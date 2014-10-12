@@ -1,0 +1,10 @@
+[package]
+
+name = "photometer"
+version = "0.0.1"
+authors = ["pavlov_dmitry"]
+
+
+[dependencies.nickel]
+
+git = "https://github.com/nickel-org/nickel.rs.git"
