@@ -5,6 +5,10 @@ use params_body_parser::{ ParamsBody };
 use std::collections::HashMap;
 use stuff::{ Stuffable };
 
+static USER : &'static str = "user";
+static PASSWORD : &'static str = "password";
+static SESSION_ID : &'static str = "session_id";
+
 #[deriving(Clone)]
 pub struct User {
 	pub name : String,
@@ -65,7 +69,7 @@ fn make_login ( response: &mut Response) {
 impl Middleware for Autentication {
 	fn invoke(&self, req: &mut Request, res: &mut Response) -> MiddlewareResult {
 
-		let found = req.parameter( "session_id" ).map_or( None, |session| {
+		let found = req.parameter( SESSION_ID ).map_or( None, |session| {
 			let session_store = req.stuff().sessions_store_for.read();
 			session_store.user_by_session_id( session )
 		} );
@@ -83,9 +87,13 @@ impl Middleware for Autentication {
     } 
 }
 
+fn not_found_param_msg( prm : &str ) -> String {
+    format!( "can`t find '{}' param", prm )
+}
+
 pub fn login( request: &Request, response: &mut Response ) {
-	let answer_str = request.parameter( "user" ).map_or( "can`t find user param".to_string(), |ref user| { 
-        request.parameter( "password" ).map_or( "can`t find password param".to_string() , |ref password| { 
+	let answer_str = request.parameter( USER ).map_or( not_found_param_msg( USER ), |ref user| { 
+        request.parameter( PASSWORD ).map_or( not_found_param_msg( PASSWORD ) , |ref password| { 
         	let mut session_store = request.stuff().sessions_store_for.write();
         	let sess_id = session_store.add_new_session( user.clone(), password.clone() );
             format!( "logging as {} with password {} session_id = {}", user, password, sess_id )
