@@ -11,6 +11,7 @@ mod params_body_parser;
 mod stuff;
 mod authentication;
 mod config;
+mod cookies_parser;
 
 fn hello ( request: &Request, response: &mut Response) { 
 	let answer = format!( "Hello {}!!! Glad to see you!", request.user().name );
@@ -33,6 +34,7 @@ fn main() {
 
     server.utilize( stuff );
     server.utilize( params_body_parser::middleware() );
+    server.utilize( cookies_parser::middleware() );
     server.utilize( StaticFilesHandler::new( cfg.static_files_path.as_slice() ) );
 	server.utilize( authentication_router );
     server.utilize( authentication::middleware( cfg.clone() ) );

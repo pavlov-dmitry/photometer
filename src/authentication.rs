@@ -5,6 +5,7 @@ use params_body_parser::{ ParamsBody };
 use std::collections::HashMap;
 use stuff::{ Stuffable };
 use sync::Arc;
+use cookies_parser::{ Cookieable };
 
 use config::Config;
 
@@ -12,7 +13,7 @@ use serialize::json;
 
 static USER : &'static str = "user";
 static PASSWORD : &'static str = "password";
-static SESSION_ID : &'static str = "session_id";
+static SESSION_ID : &'static str = "sid";
 
 /// информация о пользователе
 #[deriving(Clone)]
@@ -83,7 +84,7 @@ impl Autentication {
 impl Middleware for Autentication {
 	fn invoke(&self, req: &mut Request, res: &mut Response) -> MiddlewareResult {
 
-		let found = req.parameter( SESSION_ID ).map_or( None, |session| {
+		let found = req.cookie( SESSION_ID ).map_or( None, |session| {
 			let session_store = req.stuff().sessions_store_for.read();
 			session_store.user_by_session_id( session )
 		} );
