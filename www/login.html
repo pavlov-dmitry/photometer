@@ -1,9 +1,22 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html>
-    <body>
+    <head>
+        <meta http-equiv="content-type" content="text/html;charset=utf8" />
+        <link href="/default.css" rel="stylesheet" type="text/css" />
+    </head>
+<body>
+
+<script type="text/javascript" src="/js/jquery.min.js"></script>
+<script type="text/javascript" src="/js/jquery.cookie.js"></script>
+
+<script language="JavaScript" type="text/javascript">
+    $.cookie( 'sid', '1' );
+</script>
+    
 <form action="/login" method="post">
-<input type=text name=user><br>
-<input type=password name=password><br>
-<input type=submit name="sub" value=" Login ">
+    <input type=text name=user /><br />
+    <input type=password name=password /><br />
+    <input type=submit name="sub" value=" Login " />
 </form>
     </body>
 </html>
