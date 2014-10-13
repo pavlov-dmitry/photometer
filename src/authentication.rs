@@ -4,23 +4,31 @@ use self::nickel::{ Request, Response, Continue, Halt, MiddlewareResult, Middlew
 use params_body_parser::{ ParamsBody };
 use std::collections::HashMap;
 use stuff::{ Stuffable };
+use sync::Arc;
+
+use config::Config;
+
+use serialize::json;
 
 static USER : &'static str = "user";
 static PASSWORD : &'static str = "password";
 static SESSION_ID : &'static str = "session_id";
 
+/// информация о пользователе
 #[deriving(Clone)]
 pub struct User {
 	pub name : String,
 	password : String
 }
 
+/// хранилице информации о автиынх пользователях
 type SessionsHash = HashMap<String, User>;
 
 struct SessionIdGenerator {
 	state : int
 }
 
+/// примитивный генератор идентификаторов сессий
 impl SessionIdGenerator {
 	fn new() -> SessionIdGenerator {
 		SessionIdGenerator { state : 0i }
@@ -30,7 +38,6 @@ impl SessionIdGenerator {
 		format!( "{}", self.state )
 	}
 }
-
 
 pub struct SessionsStore {
 	sessions : SessionsHash,
@@ -56,15 +63,22 @@ impl SessionsStore {
 	}
 }
 
-#[deriving(Clone)]
-pub struct Autentication;
 
-fn make_login ( response: &mut Response) { 
-    match response.send_file( &Path::new( "../www/login.html" ) ) {
-    	Ok(_) => {}
-    	Err( e ) => { response.send( e.desc ); }
-    }
+/// аутентификация пользователя
+#[deriving(Clone)]
+pub struct Autentication {
+	cfg : Arc<Config>
 }
+
+impl Autentication {
+	fn make_login ( &self, response: &mut Response) { 
+	    match response.send_file( &Path::new( self.cfg.login_page_path.as_slice() ) ) {
+	    	Ok(_) => {}
+	    	Err( e ) => { response.send( e.desc ); }
+	    }
+	}
+}
+
 
 impl Middleware for Autentication {
 	fn invoke(&self, req: &mut Request, res: &mut Response) -> MiddlewareResult {
@@ -76,7 +90,7 @@ impl Middleware for Autentication {
 
 		match found {
 			None => { 
-				make_login( res ); 
+				self.make_login( res ); 
 				Ok( Halt )
 			}
 			Some( user ) => {
@@ -87,24 +101,38 @@ impl Middleware for Autentication {
     } 
 }
 
+/// авторизация пользователя
+pub fn login( request: &Request, response: &mut Response ) {
+	let answer_result = request.parameter( USER ).map_or( Err( not_found_param_msg( USER ) ), |ref user| { 
+    	request.parameter( PASSWORD ).map_or( Err( not_found_param_msg( PASSWORD ) ) , |ref password| { 
+			let mut session_store = request.stuff().sessions_store_for.write();
+        	let sess_id = session_store.add_new_session( user.clone(), password.clone() );
+            Ok( json::encode( &AuthAnswer{ sid : sess_id } ) )
+        } ) 
+    } );
+
+	match answer_result {
+		Err( err_desc ) => response.send( err_desc.as_slice() ),
+		Ok( answer ) => {
+			response.content_type( "application/json" );
+			response.send( answer.as_slice() );
+		}
+	}
+}
+
 fn not_found_param_msg( prm : &str ) -> String {
     format!( "can`t find '{}' param", prm )
 }
 
-pub fn login( request: &Request, response: &mut Response ) {
-	let answer_str = request.parameter( USER ).map_or( not_found_param_msg( USER ), |ref user| { 
-        request.parameter( PASSWORD ).map_or( not_found_param_msg( PASSWORD ) , |ref password| { 
-        	let mut session_store = request.stuff().sessions_store_for.write();
-        	let sess_id = session_store.add_new_session( user.clone(), password.clone() );
-            format!( "logging as {} with password {} session_id = {}", user, password, sess_id )
-        } ) 
-    } );
-
-	response.send( answer_str.as_slice() );
+#[deriving(Encodable)]
+struct AuthAnswer {
+	sid : String
 }
 
-pub fn middleware() -> Autentication {
-	Autentication
+
+/// простой доступ из Request-a к информации о пользователе
+pub fn middleware( c: Arc<Config> ) -> Autentication {
+	Autentication{ cfg : c }
 }
 
 pub trait Userable {
