@@ -9,7 +9,6 @@ use authentication::{ Userable };
 use sync::Arc;
 
 mod params_body_parser;
-mod stuff;
 mod authentication;
 mod config;
 mod cookies_parser;
@@ -33,14 +32,11 @@ fn main() {
     ).unwrap_or_else( |e| { fail!( e ) } );
 
 
-    let stuff = stuff::new( authentication::SessionsStore::new() );
-
-
     router.get( "/hello", hello );
 
     authentication_router.post( "/login", authentication::login ) ;
 
-    server.utilize( stuff );
+    server.utilize( authentication::create_session_store() );
     server.utilize( db );
     server.utilize( params_body_parser::middleware() );
     server.utilize( cookies_parser::middleware() );

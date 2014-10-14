@@ -3,8 +3,7 @@ extern crate nickel;
 use self::nickel::{ Request, Response, Continue, Halt, MiddlewareResult, Middleware };
 use params_body_parser::{ ParamsBody };
 use std::collections::HashMap;
-use stuff::{ Stuffable };
-use sync::Arc;
+use sync::{ Arc, RWLock };
 use cookies_parser::{ Cookieable };
 
 use config::Config;
@@ -52,18 +51,48 @@ impl SessionsStore {
 			session_id_generator : SessionIdGenerator::new()
 		}
 	}
-	fn user_by_session_id(&self, session_id: &String ) -> Option<User> {
-		self.sessions.find( session_id ).map( | ref user | { (*user).clone() } )
+}
+
+#[deriving(Clone)]
+pub struct SessionsStoreMiddleware {
+	store : Arc<RWLock<SessionsStore>>
+}
+
+impl SessionsStoreMiddleware {
+	pub fn user_by_session_id(&self, session_id: &String ) -> Option<User> {
+		let store = self.store.read();
+		store.sessions.find( session_id ).map( | ref user | { (*user).clone() } )
 	}
 
-	fn add_new_session( &mut self, user: &String, password: &String ) -> String {
-		let sess_id = self.session_id_generator.gen();
+	pub fn add_new_session( &self, user: &String, password: &String ) -> String {
+		let mut store = self.store.write();
+		let sess_id = store.session_id_generator.gen();
     	let new_user = User { name : user.clone(), password : password.clone() };
-    	self.sessions.insert( sess_id.clone(), new_user );
+    	store.sessions.insert( sess_id.clone(), new_user );
     	sess_id
 	}
 }
 
+impl Middleware for SessionsStoreMiddleware {
+    fn invoke(&self, req: &mut Request, _res: &mut Response) -> MiddlewareResult {
+        req.map.insert( self.clone() );
+        Ok( Continue )
+    } 
+}
+
+trait SessionsStoreable {
+	fn sessions_store( &self ) -> &SessionsStoreMiddleware;
+}
+
+impl<'a, 'b> SessionsStoreable for Request<'a, 'b> {
+	fn sessions_store( &self ) -> &SessionsStoreMiddleware {
+		self.map.find::<SessionsStoreMiddleware>().unwrap()
+	}
+}
+
+pub fn create_session_store() -> SessionsStoreMiddleware {
+	SessionsStoreMiddleware { store: Arc::new( RWLock::new( SessionsStore::new() ) ) }
+}
 
 /// аутентификация пользователя
 #[deriving(Clone)]
@@ -85,8 +114,7 @@ impl Middleware for Autentication {
 	fn invoke(&self, req: &mut Request, res: &mut Response) -> MiddlewareResult {
 
 		let found = req.cookie( SESSION_ID ).map_or( None, |session| {
-			let session_store = req.stuff().sessions_store_for.read();
-			session_store.user_by_session_id( session )
+			req.sessions_store().user_by_session_id( session )
 		} );
 
 		match found {
@@ -106,8 +134,7 @@ impl Middleware for Autentication {
 pub fn login( request: &Request, response: &mut Response ) {
 	let answer_result = request.parameter( USER ).map_or( Err( not_found_param_msg( USER ) ), |ref user| { 
     	request.parameter( PASSWORD ).map_or( Err( not_found_param_msg( PASSWORD ) ) , |ref password| { 
-			let mut session_store = request.stuff().sessions_store_for.write();
-        	let sess_id = session_store.add_new_session( user.clone(), password.clone() );
+        	let sess_id = request.sessions_store().add_new_session( user.clone(), password.clone() );
             Ok( json::encode( &AuthAnswer{ sid : sess_id } ) )
         } ) 
     } );
