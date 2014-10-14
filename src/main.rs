@@ -3,7 +3,6 @@ extern crate serialize;
 extern crate sync;
 extern crate mysql;
 
-use std::io::net::ip::Ipv4Addr;
 use nickel::{ Nickel, Request, Response, HttpRouter, StaticFilesHandler };
 use authentication::{ Userable };
 use sync::Arc;
@@ -45,5 +44,5 @@ fn main() {
     server.utilize( authentication::middleware( &cfg.login_page_path ) );
     server.utilize( router );
 
-    server.listen(Ipv4Addr(127, 0, 0, 1), 6767);
+    server.listen( cfg.server_ip(), cfg.server_port );
 }
