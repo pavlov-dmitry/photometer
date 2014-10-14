@@ -31,7 +31,7 @@ impl Middleware for Database {
     fn invoke(&self, req: &mut Request, _res: &mut Response) -> MiddlewareResult {
         req.map.insert( self.clone() );
         Ok( Continue )
-    } 
+    }
 }
 
 pub trait Databaseable {

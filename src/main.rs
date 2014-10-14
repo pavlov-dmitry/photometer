@@ -15,8 +15,8 @@ mod cookies_parser;
 mod database;
 
 fn hello ( request: &Request, response: &mut Response) { 
-	let answer = format!( "Hello {}!!! Glad to see you!", request.user().name );
-	response.send( answer );
+    let answer = format!( "Hello {}!!! Glad to see you!", request.user().name );
+    response.send( answer );
 }
 
 fn main() {
@@ -41,7 +41,7 @@ fn main() {
     server.utilize( params_body_parser::middleware() );
     server.utilize( cookies_parser::middleware() );
     server.utilize( StaticFilesHandler::new( cfg.static_files_path.as_slice() ) );
-	server.utilize( authentication_router );
+    server.utilize( authentication_router );
     server.utilize( authentication::middleware( &cfg.login_page_path ) );
     server.utilize( router );
 
