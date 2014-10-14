@@ -1,6 +1,7 @@
 extern crate nickel;
 extern crate serialize;
 extern crate sync;
+extern crate mysql;
 
 use std::io::net::ip::Ipv4Addr;
 use nickel::{ Nickel, Request, Response, HttpRouter, StaticFilesHandler };
@@ -12,6 +13,7 @@ mod stuff;
 mod authentication;
 mod config;
 mod cookies_parser;
+mod database;
 
 fn hello ( request: &Request, response: &mut Response) { 
 	let answer = format!( "Hello {}!!! Glad to see you!", request.user().name );
@@ -24,6 +26,12 @@ fn main() {
     let mut authentication_router = Nickel::router();
     let mut router = Nickel::router();
 
+    let db = database::create_db_connection(  
+        cfg.db_name.clone(),
+        cfg.db_user_name.clone(),
+        cfg.db_user_password.clone()
+    ).unwrap_or_else( |e| { fail!( e ) } );
+
 
     let stuff = stuff::new( authentication::SessionsStore::new() );
 
@@ -33,6 +41,7 @@ fn main() {
     authentication_router.post( "/login", authentication::login ) ;
 
     server.utilize( stuff );
+    server.utilize( db );
     server.utilize( params_body_parser::middleware() );
     server.utilize( cookies_parser::middleware() );
     server.utilize( StaticFilesHandler::new( cfg.static_files_path.as_slice() ) );
