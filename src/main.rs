@@ -42,7 +42,7 @@ fn main() {
     server.utilize( cookies_parser::middleware() );
     server.utilize( StaticFilesHandler::new( cfg.static_files_path.as_slice() ) );
 	server.utilize( authentication_router );
-    server.utilize( authentication::middleware( cfg.clone() ) );
+    server.utilize( authentication::middleware( &cfg.login_page_path ) );
     server.utilize( router );
 
     server.listen(Ipv4Addr(127, 0, 0, 1), 6767);

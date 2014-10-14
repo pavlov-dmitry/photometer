@@ -6,8 +6,6 @@ use std::collections::HashMap;
 use sync::{ Arc, RWLock };
 use cookies_parser::{ Cookieable };
 
-use config::Config;
-
 use serialize::json;
 
 static USER : &'static str = "user";
@@ -97,12 +95,12 @@ pub fn create_session_store() -> SessionsStoreMiddleware {
 /// аутентификация пользователя
 #[deriving(Clone)]
 pub struct Autentication {
-	cfg : Arc<Config>
+	login_page_path : Arc<String>
 }
 
 impl Autentication {
 	fn make_login ( &self, response: &mut Response) { 
-	    match response.send_file( &Path::new( self.cfg.login_page_path.as_slice() ) ) {
+	    match response.send_file( &Path::new( self.login_page_path.as_slice() ) ) {
 	    	Ok(_) => {}
 	    	Err( e ) => { response.send( e.desc ); }
 	    }
@@ -159,8 +157,8 @@ struct AuthAnswer {
 
 
 /// простой доступ из Request-a к информации о пользователе
-pub fn middleware( c: Arc<Config> ) -> Autentication {
-	Autentication{ cfg : c }
+pub fn middleware( c: &String ) -> Autentication {
+	Autentication{ login_page_path : Arc::new( (*c).clone() ) }
 }
 
 pub trait Userable {
