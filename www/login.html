@@ -8,14 +8,21 @@
 
 <script type="text/javascript" src="/js/jquery.min.js"></script>
 <script type="text/javascript" src="/js/jquery.cookie.js"></script>
+<script type="text/javascript" src="/js/jquery.md5.js"></script>
 
 <script language="JavaScript" type="text/javascript">
     $.cookie( 'sid', '1' );
+    function checkForm()
+    {
+        $( '#password' ).val( $.md5( $( '#password1' ).val() ) );
+        return true;
+    }
 </script>
     
-<form action="/login" method="post">
-    <input type=text name=user /><br />
-    <input type=password name=password /><br />
+<form action="/login" method="post" onSubmit="return checkForm();">
+    Login <input type=text name=user value="" /><br />
+    <input type=hidden name=password id=password value="" />
+    Password <input type=password name=simple_password value="" /><br />
     <input type=submit name="sub" value=" Login " />
 </form>
     </body>
