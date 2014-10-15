@@ -14,9 +14,10 @@
     $.cookie( 'sid', '1' );
     function checkForm()
     {
-        if ( '' == $.trim( $( '#' ).val() ) )
+        if ( '' == $.trim( $( '#login' ).val() ) )
         {
             alert( 'Имя пользователя должно состоять хотя бы из одного символа' );
+            return false;
         }
         else { }
 
@@ -37,12 +38,12 @@
     }
 </script>
     
-<form action="/login" method="post">
-    Login: <input type=text name=login /><br />
-    <input type=hidden name=password id=password/>
-    Password <input type=password name=password1 id=password1 /><br />
-    Retype password <input type=password name=password2 id=password2 /><br />
-    <input type=submit name="sub" value=" Login " onClick="checkForm();"/>
+<form action="/join_us" method="post" onSubmit="return checkForm();">
+    Login <input type=text name=login id="login" value="" /><br />
+    <input type=hidden name=password id=password value="" />
+    Password <input type=password name=password1 id=password1 value="" /><br />
+    Retype password <input type=password name=password2 id=password2 value="" /><br />
+    <input type=submit name="sub" value=" Login " />
 </form>
     </body>
 </html>
