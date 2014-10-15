@@ -12,6 +12,17 @@ pub struct Database {
     pool: MyPool
 }
 
+impl Database {
+    fn init(&self) -> Result<(), String> {
+        let result = self.pool
+            .query( "set names utf8;" );
+        match result {
+            Ok(_)=>Ok( () ),
+            Err( e ) => Err( format!( "Database::init failed: {}", e ) )
+        }
+    }
+}
+
 pub fn create_db_connection( db_name: String, user: String, pass: String ) -> Result<Database, String> {
     let opts = MyOpts{
         db_name: Some( db_name ),
@@ -22,7 +33,13 @@ pub fn create_db_connection( db_name: String, user: String, pass: String ) -> Re
 
     let pool = MyPool::new( opts );
     match pool {
-        Ok( pool ) => Ok( Database{ pool: pool } ),
+        Ok( pool ) => {
+            let db = Database{ pool: pool };
+            match db.init() { // тут я что-то подупрел с fn map, скопилировалось только с match
+                Ok(_) => Ok( db ),
+                Err( e ) => Err( e )
+            }
+        },
         Err( e ) => Err( format!( "Connection to db failed: {}", e ) )
     }
 }
