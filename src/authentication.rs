@@ -5,8 +5,9 @@ use params_body_parser::{ ParamsBody };
 use std::collections::HashMap;
 use sync::{ Arc, RWLock };
 use cookies_parser::{ Cookieable };
-
-use serialize::json;
+use database::{ Databaseable };
+use answer;
+use answer::{ AnswerSendable };
 
 static USER : &'static str = "user";
 static PASSWORD : &'static str = "password";
@@ -132,17 +133,26 @@ impl Middleware for Autentication {
 pub fn login( request: &Request, response: &mut Response ) {
     let answer_result = request.parameter( USER ).map_or( Err( not_found_param_msg( USER ) ), |ref user| { 
         request.parameter( PASSWORD ).map_or( Err( not_found_param_msg( PASSWORD ) ) , |ref password| { 
-            let sess_id = request.sessions_store().add_new_session( user.clone(), password.clone() );
-            Ok( json::encode( &AuthAnswer{ sid : sess_id } ) )
+            let mut db = request.db();
+            db.has_user( user.as_slice() )
+                .and_then( |has_user| {
+                    let mut answer = answer::new();
+                    if has_user {
+                        let sess_id = request.sessions_store().add_new_session( user.clone(), password.clone() );
+                        answer.add_record( "sid", sess_id.as_slice() );
+                        
+                    }
+                    else {
+                        answer.add_error( "user", "not_found" );
+                    }
+                    Ok( answer )
+                })
         } ) 
     } );
 
     match answer_result {
         Err( err_desc ) => response.send( err_desc.as_slice() ),
-        Ok( answer ) => {
-            response.content_type( "application/json" );
-            response.send( answer.as_slice() );
-        }
+        Ok( ref answer ) => response.send_answer( answer )
     }
 }
 

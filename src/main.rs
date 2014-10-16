@@ -12,6 +12,7 @@ mod authentication;
 mod config;
 mod cookies_parser;
 mod database;
+mod answer;
 
 fn hello ( request: &Request, response: &mut Response) { 
     let answer = format!( "Hello {}!!! Glad to see you!", request.user().name );
