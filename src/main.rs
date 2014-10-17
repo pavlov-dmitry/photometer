@@ -35,6 +35,7 @@ fn main() {
     router.get( "/hello", hello );
 
     authentication_router.post( "/login", authentication::login ) ;
+    authentication_router.post( "/join_us", authentication::join_us ) ;
 
     server.utilize( authentication::create_session_store() );
     server.utilize( db );

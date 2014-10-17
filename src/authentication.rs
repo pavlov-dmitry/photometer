@@ -5,19 +5,19 @@ use params_body_parser::{ ParamsBody };
 use std::collections::HashMap;
 use sync::{ Arc, RWLock };
 use cookies_parser::{ Cookieable };
-use database::{ Databaseable };
+use database::{ Databaseable, DatabaseConn };
 use answer;
-use answer::{ AnswerSendable };
+use answer::{ Answer, AnswerSendable };
 
 static USER : &'static str = "user";
+static LOGIN : &'static str = "login";
 static PASSWORD : &'static str = "password";
 static SESSION_ID : &'static str = "sid";
 
 /// информация о пользователе
 #[deriving(Clone)]
 pub struct User {
-    pub name : String,
-    password : String
+    pub name : String
 }
 
 /// хранилице информации о автиынх пользователях
@@ -63,10 +63,10 @@ impl SessionsStoreMiddleware {
         store.sessions.find( session_id ).map( | ref user | { (*user).clone() } )
     }
 
-    pub fn add_new_session( &self, user: &String, password: &String ) -> String {
+    pub fn add_new_session( &self, user: &String ) -> String {
         let mut store = self.store.write();
         let sess_id = store.session_id_generator.gen();
-        let new_user = User { name : user.clone(), password : password.clone() };
+        let new_user = User { name : user.clone()};
         store.sessions.insert( sess_id.clone(), new_user );
         sess_id
     }
@@ -129,42 +129,64 @@ impl Middleware for Autentication {
     } 
 }
 
+fn make_login( db: &mut DatabaseConn, session_store: &SessionsStoreMiddleware, user: &String, pass: &String ) -> Result<Answer, String>
+{
+    db.user_password( user.as_slice() )
+        .and_then( |maybe_password| {
+            let mut answer = answer::new();
+            match maybe_password {
+                None => answer.add_error( "user", "not_found" ), 
+                Some( password ) => {
+                    if password == *pass {
+                        let sess_id = session_store.add_new_session( user );
+                        answer.add_record( "sid", sess_id.as_slice() );
+                    } else {
+                        answer.add_error( "password", "incorrect" );
+                    }
+                }
+            }
+            Ok( answer )
+        })  
+}
+
 /// авторизация пользователя
 pub fn login( request: &Request, response: &mut Response ) {
-    let answer_result = request.parameter( USER ).map_or( Err( not_found_param_msg( USER ) ), |ref user| { 
-        request.parameter( PASSWORD ).map_or( Err( not_found_param_msg( PASSWORD ) ) , |ref password| { 
+    let answer_result = request.parameter( USER ).map_or( Err( not_found_param_msg( USER ) ), |user|
+        request.parameter( PASSWORD ).map_or( Err( not_found_param_msg( PASSWORD ) ) , |password| { 
             let mut db = request.db();
-            db.has_user( user.as_slice() )
-                .and_then( |has_user| {
-                    let mut answer = answer::new();
-                    if has_user {
-                        let sess_id = request.sessions_store().add_new_session( user.clone(), password.clone() );
-                        answer.add_record( "sid", sess_id.as_slice() );
-                        
-                    }
-                    else {
-                        answer.add_error( "user", "not_found" );
-                    }
-                    Ok( answer )
-                })
+            let session_store = request.sessions_store();
+            make_login( &mut db, session_store, user, password )
         } ) 
-    } );
+    );
 
-    match answer_result {
-        Err( err_desc ) => response.send( err_desc.as_slice() ),
-        Ok( ref answer ) => response.send_answer( answer )
-    }
+    response.send_answer( &answer_result );
+}
+
+// регистрация пользователя
+pub fn join_us( request: &Request, response: &mut Response ) {
+    let answer_result = request.parameter( LOGIN ).map_or( Err( not_found_param_msg( LOGIN ) ), |login| 
+        request.parameter( PASSWORD ).map_or( Err( not_found_param_msg( PASSWORD ) ) , |password| { 
+            let mut db = request.db();
+            db.user_password( login.as_slice() )
+                .and_then( |maybe_password| { 
+                    if maybe_password.is_none() { // нет такого пользователя
+                        db.add_user( login.as_slice(), password.as_slice() )
+                            .and_then( |_| make_login( &mut db, request.sessions_store(), login, password ) )
+                    } else {
+                        let mut answer = answer::new();
+                        answer.add_error( "user", "exists" );
+                        Ok( answer )
+                    }
+                })
+        })
+    );
+
+    response.send_answer( &answer_result );
 }
 
 fn not_found_param_msg( prm : &str ) -> String {
     format!( "can`t find '{}' param", prm )
 }
-
-#[deriving(Encodable)]
-struct AuthAnswer {
-    sid : String
-}
-
 
 /// простой доступ из Request-a к информации о пользователе
 pub fn middleware( c: &String ) -> Autentication {

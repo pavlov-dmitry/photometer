@@ -20,8 +20,9 @@ impl Middleware for ParamsBodyParser {
         if !req.origin.body.is_empty() {
             let params_vec = url::form_urlencoded::parse_str( req.origin.body.as_slice() );
             let mut params_hash = HashMap::new();
+            println!( "body params:" );
             for &( ref key, ref value ) in params_vec.iter() {
-                //println!( "{}={}", key, value );
+                println!( "{}={}", key, value );
                 params_hash.insert( key.clone(), value.clone() );
             }
             req.map.insert( params_hash );
