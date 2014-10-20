@@ -27,8 +27,10 @@ fn main() {
 
     let db = database::create_db_connection(  
         cfg.db_name.clone(),
-        cfg.db_user_name.clone(),
-        cfg.db_user_password.clone()
+        cfg.db_user.clone(),
+        cfg.db_password.clone(),
+        cfg.db_min_connections,
+        cfg.db_max_connections
     ).unwrap_or_else( |e| { fail!( e ) } );
 
 

@@ -59,7 +59,13 @@ impl Database {
     }
 }
 
-pub fn create_db_connection( db_name: String, user: String, pass: String ) -> Result<Database, String> {
+pub fn create_db_connection( 
+    db_name: String, 
+    user: String, 
+    pass: String,
+    min_connections: uint,
+    max_connections: uint
+) -> Result<Database, String> {
     let opts = MyOpts{
         db_name: Some( db_name ),
         user: Some( user ), 
@@ -67,7 +73,7 @@ pub fn create_db_connection( db_name: String, user: String, pass: String ) -> Re
         ..Default::default()
     };
 
-    let pool = MyPool::new( opts );
+    let pool = MyPool::new_manual( min_connections, max_connections, opts );
     match pool {
         Ok( pool ) => {
             let db = Database{ pool: pool };
