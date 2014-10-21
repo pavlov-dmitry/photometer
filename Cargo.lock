@@ -2,8 +2,8 @@
 name = "photometer"
 version = "0.0.1"
 dependencies = [
- "mysql 0.0.0 (git+https://github.com/blackbeam/rust-mysql-simple.git#04ac2978984acf50dfb28ac6e0e0d1a94e53e6a7)",
- "nickel 0.1.0 (git+https://github.com/nickel-org/nickel.rs.git#c1bb3e17306c8d499c9657020254b4ae9abe7f0a)",
+ "mysql 0.0.0 (git+https://github.com/blackbeam/rust-mysql-simple.git#1fbd9f8634947f5eb48dc738f6918f076f84c65f)",
+ "nickel 0.1.0 (git+https://github.com/nickel-org/nickel.rs.git#d00c02397b9e7f996141b67d207b6528f470b511)",
 ]
 
 [[package]]
@@ -14,7 +14,7 @@ source = "git+https://github.com/chris-morgan/anymap.git#512885e502985a30a5b64e8
 [[package]]
 name = "encoding"
 version = "0.1.0"
-source = "git+https://github.com/lifthrasiir/rust-encoding#16aff34b35e68b0f3a23e4d9dcff4f23cea2a414"
+source = "git+https://github.com/lifthrasiir/rust-encoding#dd6183298e20b038fcd1cc4ab91405b3c72e49db"
 
 [[package]]
 name = "groupable"
@@ -24,10 +24,10 @@ source = "git+https://github.com/Ryman/groupable-rs#ae2a086edb0b10a7e5f143405d07
 [[package]]
 name = "http"
 version = "0.1.0-pre"
-source = "git+https://github.com/chris-morgan/rust-http.git#7f41166f0fa376536830d314ac4070614fa9652e"
+source = "git+https://github.com/Ryman/rust-http.git#2daa993c5c2123ddd2f3ce73e1cc42b5b7f318b8"
 dependencies = [
- "openssl 0.0.0 (git+https://github.com/sfackler/rust-openssl.git#fa951b438418c90d68fdf687a4e636f0cade7fc0)",
- "url 0.1.0 (git+https://github.com/servo/rust-url.git#55b18b796ef2cef5490069dd450c60c2cc2c0c1b)",
+ "openssl 0.0.0 (git+https://github.com/sfackler/rust-openssl.git#6277635e5c579c5842fc5f921a3b27a544a7b346)",
+ "url 0.1.0 (git+https://github.com/servo/rust-url#7f1991d847fb8cf8648def2ff121bae90b89131f)",
 ]
 
 [[package]]
@@ -38,44 +38,45 @@ source = "git+https://github.com/Kimundi/lazy-static.rs#e62a65372f1dd9019e37eb93
 [[package]]
 name = "mysql"
 version = "0.0.0"
-source = "git+https://github.com/blackbeam/rust-mysql-simple.git#04ac2978984acf50dfb28ac6e0e0d1a94e53e6a7"
+source = "git+https://github.com/blackbeam/rust-mysql-simple.git#1fbd9f8634947f5eb48dc738f6918f076f84c65f"
 dependencies = [
  "lazy_static 0.1.0 (git+https://github.com/Kimundi/lazy-static.rs#e62a65372f1dd9019e37eb9381d819edff80e360)",
+ "openssl 0.0.0 (git+https://github.com/sfackler/rust-openssl.git#6277635e5c579c5842fc5f921a3b27a544a7b346)",
 ]
 
 [[package]]
 name = "nickel"
 version = "0.1.0"
-source = "git+https://github.com/nickel-org/nickel.rs.git#c1bb3e17306c8d499c9657020254b4ae9abe7f0a"
+source = "git+https://github.com/nickel-org/nickel.rs.git#d00c02397b9e7f996141b67d207b6528f470b511"
 dependencies = [
  "anymap 0.9.0 (git+https://github.com/chris-morgan/anymap.git#512885e502985a30a5b64e881f6f3af5a901d301)",
  "groupable 0.1.0 (git+https://github.com/Ryman/groupable-rs#ae2a086edb0b10a7e5f143405d072871e75a118e)",
- "http 0.1.0-pre (git+https://github.com/chris-morgan/rust-http.git#7f41166f0fa376536830d314ac4070614fa9652e)",
- "nickel_macros 0.0.1 (git+https://github.com/nickel-org/nickel.rs.git#c1bb3e17306c8d499c9657020254b4ae9abe7f0a)",
- "rust-mustache 0.3.0 (git+https://github.com/pythonesque/rust-mustache.git#af44dbee522ea1eec931fbc9946c7621b754c126)",
- "url 0.1.0 (git+https://github.com/servo/rust-url.git#55b18b796ef2cef5490069dd450c60c2cc2c0c1b)",
+ "http 0.1.0-pre (git+https://github.com/Ryman/rust-http.git#2daa993c5c2123ddd2f3ce73e1cc42b5b7f318b8)",
+ "nickel_macros 0.0.1 (git+https://github.com/nickel-org/nickel.rs.git#d00c02397b9e7f996141b67d207b6528f470b511)",
+ "rust-mustache 0.3.0 (git+https://github.com/Ryman/rust-mustache.git#1240fe10a84fb2104cac95085cab8535bcce82c8)",
+ "url 0.1.0 (git+https://github.com/servo/rust-url#7f1991d847fb8cf8648def2ff121bae90b89131f)",
 ]
 
 [[package]]
 name = "nickel_macros"
 version = "0.0.1"
-source = "git+https://github.com/nickel-org/nickel.rs.git#c1bb3e17306c8d499c9657020254b4ae9abe7f0a"
+source = "git+https://github.com/nickel-org/nickel.rs.git#d00c02397b9e7f996141b67d207b6528f470b511"
 
 [[package]]
 name = "openssl"
 version = "0.0.0"
-source = "git+https://github.com/sfackler/rust-openssl.git#fa951b438418c90d68fdf687a4e636f0cade7fc0"
+source = "git+https://github.com/sfackler/rust-openssl.git#6277635e5c579c5842fc5f921a3b27a544a7b346"
 
 [[package]]
 name = "rust-mustache"
 version = "0.3.0"
-source = "git+https://github.com/pythonesque/rust-mustache.git#af44dbee522ea1eec931fbc9946c7621b754c126"
+source = "git+https://github.com/Ryman/rust-mustache.git#1240fe10a84fb2104cac95085cab8535bcce82c8"
 
 [[package]]
 name = "url"
 version = "0.1.0"
-source = "git+https://github.com/servo/rust-url.git#55b18b796ef2cef5490069dd450c60c2cc2c0c1b"
+source = "git+https://github.com/servo/rust-url#7f1991d847fb8cf8648def2ff121bae90b89131f"
 dependencies = [
- "encoding 0.1.0 (git+https://github.com/lifthrasiir/rust-encoding#16aff34b35e68b0f3a23e4d9dcff4f23cea2a414)",
+ "encoding 0.1.0 (git+https://github.com/lifthrasiir/rust-encoding#dd6183298e20b038fcd1cc4ab91405b3c72e49db)",
 ]
 

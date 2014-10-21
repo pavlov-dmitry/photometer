@@ -5,6 +5,7 @@ extern crate url;
 
 use std::collections::HashMap;
 use self::nickel::{ Request, Response, Continue, MiddlewareResult, Middleware };
+use std::str;
 
 #[deriving(Clone)]
 pub struct ParamsBodyParser;
@@ -12,20 +13,26 @@ pub struct ParamsBodyParser;
 impl Middleware for ParamsBodyParser {
     fn invoke(&self, req: &mut Request, _res: &mut Response) -> MiddlewareResult {
 
-        //println!( "______________________________" );
-        //println!( "url={}", req.origin.request_uri );
-        //println!( "method={}", req.origin.method );
+        println!( "______________________________" );
+        println!( "url={}", req.origin.request_uri );
+        println!( "method={}", req.origin.method );
+
         //println!( "body={}", req.origin.body );
 
         if !req.origin.body.is_empty() {
-            let params_vec = url::form_urlencoded::parse_str( req.origin.body.as_slice() );
-            let mut params_hash = HashMap::new();
-            println!( "body params:" );
-            for &( ref key, ref value ) in params_vec.iter() {
-                println!( "{}={}", key, value );
-                params_hash.insert( key.clone(), value.clone() );
+            match str::from_utf8( req.origin.body.as_slice() ) {
+                Some( body_str ) => {
+                    let params_vec = url::form_urlencoded::parse_str( body_str );
+                    let mut params_hash = HashMap::new();
+                    println!( "#body params:" );
+                    for &( ref key, ref value ) in params_vec.iter() {
+                        println!( "{}={}", key, value );
+                        params_hash.insert( key.clone(), value.clone() );
+                    }
+                    req.map.insert( params_hash );        
+                }
+                None => {}
             }
-            req.map.insert( params_hash );
         }
         Ok( Continue )
     } 
