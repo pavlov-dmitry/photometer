@@ -6,33 +6,63 @@ extern crate url;
 use std::collections::HashMap;
 use self::nickel::{ Request, Response, Continue, MiddlewareResult, Middleware };
 use std::str;
+use parse_utils;
 
 #[deriving(Clone)]
 pub struct ParamsBodyParser;
 
 impl Middleware for ParamsBodyParser {
-    fn invoke(&self, req: &mut Request, _res: &mut Response) -> MiddlewareResult {
+    fn invoke<'a>(&self, req: &'a mut Request, _res: &mut Response) -> MiddlewareResult {
 
-        println!( "______________________________" );
-        println!( "url={}", req.origin.request_uri );
-        println!( "method={}", req.origin.method );
-
-        //println!( "body={}", req.origin.body );
+        //println!( "______________________________" );
+        //println!( "url={}", req.origin.request_uri );
+        //println!( "method={}", req.origin.method );
 
         if !req.origin.body.is_empty() {
-            match str::from_utf8( req.origin.body.as_slice() ) {
-                Some( body_str ) => {
-                    let params_vec = url::form_urlencoded::parse_str( body_str );
+            match req.origin.headers.content_type {
+                //если пришли бинарные данные
+                Some( ref media_type ) if media_type.type_.as_slice() == "multipart" && 
+                                          media_type.subtype.as_slice() == "form-data" => {
+                    let params = &media_type.parameters;
+                    //и передан спец ограничитель
+                    params.iter().filter( |&&(ref k,_)| k.as_slice() == "boundary" ).next() 
+                        .map( |&(_, ref boundary)| {
+                            // то перебираем все части ограниченные спец ограничителем
+                            let mut bin_params = HashMap::new();
+                            // из-за ограничений наложенных AnyMap-ом приходится вместо использования стандартного типа &[T]
+                            // использовать картеж (начало, конец)
+                            for (from, to) in parse_utils::boundary_idx( req.origin.body.as_slice(), boundary.as_bytes() ) {
+                                let chunk = req.origin.body.slice( from, to );
+                                //делим их на описательную часть и сами данные
+                                parse_utils::split_seq( chunk, b"\r\n\r\n" )
+                                    .map( |(desc, data)| {
+                                        let desc_str = str::from_utf8( desc ).unwrap_or( "" );
+                                        // находим имя параметра
+                                        parse_utils::str_between( desc_str, "name=\"", "\"" )
+                                            .map( |name| {
+                                                // записываем имя и "координаты" данных
+                                                let idx_slice = (to - data.len(), to);
+                                                bin_params.insert( name.to_string(), idx_slice ); 
+                                            })
+                                    });
+                            }
+                            req.map.insert( bin_params );
+                        });
+                },
+                // елси просто в текстовом виде
+                _ => {
+                    let body_str = str::from_utf8( req.origin.body.as_slice() ).unwrap_or( "" );
                     let mut params_hash = HashMap::new();
-                    println!( "#body params:" );
-                    for &( ref key, ref value ) in params_vec.iter() {
-                        println!( "{}={}", key, value );
+                    // то просто парсим их
+                    for &( ref key, ref value ) in url::form_urlencoded::parse_str( body_str ).iter() {
+                        // и запихиваем в контейнер текстовых данных
                         params_hash.insert( key.clone(), value.clone() );
                     }
                     req.map.insert( params_hash );        
                 }
-                None => {}
             }
+
+            
         }
         Ok( Continue )
     } 
@@ -41,6 +71,7 @@ impl Middleware for ParamsBodyParser {
 pub trait ParamsBody {
     fn parameter_string(&self, &String) -> Option<&String>;
     fn parameter(&self, &str ) -> Option<&String>;
+    fn bin_parameter<'a>(&self, &str) -> Option<&[u8]>;
 }
 
 impl<'a, 'b> ParamsBody for Request<'a, 'b> {
@@ -52,6 +83,13 @@ impl<'a, 'b> ParamsBody for Request<'a, 'b> {
     }
     fn parameter(&self, key: &str ) -> Option<&String> {
         self.parameter_string( &key.to_string() )
+    }
+    fn bin_parameter<'a>(&self, key: &str) -> Option<&[u8]> {
+        self.map.find::<HashMap<String, (uint, uint)>>()
+            .and_then( |ref hash| {
+                hash.find( &key.to_string() )
+                    .map( |&(from, to)| self.origin.body.slice( from, to ) )
+            })
     }
 }
 
