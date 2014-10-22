@@ -34,7 +34,7 @@ impl Middleware for ParamsBodyParser {
                             for (from, to) in parse_utils::boundary_idx( req.origin.body.as_slice(), boundary.as_bytes() ) {
                                 let chunk = req.origin.body.slice( from, to );
                                 //делим их на описательную часть и сами данные
-                                parse_utils::split_seq( chunk, b"\r\n\r\n" )
+                                parse_utils::split_seq_alt( chunk, b"\r\n\r\n", b"\n\n" )
                                     .map( |(desc, data)| {
                                         let desc_str = str::from_utf8( desc ).unwrap_or( "" );
                                         // находим имя параметра
