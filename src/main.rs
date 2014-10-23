@@ -1,3 +1,5 @@
+#![feature(struct_variant)]
+
 extern crate nickel;
 extern crate serialize;
 extern crate sync;
@@ -14,6 +16,8 @@ mod database;
 mod answer;
 mod parse_utils;
 mod handlers;
+mod photo_store;
+mod photo_event;
 
 fn main() {
     let cfg = Arc::new( config::load_or_default( &Path::new( "../etc/photometer.cfg" ) ) );
@@ -31,7 +35,7 @@ fn main() {
 
 
     router.get( "/hello", handlers::hello );
-    router.post( "/upload", handlers::test_upload );
+    router.post( "/upload", handlers::upload_photo );
 
     authentication_router.post( "/login", handlers::login ) ;
     authentication_router.post( "/join_us", handlers::join_us ) ;
@@ -39,6 +43,7 @@ fn main() {
     server.utilize( authentication::create_session_store() );
     server.utilize( db );
     server.utilize( params_body_parser::middleware() );
+    server.utilize( photo_store::middleware( &cfg.photo_store_path ) );
     server.utilize( cookies_parser::middleware() );
     server.utilize( StaticFilesHandler::new( cfg.static_files_path.as_slice() ) );
     server.utilize( authentication_router );

@@ -30,7 +30,7 @@ impl Middleware for ParamsBodyParser {
                             // то перебираем все части ограниченные спец ограничителем
                             let mut bin_params = HashMap::new();
                             // из-за ограничений наложенных AnyMap-ом приходится вместо использования стандартного типа &[T]
-                            // использовать картеж (начало, конец)
+                            // использовать кортеж (начало, конец)
                             for (from, to) in parse_utils::boundary_idx( req.origin.body.as_slice(), boundary.as_bytes() ) {
                                 let chunk = req.origin.body.slice( from, to );
                                 //делим их на описательную часть и сами данные
@@ -40,8 +40,9 @@ impl Middleware for ParamsBodyParser {
                                         // находим имя параметра
                                         parse_utils::str_between( desc_str, "name=\"", "\"" )
                                             .map( |name| {
+                                                //TODO: проверить что 4 байта хвоста будут и под windows
+                                                let idx_slice = (to - data.len(), to - 4 ); 
                                                 // записываем имя и "координаты" данных
-                                                let idx_slice = (to - data.len(), to);
                                                 bin_params.insert( name.to_string(), idx_slice ); 
                                             })
                                     });
@@ -72,6 +73,7 @@ pub trait ParamsBody {
     fn parameter_string(&self, &String) -> Option<&String>;
     fn parameter(&self, &str ) -> Option<&String>;
     fn bin_parameter<'a>(&self, &str) -> Option<&[u8]>;
+    fn bin_parameter_str<'a>(&self, &str) -> Option<&str>;
 }
 
 impl<'a, 'b> ParamsBody for Request<'a, 'b> {
@@ -90,6 +92,9 @@ impl<'a, 'b> ParamsBody for Request<'a, 'b> {
                 hash.find( &key.to_string() )
                     .map( |&(from, to)| self.origin.body.slice( from, to ) )
             })
+    }
+    fn bin_parameter_str<'a>(&self, key: &str) -> Option<&str> {
+        self.bin_parameter( key ).and_then( |data| str::from_utf8( data ) )
     }
 }
 

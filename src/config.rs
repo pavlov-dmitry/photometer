@@ -12,7 +12,8 @@ pub struct Config {
     pub db_user : String,
     pub db_password : String,
     pub db_min_connections : uint,
-    pub db_max_connections : uint
+    pub db_max_connections : uint,
+    pub photo_store_path: String,
 }
 
 impl Config {
@@ -33,7 +34,8 @@ impl Config {
             db_user : "photometer".to_string(),
             db_password : "parol".to_string(),
             db_min_connections : 10,
-            db_max_connections : 100
+            db_max_connections : 100,
+            photo_store_path : "../data/photos/".to_string()
         }
     }
 }
