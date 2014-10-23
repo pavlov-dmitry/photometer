@@ -6,7 +6,6 @@ extern crate sync;
 extern crate mysql;
 
 use nickel::{ Nickel, HttpRouter, StaticFilesHandler };
-use sync::Arc;
 
 mod params_body_parser;
 mod authentication;
@@ -20,7 +19,7 @@ mod photo_store;
 mod photo_event;
 
 fn main() {
-    let cfg = Arc::new( config::load_or_default( &Path::new( "../etc/photometer.cfg" ) ) );
+    let cfg = config::load_or_default( &Path::new( "../etc/photometer.cfg" ) );
     let mut server = Nickel::new();
     let mut authentication_router = Nickel::router();
     let mut router = Nickel::router();
@@ -40,6 +39,7 @@ fn main() {
     authentication_router.post( "/login", handlers::login ) ;
     authentication_router.post( "/join_us", handlers::join_us ) ;
 
+    server.utilize( config::middleware( &cfg ) );
     server.utilize( authentication::create_session_store() );
     server.utilize( db );
     server.utilize( params_body_parser::middleware() );

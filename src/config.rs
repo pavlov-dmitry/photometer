@@ -1,8 +1,10 @@
 use std::io::{ File, stdio };
+use sync::{ Arc };
 use serialize::json;
 use std::io::net::ip::{ Ipv4Addr, IpAddr };
+use nickel::{ Request, Response, Continue, MiddlewareResult, Middleware };
 
-#[deriving(Encodable, Decodable)]
+#[deriving(Encodable, Decodable, Clone)]
 pub struct Config {
     server_ip: (u8, u8, u8, u8),
     pub server_port: u16,
@@ -63,5 +65,31 @@ pub fn load_or_default( path: &Path ) -> Config {
             stdio::stderr().write_line( e.as_slice() ).ok().expect( "can`t write to stderr!" );
             default()
         }
+    }
+}
+
+#[deriving(Clone)]
+struct ConfigMiddleware {
+    config : Arc<Config>
+}
+
+pub fn middleware( cfg: &Config ) -> ConfigMiddleware {
+    ConfigMiddleware{ config : Arc::new( cfg.clone() ) }
+}
+
+impl Middleware for ConfigMiddleware {
+    fn invoke(&self, req: &mut Request, _res: &mut Response) -> MiddlewareResult {
+        req.map.insert( self.clone() );
+        Ok( Continue )
+    } 
+}
+
+pub trait Configable {
+    fn config( &self ) -> &Config;
+}
+
+impl<'a, 'b> Configable for Request<'a, 'b> {
+    fn config( &self ) -> &Config {
+        self.map.find::<ConfigMiddleware>().unwrap().config.deref()
     }
 }
