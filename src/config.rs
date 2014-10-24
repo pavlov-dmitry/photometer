@@ -1,10 +1,8 @@
 use std::io::{ File, stdio };
-use sync::{ Arc };
 use serialize::json;
 use std::io::net::ip::{ Ipv4Addr, IpAddr };
-use nickel::{ Request, Response, Continue, MiddlewareResult, Middleware };
 
-#[deriving(Encodable, Decodable, Clone)]
+#[deriving(Encodable, Decodable)]
 pub struct Config {
     server_ip: (u8, u8, u8, u8),
     pub server_port: u16,
@@ -16,6 +14,7 @@ pub struct Config {
     pub db_min_connections : uint,
     pub db_max_connections : uint,
     pub photo_store_path: String,
+    pub photo_store_max_photo_size_bytes : uint,
 }
 
 impl Config {
@@ -37,7 +36,8 @@ impl Config {
             db_password : "parol".to_string(),
             db_min_connections : 10,
             db_max_connections : 100,
-            photo_store_path : "../data/photos/".to_string()
+            photo_store_path : "../data/photos/".to_string(),
+            photo_store_max_photo_size_bytes : 3145728
         }
     }
 }
@@ -65,31 +65,5 @@ pub fn load_or_default( path: &Path ) -> Config {
             stdio::stderr().write_line( e.as_slice() ).ok().expect( "can`t write to stderr!" );
             default()
         }
-    }
-}
-
-#[deriving(Clone)]
-struct ConfigMiddleware {
-    config : Arc<Config>
-}
-
-pub fn middleware( cfg: &Config ) -> ConfigMiddleware {
-    ConfigMiddleware{ config : Arc::new( cfg.clone() ) }
-}
-
-impl Middleware for ConfigMiddleware {
-    fn invoke(&self, req: &mut Request, _res: &mut Response) -> MiddlewareResult {
-        req.map.insert( self.clone() );
-        Ok( Continue )
-    } 
-}
-
-pub trait Configable {
-    fn config( &self ) -> &Config;
-}
-
-impl<'a, 'b> Configable for Request<'a, 'b> {
-    fn config( &self ) -> &Config {
-        self.map.find::<ConfigMiddleware>().unwrap().config.deref()
     }
 }

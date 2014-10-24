@@ -7,15 +7,17 @@ use photo_event::{ PhotoEvent, Weekly };
 
 static WEEKLY_DIR : &'static str = "weekly";
 
-pub fn middleware( photo_dir: &String ) -> PhotoStore {
+pub fn middleware( photo_dir: &String, max_photo_size_bytes: uint ) -> PhotoStore {
     PhotoStore {
-        photos_dir: Arc::new( (*photo_dir).clone() )
+        photos_dir: Arc::new( (*photo_dir).clone() ),
+        max_photo_size_bytes: max_photo_size_bytes
     }   
 }
 
 #[deriving(Clone)]
 pub struct PhotoStore {
-    photos_dir : Arc<String>
+    photos_dir : Arc<String>,
+    pub max_photo_size_bytes : uint
 }
 
 

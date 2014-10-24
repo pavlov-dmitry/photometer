@@ -18,14 +18,23 @@ pub fn upload_photo( request: &Request, response: &mut Response ) {
         .and_then( 
             |week| request.bin_parameter( IMAGE ).ok_or( err_msg::param_not_found( IMAGE ) )
                 .and_then( |img_data| {
-                    let event = photo_event::create_weekly( 2014, week );
-                    match request.photo_store().add_new_photo( request.user(), &event, img_data ) {
-                        Ok(_) => {
-                            let mut answer = answer::new();
-                            answer.add_record( "photo_loaded", "ok" );
-                            Ok( answer )
+                    let photo_store = request.photo_store();
+                    //проверка на размер фото
+                    if img_data.len() < photo_store.max_photo_size_bytes {
+                        let event = photo_event::create_weekly( 2014, week );
+                        match photo_store.add_new_photo( request.user(), &event, img_data ) {
+                            Ok(_) => {
+                                let mut answer = answer::new();
+                                answer.add_record( "photo_loaded", "ok" );
+                                Ok( answer )
+                            }
+                            Err( e ) => Err( err_msg::fs_error( e ) )
                         }
-                        Err( e ) => Err( err_msg::fs_error( e ) )
+                    }
+                    else {
+                        let mut answer = answer::new();
+                        answer.add_error( "photo", "too_big" );
+                        Ok( answer ) 
                     }
                 })
         );
