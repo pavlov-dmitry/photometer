@@ -56,10 +56,10 @@ impl SessionsStoreMiddleware {
         store.sessions.find( session_id ).map( | ref user | { (*user).clone() } )
     }
 
-    pub fn add_new_session( &self, user: &String ) -> String {
+    pub fn add_new_session( &self, user: &str ) -> String {
         let mut store = self.store.write();
         let sess_id = store.session_id_generator.gen();
-        let new_user = User { name : user.clone()};
+        let new_user = User { name : user.to_string() };
         store.sessions.insert( sess_id.clone(), new_user );
         sess_id
     }

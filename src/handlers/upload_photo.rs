@@ -3,20 +3,17 @@ use photo_store::{ PhotoStoreable };
 use photo_event;
 use answer;
 use answer::{ AnswerSendable };
-use params_body_parser::{ ParamsBody };
+use super::get_param::{ GetParamable };
 use authentication::{ Userable };
 use super::err_msg;
-use std::from_str::{ from_str };
 
 static WEEK : &'static str = "week";
 static IMAGE : &'static str = "upload_img";
 
 pub fn upload_photo( request: &Request, response: &mut Response ) {
     let answer_result = 
-        request.bin_parameter_str( WEEK ).ok_or( err_msg::param_not_found( WEEK ) )
-        .and_then( |week_str| from_str::<uint>( week_str.as_slice() ).ok_or( err_msg::invalid_type_param( WEEK ) ) )
-        .and_then( 
-            |week| request.bin_parameter( IMAGE ).ok_or( err_msg::param_not_found( IMAGE ) )
+        request.get_param_uint( WEEK )
+            .and_then( |week| request.get_param_bin( IMAGE )
                 .and_then( |img_data| {
                     let photo_store = request.photo_store();
                     //проверка на размер фото

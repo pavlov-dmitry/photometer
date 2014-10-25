@@ -8,6 +8,7 @@ pub mod authentication;
 pub mod upload_photo;
 
 mod err_msg;
+mod get_param;
 
 pub fn hello ( request: &Request, response: &mut Response) { 
     let answer = format!( "Hello {}!!! Glad to see you!", request.user().name );

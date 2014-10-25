@@ -22,7 +22,7 @@ pub struct PhotoStore {
 
 
 impl PhotoStore {
-    pub fn init_user_dir( &self, user: &String ) -> IoResult<()> {
+    pub fn init_user_dir( &self, user: &str ) -> IoResult<()> {
         mkdir_recursive( &Path::new( format!( "{}/{}/{}", *self.photos_dir, user, WEEKLY_DIR ) ), USER_RWX )
     }
     pub fn add_new_photo( &self, user: &User, event: &PhotoEvent, img_data: &[u8] ) -> IoResult<()> {

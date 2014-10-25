@@ -73,7 +73,6 @@ pub trait ParamsBody {
     fn parameter_string(&self, &String) -> Option<&String>;
     fn parameter(&self, &str ) -> Option<&String>;
     fn bin_parameter<'a>(&self, &str) -> Option<&[u8]>;
-    fn bin_parameter_str<'a>(&self, &str) -> Option<&str>;
 }
 
 impl<'a, 'b> ParamsBody for Request<'a, 'b> {
@@ -92,9 +91,6 @@ impl<'a, 'b> ParamsBody for Request<'a, 'b> {
                 hash.find( &key.to_string() )
                     .map( |&(from, to)| self.origin.body.slice( from, to ) )
             })
-    }
-    fn bin_parameter_str<'a>(&self, key: &str) -> Option<&str> {
-        self.bin_parameter( key ).and_then( |data| str::from_utf8( data ) )
     }
 }
 
