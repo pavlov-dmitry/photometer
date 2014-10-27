@@ -36,10 +36,11 @@ fn main() {
 
     router.get( "/hello", handlers::hello );
     router.post( "/upload", handlers::upload_photo );
+    router.get( photo_store::files_router_path(), photo_store::get_photo ) ;
 
     authentication_router.post( "/login", handlers::login ) ;
     authentication_router.post( "/join_us", handlers::join_us ) ;
-
+    
     server.utilize( authentication::create_session_store() );
     server.utilize( db );
     server.utilize( params_body_parser::middleware() );

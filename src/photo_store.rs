@@ -79,6 +79,11 @@ impl PhotoStore {
             FileSizeError
         }
     }
+
+    /// возвращает путь к файлу определенного пользователя с определнного события
+    pub fn get_path_to( &self, user: &str, event: &str, filename: &str, ext: &str ) -> Path {
+        Path::new( format!( "{}/{}/{}/{}.{}", self.params.photos_dir, user, event, filename, ext ) )
+    }
     /// формирует имя файла в зависимости от пользователя и события
     fn make_filename( &self, user: &User, event: &PhotoEvent, is_preview: bool ) -> Path {
         let postfix = if is_preview { "_preview.png" } else { ".jpg" };
@@ -95,6 +100,21 @@ impl PhotoStore {
             )
         }
     }
+}
+
+pub fn files_router_path() -> &'static str {
+    "/photo/:user/:event/:filename.:ext"
+}
+
+pub fn get_photo( req: &Request, res: &mut Response ) {
+    let _ = res.send_file( 
+        &req.photo_store().get_path_to( 
+            req.param( "user" ),
+            req.param( "event" ),
+            req.param( "filename" ),
+            req.param( "ext" ) 
+        )
+    );
 }
 
 impl Middleware for PhotoStore {
