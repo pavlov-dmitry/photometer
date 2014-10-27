@@ -15,6 +15,7 @@ pub struct Config {
     pub db_max_connections : uint,
     pub photo_store_path: String,
     pub photo_store_max_photo_size_bytes : uint,
+    pub photo_store_preview_size : uint
 }
 
 impl Config {
@@ -37,7 +38,8 @@ impl Config {
             db_min_connections : 10,
             db_max_connections : 100,
             photo_store_path : "../data/photos/".to_string(),
-            photo_store_max_photo_size_bytes : 3145728
+            photo_store_max_photo_size_bytes : 3145728,
+            photo_store_preview_size : 300
         }
     }
 }

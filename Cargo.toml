@@ -12,3 +12,7 @@ git = "https://github.com/nickel-org/nickel.rs.git"
 [dependencies.mysql]
 
 git = "https://github.com/blackbeam/rust-mysql-simple.git"
+
+[dependencies.image]
+
+git = "https://github.com/PistonDevelopers/image.git"

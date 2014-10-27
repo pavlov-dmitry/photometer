@@ -4,6 +4,7 @@ extern crate nickel;
 extern crate serialize;
 extern crate sync;
 extern crate mysql;
+extern crate image;
 
 use nickel::{ Nickel, HttpRouter, StaticFilesHandler };
 
@@ -42,7 +43,13 @@ fn main() {
     server.utilize( authentication::create_session_store() );
     server.utilize( db );
     server.utilize( params_body_parser::middleware() );
-    server.utilize( photo_store::middleware( &cfg.photo_store_path, cfg.photo_store_max_photo_size_bytes ) );
+    server.utilize( 
+        photo_store::middleware( 
+            &cfg.photo_store_path, 
+            cfg.photo_store_max_photo_size_bytes,
+            cfg.photo_store_preview_size
+        ) 
+    );
     server.utilize( cookies_parser::middleware() );
     server.utilize( StaticFilesHandler::new( cfg.static_files_path.as_slice() ) );
     server.utilize( authentication_router );

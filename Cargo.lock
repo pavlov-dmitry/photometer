@@ -2,6 +2,7 @@
 name = "photometer"
 version = "0.0.1"
 dependencies = [
+ "image 0.1.0 (git+https://github.com/PistonDevelopers/image.git#9341e49299dccc7b9c3b300cc8168e360f69b045)",
  "mysql 0.0.0 (git+https://github.com/blackbeam/rust-mysql-simple.git#1fbd9f8634947f5eb48dc738f6918f076f84c65f)",
  "nickel 0.1.0 (git+https://github.com/nickel-org/nickel.rs.git#d00c02397b9e7f996141b67d207b6528f470b511)",
 ]
@@ -29,6 +30,11 @@ dependencies = [
  "openssl 0.0.0 (git+https://github.com/sfackler/rust-openssl.git#6277635e5c579c5842fc5f921a3b27a544a7b346)",
  "url 0.1.0 (git+https://github.com/servo/rust-url#7f1991d847fb8cf8648def2ff121bae90b89131f)",
 ]
+
+[[package]]
+name = "image"
+version = "0.1.0"
+source = "git+https://github.com/PistonDevelopers/image.git#9341e49299dccc7b9c3b300cc8168e360f69b045"
 
 [[package]]
 name = "lazy_static"
