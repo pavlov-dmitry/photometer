@@ -5,6 +5,7 @@ dependencies = [
  "image 0.1.0 (git+https://github.com/PistonDevelopers/image.git)",
  "mysql 0.0.0 (git+https://github.com/blackbeam/rust-mysql-simple.git)",
  "nickel 0.1.0 (git+https://github.com/nickel-org/nickel.rs.git)",
+ "num 0.0.1 (git+https://github.com/rust-lang/num)",
 ]
 
 [[package]]
@@ -107,6 +108,11 @@ dependencies = [
 name = "nickel_macros"
 version = "0.0.1"
 source = "git+https://github.com/nickel-org/nickel.rs.git#fc93f5a0eee4ffa327c1d359f4f8202e92c6151a"
+
+[[package]]
+name = "num"
+version = "0.0.1"
+source = "git+https://github.com/rust-lang/num#da2fcbaa0cff2281aede303204cc7884fb246880"
 
 [[package]]
 name = "openssl"

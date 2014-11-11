@@ -18,6 +18,7 @@ mod parse_utils;
 mod handlers;
 mod photo_store;
 mod photo_event;
+mod exif_reader;
 
 fn main() {
     let cfg = config::load_or_default( &Path::new( "../etc/photometer.cfg" ) );

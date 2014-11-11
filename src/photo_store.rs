@@ -8,6 +8,8 @@ use photo_event::{ PhotoEvent, Weekly };
 use image;
 use image::{ GenericImage };
 use std::cmp::{ min };
+use exif_reader;
+use exif_reader::{ ExifValues };
 
 static WEEKLY_DIR : &'static str = "weekly";
 
@@ -55,6 +57,20 @@ impl PhotoStore {
     /// добавляет фотографию привязанную к опеределнному событию
     pub fn add_new_photo( &self, user: &User, event: &PhotoEvent, img_data: &[u8] ) -> PhotoResult {
         if img_data.len() < self.params.max_photo_size_bytes {
+            //TODO: remove after test
+            match exif_reader::from_memory( img_data ) {
+                Some( exif ) => {
+                    println!( "camera={}", exif.camera_model() );
+                    println!( "iso={}", exif.iso() );
+                    println!( "shutter={}", exif.shutter_speed() );
+                    println!( "focal_length={}", exif.focal_length() );
+                    println!( "focal_length_35mm={}", exif.focal_length_35mm() );
+                    println!( "aperture={}", exif.aperture() ); 
+                },
+                None => println!( "no exif" )
+            }
+            
+
             match image::load_from_memory( img_data, image::JPEG ) {
                 Ok( mut img ) => {
                     let (w, h) = img.dimensions();
