@@ -13,7 +13,7 @@ impl Middleware for CookiesParser {
         let mut cookies = Cookies( HashMap::new() );
         req.origin.headers.extensions
             .find_with( |k| {
-                "Cookie".cmp( &k.as_slice() )
+                "Cookie".cmp( k.as_slice() )
             })
             .map( |value| {
                 for ref cookie in value.as_slice().split( ';' ) {
@@ -35,10 +35,10 @@ pub trait Cookieable {
 
 impl<'a, 'b> Cookieable for Request<'a, 'b> {
     fn cookie(&self, key: &str) -> Option<&String> {
-        self.map.find::<Cookies>()
+        self.map.get::<Cookies>()
             .and_then( |c| {
                 let &Cookies( ref hash ) = c;
-                hash.find( &key.to_string() )
+                hash.get( &key.to_string() )
             })
     }
 }

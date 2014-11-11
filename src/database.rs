@@ -99,6 +99,6 @@ pub trait Databaseable {
 
 impl<'a, 'b> Databaseable for Request<'a, 'b> {
     fn db(&self) -> DatabaseConn {
-        DatabaseConn{ connection: self.map.find::<Database>().unwrap().pool.get_conn() }
+        DatabaseConn{ connection: self.map.get::<Database>().unwrap().pool.get_conn() }
     }
 }

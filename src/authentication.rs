@@ -53,7 +53,7 @@ pub struct SessionsStoreMiddleware {
 impl SessionsStoreMiddleware {
     pub fn user_by_session_id(&self, session_id: &String ) -> Option<User> {
         let store = self.store.read();
-        store.sessions.find( session_id ).map( | ref user | { (*user).clone() } )
+        store.sessions.get( session_id ).map( | ref user | { (*user).clone() } )
     }
 
     pub fn add_new_session( &self, user: &str ) -> String {
@@ -78,7 +78,7 @@ pub trait SessionsStoreable {
 
 impl<'a, 'b> SessionsStoreable for Request<'a, 'b> {
     fn sessions_store( &self ) -> &SessionsStoreMiddleware {
-        self.map.find::<SessionsStoreMiddleware>().unwrap()
+        self.map.get::<SessionsStoreMiddleware>().unwrap()
     }
 }
 
@@ -133,6 +133,6 @@ pub trait Userable {
 
 impl<'a, 'b> Userable for Request<'a, 'b> {
     fn user( &self ) -> &User {
-        self.map.find::<User>().unwrap()
+        self.map.get::<User>().unwrap()
     }
 }

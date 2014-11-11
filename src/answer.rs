@@ -1,4 +1,5 @@
 use nickel::{ Response };
+use nickel::mimes;
 use serialize::json;
 
 #[deriving(Encodable)]
@@ -41,7 +42,7 @@ impl<'a, 'b> AnswerSendable for Response<'a, 'b> {
 		match answer {
 	        &Err( ref err_desc ) => self.send( err_desc.as_slice() ),
 	        &Ok( ref answer ) => {
-	        	self.content_type( "application/json" );
+	        	self.content_type( mimes::Json );
 				self.send( json::encode( answer ).as_slice() );
 	        }
 	    }

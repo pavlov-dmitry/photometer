@@ -130,8 +130,6 @@ pub trait PhotoStoreable {
 
 impl<'a, 'b> PhotoStoreable for Request<'a, 'b> {
     fn photo_store( &self ) -> &PhotoStore {
-        self.map.find::<PhotoStore>().unwrap()
+        self.map.get::<PhotoStore>().unwrap()
     }
 }
-
-

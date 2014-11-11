@@ -77,18 +77,18 @@ pub trait ParamsBody {
 
 impl<'a, 'b> ParamsBody for Request<'a, 'b> {
     fn parameter_string(&self, key: &String) -> Option<&String> {
-        self.map.find::<HashMap<String, String>>()
+        self.map.get::<HashMap<String, String>>()
             .and_then( |ref hash| {
-                hash.find( key )
+                hash.get( key )
             })
     }
     fn parameter(&self, key: &str ) -> Option<&String> {
         self.parameter_string( &key.to_string() )
     }
     fn bin_parameter<'a>(&self, key: &str) -> Option<&[u8]> {
-        self.map.find::<HashMap<String, (uint, uint)>>()
+        self.map.get::<HashMap<String, (uint, uint)>>()
             .and_then( |ref hash| {
-                hash.find( &key.to_string() )
+                hash.get( &key.to_string() )
                     .map( |&(from, to)| self.origin.body.slice( from, to ) )
             })
     }

@@ -31,7 +31,7 @@ fn main() {
         cfg.db_password.clone(),
         cfg.db_min_connections,
         cfg.db_max_connections
-    ).unwrap_or_else( |e| { fail!( e ) } );
+    ).unwrap_or_else( |e| { panic!( e ) } );
 
 
     router.get( "/hello", handlers::hello );
