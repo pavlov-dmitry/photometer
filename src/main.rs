@@ -5,6 +5,7 @@ extern crate serialize;
 extern crate sync;
 extern crate mysql;
 extern crate image;
+extern crate time;
 
 use nickel::{ Nickel, HttpRouter, StaticFilesHandler };
 
@@ -17,7 +18,7 @@ mod answer;
 mod parse_utils;
 mod handlers;
 mod photo_store;
-mod photo_event;
+//mod photo_event;
 mod exif_reader;
 
 fn main() {

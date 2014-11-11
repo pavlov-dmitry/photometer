@@ -17,6 +17,7 @@ pub struct DatabaseConn {
     connection: MyResult<MyPooledConn>
 }
 
+pub type Id = i64;
 pub type DBResult<T> = Result<T, String>;
 
 impl DatabaseConn {
@@ -24,7 +25,7 @@ impl DatabaseConn {
         self.connection.as_mut().map_err( |e| format!( "Database:: creating connection failed: {}", e ) )
     }
     /// выбирает id пользователя по имени и паролю
-    pub fn get_user( &mut self, name: &str, pass: &str ) -> DBResult<Option<i64>> {
+    pub fn get_user( &mut self, name: &str, pass: &str ) -> DBResult<Option<Id>> {
         let name = name.to_string(); // помогает убрать internal compiler error
         let pass = pass.to_string();
         self.get_conn()
@@ -32,7 +33,7 @@ impl DatabaseConn {
                 .and_then( |ref mut stmt| stmt.execute( &[ &name, &pass ] )
                     .and_then( |ref mut sql_result| 
                         sql_result.next().map_or( Ok( None ),
-                            |row| row.and_then( |r| Ok( Some( from_value::<i64>( &r[0] ) ) ) )
+                            |row| row.and_then( |r| Ok( Some( from_value::<Id>( &r[0] ) ) ) )
                         )
                     )
                 )

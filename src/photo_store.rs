@@ -4,14 +4,14 @@ use std::io;
 use std::io::{ IoResult, USER_RWX };
 use std::io::fs::{ mkdir_recursive, File };
 use authentication::{ User };
-use photo_event::{ PhotoEvent, Weekly };
 use image;
 use image::{ GenericImage };
 use std::cmp::{ min };
 use exif_reader;
 use exif_reader::{ ExifValues };
+use time::{ Timespec };
 
-static WEEKLY_DIR : &'static str = "weekly";
+static GALLERY_DIR : &'static str = "gallery";
 
 pub fn middleware( photo_dir: &String, max_photo_size_bytes: uint, preview_size: uint ) -> PhotoStore {
     PhotoStore {
@@ -52,10 +52,10 @@ pub enum PhotoResult {
 impl PhotoStore {
     /// инициализирует директории пользователя для хранения фотографий
     pub fn init_user_dir( &self, user: &str ) -> IoResult<()> {
-        mkdir_recursive( &Path::new( format!( "{}/{}/{}", self.params.photos_dir, user, WEEKLY_DIR ) ), USER_RWX )
+        mkdir_recursive( &Path::new( format!( "{}/{}/{}", self.params.photos_dir, user, GALLERY_DIR ) ), USER_RWX )
     }
     /// добавляет фотографию привязанную к опеределнному событию
-    pub fn add_new_photo( &self, user: &User, event: &PhotoEvent, img_data: &[u8] ) -> PhotoResult {
+    pub fn add_new_photo( &self, user: &User, upload_time: &Timespec, img_data: &[u8] ) -> PhotoResult {
         if img_data.len() < self.params.max_photo_size_bytes {
             //TODO: remove after test
             match exif_reader::from_memory( img_data ) {
@@ -78,10 +78,10 @@ impl PhotoStore {
                     let mut preview = img.crop( w / 2 - crop_size / 2, h / 2 - crop_size / 2, crop_size, crop_size );
                     preview = preview.resize_exact( self.params.preview_size, self.params.preview_size, image::Lanczos3 );
                     let fs_sequience = 
-                        File::create( &self.make_filename( user, event, true ) )
+                        File::create( &self.make_filename( user, upload_time, true ) )
                         //превью будет пока в пнг формате, так как image сохраняет в джипег в очень слабом качестве
                         .and_then( |preview_file| preview.save( preview_file, image::PNG ) )
-                        .and_then( |_| File::create( &self.make_filename( user, event, false ) ) )
+                        .and_then( |_| File::create( &self.make_filename( user, upload_time, false ) ) )
                         .and_then( |mut file| file.write( img_data ) );
                     match fs_sequience {
                         Ok(_) => AllCorrect,
@@ -101,20 +101,17 @@ impl PhotoStore {
         Path::new( format!( "{}/{}/{}/{}.{}", self.params.photos_dir, user, event, filename, ext ) )
     }
     /// формирует имя файла в зависимости от пользователя и события
-    fn make_filename( &self, user: &User, event: &PhotoEvent, is_preview: bool ) -> Path {
+    fn make_filename( &self, user: &User, upload_time: &Timespec, is_preview: bool ) -> Path {
         let postfix = if is_preview { "_preview.png" } else { ".jpg" };
-        match event {
-            &Weekly{ year, week } => Path::new( 
-                format!( "{}/{}/{}/{}_{}{}",
-                    self.params.photos_dir,
-                    user.name,
-                    WEEKLY_DIR,
-                    year,
-                    week,
-                    postfix
-                )  
-            )
-        }
+        Path::new( 
+            format!( "{}/{}/{}/{}{}",
+                self.params.photos_dir,
+                user.name,
+                GALLERY_DIR,
+                upload_time.sec,
+                postfix
+            )  
+        )
     }
 }
 
