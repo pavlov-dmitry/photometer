@@ -59,11 +59,11 @@ fn make_login( db: &mut DatabaseConn, session_store: &SessionsStoreMiddleware, n
         .and_then( |maybe_id| {
             let mut answer = answer::new();
             match maybe_id {
-                None => answer.add_error( "user_pass", "not_found" ), 
                 Some( id ) => {
                     let sess_id = session_store.add_new_session( &User::new( name, id ) );
                     answer.add_record( "sid", sess_id.as_slice() );
-                }
+                },
+                None => answer.add_error( "user_pass", "not_found" )
             }
             Ok( answer )
         })  

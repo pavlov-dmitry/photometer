@@ -14,7 +14,6 @@ pub fn upload_photo( request: &Request, response: &mut Response ) {
         request.get_param_bin( IMAGE )
             .and_then( |img_data| {
                 let photo_store = request.photo_store();
-                //проверка на размер фото
                 let upload_time = time::get_time();
                 match photo_store.add_new_photo( request.user(), &upload_time, img_data ) {
                     AllCorrect => {
