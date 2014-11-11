@@ -2,7 +2,7 @@ use nickel::{ Request, Response };
 use answer;
 use answer::{ Answer, AnswerSendable };
 use database::{ Databaseable, DatabaseConn };
-use authentication::{ SessionsStoreable, SessionsStoreMiddleware };
+use authentication::{ SessionsStoreable, SessionsStoreMiddleware, User };
 use super::get_param::{ GetParamable };
 use photo_store::{ PhotoStoreable };
 use super::err_msg;
@@ -33,9 +33,9 @@ pub fn join_us( request: &Request, response: &mut Response ) {
             .and_then( |login| request.get_param( PASSWORD )
                 .and_then( |password| { 
                     let mut db = request.db();
-                    db.user_password( login )
-                        .and_then( |maybe_password| { 
-                            if maybe_password.is_none() { // нет такого пользователя
+                    db.user_exists( login )
+                        .and_then( |exists| { 
+                            if !exists { // нет такого пользователя
                                 db.add_user( login, password )
                                     .and_then( |_| 
                                         request.photo_store().init_user_dir( login ).map_err( |e| err_msg::fs_error( e ) ) 
@@ -53,20 +53,16 @@ pub fn join_us( request: &Request, response: &mut Response ) {
     response.send_answer( &answer_result );
 }
 
-fn make_login( db: &mut DatabaseConn, session_store: &SessionsStoreMiddleware, user: &str, pass: &str ) -> Result<Answer, String>
+fn make_login( db: &mut DatabaseConn, session_store: &SessionsStoreMiddleware, name: &str, pass: &str ) -> Result<Answer, String>
 {
-    db.user_password( user )
-        .and_then( |maybe_password| {
+    db.get_user( name, pass )
+        .and_then( |maybe_id| {
             let mut answer = answer::new();
-            match maybe_password {
-                None => answer.add_error( "user", "not_found" ), 
-                Some( password ) => {
-                    if password.as_slice() == pass {
-                        let sess_id = session_store.add_new_session( user );
-                        answer.add_record( "sid", sess_id.as_slice() );
-                    } else {
-                        answer.add_error( "password", "incorrect" );
-                    }
+            match maybe_id {
+                None => answer.add_error( "user_pass", "not_found" ), 
+                Some( id ) => {
+                    let sess_id = session_store.add_new_session( &User::new( name, id ) );
+                    answer.add_record( "sid", sess_id.as_slice() );
                 }
             }
             Ok( answer )

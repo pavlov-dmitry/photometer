@@ -23,20 +23,23 @@ impl DatabaseConn {
     fn get_conn(&mut self) -> DBResult<&mut MyPooledConn> {
         self.connection.as_mut().map_err( |e| format!( "Database:: creating connection failed: {}", e ) )
     }
-    pub fn user_password( &mut self, name: &str ) -> DBResult<Option<String>> {
+    /// выбирает id пользователя по имени и паролю
+    pub fn get_user( &mut self, name: &str, pass: &str ) -> DBResult<Option<i64>> {
         let name = name.to_string(); // помогает убрать internal compiler error
+        let pass = pass.to_string();
         self.get_conn()
-            .and_then( |connection| connection.prepare( "select password from users where login=?" )
-                .and_then( |ref mut stmt| stmt.execute( &[ &name ] )
+            .and_then( |connection| connection.prepare( "select id from users where login=? and password=?" )
+                .and_then( |ref mut stmt| stmt.execute( &[ &name, &pass ] )
                     .and_then( |ref mut sql_result| 
                         sql_result.next().map_or( Ok( None ),
-                            |row| row.and_then( |r| Ok( Some( from_value::<String>( &r[0] ) ) ) )
+                            |row| row.and_then( |r| Ok( Some( from_value::<i64>( &r[0] ) ) ) )
                         )
                     )
                 )
-                .map_err( |e| format!( "Database:: func 'user_password' failed: {}", &e ) )
+                .map_err( |e| format!( "Database:: func 'get_user' failed: {}", &e ) )
             )
     }
+    /// добавляет нового пользователя в БД
     pub fn add_user( &mut self, name: &str, pass: &str ) -> DBResult<()> {
         let name = name.to_string();
         let pass = pass.to_string();
@@ -44,6 +47,19 @@ impl DatabaseConn {
             .and_then( |connection| connection.prepare( "INSERT INTO users (login, password) VALUES(?, ?);" )
                 .and_then( |ref mut stmt| stmt.execute( &[ &name, &pass ] ).and( Ok( () ) ) )
                 .map_err( |e| format!( "Database:: func 'add_user' failed: {}", e ) )
+            )
+    }
+    /// проверяет наличие имени в БД
+    pub fn user_exists(&mut self, name: &str,) -> DBResult<bool> {
+        let name = name.to_string();
+        self.get_conn()
+            .and_then( |connection| connection.prepare( "select id from users where login=?" )
+                .and_then( |ref mut stmt| stmt.execute( &[ &name ] )
+                    .and_then( |ref mut sql_result|
+                        Ok( sql_result.count() == 1 )
+                    )
+                )
+                .map_err( |e| format!( "Database:: func 'user_exists' failed: {}", &e ) )
             )
     }
 }

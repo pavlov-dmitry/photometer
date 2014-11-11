@@ -10,7 +10,17 @@ static SESSION_ID : &'static str = "sid";
 /// информация о пользователе
 #[deriving(Clone)]
 pub struct User {
-    pub name : String
+    pub name : String,
+    pub id : i64
+}
+
+impl User {
+    pub fn new( name: &str, id: i64 ) -> User {
+        User { 
+            name: name.to_string(), 
+            id: id 
+        }
+    }
 }
 
 /// хранилице информации о автиынх пользователях
@@ -56,11 +66,10 @@ impl SessionsStoreMiddleware {
         store.sessions.get( session_id ).map( | ref user | { (*user).clone() } )
     }
 
-    pub fn add_new_session( &self, user: &str ) -> String {
+    pub fn add_new_session( &self, user: &User ) -> String {
         let mut store = self.store.write();
         let sess_id = store.session_id_generator.gen();
-        let new_user = User { name : user.to_string() };
-        store.sessions.insert( sess_id.clone(), new_user );
+        store.sessions.insert( sess_id.clone(), (*user).clone() );
         sess_id
     }
 }
