@@ -20,6 +20,7 @@ mod handlers;
 mod photo_store;
 //mod photo_event;
 mod exif_reader;
+mod photo_info;
 
 fn main() {
     let cfg = config::load_or_default( &Path::new( "../etc/photometer.cfg" ) );
@@ -39,6 +40,7 @@ fn main() {
     router.get( "/hello", handlers::hello );
     router.post( "/upload", handlers::upload_photo );
     router.get( photo_store::files_router_path(), photo_store::get_photo ) ;
+    router.get( photo_store::preview_router_path(), photo_store::get_preview ) ;
 
     authentication_router.post( "/login", handlers::login ) ;
     authentication_router.post( "/join_us", handlers::join_us ) ;

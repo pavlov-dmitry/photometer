@@ -14,6 +14,7 @@ static PASSWORD : &'static str = "password";
 /// авторизация пользователя
 pub fn login( request: &Request, response: &mut Response ) {
     let answer_result = 
+        //request.get_prm::<&str>( USER ) //TODO: проверить после очередного апдейта раста
         request.get_param( USER )
             .and_then( |user| request.get_param( PASSWORD )
                 .and_then( |password| { 

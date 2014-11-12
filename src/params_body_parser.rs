@@ -14,9 +14,12 @@ pub struct ParamsBodyParser;
 impl Middleware for ParamsBodyParser {
     fn invoke<'a>(&self, req: &'a mut Request, _res: &mut Response) -> MiddlewareResult {
 
-        //println!( "______________________________" );
-        //println!( "url={}", req.origin.request_uri );
-        //println!( "method={}", req.origin.method );
+        println!( "______________________________" );
+        println!( "url={}", req.origin.request_uri );
+        println!( "method={}", req.origin.method );
+
+        let mut bin_params = HashMap::new();
+        let mut params_hash = HashMap::new();
 
         if !req.origin.body.is_empty() {
             match req.origin.headers.content_type {
@@ -28,7 +31,7 @@ impl Middleware for ParamsBodyParser {
                     params.iter().filter( |&&(ref k,_)| k.as_slice() == "boundary" ).next() 
                         .map( |&(_, ref boundary)| {
                             // то перебираем все части ограниченные спец ограничителем
-                            let mut bin_params = HashMap::new();
+                            
                             // из-за ограничений наложенных AnyMap-ом приходится вместо использования стандартного типа &[T]
                             // использовать кортеж (начало, конец)
                             for (from, to) in parse_utils::boundary_idx( req.origin.body.as_slice(), boundary.as_bytes() ) {
@@ -44,26 +47,39 @@ impl Middleware for ParamsBodyParser {
                                                 let idx_slice = (to - data.len(), to - 4 ); 
                                                 // записываем имя и "координаты" данных
                                                 bin_params.insert( name.to_string(), idx_slice ); 
+                                                parse_utils::str_between( desc_str, "filename=\"", "\"" )
+                                                    .map( |filename| {
+                                                        params_hash.insert( 
+                                                            name.to_string() + String::from_str( "_filename" ), 
+                                                            filename.to_string() 
+                                                        )
+                                                    });
                                             })
+                                        
                                     });
                             }
-                            req.map.insert( bin_params );
+                            
                         });
                 },
                 // елси просто в текстовом виде
                 _ => {
                     let body_str = str::from_utf8( req.origin.body.as_slice() ).unwrap_or( "" );
-                    let mut params_hash = HashMap::new();
+                    
                     // то просто парсим их
                     for &( ref key, ref value ) in url::form_urlencoded::parse_str( body_str ).iter() {
                         // и запихиваем в контейнер текстовых данных
                         params_hash.insert( key.clone(), value.clone() );
                     }
-                    req.map.insert( params_hash );        
+                            
                 }
             }
 
-            
+            for i in params_hash.iter() {
+                println!( "{}", i );
+            }
+
+            req.map.insert( params_hash );
+            req.map.insert( bin_params );
         }
         Ok( Continue )
     } 

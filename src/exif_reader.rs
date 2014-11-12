@@ -32,7 +32,7 @@ pub fn from_memory( data: &[u8] ) -> Option<ExifEntries> {
 
 ///упрощенный доступ к опередленным параметрам exif-a
 pub trait ExifValues {
-    fn iso(&self) -> Option<u16>;
+    fn iso(&self) -> Option<u32>;
     fn focal_length(&self) -> Option<u16>;
     fn focal_length_35mm(&self) -> Option<u16>;
     fn aperture(&self) -> Option<f32>;
@@ -41,9 +41,9 @@ pub trait ExifValues {
 }
 
 impl ExifValues for ExifEntries {
-    fn iso(&self) -> Option<u16> {
+    fn iso(&self) -> Option<u32> {
         self.get( &"ISOSpeedRatings".to_string() )
-            .and_then( |v| v.as_short() )
+            .and_then( |v| v.as_short().map( |v| v.to_u32().unwrap() ) )
     }
     fn focal_length(&self) -> Option<u16> {
         self.get( &"FocalLength".to_string() )
