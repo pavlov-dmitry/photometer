@@ -110,24 +110,31 @@ pub fn files_router_path() -> &'static str {
 }
 
 pub fn get_photo( req: &Request, res: &mut Response ) {
+    get_photo_impl( req, res, false );
+}
+
+pub fn get_photo_impl( req: &Request, res: &mut Response, is_preview: bool ) {
     match from_str::<Id>( req.param( "filename" ) ) {
         Some( id ) => {
-            match req.db().get_photo_info( id ).unwrap_or_else( |e| panic!( e ) ) {
-                Some( (user, info) ) => {
-                    let _ = res.send_file( 
-                        &req.photo_store().make_filename(
-                            &user,
-                            &info.upload_time,
-                            info.image_type,
-                            false
-                        )
-                    );
-                }
-                None => {}
+            match req.db().get_photo_info( id ) {
+                Ok( user_info ) => match user_info {
+                    Some( (user, info) ) => {
+                        let _ = res.send_file( 
+                            &req.photo_store().make_filename(
+                                &user,
+                                &info.upload_time,
+                                info.image_type,
+                                is_preview
+                            )
+                        ).map_err( |e| error( format!( "{}", e ) ) );
+                    },
+                    None => {}
+                },
+                Err( e ) => error( e )
             }
         }
         None => {}
-    }
+    }   
 }
 
 pub fn preview_router_path() -> &'static str {
@@ -135,24 +142,11 @@ pub fn preview_router_path() -> &'static str {
 }
 
 pub fn get_preview( req: &Request, res: &mut Response ) {
-    match from_str::<Id>( req.param( "filename" ) ) {
-        Some( id ) => {
-            match req.db().get_photo_info( id ).unwrap_or_else( |e| panic!( e ) ) {
-                Some( (user, info) ) => {
-                    let _ = res.send_file( 
-                        &req.photo_store().make_filename(
-                            &user,
-                            &info.upload_time,
-                            info.image_type,
-                            true
-                        )
-                    );
-                }
-                None => {}
-            }
-        }
-        None => {}
-    }
+    get_photo_impl( req, res, true );
+}
+
+fn error( s: String ) {
+    let _ = writeln!( io::stderr(), "{}", s );
 }
 
 impl Middleware for PhotoStore {

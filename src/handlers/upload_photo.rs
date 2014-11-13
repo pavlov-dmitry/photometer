@@ -1,7 +1,7 @@
 use nickel::{ Request, Response };
 use photo_store::{ PhotoStoreable, AllCorrect, FsError, FormatError, FileSizeError };
 use answer;
-use answer::{ AnswerSendable };
+use answer::{ AnswerSendable, Answer };
 use super::get_param::{ GetParamable };
 use authentication::{ Userable };
 use super::err_msg;
@@ -17,36 +17,33 @@ static IMAGE_FILENAME : &'static str = "upload_img_filename";
 
 
 pub fn upload_photo( request: &Request, response: &mut Response ) {
-    let answer_result = 
-        request.get_param( IMAGE_FILENAME )
-            .and_then( |filename| request.get_param_bin( IMAGE )
-                .and_then( |img_data| {
-                    let mut answer = answer::new();
-                    match check_image_type( filename ) {
-                        Some( tp ) => {
-                            let photo_store = request.photo_store();
-                            let upload_time = time::get_time();
-                            match photo_store.add_new_photo( request.user(), &upload_time, tp, img_data ) {
-                                AllCorrect( w, h ) => {
-                                    let mut db = request.db();
-                                    match db.add_photo( request.user().id, &make_photo_info( upload_time, tp, w, h, img_data ) ) {
-                                        Ok( _ ) => answer.add_record( "photo_loaded", "ok" ),
-                                        Err( e ) => panic!( e )
-                                    }
-                                }
-                                FsError( e ) => panic!( err_msg::fs_error( e ) ),
-                                FormatError => answer.add_record( "photo", "bad_image" ),
-                                FileSizeError => answer.add_error( "photo", "too_big" ),
-                            }
-                        }
-                        None => answer.add_record( "photo", "unknown_format" )
+    response.send_answer( &upload_photo_answer( request ) );
+}
+
+fn upload_photo_answer( request: &Request ) -> Result<Answer, String> {
+    let filename = try!( request.get_param( IMAGE_FILENAME ) );
+    let img_data = try!( request.get_param_bin( IMAGE ) );
+    let mut answer = answer::new();
+    match check_image_type( filename ) {
+        Some( tp ) => {
+            let photo_store = request.photo_store();
+            let upload_time = time::get_time();
+            match photo_store.add_new_photo( request.user(), &upload_time, tp, img_data ) {
+                AllCorrect( w, h ) => {
+                    let mut db = request.db();
+                    match db.add_photo( request.user().id, &make_photo_info( upload_time, tp, w, h, img_data ) ) {
+                        Ok( _ ) => answer.add_record( "photo_loaded", "ok" ),
+                        Err( e ) => panic!( e )
                     }
-                    Ok( answer )
-                })
-            );
-
-
-    response.send_answer( &answer_result );
+                }
+                FsError( e ) => return Err( err_msg::fs_error( e ) ),
+                FormatError => answer.add_record( "photo", "bad_image" ),
+                FileSizeError => answer.add_error( "photo", "too_big" ),
+            }
+        }
+        None => answer.add_record( "photo", "unknown_format" )
+    }
+    Ok( answer )
 }
 
 fn make_photo_info( upload_time: Timespec, img_type: ImageType, w: u32, h: u32, img_data: &[u8] ) -> PhotoInfo {

@@ -35,19 +35,18 @@ impl DatabaseConn {
     }
     /// выбирает id пользователя по имени и паролю
     pub fn get_user( &mut self, name: &str, pass: &str ) -> DBResult<Option<Id>> {
+        let connection = try!( self.get_conn() );
+        DatabaseConn::get_user_impl( connection, name, pass )
+            .map_err( |e| format!( "Database func 'get_user' failed: {}", &e ) )
+    }
+    fn get_user_impl( conn: &mut MyPooledConn, name: &str, pass: &str ) -> MyResult<Option<Id>> {
         let name = name.to_string(); // помогает убрать internal compiler error
         let pass = pass.to_string();
-        self.get_conn()
-            .and_then( |connection| connection.prepare( "select id from users where login=? and password=?" )
-                .and_then( |ref mut stmt| stmt.execute( &[ &name, &pass ] )
-                    .and_then( |ref mut sql_result| 
-                        sql_result.next().map_or( Ok( None ),
-                            |row| row.and_then( |r| Ok( Some( from_value::<Id>( &r[0] ) ) ) )
-                        )
-                    )
-                )
-                .map_err( |e| format!( "Database:: func 'get_user' failed: {}", &e ) )
-            )
+        let mut stmt = try!( conn.prepare( "select id from users where login=? and password=?" ) );
+        let mut sql_result = try!( stmt.execute( &[ &name, &pass ] ) );
+        sql_result.next().map_or( Ok( None ),
+            |row| row.and_then( |r| Ok( Some( from_value::<Id>( &r[0] ) ) ) )
+        )
     }
     /// добавляет нового пользователя в БД
     pub fn add_user( &mut self, name: &str, pass: &str ) -> DBResult<()> {
@@ -61,96 +60,103 @@ impl DatabaseConn {
     }
     /// проверяет наличие имени в БД
     pub fn user_exists(&mut self, name: &str,) -> DBResult<bool> {
+        let connection = try!( self.get_conn() );
+        DatabaseConn::user_exists_impl( connection, name )
+            .map_err( |e| format!( "Database:: func 'user_exists' failed: {}", &e ) )
+    }
+    fn user_exists_impl( conn: &mut MyPooledConn, name: &str  ) -> MyResult<bool> {
         let name = name.to_string();
-        self.get_conn()
-            .and_then( |connection| connection.prepare( "select id from users where login=?" )
-                .and_then( |ref mut stmt| stmt.execute( &[ &name ] )
-                    .and_then( |ref mut sql_result|
-                        Ok( sql_result.count() == 1 )
-                    )
-                )
-                .map_err( |e| format!( "Database:: func 'user_exists' failed: {}", &e ) )
-            )
+        let mut stmt = try!( conn.prepare( "select id from users where login=?" ) );
+        let mut sql_result = try!( stmt.execute( &[ &name ] ) );
+        Ok( sql_result.count() == 1 )
     }
     /// добавление фотографии в галлерею пользователя
     pub fn add_photo( &mut self, user_id: Id, info: &PhotoInfo ) -> DBResult<()> {
-        self.get_conn()
-            .and_then( |c| c.prepare( "insert into images (
-                owner_id, 
-                upload_time, 
-                type,
-                width,
-                height,
-                name,
-                iso,
-                shutter_speed,
-                aperture,
-                focal_length,
-                focal_length_35mm,
-                camera_model )
-                values( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? )" )
-                .and_then( |ref mut stmt| stmt.execute( &[
-                        &user_id,
-                        &info.upload_time.sec,
-                        &info.image_type,
-                        &info.width,
-                        &info.height,
-                        &info.name,
-                        &info.iso.unwrap_or( ISO_DEFAULT ),
-                        &info.shutter_speed.unwrap_or( SHUTTER_SPEED_DEFAULT ),
-                        &info.aperture.unwrap_or( APERTURE_DEFAULT ),
-                        &info.focal_length.unwrap_or( FOCAL_LENGTH_DEFAULT ),
-                        &info.focal_length_35mm.unwrap_or( FOCAL_LENGTH_35MM_DEFAULT ),
-                        info.camera_model.as_ref().unwrap_or( &CAMERA_MODEL_DEFAULT.to_string() )
-                    ]).map( |_| () )
-                ).map_err( |e| format!( "Database:: func 'add_photo' failed: {}", &e ) )
-            )
+        let connection = try!( self.get_conn() );
+        DatabaseConn::add_photo_impl( connection, user_id, info )
+            .map_err( |e| format!( "Database:: func 'add_photo' failed: {}", &e ) )
+    }
+    fn add_photo_impl( conn: &mut MyPooledConn, user_id: Id, info: &PhotoInfo ) -> MyResult<()> {
+        let mut stmt = try!( conn.prepare( 
+            "insert into images (
+            owner_id, 
+            upload_time, 
+            type,
+            width,
+            height,
+            name,
+            iso,
+            shutter_speed,
+            aperture,
+            focal_length,
+            focal_length_35mm,
+            camera_model )
+            values( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? )" ) 
+        );
+        try!( stmt.execute( &[
+            &user_id,
+            &info.upload_time.sec,
+            &info.image_type,
+            &info.width,
+            &info.height,
+            &info.name,
+            &info.iso.unwrap_or( ISO_DEFAULT ),
+            &info.shutter_speed.unwrap_or( SHUTTER_SPEED_DEFAULT ),
+            &info.aperture.unwrap_or( APERTURE_DEFAULT ),
+            &info.focal_length.unwrap_or( FOCAL_LENGTH_DEFAULT ),
+            &info.focal_length_35mm.unwrap_or( FOCAL_LENGTH_35MM_DEFAULT ),
+            info.camera_model.as_ref().unwrap_or( &CAMERA_MODEL_DEFAULT.to_string() )
+        ]));
+        Ok( () )
     }
 
     /// получение информации о фото
     pub fn get_photo_info( &mut self, photo_id: Id ) -> DBResult<Option<(String, PhotoInfo)>> {
-        self.get_conn()
-            .and_then( |c| c.prepare( "SELECT 
-                u.login, 
-                i.upload_time,
-                i.type,
-                i.width,
-                i.height,
-                i.name,
-                i.iso,
-                i.shutter_speed,
-                i.aperture,
-                i.focal_length,
-                i.focal_length_35mm,
-                i.camera_model
-                FROM images AS i LEFT JOIN users AS u ON ( u.id = i.owner_id )
-                WHERE u.id IS NOT NULL AND i.id = ?" ) 
-                .and_then( |ref mut stmt| stmt.execute( &[ &photo_id ] ) 
-                    .and_then( |ref mut sql_result| 
-                        sql_result.next().map_or( Ok( None ), 
-                            |row| row.and_then( |r| {
-                                let mut values = r.iter();
-                                Ok ( Some ( (
-                                    from_value( values.next().unwrap() ),
-                                    PhotoInfo {
-                                        upload_time: Timespec::new( from_value( values.next().unwrap() ), 0 ),
-                                        image_type: from_value( values.next().unwrap() ),
-                                        width: from_value( values.next().unwrap() ),
-                                        height: from_value( values.next().unwrap() ),
-                                        name: from_value( values.next().unwrap() ),
-                                        iso: if_not( from_value( values.next().unwrap() ), ISO_DEFAULT ),
-                                        shutter_speed: if_not( from_value( values.next().unwrap() ), SHUTTER_SPEED_DEFAULT ),
-                                        aperture: if_not( from_value( values.next().unwrap() ), APERTURE_DEFAULT ),
-                                        focal_length: if_not( from_value( values.next().unwrap() ), FOCAL_LENGTH_DEFAULT ),
-                                        focal_length_35mm: if_not( from_value( values.next().unwrap() ), FOCAL_LENGTH_35MM_DEFAULT ),
-                                        camera_model: if_not( from_value( values.next().unwrap() ), CAMERA_MODEL_DEFAULT.to_string() )
-                                    }
-                                ) ) )
-                            })
-                        )
-                    ) //какой-то кошмар из закрывающих скобок ... 
-                ).map_err( |e| format!( "Database:: func 'get_photo_info' failed: {}", &e ) )
-            )
+        let connection = try!( self.get_conn() );
+        DatabaseConn::get_photo_info_impl( connection, photo_id )
+            .map_err( |e| format!( "Database:: func 'get_photo_info' failed: {}", &e ) )
+    }
+    fn get_photo_info_impl( conn: &mut MyPooledConn, photo_id: Id ) -> MyResult<Option<(String, PhotoInfo)>> {
+        let mut stmt = try!( conn.prepare( "SELECT 
+            u.login, 
+            i.upload_time,
+            i.type,
+            i.width,
+            i.height,
+            i.name,
+            i.iso,
+            i.shutter_speed,
+            i.aperture,
+            i.focal_length,
+            i.focal_length_35mm,
+            i.camera_model
+            FROM images AS i LEFT JOIN users AS u ON ( u.id = i.owner_id )
+            WHERE u.id IS NOT NULL AND i.id = ?" ) 
+        );
+        let mut sql_result = try!( stmt.execute( &[ &photo_id ] ) );
+        match sql_result.next() {
+            None => Ok( None ), 
+            Some( sql_row ) => {
+                let row_data = try!( sql_row );
+                let mut values = row_data.iter();
+                Ok ( Some ( (
+                    from_value( values.next().unwrap() ),
+                    PhotoInfo {
+                        upload_time: Timespec::new( from_value( values.next().unwrap() ), 0 ),
+                        image_type: from_value( values.next().unwrap() ),
+                        width: from_value( values.next().unwrap() ),
+                        height: from_value( values.next().unwrap() ),
+                        name: from_value( values.next().unwrap() ),
+                        iso: if_not( from_value( values.next().unwrap() ), ISO_DEFAULT ),
+                        shutter_speed: if_not( from_value( values.next().unwrap() ), SHUTTER_SPEED_DEFAULT ),
+                        aperture: if_not( from_value( values.next().unwrap() ), APERTURE_DEFAULT ),
+                        focal_length: if_not( from_value( values.next().unwrap() ), FOCAL_LENGTH_DEFAULT ),
+                        focal_length_35mm: if_not( from_value( values.next().unwrap() ), FOCAL_LENGTH_35MM_DEFAULT ),
+                        camera_model: if_not( from_value( values.next().unwrap() ), CAMERA_MODEL_DEFAULT.to_string() )
+                    }
+                ) ) )
+            }
+        } 
     }
 }
 
