@@ -5,8 +5,8 @@ use std::io::{ IoResult, USER_RWX };
 use std::io::fs::{ mkdir_recursive, File };
 use authentication::{ User };
 use image;
-use image::{ GenericImage };
-use std::cmp::{ min };
+use image::{ GenericImage, DynamicImage };
+use std::cmp::{ min, max };
 use time::{ Timespec };
 use photo_info::{ ImageType };
 use database::{ Databaseable, Id };
@@ -36,17 +36,16 @@ pub struct PhotoStore {
     params : Arc<Params>
 }
 
-
-pub enum PhotoResult {
-    /// Всё прошло отлично
-    AllCorrect( u32, u32 ),
+pub enum PhotoStoreError {
     /// произошла ошибка работы с файловой системой
-    FsError( io::IoError ),
+    Fs( io::IoError ),
     /// ошибка в формате данных
-    FormatError,
+    Format,
     /// ошибка размера данных
-    FileSizeError
+    FileSize
 }
+
+pub type PhotoStoreResult<T> = Result<T, PhotoStoreError>;
 
 fn to_image_format( t: ImageType ) -> image::ImageFormat {
     match t {
@@ -61,30 +60,64 @@ impl PhotoStore {
         mkdir_recursive( &Path::new( format!( "{}/{}/{}", self.params.photos_dir, user, GALLERY_DIR ) ), USER_RWX )
     }
     /// добавляет фотографию привязанную к опеределнному событию
-    pub fn add_new_photo( &self, user: &User, upload_time: &Timespec, img_type: ImageType, img_data: &[u8] ) -> PhotoResult {
+    pub fn add_new_photo( &self, user: &User, upload_time: &Timespec, img_type: ImageType, img_data: &[u8] ) -> PhotoStoreResult<(u32, u32)> {
         if img_data.len() < self.params.max_photo_size_bytes {
             match image::load_from_memory( img_data, to_image_format( img_type ) ) {
                 Ok( mut img ) => {
                     let (w, h) = img.dimensions();
                     let crop_size = min( w, h );
-                    let mut preview = img.crop( w / 2 - crop_size / 2, h / 2 - crop_size / 2, crop_size, crop_size );
-                    preview = preview.resize_exact( self.params.preview_size, self.params.preview_size, image::Lanczos3 );
+                    //let mut preview = img.crop( w / 2 - crop_size / 2, h / 2 - crop_size / 2, crop_size, crop_size );
+                    //preview = preview.resize_exact( self.params.preview_size, self.params.preview_size, image::Lanczos3 );
+                    let preview_filename = self.make_filename( &user.name, upload_time, img_type, true );
                     let fs_sequience = 
-                        File::create( &self.make_filename( &user.name, upload_time, img_type, true ) )
-                        //превью будет пока в пнг формате, так как image сохраняет в джипег в очень слабом качестве
-                        .and_then( |preview_file| preview.save( preview_file, image::PNG ) )
+                        self.save_preview( 
+                            &mut img, 
+                            preview_filename, 
+                            ( w / 2 - crop_size / 2, h / 2 - crop_size / 2 ), 
+                            ( crop_size, crop_size ) 
+                        )
                         .and_then( |_| File::create( &self.make_filename( &user.name, upload_time, img_type, false ) ) )
                         .and_then( |mut file| file.write( img_data ) );
                     match fs_sequience {
-                        Ok(_) => AllCorrect( w, h ),
-                        Err( e ) => FsError( e )
+                        Ok(_) => Ok( (w, h) ),
+                        Err( e ) => Err( Fs( e ) )
                     }
                 }
-                _ => FormatError
+                _ => Err( Format )
             }
         }
         else {
-            FileSizeError
+            Err( FileSize )
+        }
+    }
+
+    pub fn save_preview( &self, img: &mut DynamicImage, filename: Path, (tlx, tly): (u32, u32), (w, h) : (u32, u32) ) -> IoResult<()> {
+        let mut preview = img.crop( tlx, tly, w, h );
+        preview = preview.resize( self.params.preview_size, self.params.preview_size, image::Nearest );
+        let preview_file = try!( File::create( &filename ) );
+        let _ = try!( preview.save( preview_file, image::PNG ) );
+        Ok( () )
+    }
+
+    pub fn make_crop( 
+        &self, user: &String, 
+        upload_time: Timespec, 
+        image_type: ImageType, 
+        (tlx, tly): (u32, u32), 
+        (brx, bry) : (u32, u32) 
+    ) -> PhotoStoreResult<()> {
+        match image::open( &self.make_filename( user, &upload_time, image_type, false ) ) {
+            Ok( mut img ) => {
+                let (w, h) = img.dimensions();
+                let (tlx, tly) = ( min( w, tlx ), min( h, tly ) );
+                let (brx, bry) = ( min( w, brx ), min( h, bry ) );
+                let (brx, bry) = ( max( tlx, brx ), max( tly, bry ) );
+                let top_left = ( min( tlx, brx ), min( tly, bry ) );
+                let dimensions = ( brx - tlx, bry - tly );
+                self.save_preview( &mut img, self.make_filename( user, &upload_time, image_type, true ), top_left, dimensions )
+                    .map_err( |e| Fs( e ) )
+            },
+            _ => Err( Format )
         }
     }
 

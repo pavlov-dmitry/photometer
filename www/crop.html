@@ -16,13 +16,11 @@
 </script>
     
 <form action="/crop" method="post" onSubmit="return checkForm();">
-    <input type=hidden name=event_type value="weekly" />
-    <input type=hidden name=year value="2014" />
-    <input type=hidden name=week value="42" />
-    <input type=file name=x1 value="100" />
-    <input type=file name=y1 value="100" />
-    <input type=file name=x2 value="450" />
-    <input type=file name=y2 value="450" />
+    <input type=text name=id value="1" />
+    <input type=text name=x1 value="100" />
+    <input type=text name=y1 value="100" />
+    <input type=text name=x2 value="450" />
+    <input type=text name=y2 value="450" />
     <input type=submit name="sub" value=" Crop " />
 </form>
     </body>

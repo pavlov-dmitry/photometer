@@ -22,6 +22,8 @@ pub struct Answer {
 	errors: Vec<Error>
 }
 
+pub type AnswerResult = Result<Answer, String>;
+
 impl Answer {
 	pub fn add_error( &mut self, field: &str, reason: &str ) {
 		self.errors_exists = true;
@@ -34,11 +36,11 @@ impl Answer {
 }
 
 pub trait AnswerSendable {
-	fn send_answer( &mut self, answer: &Result<Answer, String> );
+	fn send_answer( &mut self, answer: &AnswerResult );
 }
 
 impl<'a, 'b> AnswerSendable for Response<'a, 'b> {
-	fn send_answer( &mut self, answer: &Result<Answer, String> ) {
+	fn send_answer( &mut self, answer: &AnswerResult ) {
 		match answer {
 	        &Err( ref err_desc ) => self.send( err_desc.as_slice() ),
 	        &Ok( ref answer ) => {

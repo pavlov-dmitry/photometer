@@ -39,6 +39,7 @@ fn main() {
 
     router.get( "/hello", handlers::hello );
     router.post( "/upload", handlers::upload_photo );
+    router.post( "/crop", handlers::crop_photo );
     router.get( photo_store::files_router_path(), photo_store::get_photo ) ;
     router.get( photo_store::preview_router_path(), photo_store::get_preview ) ;
 

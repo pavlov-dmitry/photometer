@@ -1,5 +1,5 @@
 use nickel::{ Request, Response };
-use photo_store::{ PhotoStoreable, AllCorrect, FsError, FormatError, FileSizeError };
+use photo_store::{ PhotoStoreable, PhotoStoreError };
 use answer;
 use answer::{ AnswerSendable, Answer };
 use super::get_param::{ GetParamable };
@@ -29,16 +29,18 @@ fn upload_photo_answer( request: &Request ) -> Result<Answer, String> {
             let photo_store = request.photo_store();
             let upload_time = time::get_time();
             match photo_store.add_new_photo( request.user(), &upload_time, tp, img_data ) {
-                AllCorrect( w, h ) => {
+                Ok( (w, h) ) => {
                     let mut db = request.db();
                     match db.add_photo( request.user().id, &make_photo_info( upload_time, tp, w, h, img_data ) ) {
                         Ok( _ ) => answer.add_record( "photo_loaded", "ok" ),
                         Err( e ) => panic!( e )
                     }
                 }
-                FsError( e ) => return Err( err_msg::fs_error( e ) ),
-                FormatError => answer.add_record( "photo", "bad_image" ),
-                FileSizeError => answer.add_error( "photo", "too_big" ),
+                Err( e ) => match e {
+                    PhotoStoreError::Fs( e ) => return Err( err_msg::fs_error( e ) ),
+                    PhotoStoreError::Format => answer.add_error( "photo", "bad_image" ),
+                    PhotoStoreError::FileSize => answer.add_error( "photo", "too_big" )
+                }
             }
         }
         None => answer.add_record( "photo", "unknown_format" )

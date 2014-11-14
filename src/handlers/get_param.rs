@@ -8,6 +8,7 @@ pub trait GetParamable {
     fn get_param( &self, prm: &str ) -> Result<&str, String>;
     fn get_param_bin( &self, prm: &str ) -> Result<&[u8], String>;
     fn get_param_uint( &self, prm: &str ) -> Result<uint, String>;
+    fn get_param_i64( &self, prm: &str ) -> Result<i64, String>;
 }
 
 //TODO: проверить на следующей версии раста, а пока ICE =(
@@ -42,6 +43,10 @@ impl<'a, 'b> GetParamable for Request<'a, 'b> {
     fn get_param_uint( &self, prm: &str ) -> Result<uint, String> {
         self.get_param( prm )
             .and_then( |s| from_str::<uint>( s ).ok_or( err_msg::invalid_type_param( prm ) ) )
+    }
+    fn get_param_i64( &self, prm: &str ) -> Result<i64, String> {
+        self.get_param( prm )
+            .and_then( |s| from_str::<i64>( s ).ok_or( err_msg::invalid_type_param( prm ) ) ) 
     }
 }
 
