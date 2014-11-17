@@ -32,7 +32,7 @@ fn crop_photo_answer( request: &Request ) -> AnswerResult {
                 }
             }
             else {
-                answer.add_error( "photo", "permisson denied" );
+                answer.add_error( "access", "denied" );
             }
         },
         None => answer.add_error( "photo", "not_found" ),

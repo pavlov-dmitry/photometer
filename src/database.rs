@@ -31,7 +31,7 @@ const CAMERA_MODEL_DEFAULT: &'static str = "";
 
 impl DatabaseConn {
     fn get_conn(&mut self) -> DBResult<&mut MyPooledConn> {
-        self.connection.as_mut().map_err( |e| format!( "Database:: creating connection failed: {}", e ) )
+        self.connection.as_mut().map_err( |e| format!( "Database creating connection failed: {}", e ) )
     }
     /// выбирает id пользователя по имени и паролю
     pub fn get_user( &mut self, name: &str, pass: &str ) -> DBResult<Option<Id>> {
@@ -55,14 +55,14 @@ impl DatabaseConn {
         self.get_conn()
             .and_then( |connection| connection.prepare( "INSERT INTO users (login, password) VALUES(?, ?);" )
                 .and_then( |ref mut stmt| stmt.execute( &[ &name, &pass ] ).and( Ok( () ) ) )
-                .map_err( |e| format!( "Database:: func 'add_user' failed: {}", e ) )
+                .map_err( |e| format!( "Database func 'add_user' failed: {}", e ) )
             )
     }
     /// проверяет наличие имени в БД
     pub fn user_exists(&mut self, name: &str,) -> DBResult<bool> {
         let connection = try!( self.get_conn() );
         DatabaseConn::user_exists_impl( connection, name )
-            .map_err( |e| format!( "Database:: func 'user_exists' failed: {}", &e ) )
+            .map_err( |e| format!( "Database func 'user_exists' failed: {}", &e ) )
     }
     fn user_exists_impl( conn: &mut MyPooledConn, name: &str  ) -> MyResult<bool> {
         let name = name.to_string();
@@ -74,7 +74,7 @@ impl DatabaseConn {
     pub fn add_photo( &mut self, user_id: Id, info: &PhotoInfo ) -> DBResult<()> {
         let connection = try!( self.get_conn() );
         DatabaseConn::add_photo_impl( connection, user_id, info )
-            .map_err( |e| format!( "Database:: func 'add_photo' failed: {}", &e ) )
+            .map_err( |e| format!( "Database func 'add_photo' failed: {}", &e ) )
     }
     fn add_photo_impl( conn: &mut MyPooledConn, user_id: Id, info: &PhotoInfo ) -> MyResult<()> {
         let mut stmt = try!( conn.prepare( 
@@ -114,7 +114,7 @@ impl DatabaseConn {
     pub fn get_photo_info( &mut self, photo_id: Id ) -> DBResult<Option<(String, PhotoInfo)>> {
         let connection = try!( self.get_conn() );
         DatabaseConn::get_photo_info_impl( connection, photo_id )
-            .map_err( |e| format!( "Database:: func 'get_photo_info' failed: {}", &e ) )
+            .map_err( |e| format!( "Database func 'get_photo_info' failed: {}", &e ) )
     }
     fn get_photo_info_impl( conn: &mut MyPooledConn, photo_id: Id ) -> MyResult<Option<(String, PhotoInfo)>> {
         let mut stmt = try!( conn.prepare( "SELECT 
@@ -157,6 +157,19 @@ impl DatabaseConn {
                 ) ) )
             }
         } 
+    }
+
+    ///переименование фотографии
+    pub fn rename_photo( &mut self, photo_id: Id, newname: &str ) -> DBResult<()> {
+        let connection = try!( self.get_conn() );
+        DatabaseConn::rename_photo_impl( connection, photo_id, newname )
+            .map_err( |e| format!( "Database func 'rename_photo' failed: {}", &e ) )
+    }
+    fn rename_photo_impl( conn: &mut MyPooledConn, photo_id: Id, newname: &str ) -> MyResult<()> {
+        let newname = newname.to_string();
+        let mut stmt = try!( conn.prepare( "UPDATE images SET name=? WHERE id=?" ) );
+        let _ = try!( stmt.execute( &[ &newname, &photo_id ] ) );
+        Ok( () )
     }
 }
 

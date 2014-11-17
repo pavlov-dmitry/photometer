@@ -4,10 +4,12 @@ use authentication::{ Userable };
 pub use self::authentication::{ login, join_us };
 pub use self::upload_photo::{ upload_photo };
 pub use self::crop::{ crop_photo };
+pub use self::rename::{ rename_photo };
 
 pub mod authentication;
 pub mod upload_photo;
 pub mod crop;
+pub mod rename;
 
 mod err_msg;
 mod get_param;
