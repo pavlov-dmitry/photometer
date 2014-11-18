@@ -7,7 +7,7 @@ use authentication::{ Userable };
 use super::err_msg;
 use time;
 use time::{ Timespec };
-use photo_info::{ PhotoInfo, ImageType };
+use types::{ PhotoInfo, ImageType };
 use exif_reader;
 use exif_reader::{ ExifValues };
 use database::{ Databaseable };
@@ -52,6 +52,7 @@ fn make_photo_info( upload_time: Timespec, img_type: ImageType, w: u32, h: u32, 
     let exif = exif_reader::from_memory( img_data );
     let exif_ref = exif.as_ref();
     PhotoInfo {
+        id: 0,
         upload_time: upload_time,
         image_type: img_type,
         width: w,

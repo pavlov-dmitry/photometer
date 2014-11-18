@@ -1,6 +1,10 @@
 use time::{ Timespec };
+use std::fmt::{ Show, Formatter, Result };
+
+pub type Id = i64;
 
 pub struct PhotoInfo {
+    pub id: Id,
     pub upload_time: Timespec,
     pub image_type: ImageType,
     pub width: u32,
@@ -18,4 +22,13 @@ pub struct PhotoInfo {
 pub enum ImageType {
     Jpeg,
     Png
+}
+
+impl Show for ImageType {
+    fn fmt(&self, f: &mut Formatter) -> Result {
+        match self {
+            &Jpeg => write!(f, "{}", "jpeg" ),
+            &Png => write!(f, "{}", "png" )
+        }
+    }   
 }

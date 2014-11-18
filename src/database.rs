@@ -1,14 +1,14 @@
 /// модуль работы с БД
-
 use mysql::conn::{ MyOpts };
 use mysql::conn::pool::{ MyPool, MyPooledConn };
 use mysql::error::{ MyResult };
 use mysql::value::{ from_value, from_value_opt, ToValue, FromValue, Value };
 use std::default::{ Default };
+use std::slice::{ Items };
 
 use nickel::{ Request, Response, Continue, MiddlewareResult, Middleware };
-use photo_info::{ PhotoInfo, ImageType };
 use time::{ Timespec };
+use types::{ Id, PhotoInfo, ImageType };
 
 #[deriving(Clone)]
 pub struct Database {
@@ -19,7 +19,6 @@ pub struct DatabaseConn {
     connection: MyResult<MyPooledConn>
 }
 
-pub type Id = i64;
 pub type DBResult<T> = Result<T, String>;
 
 const ISO_DEFAULT: u32 = 0;
@@ -141,22 +140,54 @@ impl DatabaseConn {
                 let mut values = row_data.iter();
                 Ok ( Some ( (
                     from_value( values.next().unwrap() ),
-                    PhotoInfo {
-                        upload_time: Timespec::new( from_value( values.next().unwrap() ), 0 ),
-                        image_type: from_value( values.next().unwrap() ),
-                        width: from_value( values.next().unwrap() ),
-                        height: from_value( values.next().unwrap() ),
-                        name: from_value( values.next().unwrap() ),
-                        iso: if_not( from_value( values.next().unwrap() ), ISO_DEFAULT ),
-                        shutter_speed: if_not( from_value( values.next().unwrap() ), SHUTTER_SPEED_DEFAULT ),
-                        aperture: if_not( from_value( values.next().unwrap() ), APERTURE_DEFAULT ),
-                        focal_length: if_not( from_value( values.next().unwrap() ), FOCAL_LENGTH_DEFAULT ),
-                        focal_length_35mm: if_not( from_value( values.next().unwrap() ), FOCAL_LENGTH_35MM_DEFAULT ),
-                        camera_model: if_not( from_value( values.next().unwrap() ), CAMERA_MODEL_DEFAULT.to_string() )
-                    }
+                    read_photo_info( &mut values )
                 ) ) )
             }
         } 
+    }
+
+    ///возвращает список описаний фоточек
+    pub fn get_photo_infos<'a>( &'a mut self, owner_id: Id, start: Timespec, end: Timespec, offset: u32, count: u32 ) -> DBResult<Vec<PhotoInfo>> {
+        let connection = try!( self.get_conn() );
+        DatabaseConn::get_photo_infos_impl( connection, owner_id, start, end, offset, count )
+            .map_err( |e| format!( "Database func 'get_photo_infos' failed: {}", &e ) )
+    }
+    pub fn get_photo_infos_impl<'a>( 
+        conn: &'a mut MyPooledConn, 
+        owner_id: Id, 
+        start: Timespec, 
+        end: Timespec, 
+        offset: u32, 
+        count: u32 
+    ) -> MyResult<Vec<PhotoInfo>> {
+        let mut stmt = try!( conn.prepare( "SELECT 
+           id,
+           upload_time,
+           type,
+           width,
+           height,
+           name,
+           iso,
+           shutter_speed,
+           aperture,
+           focal_length,
+           focal_length_35mm,
+           camera_model
+           FROM images
+           WHERE owner_id = ? AND upload_time BETWEEN ? AND ?
+           ORDER BY upload_time ASC
+           LIMIT ? OFFSET ?;
+        " ) );
+        let result = try!( stmt.execute( &[ &owner_id, &start.sec, &end.sec, &count, &offset ] ) );
+        //что-то с преобразованием на лету через собственный итертор я подупрел =(, пришлось тупо собирать в новый массив
+        Ok( 
+            result.filter_map( |sql_row| 
+                sql_row.ok().map( |sql_values| {
+                    let mut values = sql_values.iter();
+                    read_photo_info( &mut values )
+                })
+            ).collect()
+        )
     }
 
     ///переименование фотографии
@@ -170,6 +201,23 @@ impl DatabaseConn {
         let mut stmt = try!( conn.prepare( "UPDATE images SET name=? WHERE id=?" ) );
         let _ = try!( stmt.execute( &[ &newname, &photo_id ] ) );
         Ok( () )
+    }
+}
+
+fn read_photo_info( values: &mut Items<Value> ) -> PhotoInfo {
+    PhotoInfo {
+        id: from_value( values.next().unwrap() ),
+        upload_time: Timespec::new( from_value( values.next().unwrap() ), 0 ),
+        image_type: from_value( values.next().unwrap() ),
+        width: from_value( values.next().unwrap() ),
+        height: from_value( values.next().unwrap() ),
+        name: from_value( values.next().unwrap() ),
+        iso: if_not( from_value( values.next().unwrap() ), ISO_DEFAULT ),
+        shutter_speed: if_not( from_value( values.next().unwrap() ), SHUTTER_SPEED_DEFAULT ),
+        aperture: if_not( from_value( values.next().unwrap() ), APERTURE_DEFAULT ),
+        focal_length: if_not( from_value( values.next().unwrap() ), FOCAL_LENGTH_DEFAULT ),
+        focal_length_35mm: if_not( from_value( values.next().unwrap() ), FOCAL_LENGTH_35MM_DEFAULT ),
+        camera_model: if_not( from_value( values.next().unwrap() ), CAMERA_MODEL_DEFAULT.to_string() )  
     }
 }
 

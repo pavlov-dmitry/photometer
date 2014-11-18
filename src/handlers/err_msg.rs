@@ -16,7 +16,12 @@ pub fn not_a_string_param( prm: &str ) -> String {
     format!( "not a string param '{}'", prm )
 }
 
-
+#[inline]
 pub fn fs_error( e: IoError ) -> String {
     format!( "filesystem error: {}", e )
+}
+
+#[inline]
+pub fn invalid_path_param( prm: &str ) -> String {
+    format!( "invalid path param type '{}'", prm )
 }

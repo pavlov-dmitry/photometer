@@ -8,8 +8,8 @@ use image;
 use image::{ GenericImage, DynamicImage };
 use std::cmp::{ min, max };
 use time::{ Timespec };
-use photo_info::{ ImageType };
-use database::{ Databaseable, Id };
+use types::{ Id, ImageType };
+use database::{ Databaseable };
 
 static GALLERY_DIR : &'static str = "gallery";
 

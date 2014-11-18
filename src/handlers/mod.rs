@@ -10,6 +10,7 @@ pub mod authentication;
 pub mod upload_photo;
 pub mod crop;
 pub mod rename;
+pub mod gallery;
 
 mod err_msg;
 mod get_param;
