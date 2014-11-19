@@ -3,6 +3,7 @@ use std::fmt::{ Show, Formatter, Result };
 
 pub type Id = i64;
 
+#[deriving(Show)]
 pub struct PhotoInfo {
     pub id: Id,
     pub upload_time: Timespec,

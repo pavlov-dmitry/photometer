@@ -37,7 +37,7 @@ impl ToJson for PhotoInfo {
         d.insert( String::from_str( "height" ), self.height.to_json() );
         d.insert( String::from_str( "name" ), self.name.to_json() );
         d.insert( String::from_str( "iso" ), self.iso.to_json() );
-        d.insert( String::from_str( "shutter" ), self.iso.to_json() );
+        d.insert( String::from_str( "shutter" ), self.shutter_speed.to_json() );
         d.insert( String::from_str( "aperture" ), self.aperture.to_json() );
         d.insert( String::from_str( "focal_length" ), self.focal_length.to_json() );
         d.insert( String::from_str( "focal_length_35mm" ), self.focal_length_35mm.to_json() );

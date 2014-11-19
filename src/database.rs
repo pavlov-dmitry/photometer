@@ -118,6 +118,7 @@ impl DatabaseConn {
     fn get_photo_info_impl( conn: &mut MyPooledConn, photo_id: Id ) -> MyResult<Option<(String, PhotoInfo)>> {
         let mut stmt = try!( conn.prepare( "SELECT 
             u.login, 
+            i.id,
             i.upload_time,
             i.type,
             i.width,
