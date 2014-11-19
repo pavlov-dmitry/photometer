@@ -10,14 +10,13 @@ use types::{ PhotoInfo, ImageType };
 #[deriving(Encodable)]
 struct Record {
     field: String,
-    value: String
+    value: Json
 }
 
 impl ToJson for Record {
     fn to_json(&self) -> Json {
         let mut d = TreeMap::new();
-        d.insert("field".to_string(), self.field.to_json());
-        d.insert("value".to_string(), self.value.to_json());
+        d.insert( self.field.clone(), self.value.to_json() );
         json::Object(d)
     }
 }
@@ -69,9 +68,9 @@ impl Answer {
         self.errors_exists = true;
         self.errors.push( Error{ field: field.to_string(), reason: reason.to_string() } );
     }
-    pub fn add_record( &mut self, field: &str, value: &str ) {
+    pub fn add_record( &mut self, field: &str, value: &ToJson ) {
         self.records_exists = true;
-        self.records.push( Record{ field: field.to_string(), value: value.to_string() }.to_json() );
+        self.records.push( Record{ field: field.to_string(), value: value.to_json() }.to_json() );
     }
 
     pub fn add_photo_info(&mut self, info: &PhotoInfo ) {

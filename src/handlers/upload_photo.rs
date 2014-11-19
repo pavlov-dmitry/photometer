@@ -32,7 +32,7 @@ fn upload_photo_answer( request: &Request ) -> Result<Answer, String> {
                 Ok( (w, h) ) => {
                     let mut db = request.db();
                     match db.add_photo( request.user().id, &make_photo_info( upload_time, tp, w, h, img_data ) ) {
-                        Ok( _ ) => answer.add_record( "photo_loaded", "ok" ),
+                        Ok( _ ) => answer.add_record( "photo_loaded", &String::from_str( "ok" ) ),
                         Err( e ) => panic!( e )
                     }
                 }
@@ -43,7 +43,7 @@ fn upload_photo_answer( request: &Request ) -> Result<Answer, String> {
                 }
             }
         }
-        None => answer.add_record( "photo", "unknown_format" )
+        None => answer.add_record( "photo", &String::from_str( "unknown_format" ) )
     }
     Ok( answer )
 }

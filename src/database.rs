@@ -148,13 +148,13 @@ impl DatabaseConn {
     }
 
     ///возвращает список описаний фоточек
-    pub fn get_photo_infos<'a>( &'a mut self, owner_id: Id, start: Timespec, end: Timespec, offset: u32, count: u32 ) -> DBResult<Vec<PhotoInfo>> {
+    pub fn get_photo_infos( &mut self, owner_id: Id, start: Timespec, end: Timespec, offset: u32, count: u32 ) -> DBResult<Vec<PhotoInfo>> {
         let connection = try!( self.get_conn() );
         DatabaseConn::get_photo_infos_impl( connection, owner_id, start, end, offset, count )
             .map_err( |e| format!( "Database func 'get_photo_infos' failed: {}", &e ) )
     }
-    pub fn get_photo_infos_impl<'a>( 
-        conn: &'a mut MyPooledConn, 
+    pub fn get_photo_infos_impl( 
+        conn: &mut MyPooledConn, 
         owner_id: Id, 
         start: Timespec, 
         end: Timespec, 
@@ -189,6 +189,19 @@ impl DatabaseConn {
                 })
             ).collect()
         )
+    }
+
+    ///вычисляет кол-во фоток пользователя за опеределнный период
+    pub fn get_photo_infos_count( &mut self, owner_id: Id, start: Timespec, end: Timespec ) -> DBResult<u32> {
+        let connection = try!( self.get_conn() );
+        DatabaseConn::get_photo_infos_count_impl( connection, owner_id, start, end )
+            .map_err( |e| format!( "Database func 'get_photo_infos_count' failed: {}", &e ) )
+    }
+    pub fn get_photo_infos_count_impl( conn: &mut MyPooledConn, owner_id: Id, start: Timespec, end: Timespec ) -> MyResult<u32> {
+        let mut stmt = try!( conn.prepare( "SELECT COUNT(id) FROM images WHERE owner_id = ? AND upload_time BETWEEN ? AND ?" ) ); 
+        let mut result = try!( stmt.execute( &[ &owner_id, &start.sec, &end.sec ] ) );
+        let sql_row = try!( result.next().unwrap() );
+        Ok( from_value( &sql_row[ 0 ] ) )
     }
 
     ///переименование фотографии

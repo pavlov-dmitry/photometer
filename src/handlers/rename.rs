@@ -19,7 +19,7 @@ fn rename_answer( request: &Request ) -> AnswerResult {
         Some( (user, _ ) ) => {
         	if user == request.user().name {
         		let _ = try!( request.db().rename_photo( id, name ) );
-        		answer.add_record( "rename", "ok" );
+        		answer.add_record( "rename", &String::from_str( "ok" ) );
         	}
         	else {
         		answer.add_error( "access", "denied" );

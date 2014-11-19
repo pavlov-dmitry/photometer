@@ -43,6 +43,8 @@ fn main() {
     router.post( "/rename", handlers::rename_photo );
     router.get( photo_store::files_router_path(), photo_store::get_photo ) ;
     router.get( photo_store::preview_router_path(), photo_store::get_preview ) ;
+    router.get( handlers::gallery::current_year_count_path(), handlers::gallery::current_year_count );
+    router.get( handlers::gallery::by_year_count_path(), handlers::gallery::by_year_count );
     router.get( handlers::gallery::current_year_path(), handlers::gallery::current_year );
     router.get( handlers::gallery::by_year_path(), handlers::gallery::by_year );
 

@@ -23,7 +23,7 @@ fn crop_photo_answer( request: &Request ) -> AnswerResult {
         Some( (user, info ) ) => {
             if user == request.user().name {
                 match request.photo_store().make_crop( &user, info.upload_time, info.image_type, (x1, y1), (x2, y2) ) {
-                    Ok( _ ) => answer.add_record( "cropped", "ok" ),
+                    Ok( _ ) => answer.add_record( "cropped", &String::from_str( "ok" ) ),
                     Err( e ) => match e {
                         PhotoStoreError::Fs( e ) => return Err( err_msg::fs_error( e ) ),
                         PhotoStoreError::Format => answer.add_error( "photo", "bad_image" ),
