@@ -87,26 +87,26 @@ impl ExifValues for ExifEntries {
 #[allow(dead_code)]
 #[deriving(Show)]
 enum ExifValue {
-    ExifByte( u8 ),
-    ExifText( String ),
-    ExifShort( u16 ),
-    ExifLong( u32 ),
-    ExifRatio( Ratio<u32> ),
-    ExifSByte( i8 ),
-    ExifUndefined,
-    ExifSShort( i16 ),
-    ExifSLong( i32 ),
-    ExifSRatio( Ratio<i32> ),
-    ExifFloat( f32 ),
-    ExifDouble( f64 ),
-    ErrorValue
+    Byte( u8 ),
+    Text( String ),
+    Short( u16 ),
+    Long( u32 ),
+    Ratio( Ratio<u32> ),
+    SByte( i8 ),
+    Undefined,
+    SShort( i16 ),
+    SLong( i32 ),
+    SRatio( Ratio<i32> ),
+    Float( f32 ),
+    Double( f64 ),
+    Error
 }
 
 impl ExifValue {
 	#[allow(dead_code)]
     pub fn as_u8(&self) -> Option<u8>{  
         match self {
-            &ExifByte( v ) => Some( v ),
+            &ExifValue::Byte( v ) => Some( v ),
             _ => None
         }
     }
@@ -114,7 +114,7 @@ impl ExifValue {
 	#[allow(dead_code)]
     pub fn as_text<'a>(&'a self) -> Option<&'a str> {
         match self {
-            &ExifText( ref v ) => Some( v.as_slice() ),
+            &ExifValue::Text( ref v ) => Some( v.as_slice() ),
             _ => None
         }
     }
@@ -122,7 +122,7 @@ impl ExifValue {
     #[allow(dead_code)]
     pub fn as_short(&self) -> Option<u16> {
         match self {
-            &ExifShort( v ) => Some( v ),
+            &ExifValue::Short( v ) => Some( v ),
             _ => None
         }
     }
@@ -130,7 +130,7 @@ impl ExifValue {
     #[allow(dead_code)]
     pub fn as_long(&self) -> Option<u32> {
         match self {
-            &ExifLong( v ) => Some( v ),
+            &ExifValue::Long( v ) => Some( v ),
             _ => None
         }
     }
@@ -138,7 +138,7 @@ impl ExifValue {
     #[allow(dead_code)]
     pub fn as_ratio(&self) -> Option<Ratio<u32>> {
         match self {
-            &ExifRatio( v ) => Some( v ),
+            &ExifValue::Ratio( v ) => Some( v ),
             _ => None
         }
     }
@@ -146,7 +146,7 @@ impl ExifValue {
     #[allow(dead_code)]
     pub fn is_undefined(&self) -> bool {
         match self {
-            &ExifUndefined => true,
+            &ExifValue::Undefined => true,
             _ => false
         }
     }
@@ -154,7 +154,7 @@ impl ExifValue {
     #[allow(dead_code)]
     pub fn as_sshort(&self) -> Option<i16> {
         match self {
-            &ExifSShort( v ) => Some( v ),
+            &ExifValue::SShort( v ) => Some( v ),
             _ => None
         }
     }
@@ -162,7 +162,7 @@ impl ExifValue {
     #[allow(dead_code)]
     pub fn as_slong(&self) -> Option<i32> {
         match self {
-            &ExifSLong( v ) => Some( v ),
+            &ExifValue::SLong( v ) => Some( v ),
             _ => None
         }
     }
@@ -170,7 +170,7 @@ impl ExifValue {
     #[allow(dead_code)]
     pub fn as_sratio(&self) -> Option<Ratio<i32>> {
         match self {
-            &ExifSRatio( v ) => Some( v ),
+            &ExifValue::SRatio( v ) => Some( v ),
             _ => None
         }
     }
@@ -178,7 +178,7 @@ impl ExifValue {
 	#[allow(dead_code)]
     pub fn as_float(&self) -> Option<f32> {
         match self {
-            &ExifFloat( v ) => Some( v ),
+            &ExifValue::Float( v ) => Some( v ),
             _ => None
         }
     }
@@ -186,7 +186,7 @@ impl ExifValue {
     #[allow(dead_code)]
     pub fn as_double(&self) -> Option<f64> {
         match self {
-            &ExifDouble( v ) => Some( v ),
+            &ExifValue::Double( v ) => Some( v ),
             _ => None
         }
     }
@@ -238,53 +238,53 @@ struct ExifEntry {
 #[allow(dead_code)]
 #[repr(C)]
 enum ExifFormat {
-    EXIF_FORMAT_BYTE = 1, 
-    EXIF_FORMAT_ASCII = 2, 
-    EXIF_FORMAT_SHORT = 3,
-    EXIF_FORMAT_LONG = 4, 
-    EXIF_FORMAT_RATIONAL = 5, 
-    EXIF_FORMAT_SBYTE = 6, 
-    EXIF_FORMAT_UNDEFINED = 7, 
-    EXIF_FORMAT_SSHORT = 8, 
-    EXIF_FORMAT_SLONG = 9, 
-    EXIF_FORMAT_SRATIONAL = 10, 
-    EXIF_FORMAT_FLOAT = 11, 
-    EXIF_FORMAT_DOUBLE = 12
+    BYTE = 1, 
+    ASCII = 2, 
+    SHORT = 3,
+    LONG = 4, 
+    RATIONAL = 5, 
+    SBYTE = 6, 
+    UNDEFINED = 7, 
+    SSHORT = 8, 
+    SLONG = 9, 
+    SRATIONAL = 10, 
+    FLOAT = 11, 
+    DOUBLE = 12
 }
 
 fn to_exif_value( entry: &ExifEntry, byte_order: c_int ) -> ExifValue {
     if entry.data.is_null() {
-        return ErrorValue;
+        return ExifValue::Error;
     }
     match entry.format {
-        EXIF_FORMAT_BYTE => {
+        ExifFormat::BYTE => {
             let data = unsafe{ entry.data.as_ref().unwrap() };
-            ExifByte( *data )
+            ExifValue::Byte( *data )
         },
-        EXIF_FORMAT_ASCII => {
+        ExifFormat::ASCII => {
             let name_cstr = unsafe{ CString::new( entry.data as *const i8, false ) };
             match name_cstr.as_str() {
-                Some( s ) => ExifText( s.to_string() ),
-                None => ExifText( "bad ASCII".to_string() )
+                Some( s ) => ExifValue::Text( s.to_string() ),
+                None => ExifValue::Text( "bad ASCII".to_string() )
             }
         },
-        EXIF_FORMAT_SHORT => ExifShort( unsafe{ exif_get_short( entry.data, byte_order ) } ),
-        EXIF_FORMAT_LONG => ExifLong( unsafe{ exif_get_long( entry.data, byte_order ) } ),
-        EXIF_FORMAT_RATIONAL => {
+        ExifFormat::SHORT => ExifValue::Short( unsafe{ exif_get_short( entry.data, byte_order ) } ),
+        ExifFormat::LONG => ExifValue::Long( unsafe{ exif_get_long( entry.data, byte_order ) } ),
+        ExifFormat::RATIONAL => {
             let rat = unsafe{ exif_get_rational( entry.data, byte_order ) };
-            ExifRatio( Ratio::new_raw( rat.num, rat.den ) )    
+            ExifValue::Ratio( Ratio::new_raw( rat.num, rat.den ) )    
         },
-        EXIF_FORMAT_SBYTE => {
+        ExifFormat::SBYTE => {
             let data = unsafe{ entry.data.as_ref().unwrap() };
-            ExifSByte( *data as i8 ) 
+            ExifValue::SByte( *data as i8 ) 
         },
-        EXIF_FORMAT_SSHORT => ExifSShort( unsafe{ exif_get_sshort( entry.data, byte_order ) } ),
-        EXIF_FORMAT_SLONG => ExifSLong( unsafe{ exif_get_slong( entry.data, byte_order ) } ),
-        EXIF_FORMAT_SRATIONAL => {
+        ExifFormat::SSHORT => ExifValue::SShort( unsafe{ exif_get_sshort( entry.data, byte_order ) } ),
+        ExifFormat::SLONG => ExifValue::SLong( unsafe{ exif_get_slong( entry.data, byte_order ) } ),
+        ExifFormat::SRATIONAL => {
             let rat = unsafe{ exif_get_srational( entry.data, byte_order ) };
-            ExifSRatio( Ratio::new_raw( rat.num, rat.den ) )   
+            ExifValue::SRatio( Ratio::new_raw( rat.num, rat.den ) )   
         },
-        _ => ExifUndefined
+        _ => ExifValue::Undefined
     }
 }
 

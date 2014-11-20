@@ -4,7 +4,7 @@ use answer::{ AnswerSendable, AnswerResult };
 use super::err_msg;
 use time;
 use super::get_param::{ GetParamable };
-use std::from_str::{ from_str };
+use std::str::{ from_str };
 use database::{ Databaseable };
 use authentication::{ Userable };
 

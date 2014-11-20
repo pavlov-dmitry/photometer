@@ -80,14 +80,14 @@ impl PhotoStore {
                         .and_then( |mut file| file.write( img_data ) );
                     match fs_sequience {
                         Ok(_) => Ok( (w, h) ),
-                        Err( e ) => Err( Fs( e ) )
+                        Err( e ) => Err( PhotoStoreError::Fs( e ) )
                     }
                 }
-                _ => Err( Format )
+                _ => Err( PhotoStoreError::Format )
             }
         }
         else {
-            Err( FileSize )
+            Err( PhotoStoreError::FileSize )
         }
     }
 
@@ -115,9 +115,9 @@ impl PhotoStore {
                 let top_left = ( min( tlx, brx ), min( tly, bry ) );
                 let dimensions = ( brx - tlx, bry - tly );
                 self.save_preview( &mut img, self.make_filename( user, &upload_time, image_type, true ), top_left, dimensions )
-                    .map_err( |e| Fs( e ) )
+                    .map_err( |e| PhotoStoreError::Fs( e ) )
             },
-            _ => Err( Format )
+            _ => Err( PhotoStoreError::Format )
         }
     }
 

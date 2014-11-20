@@ -1,5 +1,3 @@
-#![feature(struct_variant)]
-
 extern crate nickel;
 extern crate serialize;
 extern crate sync;

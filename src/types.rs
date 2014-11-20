@@ -28,8 +28,8 @@ pub enum ImageType {
 impl Show for ImageType {
     fn fmt(&self, f: &mut Formatter) -> Result {
         match self {
-            &Jpeg => write!(f, "{}", "jpeg" ),
-            &Png => write!(f, "{}", "png" )
+            &ImageType::Jpeg => write!(f, "{}", "jpg" ),
+            &ImageType::Png => write!(f, "{}", "png" )
         }
     }   
 }

@@ -2,7 +2,7 @@ use params_body_parser::{ ParamsBody };
 use nickel::{ Request };
 use std::str;
 use super::err_msg;
-use std::from_str::{ from_str, FromStr };
+use std::str::{ from_str, FromStr };
 
 pub trait GetParamable {
     fn get_param( &self, prm: &str ) -> Result<&str, String>;
