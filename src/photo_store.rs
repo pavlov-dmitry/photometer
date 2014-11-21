@@ -179,7 +179,7 @@ pub fn get_preview( req: &Request, res: &mut Response ) {
 }
 
 fn error( s: String ) {
-    let _ = writeln!( io::stderr(), "{}", s );
+    let _ = writeln!( &mut io::stderr(), "{}", s );
 }
 
 impl Middleware for PhotoStore {
