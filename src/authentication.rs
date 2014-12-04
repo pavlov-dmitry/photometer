@@ -2,7 +2,7 @@ extern crate nickel;
 
 use self::nickel::{ Request, Response, Continue, Halt, MiddlewareResult, Middleware };
 use std::collections::HashMap;
-use sync::{ Arc, RWLock };
+use std::sync::{ Arc, RWLock };
 use cookies_parser::{ Cookieable };
 
 static SESSION_ID : &'static str = "sid";

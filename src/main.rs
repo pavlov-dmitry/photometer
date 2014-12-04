@@ -1,6 +1,5 @@
 extern crate nickel;
 extern crate serialize;
-extern crate sync;
 extern crate mysql;
 extern crate image;
 extern crate time;

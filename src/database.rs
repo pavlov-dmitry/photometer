@@ -66,7 +66,7 @@ impl DatabaseConn {
     fn user_exists_impl( conn: &mut MyPooledConn, name: &str  ) -> MyResult<bool> {
         let name = name.to_string();
         let mut stmt = try!( conn.prepare( "select id from users where login=?" ) );
-        let mut sql_result = try!( stmt.execute( &[ &name ] ) );
+        let sql_result = try!( stmt.execute( &[ &name ] ) );
         Ok( sql_result.count() == 1 )
     }
     /// добавление фотографии в галлерею пользователя

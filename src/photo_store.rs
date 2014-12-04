@@ -1,5 +1,5 @@
 use nickel::{ Request, Response, Continue, MiddlewareResult, Middleware };
-use sync::{ Arc };
+use std::sync::{ Arc };
 use std::io;
 use std::io::{ IoResult, USER_RWX };
 use std::io::fs::{ mkdir_recursive, File };

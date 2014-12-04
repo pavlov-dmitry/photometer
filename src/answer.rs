@@ -1,5 +1,5 @@
 use nickel::{ Response };
-use nickel::mimes;
+use nickel::mimes::{ MediaType };
 use serialize::{ Encodable, Encoder };
 use serialize::json;
 use serialize::json::{ ToJson, Json };
@@ -17,13 +17,13 @@ impl ToJson for Record {
     fn to_json(&self) -> Json {
         let mut d = TreeMap::new();
         d.insert( self.field.clone(), self.value.to_json() );
-        json::Object(d)
+        Json::Object(d)
     }
 }
 
 impl ToJson for ImageType {
     fn to_json(&self) -> Json {
-        json::String( self.to_string() )
+        Json::String( self.to_string() )
     }
 }
 
@@ -41,7 +41,7 @@ impl ToJson for PhotoInfo {
         d.insert( String::from_str( "focal_length" ), self.focal_length.to_json() );
         d.insert( String::from_str( "focal_length_35mm" ), self.focal_length_35mm.to_json() );
         d.insert( String::from_str( "camera_model" ), self.camera_model.to_json() );
-        json::Object( d )
+        Json::Object( d )
     }
 }
 
@@ -87,7 +87,7 @@ impl<'a, 'b> AnswerSendable for Response<'a, 'b> {
         match answer {
             &Err( ref err_desc ) => self.send( err_desc.as_slice() ),
             &Ok( ref answer ) => {
-                self.content_type( mimes::Json );
+                self.content_type( MediaType::Json );
                 self.send( json::encode( answer ).as_slice() );
             }
         }

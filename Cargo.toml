@@ -6,7 +6,7 @@ authors = ["pavlov_dmitry"]
 
 
 [dependencies]
-num = "^0.0.4"
+num = "*"
 image = "~0.2.0"
 
 [dependencies.nickel]
@@ -16,3 +16,4 @@ git = "https://github.com/nickel-org/nickel.rs.git"
 [dependencies.mysql]
 
 git = "https://github.com/blackbeam/rust-mysql-simple.git"
+default-features = false
