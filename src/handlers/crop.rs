@@ -6,6 +6,7 @@ use super::get_param::{ GetParamable };
 use database::{ Databaseable };
 use super::err_msg;
 use authentication::{ Userable };
+use db::photos::{ DbPhotos };
 
 pub fn crop_photo( request: &Request, response: &mut Response ) {
     response.send_answer( &crop_photo_answer( request ) );
@@ -17,8 +18,9 @@ fn crop_photo_answer( request: &Request ) -> AnswerResult {
     let y1 = try!( request.get_param_uint( "y1" ) ) as u32;
     let x2 = try!( request.get_param_uint( "x2" ) ) as u32;
     let y2 = try!( request.get_param_uint( "y2" ) ) as u32;
+    let mut db = try!( request.get_db_conn() );
+    let maybe_photo_info = try!( db.get_photo_info( id ) );
     let mut answer = answer::new();
-    let maybe_photo_info = try!( request.db().get_photo_info( id ) );
     match maybe_photo_info {
         Some( (user, info ) ) => {
             if user == request.user().name {

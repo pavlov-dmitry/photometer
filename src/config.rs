@@ -1,6 +1,7 @@
 use std::io::{ File, stdio };
 use serialize::json;
 use std::io::net::ip::{ Ipv4Addr, IpAddr };
+use types::{ CommonResult };
 
 #[deriving(Encodable, Decodable)]
 pub struct Config {
@@ -48,7 +49,7 @@ pub fn default() -> Config {
     Config::new()
 }
 
-pub fn load( path: &Path ) -> Result<Config, String> {
+pub fn load( path: &Path ) -> CommonResult<Config> {
     match File::open( path ).read_to_string() {
         Err( e ) => Err( format!( "Config fail to load, description: {}", e ) ),
         Ok ( content ) => {

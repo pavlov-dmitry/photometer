@@ -5,7 +5,7 @@ use serialize::json;
 use serialize::json::{ ToJson, Json };
 use std::collections::TreeMap;
 
-use types::{ PhotoInfo, ImageType };
+use types::{ PhotoInfo, ImageType, CommonResult };
 
 #[deriving(Encodable)]
 struct Record {
@@ -61,7 +61,7 @@ pub struct Answer {
     errors: Vec<Error>
 }
 
-pub type AnswerResult = Result<Answer, String>;
+pub type AnswerResult = CommonResult<Answer>;
 
 impl Answer {
     pub fn add_error( &mut self, field: &str, reason: &str ) {

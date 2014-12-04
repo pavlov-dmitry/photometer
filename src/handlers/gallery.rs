@@ -7,6 +7,7 @@ use super::get_param::{ GetParamable };
 use std::str::{ from_str };
 use database::{ Databaseable };
 use authentication::{ Userable };
+use db::photos::{ DbPhotos };
 
 static YEAR: &'static str = "year";
 static PAGE: &'static str = "page";
@@ -57,9 +58,10 @@ pub fn by_year( request: &Request, response: &mut Response ) {
 }
 
 fn by_year_count_answer( req: &Request, year: i32 ) -> AnswerResult {
+    let mut db = try!( req.get_db_conn() );
     let mut answer = answer::new();
     let ( from, to ) = times_gate_for_year( year );
-    let photos_count = try!( req.db().get_photo_infos_count( 
+    let photos_count = try!( db.get_photo_infos_count( 
         req.user().id, 
         from.to_timespec(), 
         to.to_timespec() 
@@ -69,12 +71,13 @@ fn by_year_count_answer( req: &Request, year: i32 ) -> AnswerResult {
 }
 
 fn by_year_answer( req: &Request, year: i32 ) -> AnswerResult {
+    let mut db = try!( req.get_db_conn() );
     let mut answer = answer::new();
     let page = req.get_param_uint( PAGE ).unwrap_or( 0 ) as u32;
 
     let ( from, to ) = times_gate_for_year( year );
 
-    let photo_infos = try!( req.db().get_photo_infos(  
+    let photo_infos = try!( db.get_photo_infos(  
         req.user().id,
         from.to_timespec(),
         to.to_timespec(),

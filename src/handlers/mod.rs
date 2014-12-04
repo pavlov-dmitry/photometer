@@ -11,6 +11,7 @@ pub mod upload_photo;
 pub mod crop;
 pub mod rename;
 pub mod gallery;
+pub mod images;
 
 mod err_msg;
 mod get_param;

@@ -1,7 +1,9 @@
 use time::{ Timespec };
-use std::fmt::{ Show, Formatter, Result };
+use std::fmt;
+use std::fmt::{ Show, Formatter };
 
 pub type Id = i64;
+pub type CommonResult<T> = Result<T, String>;
 
 #[deriving(Show)]
 pub struct PhotoInfo {
@@ -26,7 +28,7 @@ pub enum ImageType {
 }
 
 impl Show for ImageType {
-    fn fmt(&self, f: &mut Formatter) -> Result {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         match self {
             &ImageType::Jpeg => write!(f, "{}", "jpg".to_string() ),
             &ImageType::Png => write!(f, "{}", "png".to_string() )

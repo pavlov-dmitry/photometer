@@ -1,7 +1,7 @@
 use nickel::{ Request, Response };
 use photo_store::{ PhotoStoreable, PhotoStoreError };
 use answer;
-use answer::{ AnswerSendable, Answer };
+use answer::{ AnswerSendable, AnswerResult };
 use super::get_param::{ GetParamable };
 use authentication::{ Userable };
 use super::err_msg;
@@ -11,6 +11,7 @@ use types::{ PhotoInfo, ImageType };
 use exif_reader;
 use exif_reader::{ ExifValues };
 use database::{ Databaseable };
+use db::photos::{ DbPhotos };
 
 static IMAGE : &'static str = "upload_img";
 static IMAGE_FILENAME : &'static str = "upload_img_filename";
@@ -20,7 +21,7 @@ pub fn upload_photo( request: &Request, response: &mut Response ) {
     response.send_answer( &upload_photo_answer( request ) );
 }
 
-fn upload_photo_answer( request: &Request ) -> Result<Answer, String> {
+fn upload_photo_answer( request: &Request ) -> AnswerResult {
     let filename = try!( request.get_param( IMAGE_FILENAME ) );
     let img_data = try!( request.get_param_bin( IMAGE ) );
     let mut answer = answer::new();
@@ -30,7 +31,7 @@ fn upload_photo_answer( request: &Request ) -> Result<Answer, String> {
             let upload_time = time::get_time();
             match photo_store.add_new_photo( request.user(), &upload_time, tp, img_data ) {
                 Ok( (w, h) ) => {
-                    let mut db = request.db();
+                    let mut db = try!( request.get_db_conn() );
                     match db.add_photo( request.user().id, &make_photo_info( upload_time, tp, w, h, img_data ) ) {
                         Ok( _ ) => answer.add_record( "photo_loaded", &String::from_str( "ok" ) ),
                         Err( e ) => panic!( e )

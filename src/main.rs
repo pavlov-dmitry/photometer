@@ -18,6 +18,7 @@ mod photo_store;
 //mod photo_event;
 mod exif_reader;
 mod types;
+mod db;
 
 fn main() {
     let cfg = config::load_or_default( &Path::new( "../etc/photometer.cfg" ) );
@@ -38,8 +39,8 @@ fn main() {
     router.post( "/upload", handlers::upload_photo );
     router.post( "/crop", handlers::crop_photo );
     router.post( "/rename", handlers::rename_photo );
-    router.get( photo_store::files_router_path(), photo_store::get_photo ) ;
-    router.get( photo_store::preview_router_path(), photo_store::get_preview ) ;
+    router.get( handlers::images::photos_path(), handlers::images::get_photo ) ;
+    router.get( handlers::images::preview_path(), handlers::images::get_preview ) ;
     router.get( handlers::gallery::current_year_count_path(), handlers::gallery::current_year_count );
     router.get( handlers::gallery::by_year_count_path(), handlers::gallery::by_year_count );
     router.get( handlers::gallery::current_year_path(), handlers::gallery::current_year );
