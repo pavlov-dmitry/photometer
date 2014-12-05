@@ -74,6 +74,7 @@ impl Answer {
     }
 
     pub fn add_photo_info(&mut self, info: &PhotoInfo ) {
+        self.records_exists = true;
         self.records.push( info.to_json() );
     }
 }
