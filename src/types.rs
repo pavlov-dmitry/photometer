@@ -4,6 +4,7 @@ use std::fmt::{ Show, Formatter };
 
 pub type Id = i64;
 pub type CommonResult<T> = Result<T, String>;
+pub type EmptyResult = CommonResult<()>;
 
 #[deriving(Show)]
 pub struct PhotoInfo {

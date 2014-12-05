@@ -4,7 +4,7 @@ use mysql::conn::pool::{ MyPool, MyPooledConn };
 use std::default::{ Default };
 
 use nickel::{ Request, Response, Continue, MiddlewareResult, Middleware };
-use types::{ CommonResult };
+use types::{ CommonResult, EmptyResult };
 
 #[deriving(Clone)]
 pub struct Database {
@@ -14,12 +14,58 @@ pub struct Database {
 pub type DbConnection = MyPooledConn;
 
 impl Database {
-    fn init(&self) -> CommonResult<()> {
-        let result = self.pool
-            .query( "set names utf8;" );
-        match result {
-            Ok(_)=>Ok( () ),
-            Err( e ) => Err( format!( "Database::init failed: {}", e ) )
+    fn init(&self) -> EmptyResult {
+        try!( self.create_users_table() );
+        try!( self.create_images_table() );
+        try!( self.init_names() );
+        Ok( () )
+    }
+
+    fn init_names(&self) -> EmptyResult {
+        self.execute( "set names utf8;", "init_names" )
+    }
+
+    fn create_users_table(&self) -> EmptyResult {
+        self.execute( "
+            CREATE TABLE IF NOT EXISTS `users` (
+                `id` bigint(20) NOT NULL AUTO_INCREMENT,
+                `login` varchar(16) NOT NULL DEFAULT '',
+                `password` varchar(32) NOT NULL DEFAULT '',
+                PRIMARY KEY (`id`),
+                KEY `login_idx` (`login`)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+        ", 
+        "create_users_table" )
+    }
+
+    fn create_images_table(&self) -> EmptyResult {
+        self.execute( "
+                CREATE TABLE IF NOT EXISTS `images` (
+                    `id` bigint(20) NOT NULL AUTO_INCREMENT,
+                    `owner_id` int(4) unsigned DEFAULT '0',
+                    `upload_time` int(11) NOT NULL DEFAULT '0',
+                    `type` enum( 'jpg', 'png' ) NOT NULL DEFAULT 'jpg',
+                    `width` int(4) unsigned DEFAULT '0',
+                    `height` int(4) unsigned DEFAULT '0',
+                    `name` varchar(64) NOT NULL DEFAULT '',
+                    `iso` int(11) unsigned DEFAULT '0',
+                    `shutter_speed` int(11) DEFAULT '0',
+                    `aperture` decimal(8,4) NOT NULL DEFAULT '0',
+                    `focal_length` int(4) unsigned DEFAULT '0',
+                    `focal_length_35mm` int(4) unsigned DEFAULT '0',
+                    `camera_model` varchar(64) NOT NULL DEFAULT '',
+                    PRIMARY KEY ( `id` ),
+                    KEY `owner_image` ( `owner_id`, `upload_time` )
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+            ", 
+            "create_images_table" 
+        )
+    }
+
+    fn execute( &self, query: &str, name: &str ) -> EmptyResult {
+        match self.pool.query( query ) {
+            Ok(_)=> Ok( () ),
+            Err( e ) => Err( format!( "Database {} failed: {}", name, e ) )
         }
     }
 }
