@@ -1,5 +1,4 @@
 ///  Небольшая middleware которая парсит html параметры, в никеле елси параметра нет, то мы сразу падаем :(
- 
 extern crate nickel;
 extern crate url;
 
@@ -31,34 +30,7 @@ impl Middleware for ParamsBodyParser {
                     params.iter().filter( |&&(ref k,_)| k.as_slice() == "boundary" ).next() 
                         .map( |&(_, ref boundary)| {
                             // то перебираем все части ограниченные спец ограничителем
-                            
-                            // из-за ограничений наложенных AnyMap-ом приходится вместо использования стандартного типа &[T]
-                            // использовать кортеж (начало, конец)
-                            for (from, to) in parse_utils::boundary_idx( req.origin.body.as_slice(), boundary.as_bytes() ) {
-                                let chunk = req.origin.body.slice( from, to );
-                                //делим их на описательную часть и сами данные
-                                parse_utils::split_seq_alt( chunk, b"\r\n\r\n", b"\n\n" )
-                                    .map( |(desc, data)| {
-                                        let desc_str = str::from_utf8( desc ).unwrap_or( "" );
-                                        // находим имя параметра
-                                        parse_utils::str_between( desc_str, "name=\"", "\"" )
-                                            .map( |name| {
-                                                //TODO: проверить что 4 байта хвоста будут и под windows
-                                                let idx_slice = (to - data.len(), to - 4 ); 
-                                                // записываем имя и "координаты" данных
-                                                bin_params.insert( name.to_string(), idx_slice ); 
-                                                parse_utils::str_between( desc_str, "filename=\"", "\"" )
-                                                    .map( |filename| {
-                                                        params_hash.insert( 
-                                                            name.to_string() + String::from_str( "_filename" ), 
-                                                            filename.to_string() 
-                                                        )
-                                                    });
-                                            })
-                                        
-                                    });
-                            }
-                            
+                            read_all_binary_parts( req.origin.body.as_slice(), boundary.as_bytes(), &mut bin_params, &mut params_hash );
                         });
                 },
                 // елси просто в текстовом виде
@@ -85,6 +57,40 @@ impl Middleware for ParamsBodyParser {
     } 
 }
 
+type BinaryHashMap = HashMap<String, (uint, uint)>;
+type StringHashMap = HashMap<String, String>;
+
+fn read_all_binary_parts( body: &[u8], boundary: &[u8], bin_hash: &mut BinaryHashMap, str_hash: &mut StringHashMap ) {
+    // из-за ограничений наложенных AnyMap-ом приходится вместо использования стандартного типа &[T]
+    // использовать кортеж (начало, конец)
+    for slice_idx in parse_utils::boundary_idx( body, boundary ) {
+        read_binary_part( body, slice_idx, bin_hash, str_hash );
+    }
+}
+
+macro_rules! try_opt(
+    ($expr:expr) => ({
+        match $expr {
+            Some( val ) => val,
+            None => return
+        }  
+    })
+)
+
+fn read_binary_part( body: &[u8], (from, to) : (uint, uint), bin_hash: &mut BinaryHashMap, str_hash: &mut StringHashMap) {
+    let chunk = body.slice( from, to );
+    //делим их на описательную часть и сами данные
+    let (desc, data) = try_opt!( parse_utils::split_seq_alt( chunk, b"\r\n\r\n", b"\n\n" ) );
+    let desc_str = str::from_utf8( desc ).unwrap_or( "" );
+    // находим имя параметра
+    let name = try_opt!( parse_utils::str_between( desc_str, "name=\"", "\"" ) );
+    let idx_slice = (to - data.len(), to - 4 ); 
+    // записываем имя и "координаты" данных
+    bin_hash.insert( name.to_string(), idx_slice ); 
+    let filename = try_opt!( parse_utils::str_between( desc_str, "filename=\"", "\"" ) );
+    str_hash.insert( name.to_string() + String::from_str( "_filename" ), filename.to_string() );
+}
+
 pub trait ParamsBody {
     fn parameter_string(&self, &String) -> Option<&String>;
     fn parameter(&self, &str ) -> Option<&String>;
@@ -93,7 +99,7 @@ pub trait ParamsBody {
 
 impl<'a, 'b> ParamsBody for Request<'a, 'b> {
     fn parameter_string(&self, key: &String) -> Option<&String> {
-        self.map.get::<HashMap<String, String>>()
+        self.map.get::<StringHashMap>()
             .and_then( |ref hash| {
                 hash.get( key )
             })
@@ -102,7 +108,7 @@ impl<'a, 'b> ParamsBody for Request<'a, 'b> {
         self.parameter_string( &key.to_string() )
     }
     fn bin_parameter<'a>(&self, key: &str) -> Option<&[u8]> {
-        self.map.get::<HashMap<String, (uint, uint)>>()
+        self.map.get::<BinaryHashMap>()
             .and_then( |ref hash| {
                 hash.get( &key.to_string() )
                     .map( |&(from, to)| self.origin.body.slice( from, to ) )

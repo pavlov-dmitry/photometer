@@ -1,3 +1,5 @@
+#![feature(macro_rules)]
+
 extern crate nickel;
 extern crate serialize;
 extern crate mysql;
