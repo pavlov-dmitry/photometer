@@ -1,6 +1,5 @@
 language: rust
 before_install:
-  - chmod +x ./build_libexif_64.sh
   - ./build_libexif_64.sh
 script:
   - TARGET=x86_64 HOST=unknown_linux_gnu cargo build -v
