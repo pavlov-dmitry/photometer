@@ -38,6 +38,7 @@ impl Show for ImageType {
 }
 
 pub struct MailInfo {
+    pub id: Id,
     pub creation_time: Timespec,
     pub sender_name: String,
     pub subject: String,
