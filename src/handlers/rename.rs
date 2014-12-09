@@ -1,8 +1,7 @@
 use nickel::{ Request, Response };
 use authentication::{ Userable };
 
-use answer;
-use answer::{ AnswerSendable, AnswerResult };
+use answer::{ AnswerSendable, AnswerResult, Answer };
 use super::get_param::{ GetParamable };
 use database::{ Databaseable };
 use db::photos::{ DbPhotos };
@@ -16,7 +15,7 @@ fn rename_answer( request: &Request ) -> AnswerResult {
 	let name = try!( request.get_param( "name" ) );
 	let mut db = try!( request.get_db_conn() );
     let maybe_photo_info = try!( db.get_photo_info( id ) );
-    let mut answer = answer::new();
+    let mut answer = Answer::new();
     match maybe_photo_info {
         Some( (user, _ ) ) => {
         	if user == request.user().name {

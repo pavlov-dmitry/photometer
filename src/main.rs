@@ -41,12 +41,20 @@ fn main() {
     router.post( "/upload", handlers::upload_photo );
     router.post( "/crop", handlers::crop_photo );
     router.post( "/rename", handlers::rename_photo );
+
     router.get( handlers::images::photos_path(), handlers::images::get_photo ) ;
     router.get( handlers::images::preview_path(), handlers::images::get_preview ) ;
+    
     router.get( handlers::gallery::current_year_count_path(), handlers::gallery::current_year_count );
     router.get( handlers::gallery::by_year_count_path(), handlers::gallery::by_year_count );
     router.get( handlers::gallery::current_year_path(), handlers::gallery::current_year );
     router.get( handlers::gallery::by_year_path(), handlers::gallery::by_year );
+
+    router.get( "/mailbox", handlers::mailbox::get );
+    router.get( "/mailbox/unreaded", handlers::mailbox::get_unreaded );
+    router.get( "/mailbox/count", handlers::mailbox::count );
+    router.get( "/mailbox/unreaded/count", handlers::mailbox::count_unreaded );
+    router.post( "/mailbox/mark_as_readed", handlers::mailbox::mark_as_readed );
 
     authentication_router.post( "/login", handlers::login ) ;
     authentication_router.post( "/join_us", handlers::join_us ) ;

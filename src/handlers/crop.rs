@@ -1,7 +1,6 @@
 use nickel::{ Request, Response };
 use photo_store::{ PhotoStoreable, PhotoStoreError };
-use answer;
-use answer::{ AnswerSendable, AnswerResult };
+use answer::{ AnswerSendable, AnswerResult, Answer };
 use super::get_param::{ GetParamable };
 use database::{ Databaseable };
 use super::err_msg;
@@ -20,7 +19,7 @@ fn crop_photo_answer( request: &Request ) -> AnswerResult {
     let y2 = try!( request.get_param_uint( "y2" ) ) as u32;
     let mut db = try!( request.get_db_conn() );
     let maybe_photo_info = try!( db.get_photo_info( id ) );
-    let mut answer = answer::new();
+    let mut answer = Answer::new();
     match maybe_photo_info {
         Some( (user, info ) ) => {
             if user == request.user().name {

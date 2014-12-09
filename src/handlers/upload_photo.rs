@@ -1,7 +1,6 @@
 use nickel::{ Request, Response };
 use photo_store::{ PhotoStoreable, PhotoStoreError };
-use answer;
-use answer::{ AnswerSendable, AnswerResult };
+use answer::{ AnswerSendable, AnswerResult, Answer };
 use super::get_param::{ GetParamable };
 use authentication::{ Userable };
 use super::err_msg;
@@ -24,7 +23,7 @@ pub fn upload_photo( request: &Request, response: &mut Response ) {
 fn upload_photo_answer( request: &Request ) -> AnswerResult {
     let filename = try!( request.get_param( IMAGE_FILENAME ) );
     let img_data = try!( request.get_param_bin( IMAGE ) );
-    let mut answer = answer::new();
+    let mut answer = Answer::new();
     match check_image_type( filename ) {
         Some( tp ) => {
             let photo_store = request.photo_store();

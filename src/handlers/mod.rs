@@ -12,6 +12,7 @@ pub mod crop;
 pub mod rename;
 pub mod gallery;
 pub mod images;
+pub mod mailbox;
 
 mod err_msg;
 mod get_param;

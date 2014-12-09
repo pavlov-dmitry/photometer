@@ -1,6 +1,5 @@
 use nickel::{ Request, Response };
-use answer;
-use answer::{ AnswerSendable, AnswerResult };
+use answer::{ AnswerSendable, AnswerResult, Answer };
 use super::err_msg;
 use time;
 use super::get_param::{ GetParamable };
@@ -59,7 +58,7 @@ pub fn by_year( request: &Request, response: &mut Response ) {
 
 fn by_year_count_answer( req: &Request, year: i32 ) -> AnswerResult {
     let mut db = try!( req.get_db_conn() );
-    let mut answer = answer::new();
+    let mut answer = Answer::new();
     let ( from, to ) = times_gate_for_year( year );
     let photos_count = try!( db.get_photo_infos_count( 
         req.user().id, 
@@ -72,7 +71,7 @@ fn by_year_count_answer( req: &Request, year: i32 ) -> AnswerResult {
 
 fn by_year_answer( req: &Request, year: i32 ) -> AnswerResult {
     let mut db = try!( req.get_db_conn() );
-    let mut answer = answer::new();
+    let mut answer = Answer::new();
     let page = req.get_param_uint( PAGE ).unwrap_or( 0 ) as u32;
 
     let ( from, to ) = times_gate_for_year( year );
@@ -85,7 +84,7 @@ fn by_year_answer( req: &Request, year: i32 ) -> AnswerResult {
         IN_PAGE_COUNT
     ) );
     for photo_info in photo_infos.iter() {
-        answer.add_photo_info( photo_info );
+        answer.add_to_records( photo_info );
     }
     Ok( answer )
 }

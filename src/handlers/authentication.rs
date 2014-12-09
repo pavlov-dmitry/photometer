@@ -1,5 +1,4 @@
 use nickel::{ Request, Response };
-use answer;
 use answer::{ Answer, AnswerSendable, AnswerResult };
 use database::{ Databaseable, DbConnection };
 use db::users::{ DbUsers };
@@ -42,7 +41,7 @@ fn join_us_answer( request: &Request ) -> AnswerResult {
         make_login( &mut db, request.sessions_store(), login, password )
     } 
     else {
-        let mut answer = answer::new();
+        let mut answer = Answer::new();
         answer.add_error( "user", "exists" );
         Ok( answer )
     }
@@ -51,7 +50,7 @@ fn join_us_answer( request: &Request ) -> AnswerResult {
 fn make_login( db: &mut DbConnection, session_store: &SessionsStoreMiddleware, name: &str, pass: &str ) -> AnswerResult
 {
     let maybe_id = try!( db.get_user( name, pass ) );
-    let mut answer = answer::new();
+    let mut answer = Answer::new();
     match maybe_id {
         Some( id ) => {
             let sess_id = session_store.add_new_session( &User::new( name, id ) );

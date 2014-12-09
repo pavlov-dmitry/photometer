@@ -8,7 +8,7 @@ use std::fmt::{ Show };
 
 pub trait DbMailbox {
     /// посылает письмо одному из участников
-    fn send_mail( &mut self, recepient_id: Id, sender_name: &str, subject: &str, body: &str ) -> EmptyResult;
+    fn send_mail( &mut self, recipient_id: Id, sender_name: &str, subject: &str, body: &str ) -> EmptyResult;
     /// подсчитывает кол-во писем у определенного участника
     fn messages_count( &mut self, owner_id: Id, only_unreaded: bool ) -> CommonResult<u32>;
     /// читает сообщения с пагинацией в обратном от создания порядке
@@ -19,8 +19,8 @@ pub trait DbMailbox {
 
 impl DbMailbox for MyPooledConn {
     /// посылает письмо одному из участников
-    fn send_mail( &mut self, recepient_id: Id, sender_name: &str, subject: &str, body: &str ) -> EmptyResult {
-        send_mail_impl( self, recepient_id, sender_name, subject, body )
+    fn send_mail( &mut self, recipient_id: Id, sender_name: &str, subject: &str, body: &str ) -> EmptyResult {
+        send_mail_impl( self, recipient_id, sender_name, subject, body )
             .map_err( |e| fn_failed( "send_mail", e ) )
     }
     /// подсчитывает кол-во писем у определенного участника
@@ -46,12 +46,12 @@ fn fn_failed<E: Show>( fn_name: &str, e: E ) -> String {
     format!( "DbMailbox {} failed: {}", fn_name, e )
 }
 
-fn send_mail_impl( conn: &mut MyPooledConn, recepient_id: Id, sender_name: &str, subject: &str, body: &str ) -> MyResult<()> {
+fn send_mail_impl( conn: &mut MyPooledConn, recipient_id: Id, sender_name: &str, subject: &str, body: &str ) -> MyResult<()> {
     let now_time = time::get_time();
     let mut stmt = try!( conn.prepare( "
         INSERT INTO mailbox (
             creation_time,
-            recepient_id,
+            recipient_id,
             sender_name,
             subject,
             body,
@@ -64,7 +64,7 @@ fn send_mail_impl( conn: &mut MyPooledConn, recepient_id: Id, sender_name: &str,
 
     try!( stmt.execute( &[
         &now_time.sec,
-        &recepient_id,
+        &recipient_id,
         &sender_name,
         &subject,
         &body,
@@ -75,7 +75,7 @@ fn send_mail_impl( conn: &mut MyPooledConn, recepient_id: Id, sender_name: &str,
 
 fn messages_count_impl( conn: &mut MyPooledConn, owner_id: Id, only_unreaded: bool ) -> MyResult<u32> {
     let where_postfix = if only_unreaded { " AND readed='false'" } else { "" };
-    let query = format!( "SELECT COUNT(id) FROM mailbox WHERE recepient_id=? {};", where_postfix );
+    let query = format!( "SELECT COUNT(id) FROM mailbox WHERE recipient_id=? {};", where_postfix );
     
     let mut stmt = try!( conn.prepare( query.as_slice() ) );
     let mut sql_result = try!( stmt.execute( &[ &owner_id ] ) );
@@ -95,7 +95,7 @@ fn messages_from_last_impl( conn: &mut MyPooledConn, owner_id: Id, only_unreaded
             body,
             readed
         FROM mailbox
-        WHERE recepient_id = ? {}
+        WHERE recipient_id = ? {}
         ORDER BY creation_time DESC
         LIMIT ? OFFSET ?;
     ", where_postfix );
@@ -118,9 +118,7 @@ fn messages_from_last_impl( conn: &mut MyPooledConn, owner_id: Id, only_unreaded
 }
 
 fn mark_as_readed_impl( conn: &mut MyPooledConn, owner_id: Id, message_id: Id ) -> MyResult<bool> {
-    let mut stmt = try!( conn.prepare( "UPDATE mailbox SET readed='true' WHERE id=? AND recepient_id=?" ) );
-    let mut sql_result = try!( stmt.execute( &[ &message_id, &owner_id ] ) );
-    let row_values = try!( sql_result.next().unwrap() );
-    let count: u32 = from_value( &row_values[0] );
-    Ok( count == 1 )
+    let mut stmt = try!( conn.prepare( "UPDATE mailbox SET readed=true WHERE id=? AND recipient_id=?" ) );
+    let sql_result = try!( stmt.execute( &[ &message_id, &owner_id ] ) );
+    Ok( 1 == sql_result.affected_rows() )
 }

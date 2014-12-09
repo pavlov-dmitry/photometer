@@ -6,6 +6,10 @@ use std::default::{ Default };
 use nickel::{ Request, Response, Continue, MiddlewareResult, Middleware };
 use types::{ CommonResult, EmptyResult };
 
+pub trait Databaseable {
+    fn get_db_conn(&self) -> CommonResult<MyPooledConn>;
+}
+
 #[deriving(Clone)]
 pub struct Database {
     pool: MyPool
@@ -66,16 +70,16 @@ impl Database {
 
     fn create_mailbox_table(&self) -> EmptyResult {
         self.execute( "
-            CREATE TABLE IF NOT EXISTS 'mailbox' (
-                'id' bigint(20) NOT NULL AUTO_INCREMENT,
-                'creation_time' int(11) NOT NULL DEFAULT '0',
-                'recipient_id' int(4) unsigned DEFAULT '0',
-                'sender_name' varchar(128) NOT NULL DEFAULT '',
-                'subject' varchar(128) NOT NULL DEFAULT '',
-                'body' varchar(4096) NOT NULL DEFAULT '',
-                'readed' BOOL NOT NULL default 'false',
+            CREATE TABLE IF NOT EXISTS `mailbox` (
+                `id` bigint(20) NOT NULL AUTO_INCREMENT,
+                `creation_time` int(11) NOT NULL DEFAULT '0',
+                `recipient_id` int(4) unsigned DEFAULT '0',
+                `sender_name` varchar(128) NOT NULL DEFAULT '',
+                `subject` varchar(128) NOT NULL DEFAULT '',
+                `body` varchar(4096) NOT NULL DEFAULT '',
+                `readed` BOOL NOT NULL DEFAULT false,
                 PRIMARY KEY ( `id` ),
-                KEY `unreaded_messages` ( 'recepient_id', 'readed', 'creation_time' ) USING BTREE
+                KEY `unreaded_messages` ( `recipient_id`, `readed`, `creation_time` ) USING BTREE
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
             ", 
             "create_mailbox_table" 
@@ -122,10 +126,6 @@ impl Middleware for Database {
         req.map.insert( self.clone() );
         Ok( Continue )
     }
-}
-
-pub trait Databaseable {
-    fn get_db_conn(&self) -> CommonResult<MyPooledConn>;
 }
 
 impl<'a, 'b> Databaseable for Request<'a, 'b> {
