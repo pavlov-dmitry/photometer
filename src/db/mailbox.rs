@@ -5,6 +5,7 @@ use time;
 use time::{ Timespec };
 use types::{ Id, CommonResult, EmptyResult, MailInfo };
 use std::fmt::{ Show };
+use parse_utils;
 
 pub trait DbMailbox {
     /// посылает письмо одному из участников
@@ -120,5 +121,9 @@ fn messages_from_last_impl( conn: &mut MyPooledConn, owner_id: Id, only_unreaded
 fn mark_as_readed_impl( conn: &mut MyPooledConn, owner_id: Id, message_id: Id ) -> MyResult<bool> {
     let mut stmt = try!( conn.prepare( "UPDATE mailbox SET readed=true WHERE id=? AND recipient_id=?" ) );
     let sql_result = try!( stmt.execute( &[ &message_id, &owner_id ] ) );
-    Ok( 1 == sql_result.affected_rows() )
+    //узнать сколько строчек подошло под запрос можно только распарсив строку информации после запроса
+    let info = String::from_utf8( sql_result.info() ).unwrap();
+    let matched_count_str = parse_utils::str_between( info.as_slice(), "matched: ", " " ).unwrap();
+    let matched : u32 = from_str( matched_count_str ).unwrap();
+    Ok( 1 == matched )
 }
