@@ -21,6 +21,7 @@ mod photo_store;
 mod exif_reader;
 mod types;
 mod db;
+mod events;
 
 fn main() {
     let cfg = config::load_or_default( &Path::new( "../etc/photometer.cfg" ) );
