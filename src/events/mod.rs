@@ -4,6 +4,8 @@ use serialize::json::{ Json };
 use answer::{ AnswerResult };
 use nickel::{ Request };
 
+mod events_executor;
+
 pub struct EventBody<'a> {
     pub sheduled_id: Id,
     pub data: &'a Json
@@ -22,5 +24,13 @@ pub trait Event {
     /// применение действия пользователя на это событие
     fn user_action_post( &self, db: &mut DbConnection, request: &Request, body: &EventBody ) -> AnswerResult;
     /// информация о состоянии события
-    fn info( &self, db: &mut DbConnection, request: &Request, body: &EventBody ) -> AnswerResult;
+    fn info_get( &self, db: &mut DbConnection, request: &Request, body: &EventBody ) -> AnswerResult;
+}
+
+/// абстракция событий которые могут быть созданы пользователями
+pub trait UserEvent {
+    /// описание создания
+    fn user_creating_get( &self, db: &mut DbConnection, request: &Request ) -> AnswerResult;
+    /// применение создания
+    fn user_creating_post( &self, db: &mut DbConnection, request: &Request ) -> Result<Json, AnswerResult>;
 }

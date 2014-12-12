@@ -45,3 +45,15 @@ pub struct MailInfo {
     pub body: String,
     pub readed: bool
 }
+
+pub struct EventInfo {
+    pub id: Id,
+    pub scheduled_id: Id,
+    pub data: String
+}
+
+pub enum EventState {
+    NotStartedYet = 1,
+    Active = 2,
+    Ended = 3
+}

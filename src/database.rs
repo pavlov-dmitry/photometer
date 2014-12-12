@@ -130,7 +130,8 @@ impl Database {
                 `end_time` int(11) NOT NULL DEFAULT '0',
                 `data` varchar(16384) NOT NULL DEFAULT '',
                 PRIMARY KEY ( `id` ),
-                KEY `time` ( `start_time`, `end_time` ) USING BTREE
+                KEY `start_time_idx` ( `start_time` ),
+                KEY `end_time_idx` ( `end_time` ),
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
             ",
             "create_events_table"
