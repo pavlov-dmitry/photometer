@@ -4,6 +4,8 @@ use self::nickel::{ Request, Response, Continue, Halt, MiddlewareResult, Middlew
 use std::collections::HashMap;
 use std::sync::{ Arc, RWLock };
 use cookies_parser::{ Cookieable };
+use typemap::Assoc;
+use plugin::Extensible;
 
 static SESSION_ID : &'static str = "sid";
 
@@ -74,9 +76,11 @@ impl SessionsStoreMiddleware {
     }
 }
 
+impl Assoc<SessionsStoreMiddleware> for SessionsStoreMiddleware {}
+
 impl Middleware for SessionsStoreMiddleware {
     fn invoke(&self, req: &mut Request, _res: &mut Response) -> MiddlewareResult {
-        req.map.insert( self.clone() );
+        req.extensions_mut().insert::<SessionsStoreMiddleware, SessionsStoreMiddleware>( self.clone() );
         Ok( Continue )
     } 
 }
@@ -87,7 +91,7 @@ pub trait SessionsStoreable {
 
 impl<'a, 'b> SessionsStoreable for Request<'a, 'b> {
     fn sessions_store( &self ) -> &SessionsStoreMiddleware {
-        self.map.get::<SessionsStoreMiddleware>().unwrap()
+        self.extensions().get::<SessionsStoreMiddleware, SessionsStoreMiddleware>().unwrap()
     }
 }
 
@@ -110,6 +114,7 @@ impl Autentication {
     }
 }
 
+impl Assoc<User> for User {}
 
 impl Middleware for Autentication {
     fn invoke(&self, req: &mut Request, res: &mut Response) -> MiddlewareResult {
@@ -124,7 +129,7 @@ impl Middleware for Autentication {
                 Ok( Halt )
             }
             Some( user ) => {
-                req.map.insert( user );
+                req.extensions_mut().insert::<User, User>( user );
                 Ok( Continue )
             }
         }
@@ -142,6 +147,6 @@ pub trait Userable {
 
 impl<'a, 'b> Userable for Request<'a, 'b> {
     fn user( &self ) -> &User {
-        self.map.get::<User>().unwrap()
+        self.extensions().get::<User, User>().unwrap()
     }
 }

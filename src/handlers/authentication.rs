@@ -6,7 +6,6 @@ use authentication::{ SessionsStoreable, SessionsStoreMiddleware, User };
 use super::get_param::{ GetParamable };
 use photo_store::{ PhotoStoreable };
 use super::err_msg;
-use types::{ CommonResult };
 
 static USER : &'static str = "user";
 static LOGIN : &'static str = "login";
@@ -17,7 +16,7 @@ pub fn login( request: &Request, response: &mut Response ) {
     response.send_answer( &login_answer( request ) );
 }
 
-fn login_answer( request: &Request ) -> CommonResult<Answer> {
+fn login_answer( request: &Request ) -> AnswerResult {
     let user = try!( request.get_param( USER ) );
     let password = try!( request.get_param( PASSWORD ) );
     let session_store = request.sessions_store();

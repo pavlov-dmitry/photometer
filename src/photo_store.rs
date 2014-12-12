@@ -9,6 +9,8 @@ use image::{ GenericImage, DynamicImage };
 use std::cmp::{ min, max };
 use time::{ Timespec };
 use types::{ ImageType };
+use typemap::Assoc;
+use plugin::Extensible;
 
 static GALLERY_DIR : &'static str = "gallery";
 
@@ -137,9 +139,11 @@ impl PhotoStore {
     }
 }
 
+impl Assoc<PhotoStore> for PhotoStore {}
+
 impl Middleware for PhotoStore {
     fn invoke(&self, req: &mut Request, _res: &mut Response) -> MiddlewareResult {
-        req.map.insert( self.clone() );
+        req.extensions_mut().insert::<PhotoStore, PhotoStore>( self.clone() );
         Ok( Continue )
     } 
 }
@@ -150,6 +154,6 @@ pub trait PhotoStoreable {
 
 impl<'a, 'b> PhotoStoreable for Request<'a, 'b> {
     fn photo_store( &self ) -> &PhotoStore {
-        self.map.get::<PhotoStore>().unwrap()
+        self.extensions().get::<PhotoStore, PhotoStore>().unwrap()
     }
 }

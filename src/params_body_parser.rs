@@ -6,9 +6,20 @@ use std::collections::HashMap;
 use self::nickel::{ Request, Response, Continue, MiddlewareResult, Middleware };
 use std::str;
 use parse_utils;
+use typemap::Assoc;
+use plugin::Extensible;
+
+// в nickel-e есть возможность сделать эти парсеры ленивыми, но тогда мне не нравится что из-за кеширования
+// нужно менять сигнатуру обработчиков на &mut Request, что лично мне не нравится
 
 #[deriving(Clone)]
 pub struct ParamsBodyParser;
+
+struct StringHashMapKey;
+struct BinaryHashMapKey;
+
+impl Assoc<StringHashMap> for StringHashMapKey {}
+impl Assoc<BinaryHashMap> for BinaryHashMapKey {}
 
 impl Middleware for ParamsBodyParser {
     fn invoke<'a>(&self, req: &'a mut Request, _res: &mut Response) -> MiddlewareResult {
@@ -17,10 +28,10 @@ impl Middleware for ParamsBodyParser {
         println!( "url={}", req.origin.request_uri );
         println!( "method={}", req.origin.method );
 
-        let mut bin_params = HashMap::new();
-        let mut params_hash = HashMap::new();
-
         if !req.origin.body.is_empty() {
+            let mut bin_params = HashMap::new();
+            let mut params_hash = HashMap::new();
+
             match req.origin.headers.content_type {
                 //если пришли бинарные данные
                 Some( ref media_type ) if media_type.type_.as_slice() == "multipart" && 
@@ -45,20 +56,20 @@ impl Middleware for ParamsBodyParser {
                             
                 }
             }
-
             for i in params_hash.iter() {
-                println!( "{}", i );
+                println!( "params: {}", i );
             }
 
-            req.map.insert( params_hash );
-            req.map.insert( bin_params );
+            req.extensions_mut().insert::<StringHashMapKey, StringHashMap>( params_hash );
+            req.extensions_mut().insert::<BinaryHashMapKey, BinaryHashMap>( bin_params );
         }
+        
         Ok( Continue )
     } 
 }
 
-type BinaryHashMap = HashMap<String, (uint, uint)>;
-type StringHashMap = HashMap<String, String>;
+pub type BinaryHashMap = HashMap<String, (uint, uint)>;
+pub type StringHashMap = HashMap<String, String>;
 
 fn read_all_binary_parts( body: &[u8], boundary: &[u8], bin_hash: &mut BinaryHashMap, str_hash: &mut StringHashMap ) {
     // из-за ограничений наложенных AnyMap-ом приходится вместо использования стандартного типа &[T]
@@ -99,16 +110,14 @@ pub trait ParamsBody {
 
 impl<'a, 'b> ParamsBody for Request<'a, 'b> {
     fn parameter_string(&self, key: &String) -> Option<&String> {
-        self.map.get::<StringHashMap>()
-            .and_then( |ref hash| {
-                hash.get( key )
-            })
+        self.extensions().get::<StringHashMapKey, StringHashMap>()
+            .and_then( |ref hash| hash.get( key ) )
     }
     fn parameter(&self, key: &str ) -> Option<&String> {
         self.parameter_string( &key.to_string() )
     }
     fn bin_parameter<'a>(&self, key: &str) -> Option<&[u8]> {
-        self.map.get::<BinaryHashMap>()
+        self.extensions().get::<BinaryHashMapKey, BinaryHashMap>()
             .and_then( |ref hash| {
                 hash.get( &key.to_string() )
                     .map( |&(from, to)| self.origin.body.slice( from, to ) )

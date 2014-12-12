@@ -5,6 +5,8 @@ use std::default::{ Default };
 
 use nickel::{ Request, Response, Continue, MiddlewareResult, Middleware };
 use types::{ CommonResult, EmptyResult };
+use typemap::Assoc;
+use plugin::Extensible;
 
 pub trait Databaseable {
     fn get_db_conn(&self) -> CommonResult<MyPooledConn>;
@@ -91,12 +93,12 @@ impl Database {
 
     fn create_group_table(&self) -> EmptyResult {
         self.execute(
-            "CREATE TABLE IF NOT EXISTS 'groups' (
+            "CREATE TABLE IF NOT EXISTS `groups` (
                 `id` bigint(20) NOT NULL AUTO_INCREMENT,
                 `name` varchar(128) NOT NULL DEFAULT '',
                 `description` varchar(4096) NOT NULL DEFAULT '',
                 `timetable` bigint(20) NOT NULL DEFAULT '0',
-                `timetable_version` int(4) unsigned DEFAULT '0'
+                `timetable_version` int(4) unsigned DEFAULT '0',
                 PRIMARY KEY ( `id` )
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
             ",
@@ -106,10 +108,10 @@ impl Database {
 
     fn create_group_members_table(&self) -> EmptyResult {
         self.execute(
-            "CREATE TABLE IF NOT EXISTS 'group_members' (
+            "CREATE TABLE IF NOT EXISTS `group_members` (
                 `id` bigint(20) NOT NULL AUTO_INCREMENT,
                 `user_id` bigint(20) NOT NULL DEFAULT '0',
-                `group_id` bigint(20) NOT NULL DEFAULT '0'
+                `group_id` bigint(20) NOT NULL DEFAULT '0',
                 PRIMARY KEY ( `id` ),
                 KEY `users` ( `user_id` ),
                 KEY `groups` ( `group_id` )
@@ -121,7 +123,7 @@ impl Database {
 
     fn create_scheduled_events_table(&self) -> EmptyResult {
         self.execute(
-            "CREATE TABLE IF NOT EXISTS 'scheduled_events' (
+            "CREATE TABLE IF NOT EXISTS `scheduled_events` (
                 `id` bigint(20) NOT NULL AUTO_INCREMENT,
                 `event_id` int(4) NOT NULL DEFAULT '0',
                 `start_time` int(11) NOT NULL DEFAULT '0',
@@ -170,16 +172,18 @@ pub fn create_db_connection(
     }
 }
 
+impl Assoc<Database> for Database {}
+
 impl Middleware for Database {
     fn invoke(&self, req: &mut Request, _res: &mut Response) -> MiddlewareResult {
-        req.map.insert( self.clone() );
+        req.extensions_mut().insert::<Database, Database>( self.clone() );
         Ok( Continue )
     }
 }
 
 impl<'a, 'b> Databaseable for Request<'a, 'b> {
     fn get_db_conn(&self) -> CommonResult<MyPooledConn> {
-        self.map.get::<Database>().unwrap()
+        self.extensions().get::<Database, Database>().unwrap()
             .pool.get_conn()
             .map_err( |e| format!( "Can't create db connection: {}", e ) )
     }
