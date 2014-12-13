@@ -1,6 +1,6 @@
 use mysql::conn::pool::{ MyPooledConn };
 use mysql::error::{ MyResult };
-use mysql::value::{ from_value };
+use mysql::value::{ from_value, ToValue };
 use types::{ Id, CommonResult, EmptyResult, EventInfo, EventState };
 use time;
 use time::{ Timespec };
@@ -8,6 +8,8 @@ use time::{ Timespec };
 pub trait DbEvents {
     /// считывает события которые должны стратануть за период
     fn starting_events( &mut self, from: &Timespec, to: &Timespec, event: |EventInfo| ) -> EmptyResult;
+    /// считывает события которые исполняются в опеределенный момент
+    fn active_events( &mut self, time: &Timespec, event: |EventInfo| ) -> EmptyResult;
     /// считывает собыятия которые должны закончится за период
     fn ending_events( &mut self, from: &Timespec, to: &Timespec, event: |EventInfo| ) -> EmptyResult;
     /// информация о событии 
@@ -19,13 +21,19 @@ pub trait DbEvents {
 impl DbEvents for MyPooledConn {
     /// считывает события которые должны стратануть за период
     fn starting_events( &mut self, from: &Timespec, to: &Timespec, event: |EventInfo| ) -> EmptyResult {
-        get_events_impl( self, from, to, event, "start_time" )
+        get_events_impl( self, event, "start_time BETWEEN ? AND ?", &[ &from.sec, &to.sec ] )
             .map_err( |e| format!( "DbEvents starting_events failed: {}", e ) )
+    }
+
+    /// считывает события которые исполняются в опеределенный момент
+    fn active_events( &mut self, time: &Timespec, event: |EventInfo| ) -> EmptyResult {
+        get_events_impl( self, event, "? BETWEEN start_time AND end_time", &[ &time.sec ] )
+            .map_err( |e| format!( "DbEvents active_events failed: {}", e ) )
     }
 
     /// считывает собыятия которые должны закончится за период
     fn ending_events( &mut self, from: &Timespec, to: &Timespec, event: |EventInfo| ) -> EmptyResult {
-        get_events_impl( self, from, to, event, "end_time" )
+        get_events_impl( self, event, "end_time BETWEEN ? AND ?", &[ &from.sec, &to.sec ] )
             .map_err( |e| format!( "DbEvents ending_events failed: {}", e ) )
     }
 
@@ -43,18 +51,18 @@ impl DbEvents for MyPooledConn {
 
 }
 
-fn get_events_impl( conn: &mut MyPooledConn, from: &Timespec, to: &Timespec, event: |EventInfo|, time: &str ) -> MyResult<()> {
+fn get_events_impl( conn: &mut MyPooledConn, event: |EventInfo|, where_cond: &str, values: &[&ToValue] ) -> MyResult<()> {
     let query = format!(
         "SELECT 
             id,
             event_id,
             data
         FROM scheduled_events
-        WHERE {} BETWEEN ? AND ?",
-        time
+        WHERE {}",
+        where_cond
     );
     let mut stmt = try!( conn.prepare( query.as_slice() ) );
-    let mut sql_result = try!( stmt.execute( &[ &from.sec, &to.sec ] ) );
+    let mut sql_result = try!( stmt.execute( values ) );
     for sql_row in sql_result {
         let row = try!( sql_row );
         let mut values = row.iter();
