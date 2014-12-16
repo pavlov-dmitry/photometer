@@ -1,8 +1,8 @@
 use nickel::{ Request, Response };
 use answer::{ AnswerSendable, AnswerResult, Answer };
-use super::err_msg;
+use err_msg;
 use time;
-use super::get_param::{ GetParamable };
+use get_param::{ GetParamable };
 use std::str::{ from_str };
 use database::{ Databaseable };
 use authentication::{ Userable };

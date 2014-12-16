@@ -3,9 +3,9 @@ use answer::{ Answer, AnswerSendable, AnswerResult };
 use database::{ Databaseable, DbConnection };
 use db::users::{ DbUsers };
 use authentication::{ SessionsStoreable, SessionsStoreMiddleware, User };
-use super::get_param::{ GetParamable };
+use get_param::{ GetParamable };
 use photo_store::{ PhotoStoreable };
-use super::err_msg;
+use err_msg;
 
 static USER : &'static str = "user";
 static LOGIN : &'static str = "login";

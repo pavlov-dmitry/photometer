@@ -24,6 +24,8 @@ mod exif_reader;
 mod types;
 mod db;
 mod events;
+mod err_msg;
+mod get_param;
 
 fn main() {
     let cfg = config::load_or_default( &Path::new( "../etc/photometer.cfg" ) );

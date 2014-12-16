@@ -3,7 +3,7 @@ use answer::{ AnswerResult, AnswerSendable, Answer };
 use database::{ Databaseable };
 use db::mailbox::{ DbMailbox };
 use authentication::{ Userable };
-use super::get_param::{ GetParamable };
+use get_param::{ GetParamable };
 
 static PAGE: &'static str = "page";
 const IN_PAGE_COUNT: u32 = 10;

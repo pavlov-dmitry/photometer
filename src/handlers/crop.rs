@@ -1,9 +1,9 @@
 use nickel::{ Request, Response };
 use photo_store::{ PhotoStoreable, PhotoStoreError };
 use answer::{ AnswerSendable, AnswerResult, Answer };
-use super::get_param::{ GetParamable };
+use get_param::{ GetParamable };
 use database::{ Databaseable };
-use super::err_msg;
+use err_msg;
 use authentication::{ Userable };
 use db::photos::{ DbPhotos };
 

@@ -1,4 +1,4 @@
-use super::err_msg;
+use err_msg;
 use nickel::{ Request, Response };
 use std::io;
 use types::{ Id, CommonResult };

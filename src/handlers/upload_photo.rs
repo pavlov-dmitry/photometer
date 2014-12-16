@@ -1,9 +1,9 @@
 use nickel::{ Request, Response };
 use photo_store::{ PhotoStoreable, PhotoStoreError };
 use answer::{ AnswerSendable, AnswerResult, Answer };
-use super::get_param::{ GetParamable };
+use get_param::{ GetParamable };
 use authentication::{ Userable };
-use super::err_msg;
+use err_msg;
 use time;
 use time::{ Timespec };
 use types::{ PhotoInfo, ImageType };

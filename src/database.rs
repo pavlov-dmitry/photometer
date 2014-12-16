@@ -27,6 +27,7 @@ impl Database {
         try!( self.create_group_table() );
         try!( self.create_group_members_table() );
         try!( self.create_scheduled_events_table() );
+        try!( self.create_publications_table() );
         try!( self.init_names() );
         Ok( () )
     }
@@ -126,6 +127,7 @@ impl Database {
             "CREATE TABLE IF NOT EXISTS `scheduled_events` (
                 `id` bigint(20) NOT NULL AUTO_INCREMENT,
                 `event_id` int(4) NOT NULL DEFAULT '0',
+                `event_name` varchar(128) NOT NULL DEFAULT '',
                 `start_time` int(11) NOT NULL DEFAULT '0',
                 `end_time` int(11) NOT NULL DEFAULT '0',
                 `data` varchar(16384) NOT NULL DEFAULT '',
@@ -134,6 +136,23 @@ impl Database {
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
             ",
             "create_events_table"
+        )
+    }
+
+    fn create_publications_table(&self) -> EmptyResult {
+        self.execute(
+            "CREATE TABLE IF NOT EXISTS 'publication' (
+                `id` bigint(20) NOT NULL AUTO_INCREMENT,
+                `scheduled_id` bigint(20) NOT NULL DEFAULT '0',
+                `group_id` bigint(20) NOT NULL DEFAULT '0',
+                `user_id` bigint(20) NOT NULL DEFAULT '0',
+                `photo_id` bigint(20) NOT NULL DEFAULT '0',
+                `visible` BOOL NOT NULL DEFAULT false
+                PRIMARY KEY ( `id` ),
+                KEY `group_publication_idx` ( `group_id`, `scheduled_id`, `visible` ) USING BTREE
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+            ",
+            "create_publications_table"
         )
     }
 

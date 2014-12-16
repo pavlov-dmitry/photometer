@@ -49,7 +49,8 @@ pub struct MailInfo {
 pub struct EventInfo {
     pub id: Id,
     pub scheduled_id: Id,
-    pub data: String
+    pub name: String,
+    pub data: String,
 }
 
 pub enum EventState {

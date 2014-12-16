@@ -2,7 +2,7 @@ use nickel::{ Request, Response };
 use authentication::{ Userable };
 
 use answer::{ AnswerSendable, AnswerResult, Answer };
-use super::get_param::{ GetParamable };
+use get_param::{ GetParamable };
 use database::{ Databaseable };
 use db::photos::{ DbPhotos };
 
