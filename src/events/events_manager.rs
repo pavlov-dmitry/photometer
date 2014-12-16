@@ -5,12 +5,14 @@ use database::{ DbConnection };
 use std::sync::{ Arc };
 use super::{ Event };
 use super::time_store::{ TimeStore };
-use super::events_collection::{ EventsCollection };
+use super::events_collection::{ EventsCollection, EventPtr };
 use db::events::{ DbEvents };
 use types::{ EmptyResult, CommonResult, EventInfo };
 use time;
 use time::{ Timespec };
 use super::publication::Publication;
+use answer::{ Answer, AnswerResult };
+use types::{ Id };
 
 #[deriving(Clone)]
 struct EventsManager {
@@ -43,6 +45,44 @@ impl EventsManager {
             try!( event.finish( db, event_info ) );
         }
         Ok( () )
+    }
+
+    /// выдаёт информацию по событию
+    pub fn info( &self, db: &mut DbConnection, scheduled_id: Id, req: &Request ) -> AnswerResult {
+        self.if_has_event( db, scheduled_id, req, |event, event_info, db| {
+            event.info_get( db, req, &event_info )
+        })
+    }
+
+    /// инфа о действии
+    pub fn action_get( &self, db: &mut DbConnection, scheduled_id: Id, req: &Request ) -> AnswerResult {
+        self.if_has_event( db, scheduled_id, req, |event, event_info, db| {
+            event.user_action_get( db, req, &event_info )
+        })
+    }
+
+    /// применяем действие
+    pub fn action_post( &self, db: &mut DbConnection, scheduled_id: Id, req: &Request ) -> AnswerResult {
+        self.if_has_event( db, scheduled_id, req, |event, event_info, db| {
+            event.user_action_post( db, req, &event_info )
+        })
+    }
+
+    // db приходится передавать по цепочке, иначе содается вторая mut ссылка в замыкании, что естественно делать нельзя
+    fn if_has_event( &self, db: &mut DbConnection, scheduled_id: Id, req: &Request, 
+        do_this: |&EventPtr, EventInfo, &mut DbConnection| -> AnswerResult 
+    ) -> AnswerResult {
+        match try!( db.event_info( scheduled_id ) ) {
+            Some( event_info ) => {
+                let event = try!( self.events.get_event_by_id( event_info.id ) ); 
+                do_this( event, event_info, db )
+            },
+            None => {
+                let mut answer = Answer::new();
+                answer.add_error( "event", "not_found" );
+                Ok( answer )
+            }
+        } 
     }
 
     fn get_time_period( &self ) -> CommonResult<( Timespec, Timespec )> {

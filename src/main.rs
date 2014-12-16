@@ -61,6 +61,10 @@ fn main() {
     router.get( "/mailbox/unreaded/count", handlers::mailbox::count_unreaded );
     router.post( "/mailbox/mark_as_readed", handlers::mailbox::mark_as_readed );
 
+    router.get( handlers::events::info_path(), handlers::events::info );
+    router.get( handlers::events::action_path(), handlers::events::action_get );
+    router.post( handlers::events::action_path(), handlers::events::action_post );
+
     authentication_router.post( "/login", handlers::login ) ;
     authentication_router.post( "/join_us", handlers::join_us ) ;
     

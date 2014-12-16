@@ -64,7 +64,7 @@ fn get_events_impl( conn: &mut MyPooledConn, where_cond: &str, values: &[&ToValu
         "SELECT 
             id,
             event_id,
-            name,
+            event_name,
             data
         FROM scheduled_events
         WHERE {}",
@@ -90,8 +90,8 @@ fn event_info_impl( conn: &mut MyPooledConn, scheduled_id: Id ) -> MyResult<Opti
     let mut stmt = try!( conn.prepare( 
         "SELECT 
             event_id,
-            name,
-            data,
+            event_name,
+            data
         FROM scheduled_events
         WHERE id = ?
     " ) );
