@@ -141,13 +141,13 @@ impl Database {
 
     fn create_publications_table(&self) -> EmptyResult {
         self.execute(
-            "CREATE TABLE IF NOT EXISTS 'publication' (
+            "CREATE TABLE IF NOT EXISTS `publication` (
                 `id` bigint(20) NOT NULL AUTO_INCREMENT,
                 `scheduled_id` bigint(20) NOT NULL DEFAULT '0',
                 `group_id` bigint(20) NOT NULL DEFAULT '0',
                 `user_id` bigint(20) NOT NULL DEFAULT '0',
                 `photo_id` bigint(20) NOT NULL DEFAULT '0',
-                `visible` BOOL NOT NULL DEFAULT false
+                `visible` BOOL NOT NULL DEFAULT false,
                 PRIMARY KEY ( `id` ),
                 KEY `group_publication_idx` ( `group_id`, `scheduled_id`, `visible` ) USING BTREE
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8;

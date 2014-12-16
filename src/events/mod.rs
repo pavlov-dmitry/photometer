@@ -4,7 +4,7 @@ use serialize::json::{ Json };
 use answer::{ AnswerResult };
 use nickel::{ Request };
 
-mod events_manager;
+pub mod events_manager;
 mod time_store;
 mod events_collection;
 mod publication;

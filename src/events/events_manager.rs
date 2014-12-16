@@ -1,3 +1,6 @@
+use nickel::{ Request, Response, Continue, MiddlewareResult, Middleware };
+use typemap::Assoc;
+use plugin::Extensible;
 use database::{ DbConnection };
 use std::sync::{ Arc };
 use super::{ Event };
@@ -13,6 +16,10 @@ use super::publication::Publication;
 struct EventsManager {
     time_store: Arc<TimeStore>,
     events: Arc<EventsCollection>
+}
+
+pub trait Eventsable {
+    fn events_manager(&self) -> &EventsManager;
 }
 
 impl EventsManager {
@@ -46,13 +53,27 @@ impl EventsManager {
     }
 }
 
-fn midleware<'a>( time_store_file_path: Path ) -> EventsManager {
+pub fn middleware( time_store_file_path: &String ) -> EventsManager {
     let mut events_collection = EventsCollection::new();
     events_collection.add( Publication::new() );
 
     EventsManager {
-        time_store: Arc::new( TimeStore::new( time_store_file_path ) ),
+        time_store: Arc::new( TimeStore::new( Path::new( time_store_file_path.as_slice() ) ) ),
         events: Arc::new( events_collection )
     }
 }
 
+impl Assoc<EventsManager> for EventsManager {}
+
+impl Middleware for EventsManager {
+    fn invoke(&self, req: &mut Request, _res: &mut Response) -> MiddlewareResult {
+        req.extensions_mut().insert::<EventsManager, EventsManager>( self.clone() );
+        Ok( Continue )
+    } 
+}
+
+impl<'a, 'b> Eventsable for Request<'a, 'b> {
+    fn events_manager(&self) -> &EventsManager {
+        self.extensions().get::<EventsManager, EventsManager>().unwrap()
+    }
+}

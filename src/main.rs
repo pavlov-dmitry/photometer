@@ -76,6 +76,7 @@ fn main() {
     );
     server.utilize( cookies_parser::middleware() );
     server.utilize( params_body_parser::middleware() );
+    server.utilize( events::events_manager::middleware( &cfg.time_store_file_path ) );
     server.utilize( authentication_router );
     server.utilize( authentication::middleware( &cfg.login_page_path ) );
     server.utilize( router );
