@@ -83,7 +83,7 @@ impl Database {
                 `recipient_id` int(4) unsigned DEFAULT '0',
                 `sender_name` varchar(128) NOT NULL DEFAULT '',
                 `subject` varchar(128) NOT NULL DEFAULT '',
-                `body` varchar(4096) NOT NULL DEFAULT '',
+                `body` TEXT NOT NULL DEFAULT '',
                 `readed` BOOL NOT NULL DEFAULT false,
                 PRIMARY KEY ( `id` ),
                 KEY `unreaded_messages` ( `recipient_id`, `readed`, `creation_time` ) USING BTREE
@@ -98,7 +98,7 @@ impl Database {
             "CREATE TABLE IF NOT EXISTS `groups` (
                 `id` bigint(20) NOT NULL AUTO_INCREMENT,
                 `name` varchar(128) NOT NULL DEFAULT '',
-                `description` varchar(4096) NOT NULL DEFAULT '',
+                `description` TEXT NOT NULL DEFAULT '',
                 `timetable_version` int(4) unsigned DEFAULT '0',
                 PRIMARY KEY ( `id` )
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
@@ -130,7 +130,7 @@ impl Database {
                 `event_name` varchar(128) NOT NULL DEFAULT '',
                 `start_time` int(11) NOT NULL DEFAULT '0',
                 `end_time` int(11) NOT NULL DEFAULT '0',
-                `data` varchar(16384) NOT NULL DEFAULT '',
+                `data` TEXT NOT NULL DEFAULT '',
                 PRIMARY KEY ( `id` ),
                 KEY `time_idx` ( `start_time`, `end_time` )
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
@@ -165,7 +165,7 @@ impl Database {
                 `event_name` varchar(128) NOT NULL DEFAULT '',
                 `start_time` int(11) NOT NULL DEFAULT '0',
                 `end_time` int(11) NOT NULL DEFAULT '0',
-                `params` varchar(16384) NOT NULL DEFAULT '',
+                `params` TEXT NOT NULL DEFAULT '',
                 `version` int(4) NOT NULL DEFAULT '0',
                 PRIMARY KEY ( `id` ),
                 KEY `time_idx` ( `start_time`, `end_time`, `version` ) USING BTREE

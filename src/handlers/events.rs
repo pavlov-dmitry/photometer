@@ -1,10 +1,8 @@
 use nickel::{ Request, Response };
-use answer::{ AnswerResult, AnswerSendable, Answer };
+use answer::{ AnswerResult, AnswerSendable };
 use database::Databaseable;
-use db::events::DbEvents;
 use events::events_manager::Eventsable;
 use types::{ Id, CommonResult };
-use err_msg;
 
 static ID: &'static str = "id";
 
