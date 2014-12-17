@@ -28,6 +28,7 @@ impl Database {
         try!( self.create_group_members_table() );
         try!( self.create_scheduled_events_table() );
         try!( self.create_publications_table() );
+        try!( self.create_timetable_table() );
         try!( self.init_names() );
         Ok( () )
     }
@@ -98,7 +99,6 @@ impl Database {
                 `id` bigint(20) NOT NULL AUTO_INCREMENT,
                 `name` varchar(128) NOT NULL DEFAULT '',
                 `description` varchar(4096) NOT NULL DEFAULT '',
-                `timetable` bigint(20) NOT NULL DEFAULT '0',
                 `timetable_version` int(4) unsigned DEFAULT '0',
                 PRIMARY KEY ( `id` )
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
@@ -153,6 +153,25 @@ impl Database {
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
             ",
             "create_publications_table"
+        )
+    }
+
+    fn create_timetable_table(&self) -> EmptyResult {
+        self.execute("
+            CREATE TABLE IF NOT EXISTS `timetable` (
+                `id` bigint(20) NOT NULL AUTO_INCREMENT,
+                `group_id` bigint(20) NOT NULL DEFAULT '0',
+                `event_id` int(4) NOT NULL DEFAULT '0',
+                `event_name` varchar(128) NOT NULL DEFAULT '',
+                `start_time` int(11) NOT NULL DEFAULT '0',
+                `end_time` int(11) NOT NULL DEFAULT '0',
+                `params` varchar(16384) NOT NULL DEFAULT '',
+                `version` int(4) NOT NULL DEFAULT '0',
+                PRIMARY KEY ( `id` ),
+                KEY `time_idx` ( `start_time`, `end_time`, `version` ) USING BTREE
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+            ",
+            "create_timetable_table"
         )
     }
 

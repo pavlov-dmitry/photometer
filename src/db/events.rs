@@ -1,13 +1,14 @@
 use mysql::conn::pool::{ MyPooledConn };
 use mysql::error::{ MyResult };
 use mysql::value::{ from_value, ToValue };
-use types::{ Id, CommonResult, EventInfo, EventState };
+use types::{ Id, CommonResult, EmptyResult };
 use time;
 use time::{ Timespec };
 use std::fmt::{ Show };
+use events::{ ScheduledEventInfo, EventState, FullEventInfo };
 
 //type EventHandler<'a> = |EventInfo|:'a -> EmptyResult;
-type EventInfos = Vec<EventInfo>;
+type EventInfos = Vec<ScheduledEventInfo>;
 
 pub trait DbEvents {
     /// считывает события которые должны стратануть за период
@@ -17,9 +18,11 @@ pub trait DbEvents {
     /// считывает собыятия которые должны закончится за период
     fn ending_events( &mut self, from: &Timespec, to: &Timespec ) -> CommonResult<EventInfos>;
     /// информация о событии 
-    fn event_info( &mut self, scheduled_id: Id ) -> CommonResult<Option<EventInfo>>;
+    fn event_info( &mut self, scheduled_id: Id ) -> CommonResult<Option<ScheduledEventInfo>>;
     /// текущая состояние события
     fn current_event_state( &mut self, scheduled_id: Id ) -> CommonResult<Option<EventState>>;
+    /// добавляет события
+    fn add_events( &mut self, events: &Vec<FullEventInfo> ) -> EmptyResult;
 }
 
 impl DbEvents for MyPooledConn {
@@ -42,7 +45,7 @@ impl DbEvents for MyPooledConn {
     }
 
     /// информация о событии 
-    fn event_info( &mut self, scheduled_id: Id ) -> CommonResult<Option<EventInfo>> {
+    fn event_info( &mut self, scheduled_id: Id ) -> CommonResult<Option<ScheduledEventInfo>> {
         event_info_impl( self, scheduled_id )
             .map_err( |e| fn_failed( "event_info", e ) )   
     }
@@ -53,13 +56,18 @@ impl DbEvents for MyPooledConn {
             .map_err( |e| fn_failed( "current_event_state", e ) )
     }
 
+    /// добавляет события
+    fn add_events( &mut self, events: &Vec<FullEventInfo> ) -> EmptyResult {
+        add_events_impl( self, events )
+            .map_err( |e| fn_failed( "add_events", e ) )
+    }
 }
 
 fn fn_failed<E: Show>( fn_name: &str, e: E ) -> String {
     format!( "DbEvents {} failed: {}", fn_name, e )
 }
 
-fn get_events_impl( conn: &mut MyPooledConn, where_cond: &str, values: &[&ToValue] ) -> MyResult<Vec<EventInfo>> {
+fn get_events_impl( conn: &mut MyPooledConn, where_cond: &str, values: &[&ToValue] ) -> MyResult<Vec<ScheduledEventInfo>> {
     let query = format!(
         "SELECT 
             id,
@@ -76,7 +84,7 @@ fn get_events_impl( conn: &mut MyPooledConn, where_cond: &str, values: &[&ToValu
     for sql_row in sql_result {
         let row = try!( sql_row );
         let mut values = row.iter();
-        events.push( EventInfo {
+        events.push( ScheduledEventInfo {
             scheduled_id: from_value( values.next().unwrap() ),
             id: from_value( values.next().unwrap() ),
             name: from_value( values.next().unwrap() ),
@@ -86,7 +94,7 @@ fn get_events_impl( conn: &mut MyPooledConn, where_cond: &str, values: &[&ToValu
     Ok( events )
 }
 
-fn event_info_impl( conn: &mut MyPooledConn, scheduled_id: Id ) -> MyResult<Option<EventInfo>> {
+fn event_info_impl( conn: &mut MyPooledConn, scheduled_id: Id ) -> MyResult<Option<ScheduledEventInfo>> {
     let mut stmt = try!( conn.prepare( 
         "SELECT 
             event_id,
@@ -100,7 +108,7 @@ fn event_info_impl( conn: &mut MyPooledConn, scheduled_id: Id ) -> MyResult<Opti
         Some( sql_row ) => {
             let row = try!( sql_row );
             let mut values = row.iter();
-            Some( EventInfo {
+            Some( ScheduledEventInfo {
                 id: from_value( values.next().unwrap() ),
                 scheduled_id: scheduled_id,
                 name: from_value( values.next().unwrap() ),
@@ -142,4 +150,34 @@ fn current_event_state_impl( conn: &mut MyPooledConn, scheduled_id: Id ) -> MyRe
         None => None
     };
     Ok( result )
+}
+
+fn add_events_impl( conn: &mut MyPooledConn, events: &Vec<FullEventInfo> ) -> MyResult<()> {
+    let mut query = format!( "
+        INSERT INTO scheduled_events (
+            event_id,
+            event_name,
+            start_time,
+            end_time,
+            data
+        )
+        VALUES( ?, ?, ?, ?, ? ) 
+    ");
+
+    for _ in range( 1, events.len() ) {
+        query.push_str( ", ( ?, ?, ?, ?, ? )" );
+    }
+
+    let mut stmt = try!( conn.prepare( query.as_slice() ) );
+    let mut values: Vec<&ToValue> = Vec::new();
+    for event in  events.iter() {
+        values.push( &event.id );
+        values.push( &event.name );
+        values.push( &event.start_time.sec );
+        values.push( &event.end_time.sec );
+        values.push( &event.data );
+    }
+
+    try!( stmt.execute( values.as_slice() ) );
+    Ok( () )
 }

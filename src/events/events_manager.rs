@@ -3,11 +3,12 @@ use typemap::Assoc;
 use plugin::Extensible;
 use database::{ DbConnection };
 use std::sync::{ Arc };
-use super::{ Event };
+use super::{ Event, FullEventInfo, ScheduledEventInfo };
 use super::time_store::{ TimeStore };
 use super::events_collection::{ EventsCollection, EventPtr };
 use db::events::{ DbEvents };
-use types::{ EmptyResult, CommonResult, EventInfo };
+use db::timetable::DbTimetable;
+use types::{ EmptyResult, CommonResult };
 use time;
 use time::{ Timespec };
 use super::publication::Publication;
@@ -28,9 +29,10 @@ impl EventsManager {
     /// исполняет события на старт
     pub fn maybe_start_something( &self, db: &mut DbConnection ) -> EmptyResult {
         let (from, to) = try!( self.get_time_period() );
+        try!( self.check_timetables( db, &from, &to ) );
         let events = try!( db.starting_events( &from, &to ) );
         for event_info in events.iter() {
-            let event = try!( self.events.get_event_by_id( event_info.id ) );
+            let event = try!( self.events.get_event( event_info.id ) );
             try!( event.start( db, event_info ) );
         }
         Ok( () )
@@ -41,7 +43,7 @@ impl EventsManager {
         let (from, to) = try!( self.get_time_period() );
         let events = try!( db.ending_events( &from, &to ) );
         for event_info in events.iter() {
-            let event = try!( self.events.get_event_by_id( event_info.id ) );
+            let event = try!( self.events.get_event( event_info.id ) );
             try!( event.finish( db, event_info ) );
         }
         Ok( () )
@@ -68,13 +70,42 @@ impl EventsManager {
         })
     }
 
+    /// проверяет расписания всех групп на новые события
+    fn check_timetables( &self, db: &mut DbConnection, from: &Timespec, to: &Timespec ) -> EmptyResult {
+        let timetable_events = try!( db.timetable_events( from, to ) );
+        // создаём события
+        let mut events : Vec<FullEventInfo> = Vec::new();
+        for event_info in  timetable_events.iter() {
+            let timetable_event = try!( self.events.get_timetable_event( event_info.event_id ) );
+            let data = timetable_event.from_timetable( event_info.group_id, &event_info.params );
+            let data = try!( data.ok_or( 
+                format!( "Creating event id = {} group_id = {} from timetable failed", 
+                    event_info.event_id, 
+                    event_info.group_id 
+                ) 
+            ));
+            events.push( FullEventInfo {
+                id: event_info.event_id,
+                name: event_info.event_name.clone(),
+                start_time: event_info.start_time,
+                end_time: event_info.end_time,
+                data: data
+            });
+        }
+        // елси хоть что нить создали, то записываем их в запланированные события
+        if events.is_empty() == false {
+            try!( db.add_events( &events ) );
+        }
+        Ok( () )
+    }
+
     // db приходится передавать по цепочке, иначе содается вторая mut ссылка в замыкании, что естественно делать нельзя
     fn if_has_event( &self, db: &mut DbConnection, scheduled_id: Id, req: &Request, 
-        do_this: |&EventPtr, EventInfo, &mut DbConnection| -> AnswerResult 
+        do_this: |&EventPtr, ScheduledEventInfo, &mut DbConnection| -> AnswerResult 
     ) -> AnswerResult {
         match try!( db.event_info( scheduled_id ) ) {
             Some( event_info ) => {
-                let event = try!( self.events.get_event_by_id( event_info.id ) ); 
+                let event = try!( self.events.get_event( event_info.id ) ); 
                 do_this( event, event_info, db )
             },
             None => {
@@ -95,7 +126,9 @@ impl EventsManager {
 
 pub fn middleware( time_store_file_path: &String ) -> EventsManager {
     let mut events_collection = EventsCollection::new();
-    events_collection.add( Publication::new() );
+    let publication = Publication::new();
+    events_collection.add( publication.clone() );
+    events_collection.add_timetable( publication.id(), publication.clone() );
 
     EventsManager {
         time_store: Arc::new( TimeStore::new( Path::new( time_store_file_path.as_slice() ) ) ),
