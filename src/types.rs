@@ -22,7 +22,7 @@ pub struct PhotoInfo {
     pub camera_model: Option<String>
 }
 
-#[deriving(PartialEq)]
+#[deriving(PartialEq, Clone)]
 pub enum ImageType {
     Jpeg,
     Png

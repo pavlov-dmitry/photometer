@@ -28,7 +28,7 @@ fn upload_photo_answer( request: &Request ) -> AnswerResult {
         Some( tp ) => {
             let photo_store = request.photo_store();
             let upload_time = time::get_time();
-            match photo_store.add_new_photo( request.user(), &upload_time, tp, img_data ) {
+            match photo_store.add_new_photo( request.user(), &upload_time, tp.clone(), img_data ) {
                 Ok( (w, h) ) => {
                     let mut db = try!( request.get_db_conn() );
                     match db.add_photo( request.user().id, &make_photo_info( upload_time, tp, w, h, img_data ) ) {

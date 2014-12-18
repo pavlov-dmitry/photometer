@@ -12,6 +12,8 @@ pub trait DbGroups {
     fn get_members( &mut self, group_id: Id ) -> CommonResult<Members>;
     /// считывает кол-во пользователей в группе
     fn get_members_count( &mut self, group_id: Id ) -> CommonResult<u32>;
+    /// проверяет пользователя на принадлежность к группе
+    fn is_member( &mut self, user_id: Id, group_id: Id ) -> CommonResult<bool>;
 }
 
 impl DbGroups for MyPooledConn {
@@ -23,6 +25,10 @@ impl DbGroups for MyPooledConn {
     fn get_members_count( &mut self, group_id: Id ) -> CommonResult<u32> {
         get_members_count_impl( self, group_id )
             .map_err( |e| fn_failed( "members_count", e ) )
+    }
+    fn is_member( &mut self, user_id: Id, group_id: Id ) -> CommonResult<bool> {
+        is_member_impl( self, user_id, group_id )
+            .map_err( |e| fn_failed( "is_member", e ) )
     }
 }
 
@@ -54,4 +60,10 @@ fn get_members_count_impl( conn: &mut MyPooledConn, group_id: Id ) -> MyResult<u
     let mut result = try!( stmt.execute( &[ &group_id ] ) );
     let row = try!( result.next().unwrap() );
     Ok( from_value( &row[ 0 ] ) )
+}
+
+fn is_member_impl( conn: &mut MyPooledConn, user_id: Id, group_id: Id ) -> MyResult<bool> {
+    let mut stmt = try!( conn.prepare( "SELECT id FROM group_members WHERE user_id=? AND group_id=?" ) );
+    let mut result = try!( stmt.execute( &[ &user_id, &group_id ] ) );
+    Ok( result.count() == 1 )
 }

@@ -49,7 +49,7 @@ impl Middleware for ParamsBodyParser {
                     let body_str = str::from_utf8( req.origin.body.as_slice() ).unwrap_or( "" );
                     
                     // то просто парсим их
-                    for &( ref key, ref value ) in url::form_urlencoded::parse_str( body_str ).iter() {
+                    for &( ref key, ref value ) in url::form_urlencoded::parse( body_str.as_bytes() ).iter() {
                         // и запихиваем в контейнер текстовых данных
                         params_hash.insert( key.clone(), value.clone() );
                     }
@@ -98,8 +98,9 @@ fn read_binary_part( body: &[u8], (from, to) : (uint, uint), bin_hash: &mut Bina
     let idx_slice = (to - data.len(), to - 4 ); 
     // записываем имя и "координаты" данных
     bin_hash.insert( name.to_string(), idx_slice ); 
+    // запись имени файла бинарных данных с постфиксом "_filename"
     let filename = try_opt!( parse_utils::str_between( desc_str, "filename=\"", "\"" ) );
-    str_hash.insert( name.to_string() + String::from_str( "_filename" ), filename.to_string() );
+    str_hash.insert( name.to_string() + "_filename", filename.to_string() );
 }
 
 pub trait ParamsBody {

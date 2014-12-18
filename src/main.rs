@@ -7,6 +7,7 @@ extern crate image;
 extern crate time;
 extern crate typemap;
 extern crate plugin;
+extern crate http;
 
 use nickel::{ Nickel, HttpRouter, StaticFilesHandler };
 

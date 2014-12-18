@@ -14,6 +14,7 @@ pub mod gallery;
 pub mod images;
 pub mod mailbox;
 pub mod events;
+pub mod timetable;
 
 pub fn hello ( request: &Request, response: &mut Response) { 
     let answer = format!( "Hello {}!!! Glad to see you!", request.user().name );

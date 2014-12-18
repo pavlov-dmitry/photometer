@@ -38,7 +38,7 @@ pub fn get_image_impl( req: &Request, res: &mut Response, is_preview: bool ) -> 
                     &req.photo_store().make_filename(
                         &user,
                         &info.upload_time,
-                        info.image_type,
+                        &info.image_type,
                         is_preview
                     )
                 ).map_err( |e| err_msg::fs_error( e ) )

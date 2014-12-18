@@ -114,8 +114,7 @@ impl Database {
                 `user_id` bigint(20) NOT NULL DEFAULT '0',
                 `group_id` bigint(20) NOT NULL DEFAULT '0',
                 PRIMARY KEY ( `id` ),
-                KEY `users` ( `user_id` ),
-                KEY `groups` ( `group_id` )
+                KEY `members_idx` ( `user_id`, `group_id` )
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
             ",
             "create_group_members_table"

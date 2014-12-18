@@ -48,10 +48,10 @@ pub enum PhotoStoreError {
 
 pub type PhotoStoreResult<T> = Result<T, PhotoStoreError>;
 
-fn to_image_format( t: ImageType ) -> image::ImageFormat {
+fn to_image_format( t: &ImageType ) -> image::ImageFormat {
     match t {
-        ImageType::Jpeg => image::JPEG,
-        ImageType::Png => image::PNG
+        &ImageType::Jpeg => image::JPEG,
+        &ImageType::Png => image::PNG
     }
 }
 
@@ -63,13 +63,13 @@ impl PhotoStore {
     /// добавляет фотографию привязанную к опеределнному событию
     pub fn add_new_photo( &self, user: &User, upload_time: &Timespec, img_type: ImageType, img_data: &[u8] ) -> PhotoStoreResult<(u32, u32)> {
         if img_data.len() < self.params.max_photo_size_bytes {
-            match image::load_from_memory( img_data, to_image_format( img_type ) ) {
+            match image::load_from_memory( img_data, to_image_format( &img_type ) ) {
                 Ok( mut img ) => {
                     let (w, h) = img.dimensions();
                     let crop_size = min( w, h );
                     //let mut preview = img.crop( w / 2 - crop_size / 2, h / 2 - crop_size / 2, crop_size, crop_size );
                     //preview = preview.resize_exact( self.params.preview_size, self.params.preview_size, image::Lanczos3 );
-                    let preview_filename = self.make_filename( &user.name, upload_time, img_type, true );
+                    let preview_filename = self.make_filename( &user.name, upload_time, &img_type, true );
                     let fs_sequience = 
                         self.save_preview( 
                             &mut img, 
@@ -77,7 +77,7 @@ impl PhotoStore {
                             ( w / 2 - crop_size / 2, h / 2 - crop_size / 2 ), 
                             ( crop_size, crop_size ) 
                         )
-                        .and_then( |_| File::create( &self.make_filename( &user.name, upload_time, img_type, false ) ) )
+                        .and_then( |_| File::create( &self.make_filename( &user.name, upload_time, &img_type, false ) ) )
                         .and_then( |mut file| file.write( img_data ) );
                     match fs_sequience {
                         Ok(_) => Ok( (w, h) ),
@@ -107,7 +107,7 @@ impl PhotoStore {
         (tlx, tly): (u32, u32), 
         (brx, bry) : (u32, u32) 
     ) -> PhotoStoreResult<()> {
-        match image::open( &self.make_filename( user, &upload_time, image_type, false ) ) {
+        match image::open( &self.make_filename( user, &upload_time, &image_type, false ) ) {
             Ok( mut img ) => {
                 let (w, h) = img.dimensions();
                 let (tlx, tly) = ( min( w, tlx ), min( h, tly ) );
@@ -115,7 +115,7 @@ impl PhotoStore {
                 let (brx, bry) = ( max( tlx, brx ), max( tly, bry ) );
                 let top_left = ( min( tlx, brx ), min( tly, bry ) );
                 let dimensions = ( brx - tlx, bry - tly );
-                self.save_preview( &mut img, self.make_filename( user, &upload_time, image_type, true ), top_left, dimensions )
+                self.save_preview( &mut img, self.make_filename( user, &upload_time, &image_type, true ), top_left, dimensions )
                     .map_err( |e| PhotoStoreError::Fs( e ) )
             },
             _ => Err( PhotoStoreError::Format )
@@ -123,8 +123,8 @@ impl PhotoStore {
     }
 
     /// формирует имя файла в зависимости от пользователя и события
-    pub fn make_filename( &self, user: &String, upload_time: &Timespec, tp: ImageType, is_preview: bool ) -> Path {
-        let extension = if tp == ImageType::Png || is_preview { "png" } else { "jpg" };
+    pub fn make_filename( &self, user: &String, upload_time: &Timespec, tp: &ImageType, is_preview: bool ) -> Path {
+        let extension = if *tp == ImageType::Png || is_preview { "png" } else { "jpg" };
         let postfix = if is_preview { "_preview" } else { "" };
         Path::new( 
             format!( "{}/{}/{}/{}{}.{}",
