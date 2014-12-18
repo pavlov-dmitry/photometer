@@ -117,7 +117,7 @@ impl EventsManager {
     }
 
     fn get_time_period( &self ) -> CommonResult<( Timespec, Timespec )> {
-        let from_time = try!( self.time_store.get_stored_time() ).unwrap_or( time::get_time() );
+        let from_time = try!( self.time_store.get_stored_time() ).unwrap_or( Timespec::new( 0, 0 ) );
         try!( self.time_store.remember_this_moment() );
         let to_time = try!( self.time_store.get_stored_time() ).unwrap();
         Ok( ( from_time, to_time ) )

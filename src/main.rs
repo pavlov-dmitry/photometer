@@ -66,6 +66,8 @@ fn main() {
     router.get( handlers::events::action_path(), handlers::events::action_get );
     router.post( handlers::events::action_path(), handlers::events::action_post );
 
+    router.post( handlers::timetable::timetable_path(), handlers::timetable::set_timetable );
+
     authentication_router.post( "/login", handlers::login ) ;
     authentication_router.post( "/join_us", handlers::join_us ) ;
     

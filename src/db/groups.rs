@@ -14,6 +14,8 @@ pub trait DbGroups {
     fn get_members_count( &mut self, group_id: Id ) -> CommonResult<u32>;
     /// проверяет пользователя на принадлежность к группе
     fn is_member( &mut self, user_id: Id, group_id: Id ) -> CommonResult<bool>;
+    /// проверяет существоание группы
+    fn is_group_exists( &mut self, group_id: Id ) -> CommonResult<bool>;
 }
 
 impl DbGroups for MyPooledConn {
@@ -29,6 +31,10 @@ impl DbGroups for MyPooledConn {
     fn is_member( &mut self, user_id: Id, group_id: Id ) -> CommonResult<bool> {
         is_member_impl( self, user_id, group_id )
             .map_err( |e| fn_failed( "is_member", e ) )
+    }
+    fn is_group_exists( &mut self, group_id: Id ) -> CommonResult<bool> {
+        is_group_exists_impl( self, group_id )
+            .map_err( |e| fn_failed( "is_group_exists", e ) )
     }
 }
 
@@ -65,5 +71,11 @@ fn get_members_count_impl( conn: &mut MyPooledConn, group_id: Id ) -> MyResult<u
 fn is_member_impl( conn: &mut MyPooledConn, user_id: Id, group_id: Id ) -> MyResult<bool> {
     let mut stmt = try!( conn.prepare( "SELECT id FROM group_members WHERE user_id=? AND group_id=?" ) );
     let mut result = try!( stmt.execute( &[ &user_id, &group_id ] ) );
+    Ok( result.count() == 1 )
+}
+
+fn is_group_exists_impl( conn: &mut MyPooledConn, group_id: Id ) -> MyResult<bool> {
+    let mut stmt = try!( conn.prepare( "SELECT id FROM groups WHERE id=?" ) );
+    let mut result = try!( stmt.execute( &[ &group_id ] ) );
     Ok( result.count() == 1 )
 }
