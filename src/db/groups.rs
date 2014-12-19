@@ -15,7 +15,13 @@ pub trait DbGroups {
     /// проверяет пользователя на принадлежность к группе
     fn is_member( &mut self, user_id: Id, group_id: Id ) -> CommonResult<bool>;
     /// проверяет существоание группы
-    fn is_group_exists( &mut self, group_id: Id ) -> CommonResult<bool>;
+    fn is_group_id_exists( &mut self, group_id: Id ) -> CommonResult<bool>;
+    /// проверяет существоание группы
+    fn is_group_exists( &mut self, name: &String ) -> CommonResult<bool>;
+    /// создать новую группу
+    fn create_group( &mut self, name: &String, desc: &String ) -> CommonResult<Id>;
+    /// добавляет членов группы
+    fn add_members( &mut self, members: &[ Id ] ) -> EmptyResult;
 }
 
 impl DbGroups for MyPooledConn {
@@ -32,8 +38,13 @@ impl DbGroups for MyPooledConn {
         is_member_impl( self, user_id, group_id )
             .map_err( |e| fn_failed( "is_member", e ) )
     }
-    fn is_group_exists( &mut self, group_id: Id ) -> CommonResult<bool> {
-        is_group_exists_impl( self, group_id )
+    fn is_group_id_exists( &mut self, group_id: Id ) -> CommonResult<bool> {
+        is_group_id_exists_impl( self, group_id )
+            .map_err( |e| fn_failed( "is_group_id_exists", e ) )
+    }
+    /// проверяет существоание группы
+    fn is_group_exists( &mut self, name: &String ) -> CommonResult<bool> {
+        is_group_exists_impl( self, name )
             .map_err( |e| fn_failed( "is_group_exists", e ) )
     }
 }
@@ -74,8 +85,14 @@ fn is_member_impl( conn: &mut MyPooledConn, user_id: Id, group_id: Id ) -> MyRes
     Ok( result.count() == 1 )
 }
 
-fn is_group_exists_impl( conn: &mut MyPooledConn, group_id: Id ) -> MyResult<bool> {
+fn is_group_id_exists_impl( conn: &mut MyPooledConn, group_id: Id ) -> MyResult<bool> {
     let mut stmt = try!( conn.prepare( "SELECT id FROM groups WHERE id=?" ) );
     let mut result = try!( stmt.execute( &[ &group_id ] ) );
+    Ok( result.count() == 1 )
+}
+
+fn is_group_exists_impl( conn: &mut MyPooledConn, name: &str ) -> MyResult<bool> {
+    let mut stmt = try!( conn.prepare( "SELECT id FROM groups WHERE name=?" ) );
+    let mut result = try!( stmt.execute( &[ &name ] ) );
     Ok( result.count() == 1 )
 }

@@ -21,8 +21,9 @@ pub trait DbEvents {
     fn event_info( &mut self, scheduled_id: Id ) -> CommonResult<Option<ScheduledEventInfo>>;
     /// текущая состояние события
     fn current_event_state( &mut self, scheduled_id: Id ) -> CommonResult<Option<EventState>>;
-    /// добавляет события
+    /// добавляет события пачкой
     fn add_events( &mut self, events: &Vec<FullEventInfo> ) -> EmptyResult;
+    
 }
 
 impl DbEvents for MyPooledConn {
@@ -153,16 +154,16 @@ fn current_event_state_impl( conn: &mut MyPooledConn, scheduled_id: Id ) -> MyRe
 }
 
 fn add_events_impl( conn: &mut MyPooledConn, events: &Vec<FullEventInfo> ) -> MyResult<()> {
-    let mut query = format!( "
-        INSERT INTO scheduled_events (
+    let mut query = format!( 
+        "INSERT INTO scheduled_events (
             event_id,
             event_name,
             start_time,
             end_time,
             data
         )
-        VALUES( ?, ?, ?, ?, ? ) 
-    ");
+        VALUES( ?, ?, ?, ?, ? )"
+    );
 
     for _ in range( 1, events.len() ) {
         query.push_str( ", ( ?, ?, ?, ?, ? )" );

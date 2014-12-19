@@ -174,6 +174,22 @@ impl Database {
         )
     }
 
+    fn create_votes_table(&self) -> EmptyResult {
+        self.execute("
+            CREATE TABLE IF NOT EXISTS `votes` (
+                `id` bigint(20) NOT NULL AUTO_INCREMENT,
+                `scheduled_id` bigint(20) NOT NULL DEFAULT '0',
+                `user_id` bigint(20) NOT NULL DEFAULT '0',
+                `voted` BOOL NOT NULL DEFAULT false,
+                `vote` BOOL NOT NULL DEFAULT false,
+                PRIMARY KEY ( `id` ),
+                KEY `voted_idx` ( `scheduled_id`, `user_id`, `voted` ) USING BTREE
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+            ",
+            "create_votes_table"
+        )
+    }
+
     fn execute( &self, query: &str, name: &str ) -> EmptyResult {
         match self.pool.query( query ) {
             Ok(_)=> Ok( () ),

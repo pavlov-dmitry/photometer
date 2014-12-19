@@ -1,4 +1,4 @@
-use super::{ Event, CreateFromTimetable, ScheduledEventInfo };
+use super::{ Event, CreateFromTimetable, ScheduledEventInfo, make_event_action_link };
 use types::{ Id, EmptyResult, CommonResult };
 use answer::{ Answer, AnswerResult };
 use serialize::json;
@@ -8,7 +8,7 @@ use db::groups::DbGroups;
 use db::publication::DbPublication;
 use db::photos::DbPhotos;
 use get_param::GetParamable;
-use database::{ DbConnection };
+use database::DbConnection;
 use nickel::{ Request };
 use authentication::{ Userable, User };
 
@@ -24,7 +24,7 @@ impl Publication {
 const ID : Id = 1;
 
 impl Event for Publication {
-        /// идентификатор события
+    /// идентификатор события
     fn id( &self ) -> Id {
         ID
     }
@@ -127,12 +127,8 @@ fn make_text_body( user: &String, group: &Info, info: &ScheduledEventInfo ) -> S
         ", 
         user,
         info.name,
-        make_link( info.scheduled_id )
+        make_event_action_link( info.scheduled_id )
     )
-}
-
-fn make_link( id: Id ) -> String {
-    format!( "/event/action/{}", id )
 }
 
 fn get_info( str_body: &String ) -> CommonResult<Info> {
