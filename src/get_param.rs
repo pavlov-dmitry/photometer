@@ -3,22 +3,22 @@ use nickel::{ Request };
 use std::str;
 use super::err_msg;
 use std::str::{ from_str, FromStr };
-use types::{ CommonResult };
+use types::{ CommonResult, Id };
 
 pub trait GetParamable {
     fn get_param( &self, prm: &str ) -> CommonResult<&str>;
     fn get_param_bin( &self, prm: &str ) -> CommonResult<&[u8]>;
     fn get_param_uint( &self, prm: &str ) -> CommonResult<uint>;
-    fn get_param_i64( &self, prm: &str ) -> CommonResult<i64>;
+    fn get_param_id( &self, prm: &str ) -> CommonResult<Id>;
 }
 
 //TODO: проверить на следующей версии раста, а пока ICE =(
-pub trait GetManyParams {
+/*pub trait GetManyParams {
     fn get_prm<'a, T: FromParams<'a>>( &'a self, prm: &str ) -> CommonResult<T>;
     fn get2params<'a, T1: FromParams<'a>, T2: FromParams<'a>>( &'a self, prm1: &str, prm2: &str ) -> CommonResult<(T1, T2)>;
     fn get3params<'a, T1: FromParams<'a>, T2: FromParams<'a>, T3: FromParams<'a>>( 
         &'a self, prm1: &str, prm2: &str, prm3: &str ) -> CommonResult<(T1, T2, T3)>;
-}
+}*/
 
 pub trait FromParams<'a> {
     fn from_params( params: &'a GetParamable, prm: &str ) -> CommonResult<Self>;
@@ -45,14 +45,14 @@ impl<'a, 'b> GetParamable for Request<'a, 'b> {
         self.get_param( prm )
             .and_then( |s| from_str::<uint>( s ).ok_or( err_msg::invalid_type_param( prm ) ) )
     }
-    fn get_param_i64( &self, prm: &str ) -> CommonResult<i64> {
+    fn get_param_id( &self, prm: &str ) -> CommonResult<Id> {
         self.get_param( prm )
-            .and_then( |s| from_str::<i64>( s ).ok_or( err_msg::invalid_type_param( prm ) ) ) 
+            .and_then( |s| from_str::<Id>( s ).ok_or( err_msg::invalid_type_param( prm ) ) ) 
     }
 }
 
-impl<'a, Params: GetParamable> GetManyParams for Params {
-    fn get_prm<'a, T: FromParams<'a>>( &'a self, prm: &str ) -> CommonResult<T> {
+/*impl<'a, Params: GetParamable> GetManyParams for Params {
+    fn get_prm<'x, T: FromParams<'x>>( &'x self, prm: &str ) -> CommonResult<T> {
         FromParams::from_params( self, prm )
     }
     fn get2params<'a, T1: FromParams<'a>, T2: FromParams<'a>>( &'a self, prm1: &str, prm2: &str ) -> CommonResult<(T1, T2)> {
@@ -78,7 +78,7 @@ impl<'a, Params: GetParamable> GetManyParams for Params {
             Err( e ) => Err( e )
         }   
     }
-}
+}*/
 
 impl<'a> FromParams<'a> for &'a [u8] {
     fn from_params( params: &'a GetParamable, prm: &str ) -> CommonResult<&'a [u8]> {

@@ -2,6 +2,7 @@ use mysql::conn::pool::{ MyPooledConn };
 use mysql::error::{ MyResult };
 use mysql::value::{ from_value };
 use types::{ Id, CommonResult };
+use std::fmt::Show;
 
 pub trait DbUsers {
     /// выбирает id пользователя по имени и паролю
@@ -35,13 +36,13 @@ impl DbUsers for MyPooledConn {
     }
     /// проверяет наличие имени в БД
     fn user_id_exists(&mut self, id: Id ) -> CommonResult<bool> {
-        user_id_exists_impl( self, name )
+        user_id_exists_impl( self, id )
             .map_err( |e| fn_failed( "user_id_exists", e ) )  
     }
     
 }
 
-fn fn_failed<E: Show>( fn_name: &str, e E ) -> String {
+fn fn_failed<E: Show>( fn_name: &str, e: E ) -> String {
     format!( "DbUsers func '{}' failed: {}", fn_name, e )
 }
 

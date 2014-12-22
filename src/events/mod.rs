@@ -1,6 +1,5 @@
 use types::{ Id, EmptyResult, CommonResult };
 use database::{ DbConnection };
-use serialize::json::{ Json };
 use answer::{ AnswerResult };
 use nickel::{ Request };
 use time::Timespec;
@@ -9,6 +8,7 @@ pub mod events_manager;
 mod time_store;
 mod events_collection;
 mod publication;
+mod group_creation;
 
 pub struct ScheduledEventInfo {
     pub id: Id,
@@ -62,7 +62,7 @@ pub trait UserEvent {
     /// описание создания
     fn user_creating_get( &self, request: &Request ) -> AnswerResult;
     /// применение создания
-    fn user_creating_post( &self, db: &mut DbConnection, request: &Request ) -> Result<String, AnswerResult>;
+    fn user_creating_post( &self, db: &mut DbConnection, request: &mut Request ) -> Result<String, AnswerResult>;
 }
 
 pub fn make_event_action_link( id: Id ) -> String {

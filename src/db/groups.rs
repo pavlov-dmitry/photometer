@@ -1,7 +1,7 @@
 use mysql::conn::pool::{ MyPooledConn };
 use mysql::error::{ MyResult };
-use mysql::value::{ from_value };
-use types::{ Id, CommonResult };
+use mysql::value::{ from_value, ToValue };
+use types::{ Id, CommonResult, EmptyResult };
 use authentication::{ User };
 use std::fmt::{ Show };
   
@@ -21,7 +21,7 @@ pub trait DbGroups {
     /// создать новую группу
     fn create_group( &mut self, name: &String, desc: &String ) -> CommonResult<Id>;
     /// добавляет членов группы
-    fn add_members( &mut self, members: &[ Id ] ) -> EmptyResult;
+    fn add_members( &mut self, group_id: Id, members: &[ Id ] ) -> EmptyResult;
 }
 
 impl DbGroups for MyPooledConn {
@@ -44,8 +44,18 @@ impl DbGroups for MyPooledConn {
     }
     /// проверяет существоание группы
     fn is_group_exists( &mut self, name: &String ) -> CommonResult<bool> {
-        is_group_exists_impl( self, name )
+        is_group_exists_impl( self, name.as_slice() )
             .map_err( |e| fn_failed( "is_group_exists", e ) )
+    }
+    /// создать новую группу
+    fn create_group( &mut self, name: &String, desc: &String ) -> CommonResult<Id> {
+        create_group_impl( self, name, desc )
+            .map_err( |e| fn_failed( "create_group", e ) )
+    }
+    /// добавляет членов группы
+    fn add_members( &mut self, group_id: Id, members: &[ Id ] ) -> EmptyResult {
+        add_members_impl( self, group_id, members )
+            .map_err( |e| fn_failed( "add_members", e ) )
     }
 }
 
@@ -81,18 +91,55 @@ fn get_members_count_impl( conn: &mut MyPooledConn, group_id: Id ) -> MyResult<u
 
 fn is_member_impl( conn: &mut MyPooledConn, user_id: Id, group_id: Id ) -> MyResult<bool> {
     let mut stmt = try!( conn.prepare( "SELECT id FROM group_members WHERE user_id=? AND group_id=?" ) );
-    let mut result = try!( stmt.execute( &[ &user_id, &group_id ] ) );
+    let result = try!( stmt.execute( &[ &user_id, &group_id ] ) );
     Ok( result.count() == 1 )
 }
 
 fn is_group_id_exists_impl( conn: &mut MyPooledConn, group_id: Id ) -> MyResult<bool> {
     let mut stmt = try!( conn.prepare( "SELECT id FROM groups WHERE id=?" ) );
-    let mut result = try!( stmt.execute( &[ &group_id ] ) );
+    let result = try!( stmt.execute( &[ &group_id ] ) );
     Ok( result.count() == 1 )
 }
 
 fn is_group_exists_impl( conn: &mut MyPooledConn, name: &str ) -> MyResult<bool> {
     let mut stmt = try!( conn.prepare( "SELECT id FROM groups WHERE name=?" ) );
-    let mut result = try!( stmt.execute( &[ &name ] ) );
+    let result = try!( stmt.execute( &[ &name ] ) );
     Ok( result.count() == 1 )
+}
+
+fn create_group_impl( conn: &mut MyPooledConn, name: &String, desc: &String ) -> MyResult<Id> {
+    let mut stmt = try!( conn.prepare( "
+        INSERT INTO groups (
+            name,
+            description
+        )
+        VALUES ( ?, ? )
+    "));
+    let result = try!( stmt.execute( &[ name, desc ] ) );
+    Ok( result.last_insert_id() )
+}
+
+fn add_members_impl( conn: &mut MyPooledConn, group_id: Id, members: &[ Id ] ) -> MyResult<()> {
+    let mut query = String::from_str("
+        INSERT INTO group_members (
+            user_id,
+            group_id
+        )
+        VALUES( ?, ? )
+    ");
+
+    for _ in range( 1, members.len() ) {
+        query.push_str( ", ( ?, ? )" );
+    }
+
+    let mut stmt = try!( conn.prepare( query.as_slice() ) );
+
+    let mut values: Vec<&ToValue> = Vec::new();
+    for i in range( 0, members.len() ) {
+        values.push( &members[ i ] );
+        values.push( &group_id );
+    }
+
+    try!( stmt.execute( values.as_slice() ) );
+    Ok( () )
 }

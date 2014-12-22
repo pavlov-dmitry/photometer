@@ -11,7 +11,7 @@ pub fn rename_photo( req: &Request, res: &mut Response ) {
 }
 
 fn rename_answer( request: &Request ) -> AnswerResult {
-	let id = try!( request.get_param_i64( "id" ) );
+	let id = try!( request.get_param_id( "id" ) );
 	let name = try!( request.get_param( "name" ) );
 	let mut db = try!( request.get_db_conn() );
     let maybe_photo_info = try!( db.get_photo_info( id ) );

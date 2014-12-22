@@ -1,7 +1,8 @@
 use mysql::conn::pool::{ MyPooledConn };
 use mysql::error::{ MyResult };
-use mysql::value::{ from_value };
+use mysql::value::{ from_value, ToValue };
 use std::fmt::{ Show };
+use types::{ Id, EmptyResult, CommonResult };
 
 pub struct Votes {
     pub all_count: u32,
@@ -11,16 +12,18 @@ pub struct Votes {
 
 pub trait DbVotes {
     /// добавляет право голоса по какому-то событию
-    fn add_rights_of_voting( &mut self, scheduled_id: Id, users: &Vec<Id> ) -> EmptyResult;
+    fn add_rights_of_voting( &mut self, scheduled_id: Id, users: &[Id]  ) -> EmptyResult;
     /// проверяет на то что все проголосовали 
     fn is_all_voted( &mut self, scheduled_id: Id ) -> CommonResult<bool>;
+    /// проверяет голосвал ли этот пользователь уже или нет
+    fn is_user_already_voted( &mut self, scheduled_id: Id, user_id: Id ) -> CommonResult<bool>;
     /// возращает голоса
     fn get_votes( &mut self, scheduled_id: Id ) -> CommonResult<Votes>;
     /// голосуем 
     fn set_vote( &mut self, scheduled_id: Id, user_id: Id, vote: bool ) -> EmptyResult;
 }
 
-impl DbVotes fro MyPooledConn {
+impl DbVotes for MyPooledConn {
     /// добавляет право голоса по какому-то событию
     fn add_rights_of_voting( &mut self, scheduled_id: Id, users: &[Id] ) -> EmptyResult {
         add_rights_of_voting_impl( self, scheduled_id, users )
@@ -28,12 +31,17 @@ impl DbVotes fro MyPooledConn {
     }
     /// проверяет на то что все проголосовали 
     fn is_all_voted( &mut self, scheduled_id: Id ) -> CommonResult<bool> {
-        is_all_voted( self, scheduled_id )
+        is_all_voted_impl( self, scheduled_id )
             .map_err( |e| fn_failed( "is_all_voted", e ) )
+    }
+    /// проверяет голосвал ли этот пользователь уже или нет
+    fn is_user_already_voted( &mut self, scheduled_id: Id, user_id: Id ) -> CommonResult<bool> {
+        is_user_already_voted_impl( self, scheduled_id, user_id )
+            .map_err( |e| fn_failed( "is_user_already_voted", e ) )
     }
     /// возращает голоса
     fn get_votes( &mut self, scheduled_id: Id ) -> CommonResult<Votes> {
-        get_votes( self, scheduled_id )
+        get_votes_impl( self, scheduled_id )
             .map_err( |e| fn_failed( "get_votes", e ) )
     }
     /// голосуем 
@@ -44,11 +52,11 @@ impl DbVotes fro MyPooledConn {
 
 }
 
-fn fn_failed<E: Show>( fn_name: &str, e E ) -> String {
+fn fn_failed<E: Show>( fn_name: &str, e: E ) -> String {
     format!( "DbVotes `{}` failed: {}", fn_name, e )
 }
 
-fn add_rights_of_voting_impl( conn: &mut MyPooledConn, scheduled_id: Id, users: &Vec<Id> ) -> MyResult<()> {
+fn add_rights_of_voting_impl( conn: &mut MyPooledConn, scheduled_id: Id, users: &[Id] ) -> MyResult<()> {
     let mut query = format!(
         "INSERT INTO votes (
             scheduled_id,
@@ -56,19 +64,19 @@ fn add_rights_of_voting_impl( conn: &mut MyPooledConn, scheduled_id: Id, users: 
         ) VALUES ( ?, ? )"
     );
 
-    for _ in range( 1, user.len() ) {
-        query_push_str( ", ( ?, ? )" );
+    for _ in range( 1, users.len() ) {
+        query.push_str( ", ( ?, ? )" );
     }
 
     let mut stmt = try!( conn.prepare( query.as_slice() ) );
 
-    let values: Vec<&ToValue> = Vec::new();
-    for user in users.iter() {
+    let mut values: Vec<&ToValue> = Vec::new();
+    for i in range( 0, users.len() ) {
         values.push( &scheduled_id );
-        values.push( &user );
+        values.push( &users[ i ] );
     }
 
-    try!( stmt.execute( values.as_slice() ) )
+    try!( stmt.execute( values.as_slice() ) );
     Ok( () )
 }
 
@@ -79,6 +87,13 @@ fn is_all_voted_impl( conn: &mut MyPooledConn, scheduled_id: Id ) -> MyResult<bo
     Ok( from_value::<u32>( &row[ 0 ] ) == 0 )
 }
 
+fn is_user_already_voted_impl( conn: &mut MyPooledConn, scheduled_id: Id, user_id: Id ) -> MyResult<bool> {
+    let mut stmt = try!( conn.prepare( "SELECT COUNT( id ) FROM votes WHERE scheduled_id = ? AND user_id = ? AND voted=true" ) );
+    let mut result = try!( stmt.execute( &[ &scheduled_id, &user_id ] ) );
+    let row = try!( result.next().unwrap() );
+    Ok( from_value::<u32>( &row[ 0 ] ) == 1 )
+}
+
 fn get_votes_impl( conn: &mut MyPooledConn, scheduled_id: Id ) -> MyResult<Votes> {
     let mut stmt = try!( conn.prepare( "SELECT user_id, voted, vote FROM votes WHERE scheduled_id = ?" ) );
     let mut result = try!( stmt.execute( &[ &scheduled_id ] ) );
@@ -86,8 +101,8 @@ fn get_votes_impl( conn: &mut MyPooledConn, scheduled_id: Id ) -> MyResult<Votes
     let mut votes = Votes {
         yes: Vec::new(),
         no: Vec::new(),
-        all_count = result.len()
-    }
+        all_count: 0
+    };
 
     for row in result {
         let row = try!( row );
@@ -102,6 +117,7 @@ fn get_votes_impl( conn: &mut MyPooledConn, scheduled_id: Id ) -> MyResult<Votes
                 votes.no.push( user_id );
             }
         }
+        votes.all_count += 1;
     }
     
     Ok( votes )

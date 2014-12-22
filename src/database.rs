@@ -29,6 +29,7 @@ impl Database {
         try!( self.create_scheduled_events_table() );
         try!( self.create_publications_table() );
         try!( self.create_timetable_table() );
+        try!( self.create_votes_table() );
         try!( self.init_names() );
         Ok( () )
     }
@@ -130,8 +131,9 @@ impl Database {
                 `start_time` int(11) NOT NULL DEFAULT '0',
                 `end_time` int(11) NOT NULL DEFAULT '0',
                 `data` TEXT NOT NULL DEFAULT '',
+                `finished` BOOL NOT NULL DEFAULT false,
                 PRIMARY KEY ( `id` ),
-                KEY `time_idx` ( `start_time`, `end_time` )
+                KEY `time_idx` ( `start_time`, `end_time`, `finished` )
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
             ",
             "create_events_table"

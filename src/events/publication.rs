@@ -62,7 +62,7 @@ impl Event for Publication {
     /// применение действия пользователя на это событие
     fn user_action_post( &self, db: &mut DbConnection, request: &Request, body: &ScheduledEventInfo ) -> AnswerResult {
         let info = try!( get_info( &body.data ) );
-        let photo_id = try!( request.get_param_i64( "photo" ) );
+        let photo_id = try!( request.get_param_id( "photo" ) );
         let user = request.user();
         let mut answer = Answer::new();
         if let Some( (user_name, _) ) = try!( db.get_photo_info( photo_id ) ) {
