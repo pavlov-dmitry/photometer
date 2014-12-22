@@ -2,7 +2,7 @@ use nickel::{ Request, Response, NickelError, NickelErrorKind, Halt, MiddlewareR
 use answer::{ AnswerResult, AnswerSendable };
 use database::Databaseable;
 use events::events_manager::Eventsable;
-use types::{ Id, CommonResult };
+use types::{ Id };
 use http::status::Status;
 
 static ID: &'static str = "id";
@@ -26,7 +26,7 @@ pub fn action_get( request: &Request, response: &mut Response ) -> MiddlewareRes
     response.send_answer( &action_get_answer( id, request ) );
     Ok( Halt )
 }
-pub fn action_post( request: &Request, response: &mut Response ) -> MiddlewareResult {
+pub fn action_post( request: &mut Request, response: &mut Response ) -> MiddlewareResult {
     let id = try!( get_id( request ) );
     response.send_answer( &action_post_answer( id, request ) );
     Ok( Halt )

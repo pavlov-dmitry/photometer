@@ -1,7 +1,7 @@
 use mysql::conn::pool::{ MyPooledConn };
 use mysql::error::{ MyResult };
 use mysql::value::{ from_value, ToValue };
-use types::{ CommonResult, Id, EmptyResult };
+use types::{ CommonResult, Id };
 use time::Timespec;
 use std::fmt::{ Show };
 

@@ -117,7 +117,7 @@ impl<'a, 'b> ParamsBody for Request<'a, 'b> {
     fn parameter(&self, key: &str ) -> Option<&String> {
         self.parameter_string( &key.to_string() )
     }
-    fn bin_parameter<'a>(&self, key: &str) -> Option<&[u8]> {
+    fn bin_parameter<'x>(&self, key: &str) -> Option<&[u8]> {
         self.extensions().get::<BinaryHashMapKey, BinaryHashMap>()
             .and_then( |ref hash| {
                 hash.get( &key.to_string() )

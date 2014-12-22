@@ -29,6 +29,7 @@ impl Database {
         try!( self.create_scheduled_events_table() );
         try!( self.create_publications_table() );
         try!( self.create_timetable_table() );
+        try!( self.create_votes_table() );
         try!( self.init_names() );
         Ok( () )
     }
@@ -130,8 +131,9 @@ impl Database {
                 `start_time` int(11) NOT NULL DEFAULT '0',
                 `end_time` int(11) NOT NULL DEFAULT '0',
                 `data` TEXT NOT NULL DEFAULT '',
+                `finished` BOOL NOT NULL DEFAULT false,
                 PRIMARY KEY ( `id` ),
-                KEY `time_idx` ( `start_time`, `end_time` )
+                KEY `time_idx` ( `start_time`, `end_time`, `finished` )
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
             ",
             "create_events_table"
@@ -171,6 +173,22 @@ impl Database {
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
             ",
             "create_timetable_table"
+        )
+    }
+
+    fn create_votes_table(&self) -> EmptyResult {
+        self.execute("
+            CREATE TABLE IF NOT EXISTS `votes` (
+                `id` bigint(20) NOT NULL AUTO_INCREMENT,
+                `scheduled_id` bigint(20) NOT NULL DEFAULT '0',
+                `user_id` bigint(20) NOT NULL DEFAULT '0',
+                `voted` BOOL NOT NULL DEFAULT false,
+                `vote` BOOL NOT NULL DEFAULT false,
+                PRIMARY KEY ( `id` ),
+                KEY `voted_idx` ( `scheduled_id`, `user_id`, `voted` ) USING BTREE
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+            ",
+            "create_votes_table"
         )
     }
 

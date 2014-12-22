@@ -1,5 +1,4 @@
 use nickel::{ Request, Response, NickelError, NickelErrorKind, Halt, MiddlewareResult };
-use authentication::{ Userable };
 use answer::{ AnswerSendable, AnswerResult, Answer };
 use db::timetable::{ DbTimetable, TimetableEventInfo };
 use db::groups::DbGroups;
@@ -23,7 +22,7 @@ fn set_timetable_answer( group_id: Id, req: &Request ) -> AnswerResult {
     let mut db = try!( req.get_db_conn() );
     let mut answer = Answer::new();
 
-    if try!( db.is_group_exists( group_id ) ) {
+    if try!( db.is_group_id_exists( group_id ) ) {
         let start_time_str = try!( req.get_param( "start_time" ) );
         let start_time = try!( time::strptime( start_time_str, "%Y.%m.%d %k:%M:%S" )
             .map_err( |e| format!( "error parsing `start_time`: {}", e ) ) 
@@ -35,7 +34,7 @@ fn set_timetable_answer( group_id: Id, req: &Request ) -> AnswerResult {
 
         let timetable_event = TimetableEventInfo {
             group_id: group_id,
-            event_id: try!( req.get_param_i64( "event_id" ) ),
+            event_id: try!( req.get_param_id( "event_id" ) ),
             event_name: try!( req.get_param( "event_name" ) ).to_string(),
             start_time: start_time.to_timespec(),
             end_time: end_time.to_timespec(),

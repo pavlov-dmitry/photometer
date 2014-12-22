@@ -6,6 +6,7 @@ use std::sync::{ Arc, RWLock };
 use cookies_parser::{ Cookieable };
 use typemap::Assoc;
 use plugin::Extensible;
+use types::Id;
 
 static SESSION_ID : &'static str = "sid";
 
@@ -13,11 +14,11 @@ static SESSION_ID : &'static str = "sid";
 #[deriving(Clone)]
 pub struct User {
     pub name : String,
-    pub id : i64
+    pub id : Id
 }
 
 impl User {
-    pub fn new( name: &str, id: i64 ) -> User {
+    pub fn new( name: &str, id: Id ) -> User {
         User { 
             name: name.to_string(), 
             id: id 
@@ -29,13 +30,13 @@ impl User {
 type SessionsHash = HashMap<String, User>;
 
 struct SessionIdGenerator {
-    state : int
+    state : Id
 }
 
 /// примитивный генератор идентификаторов сессий
 impl SessionIdGenerator {
     fn new() -> SessionIdGenerator {
-        SessionIdGenerator { state : 0i }
+        SessionIdGenerator { state : 0 }
     }
     fn gen(&mut self) -> String {
         self.state += 1;

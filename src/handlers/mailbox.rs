@@ -53,7 +53,7 @@ pub fn mark_as_readed( request: &Request, response: &mut Response ) {
 }
 
 pub fn mark_as_readed_answer( req: &Request ) -> AnswerResult {
-    let id = try!( req.get_param_i64( "id" ) );
+    let id = try!( req.get_param_id( "id" ) );
     let mut db = try!( req.get_db_conn() );
     let success = try!( db.mark_as_readed( req.user().id, id ) );
     let mut answer = Answer::new();

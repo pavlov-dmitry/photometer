@@ -4,7 +4,7 @@ use mysql::value::{ from_value, ToValue };
 use types::{ Id, CommonResult, EmptyResult };
 use time;
 use time::{ Timespec };
-use std::fmt::{ Show };
+use std::fmt::Show;
 use events::{ ScheduledEventInfo, EventState, FullEventInfo };
 
 //type EventHandler<'a> = |EventInfo|:'a -> EmptyResult;
@@ -21,8 +21,11 @@ pub trait DbEvents {
     fn event_info( &mut self, scheduled_id: Id ) -> CommonResult<Option<ScheduledEventInfo>>;
     /// текущая состояние события
     fn current_event_state( &mut self, scheduled_id: Id ) -> CommonResult<Option<EventState>>;
-    /// добавляет события
+    /// добавляет события пачкой
     fn add_events( &mut self, events: &Vec<FullEventInfo> ) -> EmptyResult;
+    /// помечает что данное событие завершено
+    fn mark_event_as_finished( &mut self, scheduled_id: Id ) -> EmptyResult;
+    
 }
 
 impl DbEvents for MyPooledConn {
@@ -34,13 +37,13 @@ impl DbEvents for MyPooledConn {
 
     /// считывает события которые исполняются в опеределенный момент
     fn active_events( &mut self, time: &Timespec ) -> CommonResult<EventInfos> {
-        get_events_impl( self, "? BETWEEN start_time AND end_time", &[ &time.sec ] )
+        get_events_impl( self, "? BETWEEN start_time AND end_time AND finished=false", &[ &time.sec ] )
             .map_err( |e| fn_failed( "active_events", e ) )
     }
 
     /// считывает собыятия которые должны закончится за период
-    fn ending_events( &mut self, from: &Timespec, to: &Timespec ) -> CommonResult<EventInfos> {
-        get_events_impl( self, "end_time BETWEEN ? AND ?", &[ &from.sec, &to.sec ] )
+    fn ending_events( &mut self, _from: &Timespec, to: &Timespec ) -> CommonResult<EventInfos> {
+        get_events_impl( self, "end_time < ? AND finished=false", &[ &to.sec ] )
             .map_err( |e| fn_failed( "ending_events", e ) )
     }
 
@@ -60,6 +63,12 @@ impl DbEvents for MyPooledConn {
     fn add_events( &mut self, events: &Vec<FullEventInfo> ) -> EmptyResult {
         add_events_impl( self, events )
             .map_err( |e| fn_failed( "add_events", e ) )
+    }
+
+    /// помечает что данное событие завершено
+    fn mark_event_as_finished( &mut self, scheduled_id: Id ) -> EmptyResult {
+        mark_event_as_finished_impl( self, scheduled_id )
+            .map_err( |e| fn_failed( "mark_event_as_finished", e ) )
     }
 }
 
@@ -153,16 +162,16 @@ fn current_event_state_impl( conn: &mut MyPooledConn, scheduled_id: Id ) -> MyRe
 }
 
 fn add_events_impl( conn: &mut MyPooledConn, events: &Vec<FullEventInfo> ) -> MyResult<()> {
-    let mut query = format!( "
-        INSERT INTO scheduled_events (
+    let mut query = format!( 
+        "INSERT INTO scheduled_events (
             event_id,
             event_name,
             start_time,
             end_time,
             data
         )
-        VALUES( ?, ?, ?, ?, ? ) 
-    ");
+        VALUES( ?, ?, ?, ?, ? )"
+    );
 
     for _ in range( 1, events.len() ) {
         query.push_str( ", ( ?, ?, ?, ?, ? )" );
@@ -179,5 +188,11 @@ fn add_events_impl( conn: &mut MyPooledConn, events: &Vec<FullEventInfo> ) -> My
     }
 
     try!( stmt.execute( values.as_slice() ) );
+    Ok( () )
+}
+
+fn mark_event_as_finished_impl( conn: &mut MyPooledConn, scheduled_id: Id ) -> MyResult<()> {
+    let mut stmt = try!( conn.prepare( "UPDATE scheduled_events SET finished=true WHERE id=?" ) );
+    try!( stmt.execute( &[ &scheduled_id ] ) );
     Ok( () )
 }

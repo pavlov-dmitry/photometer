@@ -9,7 +9,6 @@ use super::events_collection::{ EventsCollection, EventPtr };
 use db::events::{ DbEvents };
 use db::timetable::DbTimetable;
 use types::{ EmptyResult, CommonResult };
-use time;
 use time::{ Timespec };
 use super::publication::Publication;
 use answer::{ Answer, AnswerResult };
@@ -45,6 +44,7 @@ impl EventsManager {
         for event_info in events.iter() {
             let event = try!( self.events.get_event( event_info.id ) );
             try!( event.finish( db, event_info ) );
+            try!( db.mark_event_as_finished( event_info.scheduled_id ) );
         }
         Ok( () )
     }
@@ -66,7 +66,12 @@ impl EventsManager {
     /// применяем действие
     pub fn action_post( &self, db: &mut DbConnection, scheduled_id: Id, req: &Request ) -> AnswerResult {
         self.if_has_event( db, scheduled_id, req, |event, event_info, db| {
-            event.user_action_post( db, req, &event_info )
+            let result = try!( event.user_action_post( db, req, &event_info ) );
+            if try!( event.is_complete( db, &event_info ) ) {
+                try!( event.finish( db, &event_info ) );
+                try!( db.mark_event_as_finished( event_info.scheduled_id ) );
+            }
+            Ok( result )
         })
     }
 

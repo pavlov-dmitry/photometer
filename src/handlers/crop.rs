@@ -12,7 +12,7 @@ pub fn crop_photo( request: &Request, response: &mut Response ) {
 }
 
 fn crop_photo_answer( request: &Request ) -> AnswerResult {
-    let id = try!( request.get_param_i64( "id" ) );
+    let id = try!( request.get_param_id( "id" ) );
     let x1 = try!( request.get_param_uint( "x1" ) ) as u32;
     let y1 = try!( request.get_param_uint( "y1" ) ) as u32;
     let x2 = try!( request.get_param_uint( "x2" ) ) as u32;
