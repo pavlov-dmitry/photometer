@@ -25,3 +25,8 @@ pub fn fs_error( e: IoError ) -> String {
 pub fn invalid_path_param( prm: &str ) -> String {
     format!( "invalid path param type '{}'", prm )
 }
+
+#[inline]
+pub fn parsing_error_param( prm: &str ) -> String {
+	format!( "error parsing param '{}'", prm )
+}

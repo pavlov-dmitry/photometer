@@ -4,12 +4,16 @@ use std::str;
 use super::err_msg;
 use std::str::{ from_str, FromStr };
 use types::{ CommonResult, Id };
+use time;
+use time::Timespec;
 
 pub trait GetParamable {
     fn get_param( &self, prm: &str ) -> CommonResult<&str>;
     fn get_param_bin( &self, prm: &str ) -> CommonResult<&[u8]>;
     fn get_param_uint( &self, prm: &str ) -> CommonResult<uint>;
     fn get_param_id( &self, prm: &str ) -> CommonResult<Id>;
+    fn get_param_time( &self, prm: &str ) -> CommonResult<Timespec>;
+    fn get_params( &self, prm: &str ) -> CommonResult<&Vec<String>>;
 }
 
 //TODO: проверить на следующей версии раста, а пока ICE =(
@@ -38,6 +42,10 @@ impl<'a, 'b> GetParamable for Request<'a, 'b> {
             }
         }
     }
+    fn get_params( &self, prm: &str ) -> CommonResult<&Vec<String>> {
+        self.parameters( prm )
+            .ok_or( err_msg::param_not_found( prm ) )
+    }
     fn get_param_bin( &self, prm: &str ) -> CommonResult<&[u8]> {
         self.bin_parameter( prm ).ok_or( err_msg::invalid_type_param( prm ) )
     }
@@ -48,6 +56,14 @@ impl<'a, 'b> GetParamable for Request<'a, 'b> {
     fn get_param_id( &self, prm: &str ) -> CommonResult<Id> {
         self.get_param( prm )
             .and_then( |s| from_str::<Id>( s ).ok_or( err_msg::invalid_type_param( prm ) ) ) 
+    }
+
+    fn get_param_time( &self, prm: &str ) -> CommonResult<Timespec> {
+        self.get_param( prm )
+            .and_then( |s| time::strptime( s, "%Y.%m.%d %k:%M:%S" )
+                .map_err( |_| err_msg::parsing_error_param( prm ) )
+                .map( |t| t.to_timespec() )
+            )
     }
 }
 

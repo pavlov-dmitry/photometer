@@ -51,7 +51,16 @@ impl Middleware for ParamsBodyParser {
                     // то просто парсим их
                     for &( ref key, ref value ) in url::form_urlencoded::parse( body_str.as_bytes() ).iter() {
                         // и запихиваем в контейнер текстовых данных
-                        params_hash.insert( key.clone(), value.clone() );
+                        let mut need_insert = false;
+                        match params_hash.get_mut( key ) {
+                            Some( strings ) => strings.push( value.clone() ),
+                            None => need_insert = true
+                        }
+                        if need_insert {
+                            let mut strings = Vec::new();
+                            strings.push( value.clone() );
+                            params_hash.insert( key.clone(), strings );
+                        }                        
                     }
                             
                 }
@@ -69,7 +78,7 @@ impl Middleware for ParamsBodyParser {
 }
 
 pub type BinaryHashMap = HashMap<String, (uint, uint)>;
-pub type StringHashMap = HashMap<String, String>;
+pub type StringHashMap = HashMap<String, Vec<String>>;
 
 fn read_all_binary_parts( body: &[u8], boundary: &[u8], bin_hash: &mut BinaryHashMap, str_hash: &mut StringHashMap ) {
     // из-за ограничений наложенных AnyMap-ом приходится вместо использования стандартного типа &[T]
@@ -100,22 +109,20 @@ fn read_binary_part( body: &[u8], (from, to) : (uint, uint), bin_hash: &mut Bina
     bin_hash.insert( name.to_string(), idx_slice ); 
     // запись имени файла бинарных данных с постфиксом "_filename"
     let filename = try_opt!( parse_utils::str_between( desc_str, "filename=\"", "\"" ) );
-    str_hash.insert( name.to_string() + "_filename", filename.to_string() );
+    let mut values = Vec::new();
+    values.push( filename.to_string() );
+    str_hash.insert( name.to_string() + "_filename", values );
 }
 
 pub trait ParamsBody {
-    fn parameter_string(&self, &String) -> Option<&String>;
-    fn parameter(&self, &str ) -> Option<&String>;
-    fn bin_parameter<'a>(&self, &str) -> Option<&[u8]>;
+    fn parameter(&self, key: &str ) -> Option<&String>;
+    fn bin_parameter<'a>(&self, key: &str) -> Option<&[u8]>;
+    fn parameters( &self, key: &str ) -> Option<&Vec<String>>;
 }
 
 impl<'a, 'b> ParamsBody for Request<'a, 'b> {
-    fn parameter_string(&self, key: &String) -> Option<&String> {
-        self.extensions().get::<StringHashMapKey, StringHashMap>()
-            .and_then( |ref hash| hash.get( key ) )
-    }
     fn parameter(&self, key: &str ) -> Option<&String> {
-        self.parameter_string( &key.to_string() )
+        self.parameters( key ).map( |strings| &strings[ 0 ] )
     }
     fn bin_parameter<'x>(&self, key: &str) -> Option<&[u8]> {
         self.extensions().get::<BinaryHashMapKey, BinaryHashMap>()
@@ -123,6 +130,11 @@ impl<'a, 'b> ParamsBody for Request<'a, 'b> {
                 hash.get( &key.to_string() )
                     .map( |&(from, to)| self.origin.body.slice( from, to ) )
             })
+    }
+
+    fn parameters( &self, key: &str ) -> Option<&Vec<String>> {
+        self.extensions().get::<StringHashMapKey, StringHashMap>()
+            .and_then( |ref hash| hash.get( key ) )
     }
 }
 
