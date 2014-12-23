@@ -41,7 +41,7 @@ impl DbPublication for MyPooledConn {
     /// открывает на просмотр определнную группу фото
     fn make_publication_visible( &mut self, scheduled: Id, group: Id ) -> EmptyResult {
         make_publication_visible_impl( self, scheduled, group )
-            .map_err( |e| fn_failed( "make_it_visible", e ) )
+            .map_err( |e| fn_failed( "make_publication_visible", e ) )
     }
 
     /// кол-во уже опубликованных фото
@@ -65,7 +65,7 @@ fn public_photo_impl( conn: &mut MyPooledConn, scheduled: Id, group: Id, user: I
             visible
         )
         VALUES( ?, ?, ?, ?, ? )
-        ON DUBLICATE KEY UPDATE photo_id=?
+        ON DUPLICATE KEY UPDATE photo_id=?
     "));  
     try!( stmt.execute( &[
         &scheduled,
