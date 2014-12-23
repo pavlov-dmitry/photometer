@@ -1,6 +1,6 @@
 use mysql::conn::pool::{ MyPooledConn };
 use mysql::error::{ MyResult };
-use mysql::value::{ from_value, ToValue };
+use mysql::value::{ from_value, from_value_opt, ToValue };
 use types::{ CommonResult, Id, EmptyResult };
 use time::Timespec;
 use std::fmt::{ Show };
@@ -62,17 +62,35 @@ fn fn_failed<E: Show>( fn_name: &str, e: E ) -> String {
 }
 
 fn timetable_events_impl( conn: &mut MyPooledConn, from: &Timespec, to: &Timespec ) -> MyResult<TimetableEvents> {
-    let mut stmt = try!( conn.prepare( "
+    /*let mut stmt = try!( conn.prepare( "
         SELECT 
             group_id,
             event_id,
             event_name,
             start_time,
-            end_time
+            end_time,
             params
         FROM timetable
-        WHERE version=? AND ? BETWEEN start_time AND end_time 
+        WHERE version=(SELECT timetable_version FROM groups WHERE groups.id=timetable.group_id) AND (start_time BETWEEN ? AND ?) 
+    "));*/
+
+    let mut stmt = try!( conn.prepare( "
+        SELECT 
+            `tt`.`group_id`,
+            `tt`.`event_id`,
+            `tt`.`event_name`,
+            `tt`.`start_time`,
+            `tt`.`end_time`,
+            `tt`.`params`
+        FROM
+            `timetable` AS `tt`
+        LEFT JOIN
+            `groups` AS `g` ON ( `tt`.`version` = `g`.`timetable_version` AND `g`.`id` = `tt`.`group_id` )
+        WHERE
+            `g`.`id` IS NOT NULL
+            AND `tt`.`start_time` BETWEEN ? AND ?
     "));
+    
     let mut result = try!( stmt.execute( &[ &from.sec, &to.sec ] ) );
 
     let mut events = Vec::new();
@@ -98,12 +116,12 @@ fn add_new_timetable_version_impl( conn: &mut MyPooledConn, group_id: Id, new_ti
     let new_version = max_version + 1;
     let mut query = format!("
         INSERT INTO timetable (
-            group_id
-            event_id
-            event_name
-            start_time
-            end_time
-            params
+            group_id,
+            event_id,
+            event_name,
+            start_time,
+            end_time,
+            params,
             version
         )
         VALUES( ?, ?, ?, ?, ?, ?, ? )
@@ -132,11 +150,9 @@ fn add_new_timetable_version_impl( conn: &mut MyPooledConn, group_id: Id, new_ti
 fn get_max_timetable_version( conn: &mut MyPooledConn, group_id: Id ) -> MyResult<u32> {
     let mut stmt = try!( conn.prepare( "SELECT MAX( version ) FROM timetable WHERE group_id=?" ) );
     let mut result = try!( stmt.execute( &[ &group_id ] ) );
-    match result.next() {
-        Some( row ) => {
-            let row = try!( row );
-            Ok( from_value( &row[ 0 ] ) )
-        },
+    let row = try!( result.next().unwrap() );
+    match from_value_opt( &row[ 0 ] ) {
+        Some( val ) => Ok( val ),
         None => Ok( 0 )
     }
 }

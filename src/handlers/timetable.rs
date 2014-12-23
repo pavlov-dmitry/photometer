@@ -36,9 +36,10 @@ fn set_timetable_answer( group_id: Id, req: &Request ) -> AnswerResult {
         let mut events = Vec::new();
         events.push( timetable_event );
 
-        try!( db.add_new_timetable_version( group_id, &events ) );
+        let new_version = try!( db.add_new_timetable_version( group_id, &events ) );
+        try!( db.set_timetable_version( group_id, new_version ) );
         
-        answer.add_record( "new version of timetable", &String::from_str( "found" ) );
+        answer.add_record( "new version of timetable", &String::from_str( "setted" ) );
     }
     else {
         answer.add_error( "group", "not_found" );

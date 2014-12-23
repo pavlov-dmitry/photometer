@@ -23,6 +23,8 @@ pub trait DbGroups {
     fn create_group( &mut self, name: &String, desc: &String ) -> CommonResult<Id>;
     /// добавляет членов группы
     fn add_members( &mut self, group_id: Id, members: &[ Id ] ) -> EmptyResult;
+    /// устанавливает новую версию в таблицу
+    fn set_timetable_version( &mut self, group_id: Id, version: u32 ) -> EmptyResult;
 }
 
 pub fn create_tables( db: &Database ) -> EmptyResult {
@@ -83,6 +85,11 @@ impl DbGroups for MyPooledConn {
         add_members_impl( self, group_id, members )
             .map_err( |e| fn_failed( "add_members", e ) )
     }
+    /// устанавливает новую версию в таблицу
+    fn set_timetable_version( &mut self, group_id: Id, version: u32 ) -> EmptyResult {
+        set_timetable_version_impl( self, group_id, version )
+            .map_err( |e| fn_failed( "set_timetable_version", e ) )
+    }
 }
 
 fn fn_failed<E: Show>( fn_name: &str, e: E ) -> String {
@@ -93,7 +100,7 @@ fn get_members_impl( conn: &mut MyPooledConn, group_id: Id ) -> MyResult<Members
     let mut stmt = try!( conn.prepare( 
         "SELECT 
             g.user_id,
-            u.login, 
+            u.login 
         FROM group_members AS g LEFT JOIN users AS u ON ( u.id = g.user_id )
         WHERE u.id IS NOT NULL AND g.group_id = ?
     "));
@@ -167,5 +174,11 @@ fn add_members_impl( conn: &mut MyPooledConn, group_id: Id, members: &[ Id ] ) -
     }
 
     try!( stmt.execute( values.as_slice() ) );
+    Ok( () )
+}
+
+fn set_timetable_version_impl( conn: &mut MyPooledConn, group_id: Id, version: u32 ) -> MyResult<()> {
+    let mut stmt = try!( conn.prepare( "UPDATE groups SET timetable_version=? WHERE id=?" ) );
+    try!( stmt.execute( &[ &version, &group_id ] ) );
     Ok( () )
 }
