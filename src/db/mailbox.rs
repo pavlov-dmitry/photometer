@@ -6,6 +6,7 @@ use time::{ Timespec };
 use types::{ Id, CommonResult, EmptyResult, MailInfo };
 use std::fmt::{ Show };
 use parse_utils;
+use database::Database;
 
 pub trait DbMailbox {
     /// посылает письмо одному из участников
@@ -16,6 +17,24 @@ pub trait DbMailbox {
     fn messages_from_last( &mut self, owner_id: Id, only_unreaded: bool, offset: u32, count: u32, take_mail: |&MailInfo| ) -> EmptyResult;
     /// помечает сообщение как прочитанное
     fn mark_as_readed( &mut self, owner_id: Id, message_id: Id ) -> CommonResult<bool>;
+}
+
+pub fn create_tables( db: &Database ) -> EmptyResult {
+    db.execute(
+        "CREATE TABLE IF NOT EXISTS `mailbox` (
+            `id` bigint(20) NOT NULL AUTO_INCREMENT,
+            `creation_time` int(11) NOT NULL DEFAULT '0',
+            `recipient_id` int(4) unsigned DEFAULT '0',
+            `sender_name` varchar(128) NOT NULL DEFAULT '',
+            `subject` varchar(128) NOT NULL DEFAULT '',
+            `body` TEXT NOT NULL DEFAULT '',
+            `readed` BOOL NOT NULL DEFAULT false,
+            PRIMARY KEY ( `id` ),
+            KEY `unreaded_messages` ( `recipient_id`, `readed`, `creation_time` ) USING BTREE
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+        ",
+        "db::mailbox::create_tables"
+    )
 }
 
 impl DbMailbox for MyPooledConn {

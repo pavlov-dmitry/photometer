@@ -1,9 +1,10 @@
 use mysql::conn::pool::{ MyPooledConn };
 use mysql::error::{ MyResult };
 use mysql::value::{ from_value, ToValue };
-use types::{ CommonResult, Id };
+use types::{ CommonResult, Id, EmptyResult };
 use time::Timespec;
 use std::fmt::{ Show };
+use database::Database;
 
 pub struct TimetableEventInfo {
     pub group_id: Id,
@@ -21,6 +22,25 @@ pub trait DbTimetable {
     fn timetable_events( &mut self, from: &Timespec, to: &Timespec ) -> CommonResult<TimetableEvents>;
     /// добавляет новый вариант расписания для группы
     fn add_new_timetable_version( &mut self, group_id: Id, new_timetable: &TimetableEvents ) -> CommonResult<u32>;
+}
+
+pub fn create_tables( db: &Database ) -> EmptyResult {
+    db.execute(  
+        "CREATE TABLE IF NOT EXISTS `timetable` (
+            `id` bigint(20) NOT NULL AUTO_INCREMENT,
+            `group_id` bigint(20) NOT NULL DEFAULT '0',
+            `event_id` int(4) NOT NULL DEFAULT '0',
+            `event_name` varchar(128) NOT NULL DEFAULT '',
+            `start_time` int(11) NOT NULL DEFAULT '0',
+            `end_time` int(11) NOT NULL DEFAULT '0',
+            `params` TEXT NOT NULL DEFAULT '',
+            `version` int(4) NOT NULL DEFAULT '0',
+            PRIMARY KEY ( `id` ),
+            KEY `time_idx` ( `start_time`, `end_time`, `version` ) USING BTREE
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+        ",
+        "db::timetable::create_tables"
+    )
 }
 
 impl DbTimetable for MyPooledConn {

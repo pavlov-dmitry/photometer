@@ -1,8 +1,9 @@
 use mysql::conn::pool::{ MyPooledConn };
 use mysql::error::{ MyResult };
 use mysql::value::{ from_value };
-use types::{ Id, CommonResult };
+use types::{ Id, CommonResult, EmptyResult };
 use std::fmt::Show;
+use database::Database;
 
 pub trait DbUsers {
     /// выбирает id пользователя по имени и паролю
@@ -12,6 +13,20 @@ pub trait DbUsers {
     /// проверяет наличие имени в БД
     fn user_exists(&mut self, name: &str) -> CommonResult<bool>;
     fn user_id_exists(&mut self, id: Id ) -> CommonResult<bool>;
+}
+
+pub fn create_tables( db: &Database ) -> EmptyResult {
+    db.execute(  
+        "CREATE TABLE IF NOT EXISTS `users` (
+            `id` bigint(20) NOT NULL AUTO_INCREMENT,
+            `login` varchar(16) NOT NULL DEFAULT '',
+            `password` varchar(32) NOT NULL DEFAULT '',
+            PRIMARY KEY (`id`),
+            KEY `login_idx` (`login`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+        ",
+        "db::users::create_tables"
+    )
 }
 
 impl DbUsers for MyPooledConn {

@@ -6,6 +6,7 @@ use time;
 use time::{ Timespec };
 use std::fmt::Show;
 use events::{ ScheduledEventInfo, EventState, FullEventInfo };
+use database::Database;
 
 //type EventHandler<'a> = |EventInfo|:'a -> EmptyResult;
 type EventInfos = Vec<ScheduledEventInfo>;
@@ -26,6 +27,24 @@ pub trait DbEvents {
     /// помечает что данное событие завершено
     fn mark_event_as_finished( &mut self, scheduled_id: Id ) -> EmptyResult;
     
+}
+
+pub fn create_tables( db: &Database ) -> EmptyResult {
+    db.execute(
+        "CREATE TABLE IF NOT EXISTS `scheduled_events` (
+            `id` bigint(20) NOT NULL AUTO_INCREMENT,
+            `event_id` int(4) NOT NULL DEFAULT '0',
+            `event_name` varchar(128) NOT NULL DEFAULT '',
+            `start_time` int(11) NOT NULL DEFAULT '0',
+            `end_time` int(11) NOT NULL DEFAULT '0',
+            `data` TEXT NOT NULL DEFAULT '',
+            `finished` BOOL NOT NULL DEFAULT false,
+            PRIMARY KEY ( `id` ),
+            KEY `time_idx` ( `start_time`, `end_time`, `finished` )
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+        ",
+        "db::events::create_tables"
+    )
 }
 
 impl DbEvents for MyPooledConn {

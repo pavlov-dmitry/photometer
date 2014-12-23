@@ -2,8 +2,9 @@ use mysql::conn::pool::{ MyPooledConn };
 use mysql::error::{ MyResult };
 use mysql::value::{ from_value, from_value_opt, ToValue, FromValue, Value };
 use std::slice::{ Items };
-use types::{ Id, PhotoInfo, ImageType, CommonResult };
+use types::{ Id, PhotoInfo, ImageType, CommonResult, EmptyResult };
 use time::{ Timespec };
+use database::Database;
 
 pub trait DbPhotos {
 	/// добавление фотографии в галлерею пользователя
@@ -16,6 +17,30 @@ pub trait DbPhotos {
     fn get_photo_infos_count( &mut self, owner_id: Id, start: Timespec, end: Timespec ) -> CommonResult<u32>;
     ///переименование фотографии
     fn rename_photo( &mut self, photo_id: Id, newname: &str ) -> CommonResult<()>;
+}
+
+pub fn create_tables( db: &Database ) -> EmptyResult {
+    db.execute(  
+        "CREATE TABLE IF NOT EXISTS `images` (
+            `id` bigint(20) NOT NULL AUTO_INCREMENT,
+            `owner_id` int(4) unsigned DEFAULT '0',
+            `upload_time` int(11) NOT NULL DEFAULT '0',
+            `type` enum( 'jpg', 'png' ) NOT NULL DEFAULT 'jpg',
+            `width` int(4) unsigned DEFAULT '0',
+            `height` int(4) unsigned DEFAULT '0',
+            `name` varchar(64) NOT NULL DEFAULT '',
+            `iso` int(11) unsigned DEFAULT '0',
+            `shutter_speed` int(11) DEFAULT '0',
+            `aperture` decimal(8,4) NOT NULL DEFAULT '0',
+            `focal_length` int(4) unsigned DEFAULT '0',
+            `focal_length_35mm` int(4) unsigned DEFAULT '0',
+            `camera_model` varchar(64) NOT NULL DEFAULT '',
+            PRIMARY KEY ( `id` ),
+            KEY `owner_image` ( `owner_id`, `upload_time` )
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+        ",
+        "db::photos::create_tables"
+    )
 }
 
 const ISO_DEFAULT: u32 = 0;

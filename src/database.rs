@@ -7,6 +7,8 @@ use nickel::{ Request, Response, Continue, MiddlewareResult, Middleware };
 use types::{ CommonResult, EmptyResult };
 use typemap::Assoc;
 use plugin::Extensible;
+use db;
+use err_msg;
 
 pub trait Databaseable {
     fn get_db_conn(&self) -> CommonResult<MyPooledConn>;
@@ -21,15 +23,14 @@ pub type DbConnection = MyPooledConn;
 
 impl Database {
     fn init(&self) -> EmptyResult {
-        try!( self.create_users_table() );
-        try!( self.create_images_table() );
-        try!( self.create_mailbox_table() );
-        try!( self.create_group_table() );
-        try!( self.create_group_members_table() );
-        try!( self.create_scheduled_events_table() );
-        try!( self.create_publications_table() );
-        try!( self.create_timetable_table() );
-        try!( self.create_votes_table() );
+        try!( db::users::create_tables( self ) );
+        try!( db::photos::create_tables( self ) );
+        try!( db::mailbox::create_tables( self ) );
+        try!( db::groups::create_tables( self ) );
+        try!( db::events::create_tables( self ) );
+        try!( db::publication::create_tables( self ) );
+        try!( db::timetable::create_tables( self ) );
+        try!( db::votes::create_tables( self ) );
         try!( self.init_names() );
         Ok( () )
     }
@@ -38,166 +39,13 @@ impl Database {
         self.execute( "set names utf8;", "init_names" )
     }
 
-    fn create_users_table(&self) -> EmptyResult {
-        self.execute( "
-            CREATE TABLE IF NOT EXISTS `users` (
-                `id` bigint(20) NOT NULL AUTO_INCREMENT,
-                `login` varchar(16) NOT NULL DEFAULT '',
-                `password` varchar(32) NOT NULL DEFAULT '',
-                PRIMARY KEY (`id`),
-                KEY `login_idx` (`login`)
-            ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-            ", 
-            "create_users_table" 
-        )
-    }
-
-    fn create_images_table(&self) -> EmptyResult {
-        self.execute( "
-            CREATE TABLE IF NOT EXISTS `images` (
-                `id` bigint(20) NOT NULL AUTO_INCREMENT,
-                `owner_id` int(4) unsigned DEFAULT '0',
-                `upload_time` int(11) NOT NULL DEFAULT '0',
-                `type` enum( 'jpg', 'png' ) NOT NULL DEFAULT 'jpg',
-                `width` int(4) unsigned DEFAULT '0',
-                `height` int(4) unsigned DEFAULT '0',
-                `name` varchar(64) NOT NULL DEFAULT '',
-                `iso` int(11) unsigned DEFAULT '0',
-                `shutter_speed` int(11) DEFAULT '0',
-                `aperture` decimal(8,4) NOT NULL DEFAULT '0',
-                `focal_length` int(4) unsigned DEFAULT '0',
-                `focal_length_35mm` int(4) unsigned DEFAULT '0',
-                `camera_model` varchar(64) NOT NULL DEFAULT '',
-                PRIMARY KEY ( `id` ),
-                KEY `owner_image` ( `owner_id`, `upload_time` )
-            ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-            ", 
-            "create_images_table" 
-        )
-    }
-
-    fn create_mailbox_table(&self) -> EmptyResult {
-        self.execute( "
-            CREATE TABLE IF NOT EXISTS `mailbox` (
-                `id` bigint(20) NOT NULL AUTO_INCREMENT,
-                `creation_time` int(11) NOT NULL DEFAULT '0',
-                `recipient_id` int(4) unsigned DEFAULT '0',
-                `sender_name` varchar(128) NOT NULL DEFAULT '',
-                `subject` varchar(128) NOT NULL DEFAULT '',
-                `body` TEXT NOT NULL DEFAULT '',
-                `readed` BOOL NOT NULL DEFAULT false,
-                PRIMARY KEY ( `id` ),
-                KEY `unreaded_messages` ( `recipient_id`, `readed`, `creation_time` ) USING BTREE
-            ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-            ", 
-            "create_mailbox_table" 
-        )
-    }
-
-    fn create_group_table(&self) -> EmptyResult {
-        self.execute(
-            "CREATE TABLE IF NOT EXISTS `groups` (
-                `id` bigint(20) NOT NULL AUTO_INCREMENT,
-                `name` varchar(128) NOT NULL DEFAULT '',
-                `description` TEXT NOT NULL DEFAULT '',
-                `timetable_version` int(4) unsigned DEFAULT '0',
-                PRIMARY KEY ( `id` )
-            ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-            ",
-            "create_group_table"
-        )
-    }
-
-    fn create_group_members_table(&self) -> EmptyResult {
-        self.execute(
-            "CREATE TABLE IF NOT EXISTS `group_members` (
-                `id` bigint(20) NOT NULL AUTO_INCREMENT,
-                `user_id` bigint(20) NOT NULL DEFAULT '0',
-                `group_id` bigint(20) NOT NULL DEFAULT '0',
-                PRIMARY KEY ( `id` ),
-                KEY `members_idx` ( `user_id`, `group_id` )
-            ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-            ",
-            "create_group_members_table"
-        )
-    }
-
-    fn create_scheduled_events_table(&self) -> EmptyResult {
-        self.execute(
-            "CREATE TABLE IF NOT EXISTS `scheduled_events` (
-                `id` bigint(20) NOT NULL AUTO_INCREMENT,
-                `event_id` int(4) NOT NULL DEFAULT '0',
-                `event_name` varchar(128) NOT NULL DEFAULT '',
-                `start_time` int(11) NOT NULL DEFAULT '0',
-                `end_time` int(11) NOT NULL DEFAULT '0',
-                `data` TEXT NOT NULL DEFAULT '',
-                `finished` BOOL NOT NULL DEFAULT false,
-                PRIMARY KEY ( `id` ),
-                KEY `time_idx` ( `start_time`, `end_time`, `finished` )
-            ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-            ",
-            "create_events_table"
-        )
-    }
-
-    fn create_publications_table(&self) -> EmptyResult {
-        self.execute(
-            "CREATE TABLE IF NOT EXISTS `publication` (
-                `id` bigint(20) NOT NULL AUTO_INCREMENT,
-                `scheduled_id` bigint(20) NOT NULL DEFAULT '0',
-                `group_id` bigint(20) NOT NULL DEFAULT '0',
-                `user_id` bigint(20) NOT NULL DEFAULT '0',
-                `photo_id` bigint(20) NOT NULL DEFAULT '0',
-                `visible` BOOL NOT NULL DEFAULT false,
-                PRIMARY KEY ( `id` ),
-                KEY `group_publication_idx` ( `group_id`, `scheduled_id`, `visible` ) USING BTREE
-            ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-            ",
-            "create_publications_table"
-        )
-    }
-
-    fn create_timetable_table(&self) -> EmptyResult {
-        self.execute("
-            CREATE TABLE IF NOT EXISTS `timetable` (
-                `id` bigint(20) NOT NULL AUTO_INCREMENT,
-                `group_id` bigint(20) NOT NULL DEFAULT '0',
-                `event_id` int(4) NOT NULL DEFAULT '0',
-                `event_name` varchar(128) NOT NULL DEFAULT '',
-                `start_time` int(11) NOT NULL DEFAULT '0',
-                `end_time` int(11) NOT NULL DEFAULT '0',
-                `params` TEXT NOT NULL DEFAULT '',
-                `version` int(4) NOT NULL DEFAULT '0',
-                PRIMARY KEY ( `id` ),
-                KEY `time_idx` ( `start_time`, `end_time`, `version` ) USING BTREE
-            ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-            ",
-            "create_timetable_table"
-        )
-    }
-
-    fn create_votes_table(&self) -> EmptyResult {
-        self.execute("
-            CREATE TABLE IF NOT EXISTS `votes` (
-                `id` bigint(20) NOT NULL AUTO_INCREMENT,
-                `scheduled_id` bigint(20) NOT NULL DEFAULT '0',
-                `user_id` bigint(20) NOT NULL DEFAULT '0',
-                `voted` BOOL NOT NULL DEFAULT false,
-                `vote` BOOL NOT NULL DEFAULT false,
-                PRIMARY KEY ( `id` ),
-                KEY `voted_idx` ( `scheduled_id`, `user_id`, `voted` ) USING BTREE
-            ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-            ",
-            "create_votes_table"
-        )
-    }
-
-    fn execute( &self, query: &str, name: &str ) -> EmptyResult {
+    pub fn execute( &self, query: &str , fn_name: &str ) -> EmptyResult {
         match self.pool.query( query ) {
-            Ok(_)=> Ok( () ),
-            Err( e ) => Err( format!( "Database {} failed: {}", name, e ) )
+            Ok(_) => Ok( () ),
+            Err( e ) => Err( err_msg::fn_failed( fn_name, e ) )
         }
     }
+
 }
 
 pub fn create_db_connection( 

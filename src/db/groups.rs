@@ -4,6 +4,7 @@ use mysql::value::{ from_value, ToValue };
 use types::{ Id, CommonResult, EmptyResult };
 use authentication::{ User };
 use std::fmt::{ Show };
+use database::Database;
   
 type Members = Vec<User>;
 
@@ -22,6 +23,31 @@ pub trait DbGroups {
     fn create_group( &mut self, name: &String, desc: &String ) -> CommonResult<Id>;
     /// добавляет членов группы
     fn add_members( &mut self, group_id: Id, members: &[ Id ] ) -> EmptyResult;
+}
+
+pub fn create_tables( db: &Database ) -> EmptyResult {
+    try!( db.execute(
+        "CREATE TABLE IF NOT EXISTS `groups` (
+            `id` bigint(20) NOT NULL AUTO_INCREMENT,
+            `name` varchar(128) NOT NULL DEFAULT '',
+            `description` TEXT NOT NULL DEFAULT '',
+            `timetable_version` int(4) unsigned DEFAULT '0',
+            PRIMARY KEY ( `id` )
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+        ",
+        "db::groups::create_tables(groups)" 
+    ));
+    db.execute( 
+        "CREATE TABLE IF NOT EXISTS `group_members` (
+            `id` bigint(20) NOT NULL AUTO_INCREMENT,
+            `user_id` bigint(20) NOT NULL DEFAULT '0',
+            `group_id` bigint(20) NOT NULL DEFAULT '0',
+            PRIMARY KEY ( `id` ),
+            KEY `members_idx` ( `user_id`, `group_id` )
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+        ",
+        "db::groups::create_tables(group_members)" 
+    )
 }
 
 impl DbGroups for MyPooledConn {

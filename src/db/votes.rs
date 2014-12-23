@@ -3,6 +3,7 @@ use mysql::error::{ MyResult };
 use mysql::value::{ from_value, ToValue };
 use std::fmt::{ Show };
 use types::{ Id, EmptyResult, CommonResult };
+use database::Database;
 
 pub struct Votes {
     pub all_count: u32,
@@ -21,6 +22,22 @@ pub trait DbVotes {
     fn get_votes( &mut self, scheduled_id: Id ) -> CommonResult<Votes>;
     /// голосуем 
     fn set_vote( &mut self, scheduled_id: Id, user_id: Id, vote: bool ) -> EmptyResult;
+}
+
+pub fn create_tables( db: &Database ) -> EmptyResult {
+    db.execute( "
+        CREATE TABLE IF NOT EXISTS `votes` (
+            `id` bigint(20) NOT NULL AUTO_INCREMENT,
+            `scheduled_id` bigint(20) NOT NULL DEFAULT '0',
+            `user_id` bigint(20) NOT NULL DEFAULT '0',
+            `voted` BOOL NOT NULL DEFAULT false,
+            `vote` BOOL NOT NULL DEFAULT false,
+            PRIMARY KEY ( `id` ),
+            KEY `voted_idx` ( `scheduled_id`, `user_id`, `voted` ) USING BTREE
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+        ",
+        "db::votes::create_tables"
+    )
 }
 
 impl DbVotes for MyPooledConn {

@@ -3,6 +3,7 @@ use mysql::error::{ MyResult };
 use mysql::value::{ from_value };
 use types::{ Id, EmptyResult, CommonResult };
 use std::fmt::{ Show };
+use database::Database;
 
 pub trait DbPublication {
     /// публикует фото
@@ -11,6 +12,23 @@ pub trait DbPublication {
     fn make_publication_visible( &mut self, scheduled: Id, group: Id ) -> EmptyResult;
     /// кол-во уже опубликованных фото
     fn get_published_photo_count( &mut self, scheduled: Id, group: Id ) -> CommonResult<u32>;
+}
+
+pub fn create_tables( db: &Database ) -> EmptyResult {
+    db.execute(
+        "CREATE TABLE IF NOT EXISTS `publication` (
+            `id` bigint(20) NOT NULL AUTO_INCREMENT,
+            `scheduled_id` bigint(20) NOT NULL DEFAULT '0',
+            `group_id` bigint(20) NOT NULL DEFAULT '0',
+            `user_id` bigint(20) NOT NULL DEFAULT '0',
+            `photo_id` bigint(20) NOT NULL DEFAULT '0',
+            `visible` BOOL NOT NULL DEFAULT false,
+            PRIMARY KEY ( `id` ),
+            KEY `group_publication_idx` ( `group_id`, `scheduled_id`, `visible` ) USING BTREE
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+        ",
+        "db::publications::create_tables"
+    )
 }
 
 impl DbPublication for MyPooledConn {
