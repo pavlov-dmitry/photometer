@@ -120,10 +120,10 @@ fn make_subject( name: &String ) -> String {
 
 fn make_text_body( user: &String, info: &ScheduledEventInfo ) -> String {
     format!( 
-        "Привет {}!
-        Настало время публиковать фотографии для '{}'.
-        Ты можешь сделать перейдя по вот этой ссылке: {}
-        ", 
+"Привет {}!
+Настало время публиковать фотографии для '{}'.
+Ты можешь сделать перейдя по вот этой ссылке: {}
+", 
         user,
         info.name,
         make_event_action_link( info.scheduled_id )
