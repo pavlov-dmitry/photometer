@@ -22,7 +22,7 @@ pub trait DbEvents {
     /// текущая состояние события
     fn current_event_state( &mut self, scheduled_id: Id ) -> CommonResult<Option<EventState>>;
     /// добавляет события пачкой
-    fn add_events( &mut self, events: &Vec<FullEventInfo> ) -> EmptyResult;
+    fn add_events( &mut self, events: &[FullEventInfo] ) -> EmptyResult;
     /// помечает что данное событие завершено
     fn mark_event_as_finished( &mut self, scheduled_id: Id ) -> EmptyResult;
     
@@ -60,7 +60,7 @@ impl DbEvents for MyPooledConn {
     }
 
     /// добавляет события
-    fn add_events( &mut self, events: &Vec<FullEventInfo> ) -> EmptyResult {
+    fn add_events( &mut self, events: &[FullEventInfo] ) -> EmptyResult {
         add_events_impl( self, events )
             .map_err( |e| fn_failed( "add_events", e ) )
     }
@@ -161,7 +161,7 @@ fn current_event_state_impl( conn: &mut MyPooledConn, scheduled_id: Id ) -> MyRe
     Ok( result )
 }
 
-fn add_events_impl( conn: &mut MyPooledConn, events: &Vec<FullEventInfo> ) -> MyResult<()> {
+fn add_events_impl( conn: &mut MyPooledConn, events: &[FullEventInfo] ) -> MyResult<()> {
     let mut query = format!( 
         "INSERT INTO scheduled_events (
             event_id,
@@ -179,7 +179,8 @@ fn add_events_impl( conn: &mut MyPooledConn, events: &Vec<FullEventInfo> ) -> My
 
     let mut stmt = try!( conn.prepare( query.as_slice() ) );
     let mut values: Vec<&ToValue> = Vec::new();
-    for event in  events.iter() {
+    for i in range( 0, events.len() ) {
+        let event = &events[ i ];
         values.push( &event.id );
         values.push( &event.name );
         values.push( &event.start_time.sec );

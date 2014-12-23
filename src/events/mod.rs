@@ -62,7 +62,7 @@ pub trait UserEvent {
     /// описание создания
     fn user_creating_get( &self, request: &Request ) -> AnswerResult;
     /// применение создания
-    fn user_creating_post( &self, db: &mut DbConnection, request: &mut Request ) -> Result<String, AnswerResult>;
+    fn user_creating_post( &self, db: &mut DbConnection, request: &Request ) -> Result<String, AnswerResult>;
 }
 
 pub fn make_event_action_link( id: Id ) -> String {

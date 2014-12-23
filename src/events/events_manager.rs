@@ -11,8 +11,10 @@ use db::timetable::DbTimetable;
 use types::{ EmptyResult, CommonResult };
 use time::{ Timespec };
 use super::publication::Publication;
+use super::group_creation::GroupCreation;
 use answer::{ Answer, AnswerResult };
 use types::{ Id };
+use get_param::GetParamable;
 
 #[deriving(Clone)]
 struct EventsManager {
@@ -99,13 +101,44 @@ impl EventsManager {
         }
         // елси хоть что нить создали, то записываем их в запланированные события
         if events.is_empty() == false {
-            try!( db.add_events( &events ) );
+            try!( db.add_events( events.as_slice() ) );
         }
         Ok( () )
     }
 
+    /// создание пользовательского события
+    pub fn user_creation_get( &self, event_id: Id, req: &Request ) -> AnswerResult {
+        let event = try!( self.events.get_user_event( event_id ) );
+        event.user_creating_get( req )
+    }
+
+    pub fn user_creation_post( &self, event_id: Id, db: &mut DbConnection, req: &Request ) -> AnswerResult {
+        let name = try!( req.get_param( "name" ) ).to_string();
+        let start_time = try!( req.get_param_time( "start_time" ) );
+        let end_time = try!( req.get_param_time( "end_time" ) );
+
+        let event = try!( self.events.get_user_event( event_id ) );
+        match event.user_creating_post( db, req ) {
+            Ok( data ) => {
+                let event = FullEventInfo {
+                    id: event_id,
+                    name: name,
+                    start_time: start_time,
+                    end_time: end_time,
+                    data: data
+                };
+                try!( db.add_events( &[ event ] ) );
+
+                let mut answer = Answer::new();
+                answer.add_record( "event", &"created".to_string() );
+                Ok( answer )
+            }
+            Err( answer_result ) => answer_result
+        }
+    }
+
     // db приходится передавать по цепочке, иначе содается вторая mut ссылка в замыкании, что естественно делать нельзя
-    fn if_has_event( &self, db: &mut DbConnection, scheduled_id: Id, req: &Request, 
+    fn if_has_event( &self, db: &mut DbConnection, scheduled_id: Id, _req: &Request, 
         do_this: |&EventPtr, ScheduledEventInfo, &mut DbConnection| -> AnswerResult 
     ) -> AnswerResult {
         match try!( db.event_info( scheduled_id ) ) {
@@ -131,9 +164,14 @@ impl EventsManager {
 
 pub fn middleware( time_store_file_path: &String ) -> EventsManager {
     let mut events_collection = EventsCollection::new();
+
     let publication = Publication::new();
     events_collection.add( publication.clone() );
     events_collection.add_timetable( publication.id(), publication.clone() );
+
+    let group_creation = GroupCreation::new();
+    events_collection.add( group_creation.clone() );
+    events_collection.add_user_event( group_creation.id(), group_creation.clone() );
 
     EventsManager {
         time_store: Arc::new( TimeStore::new( Path::new( time_store_file_path.as_slice() ) ) ),

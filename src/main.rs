@@ -65,11 +65,14 @@ fn main() {
     router.get( handlers::events::info_path(), handlers::events::info );
     router.get( handlers::events::action_path(), handlers::events::action_get );
     router.post( handlers::events::action_path(), handlers::events::action_post );
+    router.get( handlers::events::create_path(), handlers::events::create_get );
+    router.post( handlers::events::create_path(), handlers::events::create_post );
 
     router.post( handlers::timetable::timetable_path(), handlers::timetable::set_timetable );
 
     authentication_router.post( "/login", handlers::login ) ;
     authentication_router.post( "/join_us", handlers::join_us ) ;
+    authentication_router.get( handlers::events::trigger_path(), handlers::events::trigger );
     
     server.utilize( authentication::create_session_store() );
     server.utilize( db );

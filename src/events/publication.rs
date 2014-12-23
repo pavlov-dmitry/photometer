@@ -2,7 +2,6 @@ use super::{ Event, CreateFromTimetable, ScheduledEventInfo, make_event_action_l
 use types::{ Id, EmptyResult, CommonResult };
 use answer::{ Answer, AnswerResult };
 use serialize::json;
-use std::error::FromError;
 use db::mailbox::DbMailbox;
 use db::groups::DbGroups;
 use db::publication::DbPublication;
@@ -10,7 +9,7 @@ use db::photos::DbPhotos;
 use get_param::GetParamable;
 use database::DbConnection;
 use nickel::{ Request };
-use authentication::{ Userable, User };
+use authentication::{ Userable };
 
 #[deriving(Clone)]
 pub struct Publication;
@@ -39,7 +38,7 @@ impl Event for Publication {
                 user.id, 
                 sender_name.as_slice(), 
                 subject.as_slice(), 
-                make_text_body( &user.name, &info, body ).as_slice() 
+                make_text_body( &user.name, body ).as_slice() 
             ) );
         }
         Ok( () )
@@ -53,7 +52,7 @@ impl Event for Publication {
         Ok( () )
     }
     /// описание действиz пользователя на это событие 
-    fn user_action_get( &self, db: &mut DbConnection, request: &Request, body: &ScheduledEventInfo ) -> AnswerResult {
+    fn user_action_get( &self, _db: &mut DbConnection, _request: &Request, _body: &ScheduledEventInfo ) -> AnswerResult {
         let mut answer = Answer::new();
         // TODO: переделать на нормальное отдачу, поговорить с Саньком, что ему нужно в этот момент
         answer.add_record( "choose", &"from_gallery".to_string() );
@@ -80,7 +79,7 @@ impl Event for Publication {
         Ok( answer )
     }
     /// информация о состоянии события
-    fn info_get( &self, db: &mut DbConnection, request: &Request, body: &ScheduledEventInfo ) -> AnswerResult {
+    fn info_get( &self, db: &mut DbConnection, _request: &Request, body: &ScheduledEventInfo ) -> AnswerResult {
         let info = try!( get_info( &body.data ) );
         let group_members_count = try!( db.get_members_count( info.group_id ) );
         let published_photo_count = try!( db.get_published_photo_count( body.scheduled_id, info.group_id ) );
@@ -93,7 +92,7 @@ impl Event for Publication {
         Ok( answer )
     }
     /// проверка на возможное досрочное завершение
-    fn is_complete( &self, db: &mut DbConnection, body: &ScheduledEventInfo ) -> CommonResult<bool> {
+    fn is_complete( &self, _db: &mut DbConnection, _body: &ScheduledEventInfo ) -> CommonResult<bool> {
         // публикацию досрочно заверщать не будем, есть в ожидании что-то интересное
         Ok( false )
     }
@@ -119,10 +118,10 @@ fn make_subject( name: &String ) -> String {
     format!( "Пора выкладывать {}", name )
 }
 
-fn make_text_body( user: &String, group: &Info, info: &ScheduledEventInfo ) -> String {
+fn make_text_body( user: &String, info: &ScheduledEventInfo ) -> String {
     format!( 
         "Привет {}!
-        Настало время публиковать фотографии для {}.
+        Настало время публиковать фотографии для '{}'.
         Ты можешь сделать перейдя по вот этой ссылке: {}
         ", 
         user,

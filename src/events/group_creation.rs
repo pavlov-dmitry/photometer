@@ -9,7 +9,6 @@ use nickel::{ Request };
 use answer::{ Answer, AnswerResult };
 use get_param::GetParamable;
 use database::DbConnection;
-use nickel::QueryString;
 use db::votes::DbVotes;
 use db::mailbox::DbMailbox;
 use db::users::DbUsers;
@@ -17,10 +16,10 @@ use db::groups::DbGroups;
 use authentication::Userable;
 
 #[deriving(Clone)]
-struct GroupCreation;
+pub struct GroupCreation;
 
 impl GroupCreation {
-    fn new() -> GroupCreation {
+    pub fn new() -> GroupCreation {
         GroupCreation
     }
 }
@@ -32,20 +31,15 @@ type Members = HashSet<Id>;
 
 impl UserEvent for GroupCreation {
     /// описание создания
-    fn user_creating_get( &self, request: &Request ) -> AnswerResult {
+    fn user_creating_get( &self, _request: &Request ) -> AnswerResult {
         let mut answer = Answer::new();
         answer.add_record( "edit_event", &ID );
         Ok( answer )
     }
     /// применение создания
-    fn user_creating_post( &self, db: &mut DbConnection, req: &mut Request ) -> Result<String, AnswerResult> {
-        let mut members_str = req.query( MEMBERS, "" ).into_owned();
+    fn user_creating_post( &self, db: &mut DbConnection, req: &Request ) -> Result<String, AnswerResult> {
+        let members_str = try!( req.get_params( MEMBERS ) );
         let mut answer = Answer::new();
-        //проверка на наличие данных
-        if members_str.is_empty() {
-            answer.add_error( "members", "not_found" );
-            return Err( Ok( answer ) ); // ну и конструкция %(
-        }
 
         let mut info = Info {
             initiator: req.user().id,
@@ -54,12 +48,11 @@ impl UserEvent for GroupCreation {
             description: try!( req.get_param( "description" ) ).to_string()
         };
         //конвертация идентификаторов из строк
-        let mut members: Members = HashSet::new(); 
         for member_str in members_str.iter() {
-            members.insert( try!( convert_member( member_str ) ) );
+            info.members.insert( try!( convert_member( member_str ) ) );
         }
         // проверка наличия пользователей
-        for member in members.iter() {
+        for member in info.members.iter() {
             if try!( db.user_id_exists( *member ) ) == false {
                 answer.add_error( "user", "not_found" );
                 return Err( Ok( answer ) );
@@ -157,7 +150,7 @@ impl Event for GroupCreation {
         Ok( answer )
     }
     /// информация о состоянии события
-    fn info_get( &self, db: &mut DbConnection, request: &Request, body: &ScheduledEventInfo ) -> AnswerResult {
+    fn info_get( &self, db: &mut DbConnection, _request: &Request, body: &ScheduledEventInfo ) -> AnswerResult {
         let info = try!( get_info( &body.data ) );
         let votes = try!( db.get_votes( body.scheduled_id ) );
         let mut answer = Answer::new();

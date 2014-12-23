@@ -4,7 +4,6 @@ use db::timetable::{ DbTimetable, TimetableEventInfo };
 use db::groups::DbGroups;
 use database::Databaseable;
 use get_param::GetParamable;
-use time;
 use types::{ Id };
 use http::status::Status;
 
@@ -23,21 +22,15 @@ fn set_timetable_answer( group_id: Id, req: &Request ) -> AnswerResult {
     let mut answer = Answer::new();
 
     if try!( db.is_group_id_exists( group_id ) ) {
-        let start_time_str = try!( req.get_param( "start_time" ) );
-        let start_time = try!( time::strptime( start_time_str, "%Y.%m.%d %k:%M:%S" )
-            .map_err( |e| format!( "error parsing `start_time`: {}", e ) ) 
-        );
-        let end_time_str = try!( req.get_param( "end_time" ) );
-        let end_time = try!( time::strptime( end_time_str, "%Y.%m.%d %k:%M:%S" )
-            .map_err( |e| format!( "error parsing `end_time`: {}", e ) ) 
-        );
+        let start_time = try!( req.get_param_time( "start_time" ) );
+        let end_time = try!( req.get_param_time( "end_time" ) );
 
         let timetable_event = TimetableEventInfo {
             group_id: group_id,
             event_id: try!( req.get_param_id( "event_id" ) ),
             event_name: try!( req.get_param( "event_name" ) ).to_string(),
-            start_time: start_time.to_timespec(),
-            end_time: end_time.to_timespec(),
+            start_time: start_time,
+            end_time: end_time,
             params: try!( req.get_param( "params" ) ).to_string(),
         };
         let mut events = Vec::new();
