@@ -141,7 +141,7 @@ fn get_votes_impl( conn: &mut MyPooledConn, scheduled_id: Id ) -> MyResult<Votes
 }
 
 fn set_vote_impl( conn: &mut MyPooledConn, scheduled_id: Id, user_id: Id, vote: bool ) -> MyResult<()> {
-    let mut stmt = try!( conn.prepare( "UPDATE votes SET vote=? WHERE scheduled_id=? AND user_id=?" ) );
+    let mut stmt = try!( conn.prepare( "UPDATE votes SET vote=?, voted=true WHERE scheduled_id=? AND user_id=?" ) );
     try!( stmt.execute( &[ &vote, &scheduled_id, &user_id ] ) );
     Ok( () )
 }
