@@ -2,7 +2,13 @@ use std::collections::HashSet;
 use serialize::json;
 use std::error::FromError;
 
-use super::{ Event, ScheduledEventInfo, UserEvent, make_event_action_link };
+use super::{ 
+    Event, 
+    ScheduledEventInfo, 
+    UserEvent, 
+    FullEventInfo, 
+    make_event_action_link 
+};
 use err_msg;
 use types::{ Id, EmptyResult, CommonResult };
 use nickel::{ Request };
@@ -14,6 +20,8 @@ use db::mailbox::DbMailbox;
 use db::users::DbUsers;
 use db::groups::DbGroups;
 use authentication::Userable;
+use time;
+use std::time::Duration;
 
 #[deriving(Clone)]
 pub struct GroupCreation;
@@ -37,14 +45,15 @@ impl UserEvent for GroupCreation {
         Ok( answer )
     }
     /// применение создания
-    fn user_creating_post( &self, db: &mut DbConnection, req: &Request ) -> Result<String, AnswerResult> {
+    fn user_creating_post( &self, db: &mut DbConnection, req: &Request ) -> Result<FullEventInfo, AnswerResult> {
         let members_str = try!( req.get_params( MEMBERS ) );
+        let group_name = try!( req.get_param( "name" ) );
         let mut answer = Answer::new();
 
         let mut info = Info {
             initiator: req.user().id,
             members: HashSet::new(),
-            name: try!( req.get_param( "name" ) ).to_string(),
+            name: group_name.to_string(),
             description: try!( req.get_param( "description" ) ).to_string()
         };
         //конвертация идентификаторов из строк
@@ -59,7 +68,15 @@ impl UserEvent for GroupCreation {
             }
         }
         //формирование 
-        Ok( json::encode( &info ) )
+        let start_time = time::get_time();
+        let end_time = start_time + Duration::days( 1 );
+        Ok( FullEventInfo {
+            id: ID,
+            name: group_name.to_string(),
+            start_time: start_time,
+            end_time: end_time,
+            data: json::encode( &info )
+        })
     }
 }
 

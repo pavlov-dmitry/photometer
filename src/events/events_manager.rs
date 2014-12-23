@@ -14,7 +14,6 @@ use super::publication::Publication;
 use super::group_creation::GroupCreation;
 use answer::{ Answer, AnswerResult };
 use types::{ Id };
-use get_param::GetParamable;
 
 #[deriving(Clone)]
 struct EventsManager {
@@ -113,20 +112,9 @@ impl EventsManager {
     }
 
     pub fn user_creation_post( &self, event_id: Id, db: &mut DbConnection, req: &Request ) -> AnswerResult {
-        let name = try!( req.get_param( "name" ) ).to_string();
-        let start_time = try!( req.get_param_time( "start_time" ) );
-        let end_time = try!( req.get_param_time( "end_time" ) );
-
         let event = try!( self.events.get_user_event( event_id ) );
         match event.user_creating_post( db, req ) {
-            Ok( data ) => {
-                let event = FullEventInfo {
-                    id: event_id,
-                    name: name,
-                    start_time: start_time,
-                    end_time: end_time,
-                    data: data
-                };
+            Ok( event ) => {
                 try!( db.add_events( &[ event ] ) );
 
                 let mut answer = Answer::new();
