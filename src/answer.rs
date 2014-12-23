@@ -52,6 +52,9 @@ impl<'a, 'b> AnswerSendable for Response<'a, 'b> {
             &Err( ref err_desc ) => self.send( err_desc.as_slice() ),
             &Ok( ref answer ) => {
                 self.content_type( MediaType::Json );
+                if let Some( ref mut content_type ) = self.origin.headers.content_type {
+                    content_type.parameters.push( ( "charset".to_string(), "utf8".to_string() ) );
+                }
                 self.send( json::encode( answer ).as_slice() );
             }
         }

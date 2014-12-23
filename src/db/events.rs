@@ -17,7 +17,7 @@ pub trait DbEvents {
     /// считывает события которые исполняются в опеределенный момент
     fn active_events( &mut self, time: &Timespec ) -> CommonResult<EventInfos>;
     /// считывает собыятия которые должны закончится за период
-    fn ending_events( &mut self, from: &Timespec, to: &Timespec ) -> CommonResult<EventInfos>;
+    fn ending_events( &mut self, moment: &Timespec ) -> CommonResult<EventInfos>;
     /// информация о событии 
     fn event_info( &mut self, scheduled_id: Id ) -> CommonResult<Option<ScheduledEventInfo>>;
     /// текущая состояние события
@@ -50,19 +50,19 @@ pub fn create_tables( db: &Database ) -> EmptyResult {
 impl DbEvents for MyPooledConn {
     /// считывает события которые должны стратануть за период
     fn starting_events( &mut self, from: &Timespec, to: &Timespec ) -> CommonResult<EventInfos> {
-        get_events_impl( self, "start_time BETWEEN ? AND ?", &[ &from.sec, &to.sec ] )
+        get_events_impl( self, "(start_time BETWEEN ? AND ?) AND finished=false", &[ &from.sec, &to.sec ] )
             .map_err( |e| fn_failed( "starting_events", e ) )
     }
 
     /// считывает события которые исполняются в опеределенный момент
     fn active_events( &mut self, time: &Timespec ) -> CommonResult<EventInfos> {
-        get_events_impl( self, "? BETWEEN start_time AND end_time AND finished=false", &[ &time.sec ] )
+        get_events_impl( self, "(? BETWEEN start_time AND end_time) AND finished=false", &[ &time.sec ] )
             .map_err( |e| fn_failed( "active_events", e ) )
     }
 
     /// считывает собыятия которые должны закончится за период
-    fn ending_events( &mut self, _from: &Timespec, to: &Timespec ) -> CommonResult<EventInfos> {
-        get_events_impl( self, "end_time < ? AND finished=false", &[ &to.sec ] )
+    fn ending_events( &mut self, moment: &Timespec ) -> CommonResult<EventInfos> {
+        get_events_impl( self, "end_time < ? AND finished=false", &[ &moment.sec ] )
             .map_err( |e| fn_failed( "ending_events", e ) )
     }
 

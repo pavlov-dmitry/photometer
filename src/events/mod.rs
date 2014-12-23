@@ -17,6 +17,7 @@ pub struct ScheduledEventInfo {
     pub data: String,
 }
 
+#[deriving(Show)]
 pub struct FullEventInfo {
     pub id: Id,
     pub name: String,

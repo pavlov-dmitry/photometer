@@ -58,7 +58,14 @@ impl UserEvent for GroupCreation {
         };
         //конвертация идентификаторов из строк
         for member_str in members_str.iter() {
-            info.members.insert( try!( convert_member( member_str ) ) );
+            let member = try!( convert_member( member_str ) );
+            if member != info.initiator {
+                info.members.insert( member );
+            }
+        }
+        if info.members.is_empty() {
+            answer.add_error( "members", "not_found" );
+            return Err( Ok( answer ) );
         }
         // проверка наличия пользователей
         for member in info.members.iter() {
@@ -98,8 +105,6 @@ impl Event for GroupCreation {
 
         // даём право голоса пользователям
         try!( db.add_rights_of_voting( body.scheduled_id, exists_members.as_slice() ) );
-        // тот кто создаёт группу по умолчанию проголосовал ЗА!
-        try!( db.set_vote( body.scheduled_id, info.initiator, true ) );
         // рассылаем письма что можно голосовать
         for member in exists_members.iter() {
             try!( db.send_mail( 
@@ -119,11 +124,17 @@ impl Event for GroupCreation {
         // проверяем что такой группы нет
         if try!( db.is_group_exists( &info.name ) ) == false {
             // елси хоть кто-то решил присоединиться
-            if 1 < votes.yes.len() {
+            if votes.yes.is_empty() == false {
                 // создаём группу
                 let group_id = try!( db.create_group( &info.name, &info.description ) );
                 // и тех кто проголовал ЗА добавляем в эту группу
+                try!( db.add_members( group_id, &[ info.initiator ] ) );
                 try!( db.add_members( group_id, votes.yes.as_slice() ) );
+                // рассылаем письма что группа создана
+                try!( send_mail_welcome_to_group( db, info.initiator, &info.name ) );
+                for member_id in votes.yes.iter() {
+                    try!( send_mail_welcome_to_group( db, *member_id, &info.name ) );
+                }
             }
             else {
                 // отсылаем жалостливое письмо что никто в твою группу не хочет
@@ -144,10 +155,10 @@ impl Event for GroupCreation {
         let is_already_voted = try!( db.is_user_already_voted( body.scheduled_id, request.user().id ) );
         let mut answer = Answer::new();
         if is_already_voted {
-            answer.add_error( "user", "alredy_voted" );
+            answer.add_error( "user", "no_need_vote" );
         }
         else {
-            answer.add_record( "group_creation", &"edit".to_string() );    
+            answer.add_record( "user", &"need_some_voting".to_string() );    
         }
         Ok( answer )
     }
@@ -162,7 +173,7 @@ impl Event for GroupCreation {
             answer.add_record( "vote", &"accepted".to_string() );
         }
         else {
-            answer.add_error( "user", "alredy_voted" );
+            answer.add_error( "user", "no_need_vote" );
         }
         Ok( answer )
     }
@@ -172,7 +183,7 @@ impl Event for GroupCreation {
         let votes = try!( db.get_votes( body.scheduled_id ) );
         let mut answer = Answer::new();
         answer.add_record( "name", &info.name );
-        answer.add_record( "description", &info.name );
+        answer.add_record( "description", &info.description );
         answer.add_record( "all_count", &votes.all_count );
         answer.add_record( "yes", &votes.yes.len() );
         answer.add_record( "no", &votes.no.len() );
@@ -239,4 +250,13 @@ fn send_mail_group_name_already_exists( db: &mut DbConnection, id: Id, name: &St
         format!( "Группа с именем '{}' была уже создана за время пока вы решали создавать вашу группу или нет. 
             Создайте новую группу с другим именем или присоединитесь к существующей", name ).as_slice()
     )
+}
+
+fn send_mail_welcome_to_group( db: &mut DbConnection, id: Id, name: &String ) -> EmptyResult {
+    db.send_mail(
+        id,
+        SENDER_NAME,
+        format!( "Добро пожаловать в группу {}", name ).as_slice(),
+        format!( "Группа с именем '{}' создана. Развлекайтесь!", name ).as_slice()
+    ) 
 }
