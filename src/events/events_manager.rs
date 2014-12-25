@@ -3,8 +3,7 @@ use typemap::Assoc;
 use plugin::Extensible;
 use database::{ DbConnection };
 use std::sync::{ Arc };
-use super::{ Event, FullEventInfo, ScheduledEventInfo };
-use super::time_store::{ TimeStore };
+use super::{ Event, FullEventInfo, ScheduledEventInfo, EventState };
 use super::events_collection::{ EventsCollection, EventPtr };
 use db::events::{ DbEvents };
 use db::timetable::DbTimetable;
@@ -13,8 +12,10 @@ use time;
 use time::{ Timespec };
 use super::publication::Publication;
 use super::group_creation::GroupCreation;
+use super::late_publication::LatePublication;
 use answer::{ Answer, AnswerResult };
 use types::{ Id };
+use super::time_store::TimeStore;
 
 #[deriving(Clone)]
 struct EventsManager {
@@ -31,11 +32,12 @@ impl EventsManager {
     pub fn maybe_start_something( &self, db: &mut DbConnection ) -> EmptyResult {
         let (from, to) = try!( self.get_time_period() );
         try!( self.check_timetables( db, &from, &to ) );
-        let events = try!( db.starting_events( &from, &to ) );
+        let events = try!( db.starting_events( &time::get_time() ) );
         for event_info in events.iter() {
             let event = try!( self.events.get_event( event_info.id ) );
             println!( "starting {}", event_info.id );
             try!( event.start( db, event_info ) );
+            try!( db.set_event_state( event_info.scheduled_id, EventState::Active ) );
         }
         Ok( () )
     }
@@ -46,8 +48,9 @@ impl EventsManager {
         for event_info in events.iter() {
             let event = try!( self.events.get_event( event_info.id ) );
             println!( "finishing {}", event_info.id );
-            try!( event.finish( db, event_info ) );
-            try!( db.mark_event_as_finished( event_info.scheduled_id ) );
+            //try!( event.finish( db, event_info ) );
+            //try!( db.set_event_state( event_info.scheduled_id, EventState::Finished ) );
+            try!( self.finish_him( event, db, event_info ) );
         }
         Ok( () )
     }
@@ -72,8 +75,7 @@ impl EventsManager {
             let result = try!( event.user_action_post( db, req, &event_info ) );
             if try!( event.is_complete( db, &event_info ) ) {
                 println!( "early finishing {}", event_info.id );
-                try!( event.finish( db, &event_info ) );
-                try!( db.mark_event_as_finished( event_info.scheduled_id ) );
+                try!( self.finish_him( event, db, &event_info ) );
             }
             Ok( result )
         })
@@ -147,9 +149,14 @@ impl EventsManager {
         } 
     }
 
+    fn finish_him( &self, event: &EventPtr, db: &mut DbConnection, info: &ScheduledEventInfo ) -> EmptyResult {
+        try!( event.finish( db, info ) );
+        try!( db.set_event_state( info.scheduled_id, EventState::Finished ) );  
+        Ok( () )
+    }
+
     fn get_time_period( &self ) -> CommonResult<( Timespec, Timespec )> {
-        let from_time_tmp = try!( self.time_store.get_stored_time() ).unwrap_or( Timespec::new( 0, 0 ) );
-        let from_time = Timespec::new( from_time_tmp.sec + 1, from_time_tmp.nsec );
+        let from_time = try!( self.time_store.get_stored_time() ).unwrap_or( Timespec::new( 0, 0 ) );
         try!( self.time_store.remember_this_moment() );
         let to_time = try!( self.time_store.get_stored_time() ).unwrap();
         println!( "check_period from: {}   to: {}", from_time.sec, to_time.sec );
@@ -168,8 +175,10 @@ pub fn middleware( time_store_file_path: &String ) -> EventsManager {
     events_collection.add( group_creation.clone() );
     events_collection.add_user_event( group_creation.id(), group_creation.clone() );
 
+    events_collection.add( LatePublication::new() );
+
     EventsManager {
-        time_store: Arc::new( TimeStore::new( Path::new( time_store_file_path.as_slice() ) ) ),
+        time_store: Arc::new( TimeStore::new( Path::new( time_store_file_path ) ) ),
         events: Arc::new( events_collection )
     }
 }

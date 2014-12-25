@@ -9,12 +9,14 @@ mod time_store;
 mod events_collection;
 mod publication;
 mod group_creation;
+mod late_publication;
 
 pub struct ScheduledEventInfo {
     pub id: Id,
     pub scheduled_id: Id,
     pub name: String,
     pub data: String,
+    pub state: EventState
 }
 
 #[deriving(Show)]
@@ -27,9 +29,9 @@ pub struct FullEventInfo {
 }
 
 pub enum EventState {
-    NotStartedYet = 1,
-    Active = 2,
-    Ended = 3
+    NotStartedYet = 0,
+    Active = 1,
+    Finished = 2
 }
 
 /// абстракция какого-то автоматического события

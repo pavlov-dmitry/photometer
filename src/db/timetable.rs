@@ -88,7 +88,7 @@ fn timetable_events_impl( conn: &mut MyPooledConn, from: &Timespec, to: &Timespe
             `groups` AS `g` ON ( `tt`.`version` = `g`.`timetable_version` AND `g`.`id` = `tt`.`group_id` )
         WHERE
             `g`.`id` IS NOT NULL
-            AND `tt`.`start_time` BETWEEN ? AND ?
+            AND ( ? < `tt`.`start_time` AND `tt`.`start_time` <= ? )
     "));
     
     let mut result = try!( stmt.execute( &[ &from.sec, &to.sec ] ) );
