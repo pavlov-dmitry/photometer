@@ -153,6 +153,7 @@ fn current_event_state_impl( conn: &mut MyPooledConn, scheduled_id: Id ) -> MyRe
         "SELECT 
             start_time,
             end_time,
+            finished
         FROM scheduled_events
         WHERE id = ?
     " ) );
@@ -163,11 +164,12 @@ fn current_event_state_impl( conn: &mut MyPooledConn, scheduled_id: Id ) -> MyRe
             let mut values = row.iter();
             let start_time: i64 = from_value( values.next().unwrap() );
             let end_time: i64 = from_value( values.next().unwrap() );
+            let finished: bool = from_value( values.next().unwrap() );
             let current_time = time::get_time().sec;
             let result = if current_time < start_time {
                 EventState::NotStartedYet
             }
-            else if start_time < current_time && current_time < end_time {
+            else if start_time < current_time && current_time < end_time && finished == false {
                 EventState::Active
             }
             else {
