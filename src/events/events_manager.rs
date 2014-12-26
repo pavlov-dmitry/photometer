@@ -35,7 +35,7 @@ impl EventsManager {
         let events = try!( db.starting_events( &time::get_time() ) );
         for event_info in events.iter() {
             let event = try!( self.events.get_event( event_info.id ) );
-            info!( "starting {}:{}", event_info.name, event_info.id );
+            info!( "starting '{}':{}", event_info.name, event_info.id );
             try!( event.start( db, event_info ) );
             try!( db.set_event_state( event_info.scheduled_id, EventState::Active ) );
         }
@@ -47,7 +47,7 @@ impl EventsManager {
         let events = try!( db.ending_events( &time::get_time() ) );
         for event_info in events.iter() {
             let event = try!( self.events.get_event( event_info.id ) );
-            info!( "finishing {}:{}", event_info.name, event_info.id );
+            info!( "finishing '{}':{}", event_info.name, event_info.id );
             //try!( event.finish( db, event_info ) );
             //try!( db.set_event_state( event_info.scheduled_id, EventState::Finished ) );
             try!( self.finish_him( event, db, event_info ) );
@@ -74,7 +74,7 @@ impl EventsManager {
         self.if_has_event( db, scheduled_id, req, |event, event_info, db| {
             let result = try!( event.user_action_post( db, req, &event_info ) );
             if try!( event.is_complete( db, &event_info ) ) {
-                info!( "early finishing {}:{}", event_info.name, event_info.id );
+                info!( "early finishing '{}':{}", event_info.name, event_info.id );
                 try!( self.finish_him( event, db, &event_info ) );
             }
             Ok( result )
@@ -121,7 +121,7 @@ impl EventsManager {
         let event = try!( self.events.get_user_event( event_id ) );
         match event.user_creating_post( db, req ) {
             Ok( event ) => {
-                info!( "event created: {}:{}", event.name, event.id );
+                info!( "event created: '{}':{}", event.name, event.id );
                 try!( db.add_events( &[ event ] ) );
 
                 let mut answer = Answer::new();

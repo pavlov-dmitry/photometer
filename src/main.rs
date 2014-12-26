@@ -22,13 +22,14 @@ mod answer;
 mod parse_utils;
 mod handlers;
 mod photo_store;
-//mod photo_event;
 mod exif_reader;
 mod types;
 mod db;
 mod events;
 mod err_msg;
 mod get_param;
+mod simple_time_profiler;
+mod request_logger;
 
 fn main() {
     let cfg = config::load_or_default( &Path::new( "../etc/photometer.cfg" ) );
@@ -76,6 +77,7 @@ fn main() {
     authentication_router.post( "/join_us", handlers::join_us ) ;
     authentication_router.get( handlers::events::trigger_path(), handlers::events::trigger );
     
+    server.utilize( request_logger::middleware() );
     server.utilize( authentication::create_session_store() );
     server.utilize( db );
     server.utilize( StaticFilesHandler::new( cfg.static_files_path.as_slice() ) );

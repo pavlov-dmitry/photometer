@@ -1,9 +1,8 @@
 ///  Небольшая middleware которая парсит html параметры, в никеле елси параметра нет, то мы сразу падаем :(
-extern crate nickel;
 extern crate url;
 
 use std::collections::HashMap;
-use self::nickel::{ Request, Response, Continue, MiddlewareResult, Middleware };
+use nickel::{ Request, Response, Continue, MiddlewareResult, Middleware };
 use std::str;
 use parse_utils;
 use typemap::Assoc;
@@ -23,11 +22,6 @@ impl Assoc<BinaryHashMap> for BinaryHashMapKey {}
 
 impl Middleware for ParamsBodyParser {
     fn invoke<'a>(&self, req: &'a mut Request, _res: &mut Response) -> MiddlewareResult {
-
-        debug!( "______________________________" );
-        debug!( "url={}", req.origin.request_uri );
-        debug!( "method={}", req.origin.method );
-
         if !req.origin.body.is_empty() {
             let mut bin_params = HashMap::new();
             let mut params_hash = HashMap::new();
@@ -50,6 +44,7 @@ impl Middleware for ParamsBodyParser {
                     
                     // то просто парсим их
                     for &( ref key, ref value ) in url::form_urlencoded::parse( body_str.as_bytes() ).iter() {
+                        debug!( "param: {} = {}", key, value );
                         // и запихиваем в контейнер текстовых данных
                         let mut need_insert = false;
                         match params_hash.get_mut( key ) {
@@ -64,9 +59,6 @@ impl Middleware for ParamsBodyParser {
                     }
                             
                 }
-            }
-            for i in params_hash.iter() {
-                debug!( "params: {}", i );
             }
 
             req.extensions_mut().insert::<StringHashMapKey, StringHashMap>( params_hash );
@@ -106,12 +98,15 @@ fn read_binary_part( body: &[u8], (from, to) : (uint, uint), bin_hash: &mut Bina
     let name = try_opt!( parse_utils::str_between( desc_str, "name=\"", "\"" ) );
     let idx_slice = (to - data.len(), to - 4 ); 
     // записываем имя и "координаты" данных
+    debug!( "param: {} = {}", name, idx_slice );
     bin_hash.insert( name.to_string(), idx_slice ); 
     // запись имени файла бинарных данных с постфиксом "_filename"
     let filename = try_opt!( parse_utils::str_between( desc_str, "filename=\"", "\"" ) );
     let mut values = Vec::new();
     values.push( filename.to_string() );
-    str_hash.insert( name.to_string() + "_filename", values );
+    let name = name.to_string() + "_filename";
+    debug!( "param: {} = {}", name, filename );
+    str_hash.insert( name, values );
 }
 
 pub trait ParamsBody {
