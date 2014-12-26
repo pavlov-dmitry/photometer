@@ -12,6 +12,8 @@ pub trait DbPublication {
     fn make_publication_visible( &mut self, scheduled: Id, group: Id ) -> EmptyResult;
     /// кол-во уже опубликованных фото
     fn get_published_photo_count( &mut self, scheduled: Id, group: Id ) -> CommonResult<u32>;
+    /// возвращает идентификаторы пользователей которые не проголосовали
+    fn get_unpublished_users( &mut self, scheduled: Id, group: Id ) -> CommonResult<Vec<(Id, String)>>;
 }
 
 pub fn create_tables( db: &Database ) -> EmptyResult {
@@ -47,7 +49,13 @@ impl DbPublication for MyPooledConn {
     /// кол-во уже опубликованных фото
     fn get_published_photo_count( &mut self, scheduled: Id, group: Id ) -> CommonResult<u32> {
         get_published_photo_count_impl( self, scheduled, group )
-            .map_err( |e| fn_failed( "get_publicated_photo_count_impl", e ) )
+            .map_err( |e| fn_failed( "get_publicated_photo_count", e ) )
+    }
+
+    /// возвращает идентификаторы пользователей которые не проголосовали
+    fn get_unpublished_users( &mut self, scheduled: Id, group: Id ) -> CommonResult<Vec<(Id, String)>> {
+        get_unpublished_users_impl( self, scheduled, group )
+            .map_err( |e| fn_failed( "get_unpublished_users", e ) )
     }
 }
 
@@ -94,4 +102,27 @@ fn get_published_photo_count_impl( conn: &mut MyPooledConn, scheduled: Id, group
     let mut result = try!( stmt.execute( &[ &scheduled, &group ] ) );
     let row = try!( result.next().unwrap() );
     Ok( from_value( &row[ 0 ] ) )
+}
+
+fn get_unpublished_users_impl( conn: &mut MyPooledConn, scheduled: Id, group: Id ) -> MyResult<Vec<(Id, String)>> {
+    let mut stmt = try!( conn.prepare( 
+        "SELECT
+            `g`.`user_id`, `u`.`login`
+        FROM
+            `group_members` AS `g`
+        LEFT JOIN
+            `users` AS `u` ON ( `u`.`id` = `g`.`user_id` )
+        LEFT JOIN
+            `publication` AS `p` ON ( `p`.`user_id` = `u`.`id` AND `p`.`scheduled_id` = ? )
+        WHERE
+            `g`.group_id = ?
+            AND `p`.`id` IS NULL
+    "));
+    let mut result = try!( stmt.execute( &[ &scheduled, &group ] ) );
+    let mut users = Vec::new();
+    for row in result {
+        let row = try!( row );
+        users.push( ( from_value( &row[ 0 ] ), from_value( &row[ 1 ] ) ) );
+    }
+    Ok( users )
 }

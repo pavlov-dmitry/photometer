@@ -1,4 +1,5 @@
 use super::{ Event, CreateFromTimetable, ScheduledEventInfo, make_event_action_link };
+use super::late_publication::LatePublication;
 use types::{ Id, EmptyResult, CommonResult };
 use answer::{ Answer, AnswerResult };
 use serialize::json;
@@ -6,10 +7,13 @@ use db::mailbox::DbMailbox;
 use db::groups::DbGroups;
 use db::publication::DbPublication;
 use db::photos::DbPhotos;
+use db::events::DbEvents;
 use get_param::GetParamable;
 use database::DbConnection;
 use nickel::{ Request };
 use authentication::{ Userable };
+use std::time::duration::Duration;
+use time;
 
 #[deriving(Clone)]
 pub struct Publication;
@@ -48,7 +52,22 @@ impl Event for Publication {
         let info = try!( get_info( &body.data ) );
         try!( db.make_publication_visible( body.scheduled_id, info.group_id ) );
         //TODO: старт голосования
-        //TODO: старт загрузки опоздавших
+        
+        //старт события загрузки опоздавших
+        let unpublished_users = try!( db.get_unpublished_users( body.scheduled_id, info.group_id ) );
+        if unpublished_users.is_empty() == false {
+            let unpublished_users_ids = unpublished_users.iter().map( |&(id, _)| id ).collect::<Vec<_>>();
+            let event_info = LatePublication::create_info( 
+                body.scheduled_id,
+                info.group_id, 
+                body.name.as_slice(), 
+                time::get_time(), 
+                Duration::days( 365 ), 
+                unpublished_users_ids.as_slice() 
+            );
+            try!( db.add_events( &[ event_info ] ) );
+        }
+        
         Ok( () )
     }
     /// описание действиz пользователя на это событие 
@@ -122,8 +141,7 @@ fn make_text_body( user: &String, info: &ScheduledEventInfo ) -> String {
     format!( 
 "Привет {}!
 Настало время публиковать фотографии для '{}'.
-Ты можешь сделать перейдя по вот этой ссылке: {}
-", 
+Ты можешь сделать перейдя по вот этой ссылке: {}", 
         user,
         info.name,
         make_event_action_link( info.scheduled_id )
