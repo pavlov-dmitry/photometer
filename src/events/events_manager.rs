@@ -35,7 +35,7 @@ impl EventsManager {
         let events = try!( db.starting_events( &time::get_time() ) );
         for event_info in events.iter() {
             let event = try!( self.events.get_event( event_info.id ) );
-            println!( "starting {}", event_info.id );
+            info!( "starting {}:{}", event_info.name, event_info.id );
             try!( event.start( db, event_info ) );
             try!( db.set_event_state( event_info.scheduled_id, EventState::Active ) );
         }
@@ -47,7 +47,7 @@ impl EventsManager {
         let events = try!( db.ending_events( &time::get_time() ) );
         for event_info in events.iter() {
             let event = try!( self.events.get_event( event_info.id ) );
-            println!( "finishing {}", event_info.id );
+            info!( "finishing {}:{}", event_info.name, event_info.id );
             //try!( event.finish( db, event_info ) );
             //try!( db.set_event_state( event_info.scheduled_id, EventState::Finished ) );
             try!( self.finish_him( event, db, event_info ) );
@@ -74,7 +74,7 @@ impl EventsManager {
         self.if_has_event( db, scheduled_id, req, |event, event_info, db| {
             let result = try!( event.user_action_post( db, req, &event_info ) );
             if try!( event.is_complete( db, &event_info ) ) {
-                println!( "early finishing {}", event_info.id );
+                info!( "early finishing {}:{}", event_info.name, event_info.id );
                 try!( self.finish_him( event, db, &event_info ) );
             }
             Ok( result )
@@ -105,7 +105,7 @@ impl EventsManager {
         }
         // елси хоть что нить создали, то записываем их в запланированные события
         if events.is_empty() == false {
-            println!( "add events from timetable: {}", events );
+            info!( "add events from timetable: {}", events );
             try!( db.add_events( events.as_slice() ) );
         }
         Ok( () )
@@ -121,7 +121,7 @@ impl EventsManager {
         let event = try!( self.events.get_user_event( event_id ) );
         match event.user_creating_post( db, req ) {
             Ok( event ) => {
-                println!( "event created: {}", event.id );
+                info!( "event created: {}:{}", event.name, event.id );
                 try!( db.add_events( &[ event ] ) );
 
                 let mut answer = Answer::new();
@@ -159,7 +159,7 @@ impl EventsManager {
         let from_time = try!( self.time_store.get_stored_time() ).unwrap_or( Timespec::new( 0, 0 ) );
         try!( self.time_store.remember_this_moment() );
         let to_time = try!( self.time_store.get_stored_time() ).unwrap();
-        println!( "check_period from: {}   to: {}", from_time.sec, to_time.sec );
+        debug!( "check_period from: {}  to: {}", from_time.sec, to_time.sec );
         Ok( ( from_time, to_time ) )
     }
 }

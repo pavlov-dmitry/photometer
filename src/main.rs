@@ -1,4 +1,5 @@
 #![feature(macro_rules)]
+#![feature(phase)]
 
 extern crate nickel;
 extern crate serialize;
@@ -8,6 +9,7 @@ extern crate time;
 extern crate typemap;
 extern crate plugin;
 extern crate http;
+#[phase(plugin, link)] extern crate log;
 
 use nickel::{ Nickel, HttpRouter, StaticFilesHandler };
 

@@ -24,9 +24,9 @@ impl Assoc<BinaryHashMap> for BinaryHashMapKey {}
 impl Middleware for ParamsBodyParser {
     fn invoke<'a>(&self, req: &'a mut Request, _res: &mut Response) -> MiddlewareResult {
 
-        println!( "______________________________" );
-        println!( "url={}", req.origin.request_uri );
-        println!( "method={}", req.origin.method );
+        debug!( "______________________________" );
+        debug!( "url={}", req.origin.request_uri );
+        debug!( "method={}", req.origin.method );
 
         if !req.origin.body.is_empty() {
             let mut bin_params = HashMap::new();
@@ -66,7 +66,7 @@ impl Middleware for ParamsBodyParser {
                 }
             }
             for i in params_hash.iter() {
-                println!( "params: {}", i );
+                debug!( "params: {}", i );
             }
 
             req.extensions_mut().insert::<StringHashMapKey, StringHashMap>( params_hash );
