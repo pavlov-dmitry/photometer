@@ -26,8 +26,10 @@ impl User {
     }
 }
 
-/// хранилице информации о автиынх пользователях
-type SessionsHash = HashMap<String, User>;
+/// хранилице информации о активных пользователях
+pub type SessionId = String;
+type SessionsHash = HashMap<SessionId, User>;
+type UserIdSessionsHash = HashMap<Id, SessionId>;
 
 struct SessionIdGenerator {
     state : Id
@@ -38,7 +40,7 @@ impl SessionIdGenerator {
     fn new() -> SessionIdGenerator {
         SessionIdGenerator { state : 0 }
     }
-    fn gen(&mut self) -> String {
+    fn gen(&mut self) -> SessionId {
         self.state += 1;
         format!( "{}", self.state )
     }
@@ -46,13 +48,15 @@ impl SessionIdGenerator {
 
 pub struct SessionsStore {
     sessions : SessionsHash,
+    sessions_by_user : UserIdSessionsHash,
     session_id_generator : SessionIdGenerator
 }
 
 impl SessionsStore {
     pub fn new() -> SessionsStore {
         SessionsStore { 
-            sessions : HashMap::new(),  
+            sessions : HashMap::new(), 
+            sessions_by_user : HashMap::new(), 
             session_id_generator : SessionIdGenerator::new()
         }
     }
@@ -64,14 +68,21 @@ pub struct SessionsStoreMiddleware {
 }
 
 impl SessionsStoreMiddleware {
-    pub fn user_by_session_id(&self, session_id: &String ) -> Option<User> {
+    pub fn user_by_session_id(&self, session_id: &SessionId ) -> Option<User> {
         let store = self.store.read();
         store.sessions.get( session_id ).map( | ref user | { (*user).clone() } )
     }
 
-    pub fn add_new_session( &self, user: &User ) -> String {
+    pub fn add_new_session( &self, user: &User ) -> SessionId {
         let mut store = self.store.write();
+        // удаляем старую сессию этого пользователя
         let sess_id = store.session_id_generator.gen();
+        if let Some( old_session_id ) = store.sessions_by_user.insert( user.id, sess_id.clone() ) {
+            debug!( "remove old session id={} for user='{}'", old_session_id, user.name );
+            store.sessions.remove( &old_session_id );
+        }
+        // создаём новую
+        debug!( "create session id={} for user='{}'", sess_id, user.name );
         store.sessions.insert( sess_id.clone(), (*user).clone() );
         sess_id
     }

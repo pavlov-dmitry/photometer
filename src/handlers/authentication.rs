@@ -52,6 +52,7 @@ fn make_login( db: &mut DbConnection, session_store: &SessionsStoreMiddleware, n
     let mut answer = Answer::new();
     match maybe_id {
         Some( id ) => {
+            info!( "user detected: '{}':{}", name, id );
             let sess_id = session_store.add_new_session( &User::new( name, id ) );
             answer.add_record( "sid", &sess_id );
         },
