@@ -30,11 +30,11 @@ pub fn by_year_path() -> &'static str {
     "/gallery/:year"
 }
 
-pub fn current_year_count( request: &Request, response: &mut Response ) {
+pub fn current_year_count( request: &mut Request, response: &mut Response ) {
     response.send_answer( &by_year_count_answer( request, time::now().tm_year + FROM_YEAR ) );  
 }
 
-pub fn by_year_count( request: &Request, response: &mut Response ) {
+pub fn by_year_count( request: &mut Request, response: &mut Response ) {
     let year = from_str::<i32>( request.param( YEAR ) );
     let answer = match year {
         Some( year ) => by_year_count_answer( request, year ),
@@ -43,11 +43,11 @@ pub fn by_year_count( request: &Request, response: &mut Response ) {
     response.send_answer( &answer );
 }
 
-pub fn current_year( request: &Request, response: &mut Response ) {
+pub fn current_year( request: &mut Request, response: &mut Response ) {
      response.send_answer( &by_year_answer( request, time::now().tm_year + FROM_YEAR ) );
 }
 
-pub fn by_year( request: &Request, response: &mut Response ) {
+pub fn by_year( request: &mut Request, response: &mut Response ) {
     let year = from_str::<i32>( request.param( YEAR ) );
     let answer = match year {
         Some( year ) => by_year_answer( request, year ),
@@ -56,12 +56,13 @@ pub fn by_year( request: &Request, response: &mut Response ) {
     response.send_answer( &answer );
 }
 
-fn by_year_count_answer( req: &Request, year: i32 ) -> AnswerResult {
-    let mut db = try!( req.get_db_conn() );
+fn by_year_count_answer( req: &mut Request, year: i32 ) -> AnswerResult {
     let mut answer = Answer::new();
     let ( from, to ) = times_gate_for_year( year );
+    let user_id = req.user().id;
+    let db = try!( req.get_current_db_conn() );
     let photos_count = try!( db.get_photo_infos_count( 
-        req.user().id, 
+        user_id, 
         from.to_timespec(), 
         to.to_timespec() 
     ) );
@@ -69,15 +70,15 @@ fn by_year_count_answer( req: &Request, year: i32 ) -> AnswerResult {
     Ok( answer )
 }
 
-fn by_year_answer( req: &Request, year: i32 ) -> AnswerResult {
-    let mut db = try!( req.get_db_conn() );
+fn by_year_answer( req: &mut Request, year: i32 ) -> AnswerResult {
     let mut answer = Answer::new();
     let page = req.get_param_uint( PAGE ).unwrap_or( 0 ) as u32;
 
     let ( from, to ) = times_gate_for_year( year );
-
+    let user_id = req.user().id;
+    let db = try!( req.get_current_db_conn() );
     let photo_infos = try!( db.get_photo_infos(  
-        req.user().id,
+        user_id,
         from.to_timespec(),
         to.to_timespec(),
         page * IN_PAGE_COUNT,

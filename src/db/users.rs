@@ -5,9 +5,11 @@ use types::{ Id, CommonResult, EmptyResult };
 use std::fmt::Show;
 use database::Database;
 
+use authentication::User;
+
 pub trait DbUsers {
     /// выбирает id пользователя по имени и паролю
-    fn get_user( &mut self, name: &str, pass: &str ) -> CommonResult<Option<Id>>;
+    fn get_user( &mut self, name: &str, pass: &str ) -> CommonResult<Option<User>>;
     /// добавляет нового пользователя в БД
     fn add_user( &mut self, name: &str, pass: &str ) -> CommonResult<()>;
     /// проверяет наличие имени в БД
@@ -21,6 +23,8 @@ pub fn create_tables( db: &Database ) -> EmptyResult {
             `id` bigint(20) NOT NULL AUTO_INCREMENT,
             `login` varchar(16) NOT NULL DEFAULT '',
             `password` varchar(32) NOT NULL DEFAULT '',
+            `activated` BOOL NOT NULL DEFAULT false,
+            `mail` varchar(256) NOT NULL DEFAULT '',
             PRIMARY KEY (`id`),
             KEY `login_idx` (`login`)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
@@ -31,7 +35,7 @@ pub fn create_tables( db: &Database ) -> EmptyResult {
 
 impl DbUsers for MyPooledConn {
     /// выбирает id пользователя по имени и паролю
-    fn get_user( &mut self, name: &str, pass: &str ) -> CommonResult<Option<Id>> {
+    fn get_user( &mut self, name: &str, pass: &str ) -> CommonResult<Option<User>> {
         get_user_impl( self, name, pass )
             .map_err( |e| fn_failed( "get_user", e ) )
     }
@@ -61,14 +65,23 @@ fn fn_failed<E: Show>( fn_name: &str, e: E ) -> String {
     format!( "DbUsers func '{}' failed: {}", fn_name, e )
 }
 
-fn get_user_impl( conn: &mut MyPooledConn, name: &str, pass: &str ) -> MyResult<Option<Id>> {
+fn get_user_impl( conn: &mut MyPooledConn, name: &str, pass: &str ) -> MyResult<Option<User>> {
     let name = name.to_string(); // помогает убрать internal compiler error
     let pass = pass.to_string();
-    let mut stmt = try!( conn.prepare( "select id from users where login=? and password=?" ) );
+    let mut stmt = try!( conn.prepare( "select login, id, mail from users where login=? and password=? and activated=true" ) );
     let mut sql_result = try!( stmt.execute( &[ &name, &pass ] ) );
-    sql_result.next().map_or( Ok( None ),
-        |row| row.and_then( |r| Ok( Some( from_value::<Id>( &r[0] ) ) ) )
-    )
+    match sql_result.next() {
+        None => Ok( None ),
+        Some( row ) => {
+            let row = try!( row );
+            let user = User {
+                name: from_value( &row[ 0 ] ),
+                id: from_value( &row[ 1 ] ),
+                mail: from_value( &row[ 2 ] )
+            };
+            Ok( Some( user ) )
+        }
+    }
 }
 
 fn user_exists_impl( conn: &mut MyPooledConn, name: &str  ) -> MyResult<bool> {

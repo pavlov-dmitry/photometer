@@ -1,5 +1,4 @@
 use types::{ Id, EmptyResult, CommonResult };
-use database::{ DbConnection };
 use answer::{ AnswerResult };
 use nickel::{ Request };
 use time::Timespec;
@@ -39,17 +38,17 @@ pub trait Event {
     /// идентификатор события
     fn id( &self ) -> Id;
     /// действие на начало события
-    fn start( &self, db: &mut DbConnection, body: &ScheduledEventInfo ) -> EmptyResult;
+    fn start( &self, req: &mut Request, body: &ScheduledEventInfo ) -> EmptyResult;
     /// действие на окончание события
-    fn finish( &self, db: &mut DbConnection, body: &ScheduledEventInfo ) -> EmptyResult;
+    fn finish( &self, req: &mut Request, body: &ScheduledEventInfo ) -> EmptyResult;
     /// описание действиz пользователя на это событие 
-    fn user_action_get( &self, db: &mut DbConnection, request: &Request, body: &ScheduledEventInfo ) -> AnswerResult;
+    fn user_action_get( &self, req: &mut Request, body: &ScheduledEventInfo ) -> AnswerResult;
     /// применение действия пользователя на это событие
-    fn user_action_post( &self, db: &mut DbConnection, request: &Request, body: &ScheduledEventInfo ) -> AnswerResult;
+    fn user_action_post( &self, req: &mut Request, body: &ScheduledEventInfo ) -> AnswerResult;
     /// информация о состоянии события
-    fn info_get( &self, db: &mut DbConnection, request: &Request, body: &ScheduledEventInfo ) -> AnswerResult;
+    fn info_get( &self, req: &mut Request, body: &ScheduledEventInfo ) -> AnswerResult;
     /// проверка на возможное досрочное завершение
-    fn is_complete( &self, db: &mut DbConnection, body: &ScheduledEventInfo ) -> CommonResult<bool>;
+    fn is_complete( &self, req: &mut Request, body: &ScheduledEventInfo ) -> CommonResult<bool>;
 }
 
 /// абстракция события которое может быть создано из расписания
@@ -63,9 +62,9 @@ pub trait CreateFromTimetable {
 /// абстракция событий которые могут быть созданы пользователями
 pub trait UserEvent {
     /// описание создания
-    fn user_creating_get( &self, request: &Request ) -> AnswerResult;
+    fn user_creating_get( &self, req: &mut Request ) -> AnswerResult;
     /// применение создания
-    fn user_creating_post( &self, db: &mut DbConnection, request: &Request ) -> Result<FullEventInfo, AnswerResult>;
+    fn user_creating_post( &self, req: &mut Request ) -> Result<FullEventInfo, AnswerResult>;
 }
 
 pub fn make_event_action_link( id: Id ) -> String {

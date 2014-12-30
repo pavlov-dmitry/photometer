@@ -11,7 +11,10 @@ use db;
 use err_msg;
 
 pub trait Databaseable {
-    fn get_db_conn(&self) -> CommonResult<MyPooledConn>;
+    //создаёт новое подключение
+    fn get_new_db_conn(&self) -> CommonResult<MyPooledConn>;
+    //реализует ленивую отдачу текущего подключения
+    fn get_current_db_conn(&mut self) -> CommonResult<&mut MyPooledConn>;
 }
 
 #[deriving(Clone)]
@@ -84,10 +87,20 @@ impl Middleware for Database {
     }
 }
 
+struct ConnectionKey;
+impl Assoc<MyPooledConn> for ConnectionKey {}
+
 impl<'a, 'b> Databaseable for Request<'a, 'b> {
-    fn get_db_conn(&self) -> CommonResult<MyPooledConn> {
+    fn get_new_db_conn(&self) -> CommonResult<MyPooledConn> {
         self.extensions().get::<Database, Database>().unwrap()
             .pool.get_conn()
             .map_err( |e| format!( "Can't create db connection: {}", e ) )
+    }
+    fn get_current_db_conn(&mut self) -> CommonResult<&mut MyPooledConn> {
+        if self.extensions().contains::<ConnectionKey, MyPooledConn>() == false {
+            let conn = try!( self.get_new_db_conn() );
+            self.extensions_mut().insert::<ConnectionKey, MyPooledConn>( conn );
+        }
+        Ok( self.extensions_mut().get_mut::<ConnectionKey, MyPooledConn>().unwrap() )
     }
 }

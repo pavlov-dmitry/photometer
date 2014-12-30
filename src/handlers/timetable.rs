@@ -11,17 +11,19 @@ pub fn timetable_path() -> &'static str {
     "/timetable/:group_id"
 }
 
-pub fn set_timetable( req: &Request, res: &mut Response ) -> MiddlewareResult {
+pub fn set_timetable( req: &mut Request, res: &mut Response ) -> MiddlewareResult {
     let group_id = try!( get_group_id( req ) );
     res.send_answer( &set_timetable_answer( group_id, req ) );
     Ok( Halt )
 }
 
-fn set_timetable_answer( group_id: Id, req: &Request ) -> AnswerResult {
-    let mut db = try!( req.get_db_conn() );
+fn set_timetable_answer( group_id: Id, req: &mut Request ) -> AnswerResult {
     let mut answer = Answer::new();
-
-    if try!( db.is_group_id_exists( group_id ) ) {
+    let is_group_exists = {
+        let mut db = try!( req.get_current_db_conn() );
+        try!( db.is_group_id_exists( group_id ) )
+    };
+    if is_group_exists {
         let start_time = try!( req.get_param_time( "start_time" ) );
         let end_time = try!( req.get_param_time( "end_time" ) );
 
@@ -36,8 +38,11 @@ fn set_timetable_answer( group_id: Id, req: &Request ) -> AnswerResult {
         let mut events = Vec::new();
         events.push( timetable_event );
 
-        let new_version = try!( db.add_new_timetable_version( group_id, &events ) );
-        try!( db.set_timetable_version( group_id, new_version ) );
+        {
+            let mut db = try!( req.get_current_db_conn() );
+            let new_version = try!( db.add_new_timetable_version( group_id, &events ) );
+            try!( db.set_timetable_version( group_id, new_version ) );
+        }
         
         answer.add_record( "new version of timetable", &String::from_str( "setted" ) );
     }

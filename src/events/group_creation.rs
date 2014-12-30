@@ -14,7 +14,7 @@ use types::{ Id, EmptyResult, CommonResult };
 use nickel::{ Request };
 use answer::{ Answer, AnswerResult };
 use get_param::GetParamable;
-use database::DbConnection;
+use database::{ DbConnection, Databaseable };
 use db::votes::DbVotes;
 use db::mailbox::DbMailbox;
 use db::users::DbUsers;
@@ -25,6 +25,7 @@ use std::time::Duration;
 
 #[deriving(Clone)]
 pub struct GroupCreation;
+pub const ID : Id = 2;
 
 impl GroupCreation {
     pub fn new() -> GroupCreation {
@@ -32,35 +33,36 @@ impl GroupCreation {
     }
 }
 
-const ID : Id = 2;
 static MEMBERS: &'static str = "members";
 static SENDER_NAME: &'static str = "Создание группы";
 type Members = HashSet<Id>;
 
 impl UserEvent for GroupCreation {
     /// описание создания
-    fn user_creating_get( &self, _request: &Request ) -> AnswerResult {
+    fn user_creating_get( &self, _req: &mut Request ) -> AnswerResult {
         let mut answer = Answer::new();
         answer.add_record( "edit_event", &ID );
         Ok( answer )
     }
     /// применение создания
-    fn user_creating_post( &self, db: &mut DbConnection, req: &Request ) -> Result<FullEventInfo, AnswerResult> {
-        let members_str = try!( req.get_params( MEMBERS ) );
-        let group_name = try!( req.get_param( "name" ) );
+    fn user_creating_post( &self, req: &mut Request ) -> Result<FullEventInfo, AnswerResult> {
+        let group_name = try!( req.get_param( "name" ) ).to_string();
         let mut answer = Answer::new();
 
         let mut info = Info {
             initiator: req.user().id,
             members: HashSet::new(),
-            name: group_name.to_string(),
+            name: group_name.clone(),
             description: try!( req.get_param( "description" ) ).to_string()
         };
         //конвертация идентификаторов из строк
-        for member_str in members_str.iter() {
-            let member = try!( convert_member( member_str ) );
-            if member != info.initiator {
-                info.members.insert( member );
+        {
+            let members_str = try!( req.get_params( MEMBERS ) );
+            for member_str in members_str.iter() {
+                let member = try!( convert_member( member_str ) );
+                if member != info.initiator {
+                    info.members.insert( member );
+                }
             }
         }
         if info.members.is_empty() {
@@ -68,6 +70,7 @@ impl UserEvent for GroupCreation {
             return Err( Ok( answer ) );
         }
         // проверка наличия пользователей
+        let db = try!( req.get_current_db_conn() );
         for member in info.members.iter() {
             if try!( db.user_id_exists( *member ) ) == false {
                 answer.add_error( "user", "not_found" );
@@ -79,7 +82,7 @@ impl UserEvent for GroupCreation {
         let end_time = start_time + Duration::days( 1 );
         Ok( FullEventInfo {
             id: ID,
-            name: group_name.to_string(),
+            name: group_name,
             start_time: start_time,
             end_time: end_time,
             data: json::encode( &info )
@@ -93,8 +96,9 @@ impl Event for GroupCreation {
         ID
     }
     /// действие на начало события
-    fn start( &self, db: &mut DbConnection, body: &ScheduledEventInfo ) -> EmptyResult {
+    fn start( &self, req: &mut Request, body: &ScheduledEventInfo ) -> EmptyResult {
         let info = try!( get_info( &body.data ) );
+        let db = try!( req.get_current_db_conn() );
 
         let mut exists_members = Vec::new();
         for member in info.members.iter() {
@@ -117,8 +121,9 @@ impl Event for GroupCreation {
         Ok( () )
     }
     /// действие на окончание события
-    fn finish( &self, db: &mut DbConnection, body: &ScheduledEventInfo ) -> EmptyResult {
+    fn finish( &self, req: &mut Request, body: &ScheduledEventInfo ) -> EmptyResult {
         let info = try!( get_info( &body.data ) );
+        let db = try!( req.get_current_db_conn() );
         // собиарем голоса
         let votes = try!( db.get_votes( body.scheduled_id ) );
         // проверяем что такой группы нет
@@ -150,9 +155,11 @@ impl Event for GroupCreation {
         Ok( () )
     }
     /// описание действия пользователя на это событие 
-    fn user_action_get( &self, db: &mut DbConnection, request: &Request, body: &ScheduledEventInfo ) -> AnswerResult {
+    fn user_action_get( &self, req: &mut Request, body: &ScheduledEventInfo ) -> AnswerResult {
         //TODO: Согласовать с Саньком, что именно ему здесь надо отсылать
-        let is_already_voted = try!( db.is_user_already_voted( body.scheduled_id, request.user().id ) );
+        let user_id = req.user().id;
+        let db = try!( req.get_current_db_conn() );
+        let is_already_voted = try!( db.is_user_already_voted( body.scheduled_id, user_id ) );
         let mut answer = Answer::new();
         if is_already_voted {
             answer.add_error( "user", "no_need_vote" );
@@ -163,13 +170,15 @@ impl Event for GroupCreation {
         Ok( answer )
     }
     /// применение действия пользователя на это событие
-    fn user_action_post( &self, db: &mut DbConnection, request: &Request, body: &ScheduledEventInfo ) -> AnswerResult {
-        let vote: bool = try!( request.get_param( "vote" ) ) == "yes";
-        let is_already_voted = try!( db.is_user_already_voted( body.scheduled_id, request.user().id ) );
+    fn user_action_post( &self, req: &mut Request, body: &ScheduledEventInfo ) -> AnswerResult {
+        let vote: bool = try!( req.get_param( "vote" ) ) == "yes";
+        let user_id = req.user().id;
+        let db = try!( req.get_current_db_conn() );
+        let is_already_voted = try!( db.is_user_already_voted( body.scheduled_id, user_id ) );
 
         let mut answer = Answer::new();
         if is_already_voted == false {
-            try!( db.set_vote( body.scheduled_id, request.user().id, vote ) );
+            try!( db.set_vote( body.scheduled_id, user_id, vote ) );
             answer.add_record( "vote", &"accepted".to_string() );
         }
         else {
@@ -178,8 +187,9 @@ impl Event for GroupCreation {
         Ok( answer )
     }
     /// информация о состоянии события
-    fn info_get( &self, db: &mut DbConnection, _request: &Request, body: &ScheduledEventInfo ) -> AnswerResult {
+    fn info_get( &self, req: &mut Request, body: &ScheduledEventInfo ) -> AnswerResult {
         let info = try!( get_info( &body.data ) );
+        let db = try!( req.get_current_db_conn() );
         let votes = try!( db.get_votes( body.scheduled_id ) );
         let mut answer = Answer::new();
         answer.add_record( "name", &info.name );
@@ -190,8 +200,9 @@ impl Event for GroupCreation {
         Ok( answer )
     }
     /// проверка на возможное досрочное завершение
-    fn is_complete( &self, db: &mut DbConnection, body: &ScheduledEventInfo ) -> CommonResult<bool> {
+    fn is_complete( &self, req: &mut Request, body: &ScheduledEventInfo ) -> CommonResult<bool> {
         //досрочно завершается когда все проголосвали
+        let db = try!( req.get_current_db_conn() );
         db.is_all_voted( body.scheduled_id )
     }
 }

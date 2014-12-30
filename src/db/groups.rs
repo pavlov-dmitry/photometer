@@ -100,7 +100,8 @@ fn get_members_impl( conn: &mut MyPooledConn, group_id: Id ) -> MyResult<Members
     let mut stmt = try!( conn.prepare( 
         "SELECT 
             g.user_id,
-            u.login 
+            u.login,
+            u.mail
         FROM group_members AS g LEFT JOIN users AS u ON ( u.id = g.user_id )
         WHERE u.id IS NOT NULL AND g.group_id = ?
     "));
@@ -109,7 +110,8 @@ fn get_members_impl( conn: &mut MyPooledConn, group_id: Id ) -> MyResult<Members
         let row = try!( row );
         members.push( User{ 
             id: from_value( &row[ 0 ] ), 
-            name: from_value( &row[ 1 ] )
+            name: from_value( &row[ 1 ] ),
+            mail: from_value( &row[ 2 ] )
         });
     }
     Ok( members )

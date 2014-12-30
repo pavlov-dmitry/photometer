@@ -14,17 +14,18 @@ static SESSION_ID : &'static str = "sid";
 #[deriving(Clone)]
 pub struct User {
     pub name : String,
-    pub id : Id
+    pub id : Id,
+    pub mail: String
 }
 
-impl User {
+/*impl User {
     pub fn new( name: &str, id: Id ) -> User {
         User { 
             name: name.to_string(), 
             id: id 
         }
     }
-}
+}*/
 
 /// хранилице информации о активных пользователях
 pub type SessionId = String;

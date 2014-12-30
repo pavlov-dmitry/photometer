@@ -9,7 +9,7 @@ use db::publication::DbPublication;
 use db::photos::DbPhotos;
 use db::events::DbEvents;
 use get_param::GetParamable;
-use database::DbConnection;
+use database::{ Databaseable };
 use nickel::{ Request };
 use authentication::{ Userable };
 use std::time::duration::Duration;
@@ -17,6 +17,7 @@ use time;
 
 #[deriving(Clone)]
 pub struct Publication;
+pub const ID : Id = 1;
 
 impl Publication {
     pub fn new() -> Publication {
@@ -24,16 +25,15 @@ impl Publication {
     }
 }
 
-const ID : Id = 1;
-
 impl Event for Publication {
     /// идентификатор события
     fn id( &self ) -> Id {
         ID
     }
     /// действие на начало события
-    fn start( &self, db: &mut DbConnection, body: &ScheduledEventInfo ) -> EmptyResult {
+    fn start( &self, req: &mut Request, body: &ScheduledEventInfo ) -> EmptyResult {
         let info = try!( get_info( &body.data ) );
+        let db = try!( req.get_current_db_conn() );
         let members = try!( db.get_members( info.group_id ) );
         let sender_name = make_sender_name( &body.name );
         let subject = make_subject( &body.name );
@@ -48,8 +48,9 @@ impl Event for Publication {
         Ok( () )
     }
     /// действие на окончание события
-    fn finish( &self, db: &mut DbConnection, body: &ScheduledEventInfo ) -> EmptyResult {
+    fn finish( &self, req: &mut Request, body: &ScheduledEventInfo ) -> EmptyResult {
         let info = try!( get_info( &body.data ) );
+        let db = try!( req.get_current_db_conn() );
         try!( db.make_publication_visible( body.scheduled_id, info.group_id ) );
         //TODO: старт голосования
         
@@ -71,17 +72,18 @@ impl Event for Publication {
         Ok( () )
     }
     /// описание действиz пользователя на это событие 
-    fn user_action_get( &self, _db: &mut DbConnection, _request: &Request, _body: &ScheduledEventInfo ) -> AnswerResult {
+    fn user_action_get( &self, _req: &mut Request, _body: &ScheduledEventInfo ) -> AnswerResult {
         let mut answer = Answer::new();
         // TODO: переделать на нормальное отдачу, поговорить с Саньком, что ему нужно в этот момент
         answer.add_record( "choose", &"from_gallery".to_string() );
         Ok( answer )
     }
     /// применение действия пользователя на это событие
-    fn user_action_post( &self, db: &mut DbConnection, request: &Request, body: &ScheduledEventInfo ) -> AnswerResult {
+    fn user_action_post( &self, req: &mut Request, body: &ScheduledEventInfo ) -> AnswerResult {
         let info = try!( get_info( &body.data ) );
-        let photo_id = try!( request.get_param_id( "photo" ) );
-        let user = request.user();
+        let photo_id = try!( req.get_param_id( "photo" ) );
+        let user = req.user().clone();
+        let db = try!( req.get_current_db_conn() );
         let mut answer = Answer::new();
         if let Some( (user_name, _) ) = try!( db.get_photo_info( photo_id ) ) {
             if user_name == user.name {
@@ -98,8 +100,9 @@ impl Event for Publication {
         Ok( answer )
     }
     /// информация о состоянии события
-    fn info_get( &self, db: &mut DbConnection, _request: &Request, body: &ScheduledEventInfo ) -> AnswerResult {
+    fn info_get( &self, req: &mut Request, body: &ScheduledEventInfo ) -> AnswerResult {
         let info = try!( get_info( &body.data ) );
+        let db = try!( req.get_current_db_conn() );
         let group_members_count = try!( db.get_members_count( info.group_id ) );
         let published_photo_count = try!( db.get_published_photo_count( body.scheduled_id, info.group_id ) );
 
@@ -111,7 +114,7 @@ impl Event for Publication {
         Ok( answer )
     }
     /// проверка на возможное досрочное завершение
-    fn is_complete( &self, _db: &mut DbConnection, _body: &ScheduledEventInfo ) -> CommonResult<bool> {
+    fn is_complete( &self, _req: &mut Request, _body: &ScheduledEventInfo ) -> CommonResult<bool> {
         // публикацию досрочно заверщать не будем, есть в ожидании что-то интересное
         Ok( false )
     }

@@ -1,7 +1,7 @@
 use super::{ Event, ScheduledEventInfo, FullEventInfo, make_event_action_link };
 use types::{ Id, EmptyResult, CommonResult };
 use answer::{ Answer, AnswerResult };
-use database::DbConnection;
+use database::{ Databaseable };
 use db::mailbox::DbMailbox;
 use db::groups::DbGroups;
 use db::publication::DbPublication;
@@ -15,6 +15,7 @@ use get_param::GetParamable;
 
 #[deriving(Clone)]
 pub struct LatePublication;
+pub const ID : Id = 3;
 
 impl LatePublication {
     pub fn new() -> LatePublication {
@@ -37,32 +38,30 @@ impl LatePublication {
     }
 }
 
-const ID : Id = 3;
-
 impl Event for LatePublication {
     /// идентификатор события
     fn id( &self ) -> Id {
         ID
     }
     /// действие на начало события
-    fn start( &self, db: &mut DbConnection, body: &ScheduledEventInfo ) -> EmptyResult {
+    fn start( &self, req: &mut Request, body: &ScheduledEventInfo ) -> EmptyResult {
         let info = try!( get_info( &body.data ) );
         for user in info.late_users.iter() {
-            try!( send_mail_you_can_public_photos( db, *user, body, &info ) );
+            try!( send_mail_you_can_public_photos( req, *user, body, &info ) );
         }
         Ok( () )
     }
     /// действие на окончание события
-    fn finish( &self, _db: &mut DbConnection, _body: &ScheduledEventInfo ) -> EmptyResult {
+    fn finish( &self, _req: &mut Request, _body: &ScheduledEventInfo ) -> EmptyResult {
         // нечего тут делать
         Ok( () )
     }
     /// описание действиz пользователя на это событие 
-    fn user_action_get( &self, _db: &mut DbConnection, request: &Request, body: &ScheduledEventInfo ) -> AnswerResult {
+    fn user_action_get( &self, req: &mut Request, body: &ScheduledEventInfo ) -> AnswerResult {
         let info = try!( get_info( &body.data ) );
         let mut answer = Answer::new();
         // если такой пользователь есть должен выложиться
-        if info.late_users.iter().any( |c| *c == request.user().id ) {
+        if info.late_users.iter().any( |c| *c == req.user().id ) {
             // TODO: переделать на нормальное отдачу, поговорить с Саньком, что ему нужно в этот момент
             answer.add_record( "choose", &"from_gallery".to_string() );
         }
@@ -72,17 +71,19 @@ impl Event for LatePublication {
         Ok( answer )
     }
     /// применение действия пользователя на это событие
-    fn user_action_post( &self, db: &mut DbConnection, request: &Request, body: &ScheduledEventInfo ) -> AnswerResult {
+    fn user_action_post( &self, req: &mut Request, body: &ScheduledEventInfo ) -> AnswerResult {
         let info = try!( get_info( &body.data ) );
-        let photo_id = try!( request.get_param_id( "photo" ) );
-        let user = request.user();
+        let photo_id = try!( req.get_param_id( "photo" ) );
+        let current_user_name = req.user().name.clone();
+        let user_id = req.user().id;
+        let db = try!( req.get_current_db_conn() );
 
         let mut answer = Answer::new();
         // если такой пользователь есть должен выложиться
-        if info.late_users.iter().any( |c| *c == user.id ) {
+        if info.late_users.iter().any( |c| *c == user_id ) {
             if let Some( (user_name, _) ) = try!( db.get_photo_info( photo_id ) ) {
-                if user_name == user.name {
-                    try!( db.public_photo( info.parent_id, info.group_id, user.id, photo_id, true ) );
+                if user_name == current_user_name {
+                    try!( db.public_photo( info.parent_id, info.group_id, user_id, photo_id, true ) );
                     answer.add_record( "published", &"ok".to_string() );
                 }
                 else {
@@ -99,8 +100,9 @@ impl Event for LatePublication {
         Ok( answer )
     }
     /// информация о состоянии события
-    fn info_get( &self, db: &mut DbConnection, _request: &Request, body: &ScheduledEventInfo ) -> AnswerResult {
+    fn info_get( &self, req: &mut Request, body: &ScheduledEventInfo ) -> AnswerResult {
         let info = try!( get_info( &body.data ) );
+        let db = try!( req.get_current_db_conn() );
         let group_members_count = try!( db.get_members_count( info.group_id ) );
         let published_photo_count = try!( db.get_published_photo_count( body.scheduled_id, info.group_id ) );
 
@@ -112,8 +114,9 @@ impl Event for LatePublication {
         Ok( answer )
     }
     /// проверка на возможное досрочное завершение
-    fn is_complete( &self, db: &mut DbConnection, body: &ScheduledEventInfo ) -> CommonResult<bool> {
+    fn is_complete( &self, req: &mut Request, body: &ScheduledEventInfo ) -> CommonResult<bool> {
         let info = try!( get_info( &body.data ) );
+        let db = try!( req.get_current_db_conn() );
         let group_members_count = try!( db.get_members_count( info.group_id ) );
         let published_photo_count = try!( db.get_published_photo_count( body.scheduled_id, info.group_id ) ); 
         Ok( group_members_count == published_photo_count )
@@ -122,7 +125,8 @@ impl Event for LatePublication {
 
 static SENDER_NAME: &'static str = "Публикация с опозданием";
 
-fn send_mail_you_can_public_photos( db: &mut DbConnection, user: Id, body: &ScheduledEventInfo, _info: &Info ) -> EmptyResult {
+fn send_mail_you_can_public_photos( req: &mut Request, user: Id, body: &ScheduledEventInfo, _info: &Info ) -> EmptyResult {
+    let db = try!( req.get_current_db_conn() );
     db.send_mail(
         user,
         SENDER_NAME,

@@ -16,22 +16,27 @@ static IMAGE : &'static str = "upload_img";
 static IMAGE_FILENAME : &'static str = "upload_img_filename";
 
 
-pub fn upload_photo( request: &Request, response: &mut Response ) {
+pub fn upload_photo( request: &mut Request, response: &mut Response ) {
     response.send_answer( &upload_photo_answer( request ) );
 }
 
-fn upload_photo_answer( request: &Request ) -> AnswerResult {
-    let filename = try!( request.get_param( IMAGE_FILENAME ) );
-    let img_data = try!( request.get_param_bin( IMAGE ) );
+fn upload_photo_answer( request: &mut Request ) -> AnswerResult {
+    let filename = try!( request.get_param( IMAGE_FILENAME ) ).to_string();
     let mut answer = Answer::new();
-    match check_image_type( filename ) {
+    match check_image_type( filename.as_slice() ) {
         Some( tp ) => {
-            let photo_store = request.photo_store();
-            let upload_time = time::get_time();
-            match photo_store.add_new_photo( request.user(), &upload_time, tp.clone(), img_data ) {
-                Ok( (w, h) ) => {
-                    let mut db = try!( request.get_db_conn() );
-                    match db.add_photo( request.user().id, &make_photo_info( upload_time, tp, w, h, img_data ) ) {
+            let photo_info = {
+                let photo_store = request.photo_store();
+                let upload_time = time::get_time();
+                let img_data = try!( request.get_param_bin( IMAGE ) );
+                photo_store.add_new_photo( request.user(), &upload_time, tp.clone(), img_data )
+                    .map( |(w, h)| make_photo_info( upload_time, tp.clone(), w, h, img_data ) )
+            };
+            match photo_info {
+                Ok( photo_info ) => {
+                    let user_id = request.user().id;
+                    let db = try!( request.get_current_db_conn() );
+                    match db.add_photo( user_id, &photo_info ) {
                         Ok( _ ) => answer.add_record( "photo_loaded", &String::from_str( "ok" ) ),
                         Err( e ) => panic!( e )
                     }
