@@ -9,12 +9,12 @@ use image::{ GenericImage, DynamicImage };
 use std::cmp::{ min, max };
 use time::{ Timespec };
 use types::{ ImageType };
-use typemap::Assoc;
+use typemap::Key;
 use plugin::Extensible;
 
 static GALLERY_DIR : &'static str = "gallery";
 
-pub fn middleware( photo_dir: &String, max_photo_size_bytes: uint, preview_size: uint ) -> PhotoStore {
+pub fn middleware( photo_dir: &String, max_photo_size_bytes: usize, preview_size: usize ) -> PhotoStore {
     PhotoStore {
         params: Arc::new( 
             Params {
@@ -28,11 +28,11 @@ pub fn middleware( photo_dir: &String, max_photo_size_bytes: uint, preview_size:
 
 struct Params {
     photos_dir : String,
-    max_photo_size_bytes : uint, 
+    max_photo_size_bytes : usize, 
     preview_size : u32,
 }
 
-#[deriving(Clone)]
+#[derive(Clone)]
 pub struct PhotoStore {
     params : Arc<Params>
 }
@@ -63,7 +63,7 @@ impl PhotoStore {
     /// добавляет фотографию привязанную к опеределнному событию
     pub fn add_new_photo( &self, user: &User, upload_time: &Timespec, img_type: ImageType, img_data: &[u8] ) -> PhotoStoreResult<(u32, u32)> {
         if img_data.len() < self.params.max_photo_size_bytes {
-            match image::load_from_memory( img_data, to_image_format( &img_type ) ) {
+            match image::load_from_memory_with_format( img_data, to_image_format( &img_type ) ) {
                 Ok( mut img ) => {
                     let (w, h) = img.dimensions();
                     let crop_size = min( w, h );
@@ -139,11 +139,11 @@ impl PhotoStore {
     }
 }
 
-impl Assoc<PhotoStore> for PhotoStore {}
+impl Key for PhotoStore { type Value = PhotoStore; }
 
 impl Middleware for PhotoStore {
     fn invoke(&self, req: &mut Request, _res: &mut Response) -> MiddlewareResult {
-        req.extensions_mut().insert::<PhotoStore, PhotoStore>( self.clone() );
+        req.extensions_mut().insert::<PhotoStore>( self.clone() );
         Ok( Continue )
     } 
 }
@@ -154,6 +154,6 @@ pub trait PhotoStoreable {
 
 impl<'a, 'b> PhotoStoreable for Request<'a, 'b> {
     fn photo_store( &self ) -> &PhotoStore {
-        self.extensions().get::<PhotoStore, PhotoStore>().unwrap()
+        self.extensions().get::<PhotoStore>().unwrap()
     }
 }

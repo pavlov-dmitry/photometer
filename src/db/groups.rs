@@ -3,7 +3,7 @@ use mysql::error::{ MyResult };
 use mysql::value::{ from_value, ToValue };
 use types::{ Id, CommonResult, EmptyResult };
 use authentication::{ User };
-use std::fmt::{ Show };
+use std::fmt::Display;
 use database::Database;
   
 type Members = Vec<User>;
@@ -92,7 +92,7 @@ impl DbGroups for MyPooledConn {
     }
 }
 
-fn fn_failed<E: Show>( fn_name: &str, e: E ) -> String {
+fn fn_failed<E: Display>( fn_name: &str, e: E ) -> String {
     format!( "DbGroups {} failed: {}", fn_name, e )
 }
 

@@ -1,9 +1,9 @@
 use std::io::{ File, stdio };
-use serialize::json;
+use rustc_serialize::json;
 use std::io::net::ip::{ Ipv4Addr, IpAddr };
 use types::{ CommonResult };
 
-#[deriving(Encodable, Decodable)]
+#[derive(RustcEncodable, RustcDecodable)]
 pub struct Config {
     server_ip: (u8, u8, u8, u8),
     pub server_port: u16,
@@ -12,11 +12,11 @@ pub struct Config {
     pub db_name : String,
     pub db_user : String,
     pub db_password : String,
-    pub db_min_connections : uint,
-    pub db_max_connections : uint,
+    pub db_min_connections : usize,
+    pub db_max_connections : usize,
     pub photo_store_path: String,
-    pub photo_store_max_photo_size_bytes : uint,
-    pub photo_store_preview_size : uint,
+    pub photo_store_max_photo_size_bytes : usize,
+    pub photo_store_preview_size : usize,
     pub time_store_file_path: String,
 }
 

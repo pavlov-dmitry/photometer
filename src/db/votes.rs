@@ -1,7 +1,7 @@
 use mysql::conn::pool::{ MyPooledConn };
 use mysql::error::{ MyResult };
 use mysql::value::{ from_value, ToValue };
-use std::fmt::{ Show };
+use std::fmt::Display;
 use types::{ Id, EmptyResult, CommonResult };
 use database::Database;
 
@@ -69,7 +69,7 @@ impl DbVotes for MyPooledConn {
 
 }
 
-fn fn_failed<E: Show>( fn_name: &str, e: E ) -> String {
+fn fn_failed<E: Display>( fn_name: &str, e: E ) -> String {
     format!( "DbVotes `{}` failed: {}", fn_name, e )
 }
 

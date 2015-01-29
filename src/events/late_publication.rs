@@ -8,12 +8,12 @@ use db::publication::DbPublication;
 use db::photos::DbPhotos;
 use std::time;
 use time::Timespec;
-use serialize::json;
+use rustc_serialize::json;
 use nickel::Request;
 use authentication::Userable;
 use get_param::GetParamable;
 
-#[deriving(Clone)]
+#[derive(Clone)]
 pub struct LatePublication;
 pub const ID : Id = 3;
 
@@ -33,7 +33,7 @@ impl LatePublication {
             name: String::from_str( "Догоняем " ) + name,
             start_time: start_time,
             end_time: start_time + duration,
-            data: json::encode( &info )
+            data: json::encode( &info ).unwrap()
         }
     }
 }
@@ -140,7 +140,7 @@ fn send_mail_you_can_public_photos( req: &mut Request, user: Id, body: &Schedule
     )
 }
 
-#[deriving(Encodable, Decodable)]
+#[derive(RustcEncodable, RustcDecodable)]
 struct Info {
     group_id: Id,
     parent_id: Id,

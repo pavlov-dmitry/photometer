@@ -1,11 +1,11 @@
 use nickel::{ Request, Response, Continue, MiddlewareResult, Middleware };
-use typemap::Assoc;
+use typemap::Key;
 use plugin::Extensible;
 use log;
 
 use simple_time_profiler::SimpleTimeProfiler;
 
-#[deriving(Clone)]
+#[derive(Clone)]
 struct RequestLogger;
 
 impl Copy for RequestLogger {}
@@ -20,10 +20,10 @@ impl Middleware for RequestLogger {
             info!( "_______________________________________" );
             let request = format!( "request {}:{}", req.origin.method, req.origin.request_uri );
             info!( "{}", request );
-            req.extensions_mut().insert::<RequestLogger, SimpleTimeProfiler>( SimpleTimeProfiler::new( request.as_slice() ) );
+            req.extensions_mut().insert::<RequestLogger>( SimpleTimeProfiler::new( request.as_slice() ) );
         }
         Ok( Continue )
     }
 }
 
-impl Assoc<SimpleTimeProfiler> for RequestLogger {}
+impl Key for RequestLogger { type Value = SimpleTimeProfiler; }

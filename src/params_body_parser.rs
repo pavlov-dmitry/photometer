@@ -1,24 +1,22 @@
 ///  Небольшая middleware которая парсит html параметры, в никеле елси параметра нет, то мы сразу падаем :(
-extern crate url;
 
 use std::collections::HashMap;
 use nickel::{ Request, Response, Continue, MiddlewareResult, Middleware };
 use std::str;
 use parse_utils;
-use typemap::Assoc;
 use plugin::Extensible;
+use plugin::Pluggable;
+use typemap::Key;
+use url;
 
-// в nickel-e есть возможность сделать эти парсеры ленивыми, но тогда мне не нравится что из-за кеширования
-// нужно менять сигнатуру обработчиков на &mut Request, что лично мне не нравится
-
-#[deriving(Clone)]
+#[derive(Clone)]
 pub struct ParamsBodyParser;
 
 struct StringHashMapKey;
 struct BinaryHashMapKey;
 
-impl Assoc<StringHashMap> for StringHashMapKey {}
-impl Assoc<BinaryHashMap> for BinaryHashMapKey {}
+impl Key for StringHashMapKey { type Value = StringHashMap; }
+impl Key for BinaryHashMapKey { type Value = BinaryHashMap; }
 
 impl Middleware for ParamsBodyParser {
     fn invoke<'a>(&self, req: &'a mut Request, _res: &mut Response) -> MiddlewareResult {
@@ -61,15 +59,15 @@ impl Middleware for ParamsBodyParser {
                 }
             }
 
-            req.extensions_mut().insert::<StringHashMapKey, StringHashMap>( params_hash );
-            req.extensions_mut().insert::<BinaryHashMapKey, BinaryHashMap>( bin_params );
+            req.extensions_mut().insert::<StringHashMapKey>( params_hash );
+            req.extensions_mut().insert::<BinaryHashMapKey>( bin_params );
         }
         
         Ok( Continue )
     } 
 }
 
-pub type BinaryHashMap = HashMap<String, (uint, uint)>;
+pub type BinaryHashMap = HashMap<String, (usize, usize)>;
 pub type StringHashMap = HashMap<String, Vec<String>>;
 
 fn read_all_binary_parts( body: &[u8], boundary: &[u8], bin_hash: &mut BinaryHashMap, str_hash: &mut StringHashMap ) {
@@ -80,16 +78,16 @@ fn read_all_binary_parts( body: &[u8], boundary: &[u8], bin_hash: &mut BinaryHas
     }
 }
 
-macro_rules! try_opt(
+macro_rules! try_opt{
     ($expr:expr) => ({
         match $expr {
             Some( val ) => val,
             None => return
         }  
     })
-)
+}
 
-fn read_binary_part( body: &[u8], (from, to) : (uint, uint), bin_hash: &mut BinaryHashMap, str_hash: &mut StringHashMap) {
+fn read_binary_part( body: &[u8], (from, to) : (usize, usize), bin_hash: &mut BinaryHashMap, str_hash: &mut StringHashMap) {
     let chunk = body.slice( from, to );
     //делим их на описательную часть и сами данные
     let (desc, data) = try_opt!( parse_utils::split_seq_alt( chunk, b"\r\n\r\n", b"\n\n" ) );
@@ -98,7 +96,7 @@ fn read_binary_part( body: &[u8], (from, to) : (uint, uint), bin_hash: &mut Bina
     let name = try_opt!( parse_utils::str_between( desc_str, "name=\"", "\"" ) );
     let idx_slice = (to - data.len(), to - 4 ); 
     // записываем имя и "координаты" данных
-    debug!( "param: {} = {}", name, idx_slice );
+    debug!( "param: {} = {:?}", name, idx_slice );
     bin_hash.insert( name.to_string(), idx_slice ); 
     // запись имени файла бинарных данных с постфиксом "_filename"
     let filename = try_opt!( parse_utils::str_between( desc_str, "filename=\"", "\"" ) );
@@ -120,7 +118,7 @@ impl<'a, 'b> ParamsBody for Request<'a, 'b> {
         self.parameters( key ).map( |strings| &strings[ 0 ] )
     }
     fn bin_parameter<'x>(&self, key: &str) -> Option<&[u8]> {
-        self.extensions().get::<BinaryHashMapKey, BinaryHashMap>()
+        self.extensions().get::<BinaryHashMapKey>()
             .and_then( |ref hash| {
                 hash.get( &key.to_string() )
                     .map( |&(from, to)| self.origin.body.slice( from, to ) )
@@ -128,7 +126,7 @@ impl<'a, 'b> ParamsBody for Request<'a, 'b> {
     }
 
     fn parameters( &self, key: &str ) -> Option<&Vec<String>> {
-        self.extensions().get::<StringHashMapKey, StringHashMap>()
+        self.extensions().get::<StringHashMapKey>()
             .and_then( |ref hash| hash.get( key ) )
     }
 }

@@ -6,6 +6,7 @@ use database::Databaseable;
 use get_param::GetParamable;
 use types::{ Id };
 use http::status::Status;
+use std::str::FromStr;
 
 pub fn timetable_path() -> &'static str {
     "/timetable/:group_id"
@@ -54,6 +55,6 @@ fn set_timetable_answer( group_id: Id, req: &mut Request ) -> AnswerResult {
 
 fn get_group_id( req: &Request ) -> Result<Id, NickelError> {
     let group_id_str = req.param( "group_id" );
-    ::std::str::from_str::<Id>( group_id_str )
+    FromStr::from_str( group_id_str )
         .ok_or( NickelError::new("Error parsing request path", NickelErrorKind::ErrorWithStatusCode(Status::NotFound)) )
 }

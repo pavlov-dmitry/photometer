@@ -44,7 +44,7 @@ fn get_answer( req: &mut Request, only_unreaded: bool ) -> AnswerResult {
             only_unreaded,
             page * IN_PAGE_COUNT,
             IN_PAGE_COUNT,
-            |mail_info| answer.add_to_records( mail_info )
+            &mut |mail_info| answer.add_to_records( mail_info )
         )
     );
     Ok( answer )

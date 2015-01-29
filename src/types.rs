@@ -1,12 +1,12 @@
 use time::{ Timespec };
 use std::fmt;
-use std::fmt::{ Show, Formatter };
+use std::fmt::{ Display, Formatter };
 
 pub type Id = u64;
 pub type CommonResult<T> = Result<T, String>;
 pub type EmptyResult = CommonResult<()>;
 
-#[deriving(Show)]
+#[derive(Debug)]
 pub struct PhotoInfo {
     pub id: Id,
     pub upload_time: Timespec,
@@ -22,13 +22,13 @@ pub struct PhotoInfo {
     pub camera_model: Option<String>
 }
 
-#[deriving(PartialEq, Clone)]
+#[derive(PartialEq, Clone, Debug)]
 pub enum ImageType {
     Jpeg,
     Png
 }
 
-impl Show for ImageType {
+impl Display for ImageType {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         match self {
             &ImageType::Jpeg => write!(f, "{}", "jpg".to_string() ),

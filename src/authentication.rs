@@ -2,16 +2,16 @@ extern crate nickel;
 
 use self::nickel::{ Request, Response, Continue, Halt, MiddlewareResult, Middleware };
 use std::collections::HashMap;
-use std::sync::{ Arc, RWLock };
+use std::sync::{ Arc, RwLock };
 use cookies_parser::{ Cookieable };
-use typemap::Assoc;
+use typemap::Key;
 use plugin::Extensible;
 use types::Id;
 
 static SESSION_ID : &'static str = "sid";
 
 /// информация о пользователе
-#[deriving(Clone)]
+#[derive(Clone)]
 pub struct User {
     pub name : String,
     pub id : Id,
@@ -63,19 +63,19 @@ impl SessionsStore {
     }
 }
 
-#[deriving(Clone)]
+#[derive(Clone)]
 pub struct SessionsStoreMiddleware {
-    store : Arc<RWLock<SessionsStore>>
+    store : Arc<RwLock<SessionsStore>>
 }
 
 impl SessionsStoreMiddleware {
     pub fn user_by_session_id(&self, session_id: &SessionId ) -> Option<User> {
-        let store = self.store.read();
-        store.sessions.get( session_id ).map( | ref user | { (*user).clone() } )
+        let store = self.store.read().unwrap();
+        store.sessions.get( session_id ).map( |user| { (*user).clone() } )
     }
 
     pub fn add_new_session( &self, user: &User ) -> SessionId {
-        let mut store = self.store.write();
+        let mut store = self.store.write().unwrap();
         // удаляем старую сессию этого пользователя
         let sess_id = store.session_id_generator.gen();
         if let Some( old_session_id ) = store.sessions_by_user.insert( user.id, sess_id.clone() ) {
@@ -89,11 +89,11 @@ impl SessionsStoreMiddleware {
     }
 }
 
-impl Assoc<SessionsStoreMiddleware> for SessionsStoreMiddleware {}
+impl Key for SessionsStoreMiddleware { type Value = SessionsStoreMiddleware; }
 
 impl Middleware for SessionsStoreMiddleware {
     fn invoke(&self, req: &mut Request, _res: &mut Response) -> MiddlewareResult {
-        req.extensions_mut().insert::<SessionsStoreMiddleware, SessionsStoreMiddleware>( self.clone() );
+        req.extensions_mut().insert::<SessionsStoreMiddleware>( (*self).clone() );
         Ok( Continue )
     } 
 }
@@ -104,12 +104,12 @@ pub trait SessionsStoreable {
 
 impl<'a, 'b> SessionsStoreable for Request<'a, 'b> {
     fn sessions_store( &self ) -> &SessionsStoreMiddleware {
-        self.extensions().get::<SessionsStoreMiddleware, SessionsStoreMiddleware>().unwrap()
+        self.extensions().get::<SessionsStoreMiddleware>().unwrap()
     }
 }
 
 pub fn create_session_store() -> SessionsStoreMiddleware {
-    SessionsStoreMiddleware { store: Arc::new( RWLock::new( SessionsStore::new() ) ) }
+    SessionsStoreMiddleware { store: Arc::new( RwLock::new( SessionsStore::new() ) ) }
 }
 
 /// аутентификация пользователя
@@ -127,7 +127,7 @@ impl Autentication {
     }
 }
 
-impl Assoc<User> for User {}
+impl Key for User { type Value = User; }
 
 impl Middleware for Autentication {
     fn invoke(&self, req: &mut Request, res: &mut Response) -> MiddlewareResult {
@@ -142,7 +142,7 @@ impl Middleware for Autentication {
                 Ok( Halt )
             }
             Some( user ) => {
-                req.extensions_mut().insert::<User, User>( user );
+                req.extensions_mut().insert::<User>( user );
                 Ok( Continue )
             }
         }
@@ -160,6 +160,6 @@ pub trait Userable {
 
 impl<'a, 'b> Userable for Request<'a, 'b> {
     fn user( &self ) -> &User {
-        self.extensions().get::<User, User>().unwrap()
+        self.extensions().get::<User>().unwrap()
     }
 }

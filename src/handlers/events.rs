@@ -3,6 +3,7 @@ use answer::{ AnswerResult, AnswerSendable, Answer };
 use events::events_manager::EventsManager;
 use types::{ Id };
 use http::status::Status;
+use std::str::FromStr;
 
 static ID: &'static str = "id";
 
@@ -80,6 +81,6 @@ fn create_post_answer( event_id: Id, req: &mut Request ) -> AnswerResult {
 
 fn get_id( req: &Request ) -> Result<Id, NickelError> {
     let id = req.param( ID );
-    ::std::str::from_str::<Id>( id )
+    FromStr::from_str( id )
         .ok_or( NickelError::new("Error parsing request path", NickelErrorKind::ErrorWithStatusCode(Status::NotFound)) )
 }

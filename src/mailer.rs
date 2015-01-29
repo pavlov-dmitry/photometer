@@ -15,7 +15,7 @@ use database::{ Databaseable };
 
 type MailSender = Sender<Mail>;
 
-#[deriving(Clone)]
+#[derive(Clone)]
 struct MailerMiddleware {
     sender: MailSender
 }

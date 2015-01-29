@@ -1,9 +1,12 @@
 extern crate libc;
 extern crate num;
-use self::libc::{ size_t, c_int };
+use self::libc::{ size_t, c_int, c_char };
 use self::num::rational::Ratio;
 use std::collections::HashMap;
-use std::c_str::CString;
+use std::ffi;
+use std::str;
+use std::num::ToPrimitive;
+use std::ops::Neg;
 
 pub type ExifEntries = HashMap<String, ExifValue>;
 
@@ -85,7 +88,7 @@ impl ExifValues for ExifEntries {
 }
 
 #[allow(dead_code)]
-#[deriving(Show)]
+#[derive(Debug)]
 enum ExifValue {
     Byte( u8 ),
     Text( String ),
@@ -229,7 +232,7 @@ struct ExifEntry {
     format: ExifFormat,
     components: u32,
     data: *const u8,
-    size: uint,
+    size: usize,
     parent: c_int,
     private: c_int
 }
@@ -262,10 +265,11 @@ fn to_exif_value( entry: &ExifEntry, byte_order: c_int ) -> ExifValue {
             ExifValue::Byte( *data )
         },
         ExifFormat::ASCII => {
-            let name_cstr = unsafe{ CString::new( entry.data as *const i8, false ) };
-            match name_cstr.as_str() {
-                Some( s ) => ExifValue::Text( s.to_string() ),
-                None => ExifValue::Text( "bad ASCII".to_string() )
+            let entry_data_c_char = entry.data as *const c_char;
+            let name_slice = unsafe { ffi::c_str_to_bytes( &entry_data_c_char ) };
+            match str::from_utf8( name_slice ) {
+                Ok( s ) => ExifValue::Text( s.to_string() ),
+                Err( _ ) => ExifValue::Text( "[bad utf8]".to_string() )
             }
         },
         ExifFormat::SHORT => ExifValue::Short( unsafe{ exif_get_short( entry.data, byte_order ) } ),
@@ -298,13 +302,11 @@ struct ReadBody {
 extern fn read_exif_entry( e: *mut ExifEntry, b: *mut ReadBody ) {
     let entry = unsafe{ e.as_ref().unwrap() };
     let body = unsafe{ b.as_mut().unwrap() };
-    let name_cstr = unsafe{ CString::new( exif_tag_get_name_in_ifd( entry.tag, body.ifd ), false ) };
-    match name_cstr.as_str() {
-        Some( name_utf8 ) => {
-            let value = to_exif_value( entry, body.byte_order );
-            body.entries.insert( name_utf8.to_string(), value );
-        }
-        None => {}
+    let name_c_char = unsafe { exif_tag_get_name_in_ifd( entry.tag, body.ifd ) as *const c_char };
+    let name_slice = unsafe { ffi::c_str_to_bytes( &name_c_char ) };
+    if let Ok( name_utf8 ) = str::from_utf8( name_slice ) {
+        let value = to_exif_value( entry, body.byte_order );
+        body.entries.insert( name_utf8.to_string(), value );
     }
 }
 

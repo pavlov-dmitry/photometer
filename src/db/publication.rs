@@ -2,7 +2,7 @@ use mysql::conn::pool::{ MyPooledConn };
 use mysql::error::{ MyResult };
 use mysql::value::{ from_value };
 use types::{ Id, EmptyResult, CommonResult };
-use std::fmt::{ Show };
+use std::fmt::Display;
 use database::Database;
 
 pub trait DbPublication {
@@ -59,7 +59,7 @@ impl DbPublication for MyPooledConn {
     }
 }
 
-fn fn_failed<E: Show>( fn_name: &str, e: E ) -> String {
+fn fn_failed<E: Display>( fn_name: &str, e: E ) -> String {
     format!( "DbPublication {} failed: {}", fn_name, e )
 }
 

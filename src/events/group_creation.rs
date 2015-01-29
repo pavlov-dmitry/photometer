@@ -1,6 +1,7 @@
 use std::collections::HashSet;
-use serialize::json;
+use rustc_serialize::json;
 use std::error::FromError;
+use std::str::FromStr;
 
 use super::{ 
     Event, 
@@ -23,7 +24,7 @@ use authentication::Userable;
 use time;
 use std::time::Duration;
 
-#[deriving(Clone)]
+#[derive(Clone)]
 pub struct GroupCreation;
 pub const ID : Id = 2;
 
@@ -85,7 +86,7 @@ impl UserEvent for GroupCreation {
             name: group_name,
             start_time: start_time,
             end_time: end_time,
-            data: json::encode( &info )
+            data: json::encode( &info ).unwrap()
         })
     }
 }
@@ -207,7 +208,7 @@ impl Event for GroupCreation {
     }
 }
 
-#[deriving(Encodable, Decodable)]
+#[derive(RustcEncodable, RustcDecodable)]
 struct Info {
     initiator: Id,
     members: HashSet<Id>,
@@ -222,7 +223,7 @@ impl FromError<String> for AnswerResult {
 }
 
 fn convert_member( s: &String ) -> CommonResult<Id> {
-    match ::std::str::from_str::<Id>( s.as_slice() ) {
+    match FromStr::from_str( s.as_slice() ) {
         Some( id ) => Ok( id ),
         None => Err( err_msg::invalid_type_param( MEMBERS ) )
     }

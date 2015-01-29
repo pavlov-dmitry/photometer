@@ -3,7 +3,7 @@ use answer::{ AnswerSendable, AnswerResult, Answer };
 use err_msg;
 use time;
 use get_param::{ GetParamable };
-use std::str::{ from_str };
+use std::str::FromStr;
 use database::{ Databaseable };
 use authentication::{ Userable };
 use db::photos::{ DbPhotos };
@@ -35,7 +35,7 @@ pub fn current_year_count( request: &mut Request, response: &mut Response ) {
 }
 
 pub fn by_year_count( request: &mut Request, response: &mut Response ) {
-    let year = from_str::<i32>( request.param( YEAR ) );
+    let year = FromStr::from_str( request.param( YEAR ) );
     let answer = match year {
         Some( year ) => by_year_count_answer( request, year ),
         None => Err( err_msg::invalid_path_param( YEAR ) )
@@ -48,7 +48,7 @@ pub fn current_year( request: &mut Request, response: &mut Response ) {
 }
 
 pub fn by_year( request: &mut Request, response: &mut Response ) {
-    let year = from_str::<i32>( request.param( YEAR ) );
+    let year = FromStr::from_str( request.param( YEAR ) );
     let answer = match year {
         Some( year ) => by_year_answer( request, year ),
         None => Err( err_msg::invalid_path_param( YEAR ) )

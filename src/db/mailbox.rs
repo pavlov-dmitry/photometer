@@ -4,9 +4,10 @@ use mysql::value::{ from_value };
 use time;
 use time::{ Timespec };
 use types::{ Id, CommonResult, EmptyResult, MailInfo };
-use std::fmt::{ Show };
+use std::fmt::Display;
 use parse_utils;
 use database::Database;
+use std::str::FromStr;
 
 pub trait DbMailbox {
     /// посылает письмо одному из участников
@@ -14,7 +15,7 @@ pub trait DbMailbox {
     /// подсчитывает кол-во писем у определенного участника
     fn messages_count( &mut self, owner_id: Id, only_unreaded: bool ) -> CommonResult<u32>;
     /// читает сообщения с пагинацией в обратном от создания порядке
-    fn messages_from_last( &mut self, owner_id: Id, only_unreaded: bool, offset: u32, count: u32, take_mail: |&MailInfo| ) -> EmptyResult;
+    fn messages_from_last<F: FnMut(&MailInfo)>( &mut self, owner_id: Id, only_unreaded: bool, offset: u32, count: u32, take_mail: &mut F ) -> EmptyResult;
     /// помечает сообщение как прочитанное
     fn mark_as_readed( &mut self, owner_id: Id, message_id: Id ) -> CommonResult<bool>;
 }
@@ -49,7 +50,7 @@ impl DbMailbox for MyPooledConn {
             .map_err( |e| fn_failed( "messages_count", e ) )
     }
     /// читает сообщения с пагинацией в обратном от создания порядке
-    fn messages_from_last( &mut self, owner_id: Id, only_unreaded: bool, offset: u32, count: u32, take_mail: |&MailInfo| ) -> EmptyResult {
+    fn messages_from_last<F: FnMut(&MailInfo)>( &mut self, owner_id: Id, only_unreaded: bool, offset: u32, count: u32, take_mail: &mut F ) -> EmptyResult {
         messages_from_last_impl( self, owner_id, only_unreaded, offset, count, take_mail )
             .map_err( |e| fn_failed( "messages_from_last", e ) )
     }
@@ -62,7 +63,7 @@ impl DbMailbox for MyPooledConn {
 }
 
 #[inline]
-fn fn_failed<E: Show>( fn_name: &str, e: E ) -> String {
+fn fn_failed<E: Display>( fn_name: &str, e: E ) -> String {
     format!( "DbMailbox {} failed: {}", fn_name, e )
 }
 
@@ -104,7 +105,15 @@ fn messages_count_impl( conn: &mut MyPooledConn, owner_id: Id, only_unreaded: bo
     Ok( from_value( &sql_row[ 0 ] ) )
 }
 
-fn messages_from_last_impl( conn: &mut MyPooledConn, owner_id: Id, only_unreaded: bool, offset: u32, count: u32, take_mail: |&MailInfo| ) -> MyResult<()> {
+fn messages_from_last_impl<F: FnMut(&MailInfo)>( 
+    conn: &mut MyPooledConn, 
+    owner_id: Id, 
+    only_unreaded: bool, 
+    offset: u32, 
+    count: u32, 
+    take_mail: &mut F 
+) -> MyResult<()> 
+{
     let where_postfix = if only_unreaded { "AND readed='false'" } else { "" };
     let query = format!( "
         SELECT 
@@ -143,6 +152,6 @@ fn mark_as_readed_impl( conn: &mut MyPooledConn, owner_id: Id, message_id: Id ) 
     //узнать сколько строчек подошло под запрос можно только распарсив строку информации после запроса
     let info = String::from_utf8( sql_result.info() ).unwrap();
     let matched_count_str = parse_utils::str_between( info.as_slice(), "matched: ", " " ).unwrap();
-    let matched : u32 = from_str( matched_count_str ).unwrap();
+    let matched : u32 = FromStr::from_str( matched_count_str ).unwrap();
     Ok( 1 == matched )
 }

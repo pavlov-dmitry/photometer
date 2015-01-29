@@ -5,6 +5,7 @@ use types::{ Id, CommonResult };
 use database::{ Databaseable };
 use db::photos::{ DbPhotos };
 use photo_store::{ PhotoStoreable };
+use std::str::FromStr;
 
 static FILENAME : &'static str = "filename";
 
@@ -26,7 +27,7 @@ pub fn get_image( req: &mut Request, res: &mut Response, is_preview: bool ) {
 
 pub fn get_image_impl( req: &mut Request, res: &mut Response, is_preview: bool ) -> CommonResult<()> {
     let image_id = try!( 
-        from_str::<Id>( req.param( FILENAME ) )
+        FromStr::from_str( req.param( FILENAME ) )
             .ok_or( err_msg::invalid_type_param( FILENAME ) ) 
     );
     let maybe_info = {

@@ -3,7 +3,7 @@ use mysql::error::{ MyResult };
 use mysql::value::{ from_value, ToValue, FromValue, Value, from_value_opt };
 use types::{ Id, CommonResult, EmptyResult };
 use time::{ Timespec };
-use std::fmt::Show;
+use std::fmt::Display;
 use events::{ ScheduledEventInfo, EventState, FullEventInfo };
 use database::Database;
 
@@ -84,7 +84,7 @@ impl DbEvents for MyPooledConn {
     }
 }
 
-fn fn_failed<E: Show>( fn_name: &str, e: E ) -> String {
+fn fn_failed<E: Display>( fn_name: &str, e: E ) -> String {
     format!( "DbEvents {} failed: {}", fn_name, e )
 }
 

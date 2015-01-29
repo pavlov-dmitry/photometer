@@ -27,6 +27,6 @@ impl Drop for SimpleTimeProfiler {
 
 //судя по всему чтобы этот макрос заработал, его нужно выносить в отдельный crate
 #[macro_export]
-macro_rules! measure(
+macro_rules! measure {
     ($expr:expr) => ({ let _profiler = simple_time_profiler::SimpleTimeProfiler::new( stringify!( $expr ) ); $expr })
-)
+}

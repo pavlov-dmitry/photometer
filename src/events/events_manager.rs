@@ -1,5 +1,5 @@
 use nickel::{ Request, Response, Continue, MiddlewareResult, Middleware };
-use typemap::Assoc;
+use typemap::Key;
 use plugin::Extensible;
 use database::{ Databaseable };
 use std::sync::{ Arc };
@@ -15,7 +15,7 @@ use answer::{ Answer, AnswerResult };
 use types::{ Id };
 use super::time_store::TimeStore;
 
-#[deriving(Clone)]
+#[derive(Clone)]
 struct EventsManagerMiddleware {
     time_store: Arc<TimeStore>
 }
@@ -117,15 +117,15 @@ trait EventsManagerPrivate {
     fn set_event_state( &mut self, scheduled_id: Id, state: EventState ) -> EmptyResult;
     fn finish_him( &mut self, event: EventPtr, info: &ScheduledEventInfo ) -> EmptyResult;
     fn get_time_period( &self ) -> CommonResult<( Timespec, Timespec )>;
-    fn if_has_event( &mut self, scheduled_id: Id, 
-        do_this: |EventPtr, ScheduledEventInfo, &mut Request| -> AnswerResult
+    fn if_has_event<F: Fn(EventPtr, ScheduledEventInfo, &mut Request) -> AnswerResult>( 
+        &mut self, scheduled_id: Id, do_this: F
     ) -> AnswerResult;
     fn check_timetables( &mut self, from: &Timespec, to: &Timespec ) -> EmptyResult;
 }
 
 impl<'a, 'b> EventsManagerPrivate for Request<'a, 'b> {
     fn get_body( &self ) -> &EventsManagerMiddleware {
-        self.extensions().get::<EventsManagerMiddleware, EventsManagerMiddleware>().unwrap()  
+        self.extensions().get::<EventsManagerMiddleware>().unwrap()  
     }
     fn set_event_state( &mut self, scheduled_id: Id, state: EventState ) -> EmptyResult {
         let db = try!( self.get_current_db_conn() );
@@ -149,8 +149,8 @@ impl<'a, 'b> EventsManagerPrivate for Request<'a, 'b> {
     }
 
     // db приходится передавать по цепочке, иначе содается вторая mut ссылка в замыкании, что естественно делать нельзя
-    fn if_has_event( &mut self,  scheduled_id: Id,
-        do_this: |EventPtr, ScheduledEventInfo, &mut Request| -> AnswerResult 
+    fn if_has_event<F: Fn(EventPtr, ScheduledEventInfo, &mut Request) -> AnswerResult>( 
+        &mut self,  scheduled_id: Id, do_this: F
     ) -> AnswerResult {
         let event_info = {
             let db = try!( self.get_current_db_conn() );
@@ -196,7 +196,7 @@ impl<'a, 'b> EventsManagerPrivate for Request<'a, 'b> {
         }
         // елси хоть что нить создали, то записываем их в запланированные события
         if events.is_empty() == false {
-            info!( "add events from timetable: {}", events );
+            debug!( "add events from timetable: {:?}", events );
             let db = try!( self.get_current_db_conn() );
             try!( db.add_events( events.as_slice() ) );
         }
@@ -210,11 +210,11 @@ pub fn middleware( time_store_file_path: &String ) -> EventsManagerMiddleware {
     }
 }
 
-impl Assoc<EventsManagerMiddleware> for EventsManagerMiddleware {}
+impl Key for EventsManagerMiddleware { type Value = EventsManagerMiddleware; }
 
 impl Middleware for EventsManagerMiddleware {
     fn invoke(&self, req: &mut Request, _res: &mut Response) -> MiddlewareResult {
-        req.extensions_mut().insert::<EventsManagerMiddleware, EventsManagerMiddleware>( self.clone() );
+        req.extensions_mut().insert::<EventsManagerMiddleware>( self.clone() );
         Ok( Continue )
     } 
 }

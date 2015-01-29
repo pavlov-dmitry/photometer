@@ -18,7 +18,7 @@ pub struct ScheduledEventInfo {
     pub state: EventState
 }
 
-#[deriving(Show)]
+#[derive(Debug)]
 pub struct FullEventInfo {
     pub id: Id,
     pub name: String,

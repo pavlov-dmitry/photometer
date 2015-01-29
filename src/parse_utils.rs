@@ -20,7 +20,9 @@ pub struct BoundaryIter<'a, 'b, T:'a + 'b + PartialEq> {
     data: &'a [T],
     sequence: &'b [T]
 }
-impl<'a, 'b, T:'a + PartialEq> Iterator<&'a [T]> for BoundaryIter<'a, 'b, T> {
+impl<'a, 'b, T:'a + PartialEq> Iterator for BoundaryIter<'a, 'b, T> {
+    type Item = &'a [T];
+
     fn next(&mut self) -> Option<&'a [T]> {
         let mut result = None;
         for pos in range( 0, self.data.len() + 1 ) {
@@ -57,10 +59,12 @@ pub fn boundary_idx<'a, T:'a + PartialEq>( data: &'a [T], sequence: &'a [T] ) ->
 pub struct BoundaryIdxIter<'a, T:'a + PartialEq> {
     data: &'a [T],
     sequence: &'a [T],
-    idx: uint
+    idx: usize
 }
-impl<'a, T:'a + PartialEq> Iterator<(uint, uint)> for BoundaryIdxIter<'a, T> {
-    fn next(&mut self) -> Option<(uint, uint)> {
+impl<'a, T:'a + PartialEq> Iterator for BoundaryIdxIter<'a, T> {
+    type Item = (usize, usize);
+    
+    fn next(&mut self) -> Option<(usize, usize)> {
         let mut result = None;
         for pos in range( self.idx, self.data.len() + 1 ) {
             if self.data.slice( self.idx, pos ).ends_with( self.sequence ) {

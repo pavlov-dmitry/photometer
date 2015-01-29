@@ -2,7 +2,7 @@ use params_body_parser::{ ParamsBody };
 use nickel::{ Request };
 use std::str;
 use super::err_msg;
-use std::str::{ from_str, FromStr };
+use std::str::FromStr;
 use types::{ CommonResult, Id };
 use time;
 use time::Timespec;
@@ -10,7 +10,7 @@ use time::Timespec;
 pub trait GetParamable {
     fn get_param( &self, prm: &str ) -> CommonResult<&str>;
     fn get_param_bin( &self, prm: &str ) -> CommonResult<&[u8]>;
-    fn get_param_uint( &self, prm: &str ) -> CommonResult<uint>;
+    fn get_param_uint( &self, prm: &str ) -> CommonResult<usize>;
     fn get_param_id( &self, prm: &str ) -> CommonResult<Id>;
     fn get_param_time( &self, prm: &str ) -> CommonResult<Timespec>;
     fn get_params( &self, prm: &str ) -> CommonResult<&Vec<String>>;
@@ -35,8 +35,8 @@ impl<'a, 'b> GetParamable for Request<'a, 'b> {
             Some( s ) => Ok( s.as_slice() ),
             None => match self.bin_parameter( prm ) {
                 Some( b ) => match str::from_utf8( b ) {
-                    Some( s ) => Ok( s ),
-                    None => Err( err_msg::not_a_string_param( prm ) )
+                    Ok( s ) => Ok( s ),
+                    Err( _ ) => Err( err_msg::not_a_string_param( prm ) )
                 },
                 None => Err( err_msg::param_not_found( prm ) )
             }
@@ -49,13 +49,13 @@ impl<'a, 'b> GetParamable for Request<'a, 'b> {
     fn get_param_bin( &self, prm: &str ) -> CommonResult<&[u8]> {
         self.bin_parameter( prm ).ok_or( err_msg::invalid_type_param( prm ) )
     }
-    fn get_param_uint( &self, prm: &str ) -> CommonResult<uint> {
+    fn get_param_uint( &self, prm: &str ) -> CommonResult<usize> {
         self.get_param( prm )
-            .and_then( |s| from_str::<uint>( s ).ok_or( err_msg::invalid_type_param( prm ) ) )
+            .and_then( |s| FromStr::from_str( s ).ok_or( err_msg::invalid_type_param( prm ) ) )
     }
     fn get_param_id( &self, prm: &str ) -> CommonResult<Id> {
         self.get_param( prm )
-            .and_then( |s| from_str::<Id>( s ).ok_or( err_msg::invalid_type_param( prm ) ) ) 
+            .and_then( |s| FromStr::from_str( s ).ok_or( err_msg::invalid_type_param( prm ) ) ) 
     }
 
     fn get_param_time( &self, prm: &str ) -> CommonResult<Timespec> {
@@ -111,6 +111,6 @@ impl<'a> FromParams<'a> for &'a str {
 impl<'a, T: FromStr> FromParams<'a> for T {
     fn from_params( params: &'a GetParamable, prm: &str ) -> CommonResult<T> {
         params.get_param( prm )
-            .and_then( |s| from_str::<T>( s ).ok_or( err_msg::invalid_type_param( prm ) ) )
+            .and_then( |s| FromStr::from_str( s ).ok_or( err_msg::invalid_type_param( prm ) ) )
     }
 }

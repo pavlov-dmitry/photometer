@@ -2,7 +2,7 @@ use super::{ Event, CreateFromTimetable, ScheduledEventInfo, make_event_action_l
 use super::late_publication::LatePublication;
 use types::{ Id, EmptyResult, CommonResult };
 use answer::{ Answer, AnswerResult };
-use serialize::json;
+use rustc_serialize::json;
 use db::mailbox::DbMailbox;
 use db::groups::DbGroups;
 use db::publication::DbPublication;
@@ -15,7 +15,7 @@ use authentication::{ Userable };
 use std::time::duration::Duration;
 use time;
 
-#[deriving(Clone)]
+#[derive(Clone)]
 pub struct Publication;
 pub const ID : Id = 1;
 
@@ -128,7 +128,7 @@ impl CreateFromTimetable for Publication {
     /// создаёт данные для события, возвращет None если параметры не соответствуют этому событию
     fn from_timetable( &self, group_id: Id, _params: &String ) -> Option<String> {
         let data = Info{ group_id: group_id };
-        Some( json::encode( &data ) )
+        Some( json::encode( &data ).unwrap() )
     }
 }
 
@@ -155,7 +155,7 @@ fn get_info( str_body: &String ) -> CommonResult<Info> {
     json::decode( str_body.as_slice() ).map_err( |e| format!( "Publication event decode error: {}", e ) )   
 }
 
-#[deriving(Encodable, Decodable)]
+#[derive(RustcEncodable, RustcDecodable)]
 struct Info {
     group_id: Id
 }

@@ -3,7 +3,7 @@ use mysql::error::{ MyResult };
 use mysql::value::{ from_value, from_value_opt, ToValue };
 use types::{ CommonResult, Id, EmptyResult };
 use time::Timespec;
-use std::fmt::{ Show };
+use std::fmt::Display;
 use database::Database;
 
 pub struct TimetableEventInfo {
@@ -57,7 +57,7 @@ impl DbTimetable for MyPooledConn {
     } 
 }
 
-fn fn_failed<E: Show>( fn_name: &str, e: E ) -> String {
+fn fn_failed<E: Display>( fn_name: &str, e: E ) -> String {
     format!( "DbTimetable {} failed: {}", fn_name, e )
 }
 

@@ -1,7 +1,6 @@
 use mysql::conn::pool::{ MyPooledConn };
 use mysql::error::{ MyResult };
 use mysql::value::{ from_value, from_value_opt, ToValue, FromValue, Value };
-use std::slice::{ Items };
 use types::{ Id, PhotoInfo, ImageType, CommonResult, EmptyResult };
 use time::{ Timespec };
 use database::Database;
@@ -202,7 +201,8 @@ fn rename_photo_impl( conn: &mut MyPooledConn, photo_id: Id, newname: &str ) -> 
     Ok( () )
 }
 
-fn read_photo_info( values: &mut Items<Value> ) -> PhotoInfo {
+fn read_photo_info<'a, I: Iterator<Item = &'a Value>>( values: &mut I ) -> PhotoInfo 
+{
     PhotoInfo {
         id: from_value( values.next().unwrap() ),
         upload_time: Timespec::new( from_value( values.next().unwrap() ), 0 ),

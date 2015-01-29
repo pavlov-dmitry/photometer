@@ -1,6 +1,6 @@
 // формирование стандартных описаний ошибок
 use std::io::{ IoError };
-use std::fmt::Show;
+use std::fmt::Display;
 
 #[inline]
 pub fn param_not_found( prm: &str ) -> String {
@@ -33,6 +33,10 @@ pub fn parsing_error_param( prm: &str ) -> String {
 }
 
 #[inline]
-pub fn fn_failed<E: Show>( fn_name: &str, e: E ) -> String {
+pub fn fn_failed<E: Display>( fn_name: &str, e: E ) -> String {
 	format!( "error {} failed: {}", fn_name, e )
 }
+
+/*pub fn fn_failed<E: Display>( fn_name: &str, e: E ) -> String {
+	format!( "error {} failed: {}", fn_name, e )
+}*/

@@ -1,9 +1,9 @@
 use nickel::{ Response };
 use nickel::mimes::{ MediaType };
-use serialize::{ Encodable, Encoder };
-use serialize::json;
-use serialize::json::{ ToJson, Json };
-use std::collections::TreeMap;
+use rustc_serialize::{ Encodable, Encoder };
+use rustc_serialize::json;
+use rustc_serialize::json::{ ToJson, Json };
+use std::collections::BTreeMap;
 
 use types::{ PhotoInfo, ImageType, CommonResult, MailInfo };
 
@@ -11,7 +11,7 @@ pub trait AnswerSendable {
     fn send_answer( &mut self, answer: &AnswerResult );
 }
 
-#[deriving(Encodable)]
+#[derive(RustcEncodable)]
 pub struct Answer {
     records_exists: bool,
     records: Records,
@@ -55,20 +55,20 @@ impl<'a, 'b> AnswerSendable for Response<'a, 'b> {
                 if let Some( ref mut content_type ) = self.origin.headers.content_type {
                     content_type.parameters.push( ( "charset".to_string(), "utf8".to_string() ) );
                 }
-                self.send( json::encode( answer ).as_slice() );
+                self.send( json::encode( answer ).unwrap().as_slice() );
             }
         }
     }
 }
 
 
-#[deriving(Encodable)]
+#[derive(RustcEncodable)]
 struct Record {
     field: String,
     value: Json
 }
 
-#[deriving(Encodable)]
+#[derive(RustcEncodable)]
 struct Error {
     field: String,
     reason: String
@@ -78,7 +78,7 @@ type Records = Vec<Json>;
 
 impl ToJson for Record {
     fn to_json(&self) -> Json {
-        let mut d = TreeMap::new();
+        let mut d = BTreeMap::new();
         d.insert( self.field.clone(), self.value.to_json() );
         Json::Object(d)
     }
@@ -102,7 +102,7 @@ impl AddToJson for json::Object {
 
 impl ToJson for PhotoInfo {
     fn to_json(&self) -> Json {
-        let mut d = TreeMap::new();
+        let mut d = BTreeMap::new();
         d.add( "id", &self.id );
         d.add( "type", &self.image_type );
         d.add( "width", &self.width );
@@ -114,18 +114,6 @@ impl ToJson for PhotoInfo {
         d.add( "focal_length", &self.focal_length );
         d.add( "focal_length_35mm", &self.focal_length_35mm );
         d.add( "camera_model", &self.camera_model );
-        /*d.insert( String::from_str( "id" ), self.id.to_json() );
-        d.insert( String::from_str( "type" ), self.image_type.to_json() );
-        d.insert( String::from_str( "width" ), self.width.to_json() );
-        d.insert( String::from_str( "height" ), self.height.to_json() );
-        d.insert( String::from_str( "name" ), self.name.to_json() );
-        d.insert( String::from_str( "iso" ), self.iso.to_json() );
-        d.insert( String::from_str( "shutter" ), self.shutter_speed.to_json() );
-        d.insert( String::from_str( "aperture" ), self.aperture.to_json() );
-        d.insert( String::from_str( "focal_length" ), self.focal_length.to_json() );
-        d.insert( String::from_str( "focal_length_35mm" ), self.focal_length_35mm.to_json() );
-        d.insert( String::from_str( "camera_model" ), self.camera_model.to_json() );
-        */
         Json::Object( d )
     }
 }
@@ -133,7 +121,7 @@ impl ToJson for PhotoInfo {
 
 impl ToJson for MailInfo {
     fn to_json( &self ) -> Json {
-        let mut d = TreeMap::new();
+        let mut d = BTreeMap::new();
         d.add( "id", &self.id );
         d.add( "time", &self.creation_time.sec );
         d.add( "sender", &self.sender_name );
