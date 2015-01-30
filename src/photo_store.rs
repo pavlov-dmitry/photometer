@@ -1,16 +1,14 @@
-use nickel::{ Request, Response, Continue, MiddlewareResult, Middleware };
 use std::sync::{ Arc };
-use std::io;
-use std::io::{ IoResult, USER_RWX };
-use std::io::fs::{ mkdir_recursive, File };
+use std::old_io as io;
+use std::old_io::{ IoResult, USER_RWX };
+use std::old_io::fs::{ mkdir_recursive, File };
 use authentication::{ User };
 use image;
 use image::{ GenericImage, DynamicImage };
 use std::cmp::{ min, max };
 use time::{ Timespec };
 use types::{ ImageType };
-use typemap::Key;
-use plugin::Extensible;
+use iron::typemap::Key;
 
 static GALLERY_DIR : &'static str = "gallery";
 

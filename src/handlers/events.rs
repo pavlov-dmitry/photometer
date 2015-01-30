@@ -1,8 +1,7 @@
-use nickel::{ Request, Response, NickelError, NickelErrorKind, Halt, MiddlewareResult };
 use answer::{ AnswerResult, AnswerSendable, Answer };
 use events::events_manager::EventsManager;
 use types::{ Id };
-use http::status::Status;
+use iron::status::Status;
 use std::str::FromStr;
 
 static ID: &'static str = "id";

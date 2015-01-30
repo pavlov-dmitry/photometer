@@ -1,12 +1,10 @@
 ///  Небольшая middleware которая парсит html параметры, в никеле елси параметра нет, то мы сразу падаем :(
 
 use std::collections::HashMap;
-use nickel::{ Request, Response, Continue, MiddlewareResult, Middleware };
 use std::str;
 use parse_utils;
-use plugin::Extensible;
-use plugin::Pluggable;
-use typemap::Key;
+use iron::Plugin;
+use iron::typemap::Key;
 use url;
 
 #[derive(Clone)]

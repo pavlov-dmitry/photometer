@@ -1,6 +1,4 @@
-use nickel::{ Request, Response, Continue, MiddlewareResult, Middleware };
-use typemap::Key;
-use plugin::Extensible;
+use iron::typemap::Key;
 use log;
 
 use simple_time_profiler::SimpleTimeProfiler;

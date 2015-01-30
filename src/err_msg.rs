@@ -1,5 +1,5 @@
 // формирование стандартных описаний ошибок
-use std::io::{ IoError };
+use std::old_io::{ IoError };
 use std::fmt::Display;
 
 #[inline]

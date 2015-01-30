@@ -8,25 +8,14 @@ authors = ["pavlov_dmitry"]
 [dependencies]
 num = "*"
 time = "*"
-typemap = "*"
 url="*"
 rustc-serialize="*"
 log = "*"
 env_logger = "*"
-
-[dependencies.nickel]
-
-git = "https://github.com/nickel-org/nickel.rs.git"
-
-[dependencies.plugin]
-git = "https://github.com/reem/rust-plugin"
-
-[dependencies.http]
-git = "https://github.com/nickel-org/rust-http.git"
+iron = "*"
 
 [dependencies.mysql]
-# git = "https://github.com/pavlov-dmitry/rust-mysql-simple.git"
-path = "../forked/rust-mysql-simple"
+version="*"
 default-features = false
 
 [dependencies.image]

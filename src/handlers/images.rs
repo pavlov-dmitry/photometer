@@ -1,6 +1,5 @@
 use err_msg;
-use nickel::{ Request, Response };
-use std::io;
+use std::old_io as io;
 use types::{ Id, CommonResult };
 use database::{ Databaseable };
 use db::photos::{ DbPhotos };

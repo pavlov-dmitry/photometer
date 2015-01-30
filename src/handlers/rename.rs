@@ -1,4 +1,3 @@
-use nickel::{ Request, Response };
 use authentication::{ Userable };
 
 use answer::{ AnswerSendable, AnswerResult, Answer };

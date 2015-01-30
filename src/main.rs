@@ -1,17 +1,14 @@
-extern crate nickel;
+extern crate iron;
 extern crate mysql;
 extern crate image;
 extern crate time;
-extern crate typemap;
-extern crate plugin;
-extern crate http;
 extern crate url;
 #[macro_use] 
 extern crate log;
 extern crate env_logger;
 extern crate "rustc-serialize" as rustc_serialize;
 
-use nickel::{ Nickel, HttpRouter, StaticFilesHandler, Request, Response, MiddlewareResult, ResponseFinalizer };
+use iron::prelude::*;
 
 mod params_body_parser;
 mod authentication;

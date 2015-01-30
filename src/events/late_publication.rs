@@ -9,7 +9,6 @@ use db::photos::DbPhotos;
 use std::time;
 use time::Timespec;
 use rustc_serialize::json;
-use nickel::Request;
 use authentication::Userable;
 use get_param::GetParamable;
 

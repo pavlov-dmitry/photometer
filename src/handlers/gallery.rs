@@ -1,4 +1,3 @@
-use nickel::{ Request, Response };
 use answer::{ AnswerSendable, AnswerResult, Answer };
 use err_msg;
 use time;

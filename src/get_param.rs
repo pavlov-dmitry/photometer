@@ -1,5 +1,4 @@
 use params_body_parser::{ ParamsBody };
-use nickel::{ Request };
 use std::str;
 use super::err_msg;
 use std::str::FromStr;

@@ -1,11 +1,10 @@
-use nickel::{ Request, Response, NickelError, NickelErrorKind, Halt, MiddlewareResult };
 use answer::{ AnswerSendable, AnswerResult, Answer };
 use db::timetable::{ DbTimetable, TimetableEventInfo };
 use db::groups::DbGroups;
 use database::Databaseable;
 use get_param::GetParamable;
 use types::{ Id };
-use http::status::Status;
+use iron::status::Status;
 use std::str::FromStr;
 
 pub fn timetable_path() -> &'static str {

@@ -1,4 +1,3 @@
-use nickel::{ Request, Response };
 use photo_store::{ PhotoStoreable, PhotoStoreError };
 use answer::{ AnswerSendable, AnswerResult, Answer };
 use get_param::{ GetParamable };

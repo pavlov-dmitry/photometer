@@ -1,6 +1,6 @@
-use std::io::{ File, stdio };
+use std::old_io::{ File, stdio };
 use rustc_serialize::json;
-use std::io::net::ip::{ Ipv4Addr, IpAddr };
+use std::old_io::net::ip::{ Ipv4Addr, IpAddr };
 use types::{ CommonResult };
 
 #[derive(RustcEncodable, RustcDecodable)]

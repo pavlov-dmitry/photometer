@@ -1,11 +1,7 @@
-extern crate nickel;
-
-use self::nickel::{ Request, Response, Continue, Halt, MiddlewareResult, Middleware };
 use std::collections::HashMap;
 use std::sync::{ Arc, RwLock };
 use cookies_parser::{ Cookieable };
-use typemap::Key;
-use plugin::Extensible;
+use iron::typemap::Key;
 use types::Id;
 
 static SESSION_ID : &'static str = "sid";
@@ -113,7 +109,7 @@ pub fn create_session_store() -> SessionsStoreMiddleware {
 }
 
 /// аутентификация пользователя
-#[deriving(Clone)]
+#[derive(Clone)]
 pub struct Autentication {
     login_page_path : Arc<String>
 }

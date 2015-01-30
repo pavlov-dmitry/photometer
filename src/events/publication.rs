@@ -10,7 +10,6 @@ use db::photos::DbPhotos;
 use db::events::DbEvents;
 use get_param::GetParamable;
 use database::{ Databaseable };
-use nickel::{ Request };
 use authentication::{ Userable };
 use std::time::duration::Duration;
 use time;

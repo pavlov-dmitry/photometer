@@ -1,9 +1,7 @@
 /// Простой парсер печенек, оформленный в виде middleware
 
-use nickel::{ Request, Response, Continue, MiddlewareResult, Middleware };
 use std::collections::HashMap;
-use typemap::Key;
-use plugin::Extensible;
+use iron::typemap::Key;
 
 pub trait Cookieable {
     fn cookie( &self, &str ) -> Option<&String>;

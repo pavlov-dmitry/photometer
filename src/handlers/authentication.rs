@@ -1,4 +1,3 @@
-use nickel::{ Request, Response };
 use answer::{ Answer, AnswerSendable, AnswerResult };
 use database::{ Databaseable };
 use db::users::{ DbUsers };

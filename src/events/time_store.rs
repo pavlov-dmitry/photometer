@@ -1,5 +1,5 @@
 use time::{ Timespec };
-use std::io::{ File, IoErrorKind };
+use std::old_io::{ File, IoErrorKind };
 use types::{ EmptyResult, CommonResult };
 
 /// хранилище времени на базе файла

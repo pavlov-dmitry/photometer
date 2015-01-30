@@ -12,7 +12,6 @@ use super::{
 };
 use err_msg;
 use types::{ Id, EmptyResult, CommonResult };
-use nickel::{ Request };
 use answer::{ Answer, AnswerResult };
 use get_param::GetParamable;
 use database::{ DbConnection, Databaseable };

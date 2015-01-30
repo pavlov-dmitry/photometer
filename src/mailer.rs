@@ -1,7 +1,6 @@
 use typemap::Assoc;
 use plugin::Extensible;
 use std::sync::{ Arc, RWLock };
-use nickel::{ Request, Response, Continue, MiddlewareResult, Middleware };
 use std::io::process::Command;
 use std::io::IoResult;
 use std::io::fs::File;

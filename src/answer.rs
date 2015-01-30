@@ -1,8 +1,5 @@
-use nickel::{ Response };
-use nickel::mimes::{ MediaType };
 use rustc_serialize::{ Encodable, Encoder };
-use rustc_serialize::json;
-use rustc_serialize::json::{ ToJson, Json };
+use rustc_serialize::json::{ self, ToJson, Json };
 use std::collections::BTreeMap;
 
 use types::{ PhotoInfo, ImageType, CommonResult, MailInfo };

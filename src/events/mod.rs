@@ -1,6 +1,5 @@
 use types::{ Id, EmptyResult, CommonResult };
 use answer::{ AnswerResult };
-use nickel::{ Request };
 use time::Timespec;
 
 pub mod events_manager;

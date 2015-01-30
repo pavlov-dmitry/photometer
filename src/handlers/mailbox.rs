@@ -1,4 +1,3 @@
-use nickel::{ Request, Response };
 use answer::{ AnswerResult, AnswerSendable, Answer };
 use database::{ Databaseable };
 use db::mailbox::{ DbMailbox };

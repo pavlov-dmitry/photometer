@@ -1,4 +1,3 @@
-use nickel::{ Request, Response };
 use authentication::{ Userable };
 
 pub use self::authentication::{ login, join_us };

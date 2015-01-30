@@ -3,10 +3,8 @@ use mysql::conn::{ MyOpts };
 use mysql::conn::pool::{ MyPool, MyPooledConn };
 use std::default::{ Default };
 
-use nickel::{ Request, Response, Continue, MiddlewareResult, Middleware };
 use types::{ CommonResult, EmptyResult };
-use typemap::Key;
-use plugin::Extensible;
+use iron::typemap::Key;
 use db;
 use err_msg;
 
