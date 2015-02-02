@@ -1,5 +1,7 @@
 use iron::typemap::Key;
 use log;
+use iron::{Handler, AroundMiddleware};
+use iron::prelude::*;
 
 use simple_time_profiler::SimpleTimeProfiler;
 
@@ -12,15 +14,30 @@ pub fn middleware() -> RequestLogger {
     RequestLogger
 }
 
-impl Middleware for RequestLogger {
-    fn invoke<'a>(&self, req: &'a mut Request, _res: &mut Response) -> MiddlewareResult {
-        if log_enabled!( log::INFO ) {
+struct RequestLoggerHandler<H: Handler> {
+    handler: H
+}
+
+impl AroundMiddleware for RequestLogger {
+   fn around(self, handler: Box<Handler>) -> Box<Handler> {
+        Box::new( RequestLoggerHandler{
+            handler: handler
+        })
+    }
+}
+
+impl<H: Handler> Handler for RequestLoggerHandler<H> {
+    fn handle(&self, req: &mut Request) -> IronResult<Response> {
+        if log_enabled!( log::LogLevel::Info ) {
             info!( "_______________________________________" );
             let request = format!( "request {}:{}", req.origin.method, req.origin.request_uri );
             info!( "{}", request );
-            req.extensions_mut().insert::<RequestLogger>( SimpleTimeProfiler::new( request.as_slice() ) );
+            let _profiler = SimpleTimeProfiler::new( request.as_slice() );
+            self.handler.handle( req )
         }
-        Ok( Continue )
+        else {
+            self.handler.handle( req )
+        }
     }
 }
 

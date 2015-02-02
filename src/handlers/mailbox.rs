@@ -3,16 +3,18 @@ use database::{ Databaseable };
 use db::mailbox::{ DbMailbox };
 use authentication::{ Userable };
 use get_param::{ GetParamable };
+use iron::prelude::*;
+use iron::status;
 
 static PAGE: &'static str = "page";
 const IN_PAGE_COUNT: u32 = 10;
 
-pub fn count(request: &mut Request, response: &mut Response ) {
-    response.send_answer( &count_answer( request, false ) );
+pub fn count(request: &mut Request ) -> IronResult<Response> {
+    Ok( Response::with( status::Ok, count_answer( request, false ) ) )
 }
 
 pub fn count_unreaded( request: &mut Request, response: &mut Response ) {
-    response.send_answer( &count_answer( request, true ) );
+    Ok( Response::with( status::Ok, count_answer( request, true ) ) )
 }
 
 fn count_answer( req: &mut Request, only_unreaded: bool ) -> AnswerResult {

@@ -2,6 +2,7 @@ use std::collections::HashSet;
 use rustc_serialize::json;
 use std::error::FromError;
 use std::str::FromStr;
+use iron::prelude::*;
 
 use super::{ 
     Event, 

@@ -9,6 +9,8 @@ use std::cmp::{ min, max };
 use time::{ Timespec };
 use types::{ ImageType };
 use iron::typemap::Key;
+use iron::middleware::BeforeMiddleware;
+use iron::prelude::*;
 
 static GALLERY_DIR : &'static str = "gallery";
 
@@ -139,10 +141,10 @@ impl PhotoStore {
 
 impl Key for PhotoStore { type Value = PhotoStore; }
 
-impl Middleware for PhotoStore {
-    fn invoke(&self, req: &mut Request, _res: &mut Response) -> MiddlewareResult {
+impl BeforeMiddleware for PhotoStore {
+    fn before(&self, req: &mut Request) -> IronResult<()> {
         req.extensions_mut().insert::<PhotoStore>( self.clone() );
-        Ok( Continue )
+        Ok( () )
     } 
 }
 

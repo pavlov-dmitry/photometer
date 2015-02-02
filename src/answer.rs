@@ -1,6 +1,9 @@
 use rustc_serialize::{ Encodable, Encoder };
 use rustc_serialize::json::{ self, ToJson, Json };
 use std::collections::BTreeMap;
+use iron::modifier::Modifier;
+use iron::prelude::*;
+use iron::mime;
 
 use types::{ PhotoInfo, ImageType, CommonResult, MailInfo };
 
@@ -43,21 +46,19 @@ impl Answer {
     }
 }
 
-impl<'a, 'b> AnswerSendable for Response<'a, 'b> {
-    fn send_answer( &mut self, answer: &AnswerResult ) {
-        match answer {
-            &Err( ref err_desc ) => self.send( err_desc.as_slice() ),
-            &Ok( ref answer ) => {
-                self.content_type( MediaType::Json );
-                if let Some( ref mut content_type ) = self.origin.headers.content_type {
-                    content_type.parameters.push( ( "charset".to_string(), "utf8".to_string() ) );
-                }
-                self.send( json::encode( answer ).unwrap().as_slice() );
+impl Modifier<Response> for AnswerResult {
+    #[inline]
+    fn modify(self, res: &mut Response) {
+        match self {
+            Ok( answer ) => {
+                let mime: mime::Mime = "application/json;charset=utf8".parse().unwrap();
+                mime.modify( res );
+                json::encode( answer ).unwrap().modify( res );        
             }
+            Err( err ) => err.modify( res )
         }
     }
 }
-
 
 #[derive(RustcEncodable)]
 struct Record {

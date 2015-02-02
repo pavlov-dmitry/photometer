@@ -1,7 +1,11 @@
 use std::collections::HashMap;
 use std::sync::{ Arc, RwLock };
 use cookies_parser::{ Cookieable };
+use iron::middleware::{ BeforeMiddleware, AroundMiddleware };
+use iron::prelude::*;
 use iron::typemap::Key;
+use iron::{ Handler, status, Url };
+use iron::modifiers::Redirect;
 use types::Id;
 
 static SESSION_ID : &'static str = "sid";
@@ -87,10 +91,10 @@ impl SessionsStoreMiddleware {
 
 impl Key for SessionsStoreMiddleware { type Value = SessionsStoreMiddleware; }
 
-impl Middleware for SessionsStoreMiddleware {
-    fn invoke(&self, req: &mut Request, _res: &mut Response) -> MiddlewareResult {
+impl BeforeMiddleware for SessionsStoreMiddleware {
+    fn before( &self, req: &mut Request ) -> IronResult<()> {
         req.extensions_mut().insert::<SessionsStoreMiddleware>( (*self).clone() );
-        Ok( Continue )
+        Ok( () )
     } 
 }
 
@@ -111,35 +115,44 @@ pub fn create_session_store() -> SessionsStoreMiddleware {
 /// аутентификация пользователя
 #[derive(Clone)]
 pub struct Autentication {
-    login_page_path : Arc<String>
+    login_url : Arc<Url>
+}
+
+pub struct AuthenticationHandler<H: Handler> {
+    handler: H,
+    authentication: Autentication
 }
 
 impl Autentication {
-    fn make_login ( &self, response: &mut Response) { 
-        match response.send_file( &Path::new( self.login_page_path.as_slice() ) ) {
-            Ok(_) => {}
-            Err( e ) => { response.send( e.desc ); }
-        }
+    fn make_login ( &self ) -> IronResult<Response> { 
+        Ok( Response::with(( status::Found, Redirect( self.login_url.clone() ) )) )
     }
 }
 
 impl Key for User { type Value = User; }
 
-impl Middleware for Autentication {
-    fn invoke(&self, req: &mut Request, res: &mut Response) -> MiddlewareResult {
+impl AroundMiddleware for Autentication {
+    fn around(mut self, handler: Box<Handler>) -> Box<Handler> {
+        Box::new( AuthenticationHandler {
+            handler: handler,
+            authentication: self
+        })
+    }
+}
 
-        let found = req.cookie( SESSION_ID ).map_or( None, |session| {
+impl Handler for AuthenticationHandler {
+    fn handle(&self, req: &mut Request) -> IronResult<Response> {
+        let some_user = req.cookie( SESSION_ID ).map_or( None, |session| {
             req.sessions_store().user_by_session_id( session )
         } );
 
-        match found {
+        match some_user {
             None => { 
-                self.make_login( res ); 
-                Ok( Halt )
+                self.authentication.make_login()
             }
             Some( user ) => {
                 req.extensions_mut().insert::<User>( user );
-                Ok( Continue )
+                self.handler.handle( req )
             }
         }
     } 

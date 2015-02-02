@@ -2,6 +2,8 @@
 
 use std::collections::HashMap;
 use iron::typemap::Key;
+use iron::middleware::BeforeMiddleware;
+use iron::prelude::*;
 
 pub trait Cookieable {
     fn cookie( &self, &str ) -> Option<&String>;
@@ -14,8 +16,8 @@ pub struct CookiesParser;
 
 impl Key for CookiesParser { type Value = StringHashMap; }
 
-impl Middleware for CookiesParser {
-    fn invoke(&self, req: &mut Request, _res: &mut Response) -> MiddlewareResult {
+impl BeforeMiddleware for CookiesParser {
+    fn before( &self, req: &mut Request ) -> IronResult<()> {
         let mut cookies = HashMap::new();
         req.origin.headers.extensions.get( "Cookie" )
             .map( |value| {
@@ -27,7 +29,7 @@ impl Middleware for CookiesParser {
                 }
             });
         req.extensions_mut().insert::<CookiesParser>( cookies );
-        Ok( Continue )
+        Ok( () )
     } 
 }
 

@@ -5,6 +5,7 @@ use std::str::FromStr;
 use types::{ CommonResult, Id };
 use time;
 use time::Timespec;
+use iron::prelude::Request;
 
 pub trait GetParamable {
     fn get_param( &self, prm: &str ) -> CommonResult<&str>;
@@ -27,7 +28,7 @@ pub trait FromParams<'a> {
     fn from_params( params: &'a GetParamable, prm: &str ) -> CommonResult<Self>;
 }
 
-impl<'a, 'b> GetParamable for Request<'a, 'b> {
+impl GetParamable for Request {
     //инкапсулирует поиск параметра сначало в текстовом виде, потом в бинарном
     fn get_param( &self, prm: &str ) -> CommonResult<&str> {
         match self.parameter( prm ) {

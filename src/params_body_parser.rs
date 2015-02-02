@@ -3,7 +3,8 @@
 use std::collections::HashMap;
 use std::str;
 use parse_utils;
-use iron::Plugin;
+use iron::middleware::BeforeMiddleware;
+use iron::prelude::*;
 use iron::typemap::Key;
 use url;
 
@@ -16,8 +17,8 @@ struct BinaryHashMapKey;
 impl Key for StringHashMapKey { type Value = StringHashMap; }
 impl Key for BinaryHashMapKey { type Value = BinaryHashMap; }
 
-impl Middleware for ParamsBodyParser {
-    fn invoke<'a>(&self, req: &'a mut Request, _res: &mut Response) -> MiddlewareResult {
+impl BeforeMiddleware for ParamsBodyParser {
+    fn before( &self, req: &mut Request ) -> IronResult<()> {
         if !req.origin.body.is_empty() {
             let mut bin_params = HashMap::new();
             let mut params_hash = HashMap::new();
@@ -61,7 +62,7 @@ impl Middleware for ParamsBodyParser {
             req.extensions_mut().insert::<BinaryHashMapKey>( bin_params );
         }
         
-        Ok( Continue )
+        Ok( () )
     } 
 }
 

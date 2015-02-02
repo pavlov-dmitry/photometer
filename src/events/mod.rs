@@ -1,6 +1,7 @@
 use types::{ Id, EmptyResult, CommonResult };
 use answer::{ AnswerResult };
 use time::Timespec;
+use iron::prelude::*;
 
 pub mod events_manager;
 mod time_store;

@@ -5,6 +5,8 @@ use std::default::{ Default };
 
 use types::{ CommonResult, EmptyResult };
 use iron::typemap::Key;
+use iron::middleware::BeforeMiddleware;
+use iron::prelude::*;
 use db;
 use err_msg;
 
@@ -78,10 +80,10 @@ pub fn create_db_connection(
 
 impl Key for Database { type Value = Database; }
 
-impl Middleware for Database {
-    fn invoke(&self, req: &mut Request, _res: &mut Response) -> MiddlewareResult {
+impl BeforeMiddleware for Database {
+    fn before( &self, req: &mut Request ) -> IronResult<()> {
         req.extensions_mut().insert::<Database>( self.clone() );
-        Ok( Continue )
+        Ok( () )
     }
 }
 

@@ -1,4 +1,6 @@
 use authentication::{ Userable };
+use iron::status;
+use iron::prelude::*;
 
 pub use self::authentication::{ login, join_us };
 pub use self::upload_photo::{ upload_photo };
@@ -15,7 +17,7 @@ pub mod mailbox;
 pub mod events;
 pub mod timetable;
 
-pub fn hello ( request: &Request, response: &mut Response) -> () { 
+pub fn hello ( request: &Request ) -> IronResult<Response> { 
     let answer = format!( "Hello {}!!! Glad to see you!", request.user().name );
-    response.send( answer );
+    Ok( Response::with( status::Ok, answer ) )
 }

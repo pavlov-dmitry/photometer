@@ -5,14 +5,16 @@ use authentication::{ SessionsStoreable };
 use get_param::{ GetParamable };
 use photo_store::{ PhotoStoreable };
 use err_msg;
+use iron::prelude::*;
+use iron::status;
 
 static USER : &'static str = "user";
 static LOGIN : &'static str = "login";
 static PASSWORD : &'static str = "password";
 
 /// авторизация пользователя
-pub fn login( request: &mut Request, response: &mut Response ) {
-    response.send_answer( &login_answer( request ) );
+pub fn login( request: &mut Request ) -> IronResult<Response> {
+    Ok( Response::with( (status::Ok, login_answer( request )) ) )
 }
 
 fn login_answer( request: &mut Request ) -> AnswerResult {

@@ -5,9 +5,11 @@ use database::{ Databaseable };
 use err_msg;
 use authentication::{ Userable };
 use db::photos::{ DbPhotos };
+use iron::prelude::*;
+use iron::status;
 
-pub fn crop_photo( request: &mut Request, response: &mut Response ) {
-    response.send_answer( &crop_photo_answer( request ) );
+pub fn crop_photo( request: &mut Request ) -> IronResult<Response> {
+    Ok( Response::with( (status::Ok, crop_photo_answer( request )) ) )
 }
 
 fn crop_photo_answer( request: &mut Request ) -> AnswerResult {

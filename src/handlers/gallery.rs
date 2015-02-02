@@ -6,6 +6,8 @@ use std::str::FromStr;
 use database::{ Databaseable };
 use authentication::{ Userable };
 use db::photos::{ DbPhotos };
+use iron::prelude::*;
+use iron::status;
 
 static YEAR: &'static str = "year";
 static PAGE: &'static str = "page";
@@ -29,8 +31,8 @@ pub fn by_year_path() -> &'static str {
     "/gallery/:year"
 }
 
-pub fn current_year_count( request: &mut Request, response: &mut Response ) {
-    response.send_answer( &by_year_count_answer( request, time::now().tm_year + FROM_YEAR ) );  
+pub fn current_year_count( request: &mut Request ) -> IronResult<Response> {
+    Ok( Response::with( (status::Ok, by_year_count_answer( request, time::now().tm_year + FROM_YEAR )) ) )
 }
 
 pub fn by_year_count( request: &mut Request, response: &mut Response ) {

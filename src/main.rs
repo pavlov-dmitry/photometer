@@ -7,8 +7,16 @@ extern crate url;
 extern crate log;
 extern crate env_logger;
 extern crate "rustc-serialize" as rustc_serialize;
+extern crate router;
+extern crate mount;
+extern crate "static" as static_file;
 
 use iron::prelude::*;
+use iron::Url;
+use router::Router;
+use not_found_switcher::NotFoundSwitcher;
+use mount::Mount;
+use static_file::Static;
 
 mod params_body_parser;
 mod authentication;
@@ -27,14 +35,12 @@ mod err_msg;
 mod get_param;
 mod simple_time_profiler;
 mod request_logger;
+mod not_found_switcher;
 
 fn main() {
     env_logger::init().unwrap();
     
     let cfg = config::load_or_default( &Path::new( "../etc/photometer.cfg" ) );
-    let mut server = Nickel::new();
-    let mut authentication_router = Nickel::router();
-    let mut router = Nickel::router();
 
     let db = database::create_db_connection(  
         cfg.db_name.clone(),
@@ -44,55 +50,66 @@ fn main() {
         cfg.db_max_connections
     ).unwrap_or_else( |e| { panic!( e ) } );
 
-    // надеюсь этот кошмар скоро поправят (as fn(&mut Request, &mut Response))
-    router.get( "/hello", handlers::hello as fn(&Request, &mut Response) );
-    router.post( "/upload", handlers::upload_photo as fn(&mut Request, &mut Response) );
-    router.post( "/crop", handlers::crop_photo as fn(&mut Request, &mut Response) );
-    router.post( "/rename", handlers::rename_photo as fn(&mut Request, &mut Response) );
+    let mut router = Router::new();
 
-    router.get( handlers::images::photos_path(), handlers::images::get_photo as fn(&mut Request, &mut Response) );
-    router.get( handlers::images::preview_path(), handlers::images::get_preview as fn(&mut Request, &mut Response) );
+    router.get( "/hello", handlers::hello );
+    router.post( "/upload", handlers::upload_photo );
+    router.post( "/crop", handlers::crop_photo );
+    router.post( "/rename", handlers::rename_photo );
+
+    router.get( handlers::images::photos_path(), handlers::images::get_photo );
+    router.get( handlers::images::preview_path(), handlers::images::get_preview );
     
-    router.get( handlers::gallery::current_year_count_path(), handlers::gallery::current_year_count as fn(&mut Request, &mut Response) );
-    router.get( handlers::gallery::by_year_count_path(), handlers::gallery::by_year_count as fn(&mut Request, &mut Response) );
-    router.get( handlers::gallery::current_year_path(), handlers::gallery::current_year as fn(&mut Request, &mut Response) );
-    router.get( handlers::gallery::by_year_path(), handlers::gallery::by_year as fn(&mut Request, &mut Response) );
+    router.get( handlers::gallery::current_year_count_path(), handlers::gallery::current_year_count );
+    router.get( handlers::gallery::by_year_count_path(), handlers::gallery::by_year_count );
+    router.get( handlers::gallery::current_year_path(), handlers::gallery::current_year );
+    router.get( handlers::gallery::by_year_path(), handlers::gallery::by_year );
 
-    router.get( "/mailbox", handlers::mailbox::get as fn(&mut Request, &mut Response) );
-    router.get( "/mailbox/unreaded", handlers::mailbox::get_unreaded as fn(&mut Request, &mut Response) );
-    router.get( "/mailbox/count", handlers::mailbox::count as fn(&mut Request, &mut Response) );
-    router.get( "/mailbox/unreaded/count", handlers::mailbox::count_unreaded as fn(&mut Request, &mut Response) );
-    router.post( "/mailbox/mark_as_readed", handlers::mailbox::mark_as_readed as fn(&mut Request, &mut Response) );
+    router.get( "/mailbox", handlers::mailbox::get );
+    router.get( "/mailbox/unreaded", handlers::mailbox::get_unreaded );
+    router.get( "/mailbox/count", handlers::mailbox::count );
+    router.get( "/mailbox/unreaded/count", handlers::mailbox::count_unreaded );
+    router.post( "/mailbox/mark_as_readed", handlers::mailbox::mark_as_readed );
 
-    router.get( handlers::events::info_path(), handlers::events::info as fn(&mut Request, &mut Response) -> MiddlewareResult );
-    router.get( handlers::events::action_path(), handlers::events::action_get as fn(&mut Request, &mut Response ) -> MiddlewareResult );
-    router.post( handlers::events::action_path(), handlers::events::action_post as fn(&mut Request, &mut Response) -> MiddlewareResult );
-    router.get( handlers::events::create_path(), handlers::events::create_get as fn(&mut Request, &mut Response) -> MiddlewareResult );
-    router.post( handlers::events::create_path(), handlers::events::create_post as fn(&mut Request, &mut Response) -> MiddlewareResult );
+    router.get( handlers::events::info_path(), handlers::events::info );
+    router.get( handlers::events::action_path(), handlers::events::action_get );
+    router.post( handlers::events::action_path(), handlers::events::action_post );
+    router.get( handlers::events::create_path(), handlers::events::create_get );
+    router.post( handlers::events::create_path(), handlers::events::create_post );
 
-    router.post( handlers::timetable::timetable_path(), handlers::timetable::set_timetable as fn(&mut Request, &mut Response) -> MiddlewareResult );
+    router.post( handlers::timetable::timetable_path(), handlers::timetable::set_timetable );
 
-    authentication_router.post( "/login", handlers::login as fn(&mut Request, &mut Response) ) ;
-    authentication_router.post( "/join_us", handlers::join_us as fn(&mut Request, &mut Response) ) ;
-    authentication_router.get( handlers::events::trigger_path(), handlers::events::trigger as fn(&mut Request, &mut Response) );
-    
-    server.utilize( request_logger::middleware() );
-    server.utilize( authentication::create_session_store() );
-    server.utilize( db );
-    server.utilize( StaticFilesHandler::new( cfg.static_files_path.as_slice() ) );
-    server.utilize( 
+    let auth_chain = Chain::new( router );
+    auth_chain.around( authentication::middleware( Url::parse( &cfg.login_page_path ).unwrap() ) );
+    auth_chain.before(
         photo_store::middleware( 
             &cfg.photo_store_path, 
             cfg.photo_store_max_photo_size_bytes,
             cfg.photo_store_preview_size
-        ) 
+        )
     );
-    server.utilize( cookies_parser::middleware() );
-    server.utilize( params_body_parser::middleware() );
-    server.utilize( events::events_manager::middleware( &cfg.time_store_file_path ) );
-    server.utilize( authentication_router );
-    server.utilize( authentication::middleware( &cfg.login_page_path ) );
-    server.utilize( router );
 
-    server.listen( cfg.server_ip(), cfg.server_port );
+    let not_found_switch_to_auth = NotFoundSwitcher::new( auth_chain );
+
+    let no_auth_router = Router::new();
+
+    no_auth_router.post( "/login", handlers::login );
+    no_auth_router.post( "/join_us", handlers::join_us );
+    no_auth_router.get( handlers::events::trigger_path(), handlers::events::trigger );
+    let static_mount = Mount::new();
+    static_mount.mount( "/static/", Static::new( Path::new( "../www/" ) );
+    no_auth_router.get( "/static/*", static_mount );
+    
+    let chain = Chain::new( no_auth_router );
+    chain.before( authentication::create_session_store() );
+    chain.before( request_logger::middleware() );
+    chain.before( db );
+    chain.before( cookies_parser::middleware() );
+    chain.before( params_body_parser::middleware() );
+    chain.before( events::events_manager::middleware( &cfg.time_store_file_path ) );
+    chain.around( not_found_switch_to_auth );
+
+    let addr = format!( "{}:{}", cfg.server_ip(), cfg.server_port );
+    println!( "starting listen on {}", addr );
+    Iron::new( chain ).listen( addr ).unwrap();
 }

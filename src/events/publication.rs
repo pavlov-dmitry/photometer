@@ -13,6 +13,7 @@ use database::{ Databaseable };
 use authentication::{ Userable };
 use std::time::duration::Duration;
 use time;
+use iron::prelude::*;
 
 #[derive(Clone)]
 pub struct Publication;

@@ -4,17 +4,20 @@ use db::groups::DbGroups;
 use database::Databaseable;
 use get_param::GetParamable;
 use types::{ Id };
-use iron::status::Status;
+use iron::status;
+use iron::prelude::*;
 use std::str::FromStr;
 
 pub fn timetable_path() -> &'static str {
     "/timetable/:group_id"
 }
 
-pub fn set_timetable( req: &mut Request, res: &mut Response ) -> MiddlewareResult {
-    let group_id = try!( get_group_id( req ) );
-    res.send_answer( &set_timetable_answer( group_id, req ) );
-    Ok( Halt )
+pub fn set_timetable( req: &mut Request ) -> IronResult<Response> {
+    let reponse = match get_group_id( req ) {
+        Some( id ) => Response::with( (status::Ok, set_timetable_answer( id, req )) ),
+        None => Response::with( status::NotFound )
+    };
+    Ok( reponse )
 }
 
 fn set_timetable_answer( group_id: Id, req: &mut Request ) -> AnswerResult {
@@ -52,8 +55,7 @@ fn set_timetable_answer( group_id: Id, req: &mut Request ) -> AnswerResult {
     Ok( answer )
 }
 
-fn get_group_id( req: &Request ) -> Result<Id, NickelError> {
+fn get_group_id( req: &Request ) -> Option<Id> {
     let group_id_str = req.param( "group_id" );
     FromStr::from_str( group_id_str )
-        .ok_or( NickelError::new("Error parsing request path", NickelErrorKind::ErrorWithStatusCode(Status::NotFound)) )
 }

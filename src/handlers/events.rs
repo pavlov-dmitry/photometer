@@ -1,7 +1,8 @@
 use answer::{ AnswerResult, AnswerSendable, Answer };
 use events::events_manager::EventsManager;
 use types::{ Id };
-use iron::status::Status;
+use iron::prelude::*;
+use iron::status;
 use std::str::FromStr;
 
 static ID: &'static str = "id";
@@ -10,10 +11,12 @@ pub fn info_path() -> &'static str {
     "/events/info/:id"
 }
 
-pub fn info( request: &mut Request, response: &mut Response ) -> MiddlewareResult {
-    let id = try!( get_id( request ) );
-    response.send_answer( &request.event_info( id ) );
-    Ok( Halt )
+pub fn info( request: &mut Request ) -> IronResult<Response> {
+    let response = match get_id( request ) {
+        Some( id ) => Response::with( (status::Ok, request.event_info( id )) ),
+        None => Response::with( status::NotFound )
+    };
+    Ok( response )
 }
 
 pub fn action_path() -> &'static str {
@@ -24,35 +27,44 @@ pub fn trigger_path() -> &'static str {
     "/events/trigger"
 }
 
-pub fn action_get( request: &mut Request, response: &mut Response ) -> MiddlewareResult {
-    let id = try!( get_id( request ) );
-    response.send_answer( &request.event_action_get( id ) );
-    Ok( Halt )
-}
-pub fn action_post( request: &mut Request, response: &mut Response ) -> MiddlewareResult {
-    let id = try!( get_id( request ) );
-    response.send_answer( &action_post_answer( id, request ) );
-    Ok( Halt )
+pub fn action_get( request: &mut Request ) -> IronResult<Response> {
+    let response = match get_id( request ) {
+        Some( id ) => Response::with( (status::Ok, request.event_action_get( id )) ),
+        None => Response::with( status::NotFound )
+    };
+    Ok( response )
 }
 
-pub fn trigger( request: &mut Request, response: &mut Response ) {
-    response.send_answer( &trigger_impl( request ) );
+pub fn action_post( request: &mut Request ) -> IronResult<Response> {
+    let response = match get_id( request ) {
+        Some( id ) => Response::with( (status::Ok, action_post_answer( id, request )) ),
+        None => Response::with( status::NotFound )
+    };
+    Ok( response )
+}
+
+pub fn trigger( request: &mut Request ) -> IronResult<Response> {
+    Ok( Response::with( status::Ok, trigger_impl( request ) ) );
 }
 
 pub fn create_path() -> &'static str {
     "/events/create/:id"
 }
 
-pub fn create_get( request: &mut Request, response: &mut Response ) -> MiddlewareResult {
-    let id = try!( get_id( request ) );
-    response.send_answer( &request.event_user_creation_get( id ) );
-    Ok( Halt )
+pub fn create_get( request: &mut Request ) -> IronResult<Response> {
+    let response = match get_id( request ) {
+        Some( id ) => Response::with( (status::Ok, request.event_user_creation_get( id )) ),
+        None => Response::with( status::NotFound )
+    };
+    Ok( response )
 }
 
-pub fn create_post( request: &mut Request, response: &mut Response ) -> MiddlewareResult {
-    let id = try!( get_id( request ) );
-    response.send_answer( &create_post_answer( id, request ) );
-    Ok( Halt )
+pub fn create_post( request: &mut Request ) -> IronResult<Response> {
+    let response = match get_id( request ) {
+        Some( id ) => Response::with( (status::Ok, create_post_answer( id, request )) ),
+        None => Response::with( status::NotFound )
+    };
+    Ok( response )
 }
 
 fn trigger_impl( req: &mut Request ) -> AnswerResult {
@@ -78,8 +90,7 @@ fn create_post_answer( event_id: Id, req: &mut Request ) -> AnswerResult {
     result
 }
 
-fn get_id( req: &Request ) -> Result<Id, NickelError> {
+fn get_id( req: &Request ) -> Option<Id> {
     let id = req.param( ID );
     FromStr::from_str( id )
-        .ok_or( NickelError::new("Error parsing request path", NickelErrorKind::ErrorWithStatusCode(Status::NotFound)) )
 }

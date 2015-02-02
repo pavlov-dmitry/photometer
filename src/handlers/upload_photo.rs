@@ -10,13 +10,15 @@ use exif_reader;
 use exif_reader::{ ExifValues };
 use database::{ Databaseable };
 use db::photos::{ DbPhotos };
+use iron::prelude::*;
+use iron::status;
 
 static IMAGE : &'static str = "upload_img";
 static IMAGE_FILENAME : &'static str = "upload_img_filename";
 
 
-pub fn upload_photo( request: &mut Request, response: &mut Response ) {
-    response.send_answer( &upload_photo_answer( request ) );
+pub fn upload_photo( request: &mut Request ) -> IronResult<Response> {
+    Ok( Response::with( (status::Ok, upload_photo_answer( request )) ) )
 }
 
 fn upload_photo_answer( request: &mut Request ) -> AnswerResult {

@@ -11,6 +11,7 @@ use time::Timespec;
 use rustc_serialize::json;
 use authentication::Userable;
 use get_param::GetParamable;
+use iron::prelude::*;
 
 #[derive(Clone)]
 pub struct LatePublication;

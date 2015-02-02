@@ -4,9 +4,11 @@ use answer::{ AnswerSendable, AnswerResult, Answer };
 use get_param::{ GetParamable };
 use database::{ Databaseable };
 use db::photos::{ DbPhotos };
+use iron::prelude::*;
+use iron::status;
 
-pub fn rename_photo( req: &mut Request, res: &mut Response ) {
-    res.send_answer( &rename_answer( req ) );
+pub fn rename_photo( req: &mut Request ) -> IronResult<Response> {
+    Ok( Response::with( (status::Ok, rename_answer( req )) ) );
 }
 
 fn rename_answer( request: &mut Request ) -> AnswerResult {

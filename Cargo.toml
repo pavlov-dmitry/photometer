@@ -13,6 +13,9 @@ rustc-serialize="*"
 log = "*"
 env_logger = "*"
 iron = "*"
+router = "*"
+mount = "*"
+static = "*"
 
 [dependencies.mysql]
 version="*"

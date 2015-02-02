@@ -12,6 +12,8 @@ use time::{ Timespec };
 use answer::{ Answer, AnswerResult };
 use types::{ Id };
 use super::time_store::TimeStore;
+use iron::prelude::*;
+use iron::middleware::BeforeMiddleware;
 
 #[derive(Clone)]
 struct EventsManagerMiddleware {
@@ -28,7 +30,7 @@ pub trait EventsManager {
     fn event_user_creation_post(&mut self, scheduled_id: Id ) -> AnswerResult;
 }
 
-impl<'a, 'b> EventsManager for Request<'a, 'b> {
+impl EventsManager for Request {
     
     /// исполняет события на старт
     fn maybe_start_some_events( &mut self ) -> EmptyResult {
@@ -210,9 +212,9 @@ pub fn middleware( time_store_file_path: &String ) -> EventsManagerMiddleware {
 
 impl Key for EventsManagerMiddleware { type Value = EventsManagerMiddleware; }
 
-impl Middleware for EventsManagerMiddleware {
-    fn invoke(&self, req: &mut Request, _res: &mut Response) -> MiddlewareResult {
+impl BeforeMiddleware for EventsManagerMiddleware {
+    fn before(&self, req: &mut Request) -> IronResult<()> {
         req.extensions_mut().insert::<EventsManagerMiddleware>( self.clone() );
-        Ok( Continue )
+        Ok( () )
     } 
 }
