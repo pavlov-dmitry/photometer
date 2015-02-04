@@ -3,16 +3,16 @@
 pub fn boundary<'a, 'b, T:'a + 'b + PartialEq>( data: &'a [T], sequence: &'b [T] ) -> BoundaryIter<'a, 'b, T> {
     //ищем начало
     for start in range( 0, data.len() ) {
-        if data.slice_from( start ).starts_with( sequence ) {
+        if data[start ..].starts_with( sequence ) {
             return BoundaryIter {
-                data : data.slice_from( start + sequence.len() ),
+                data : &data[start + sequence.len() ..],
                 sequence : sequence
             }
         }
     }
     //елис не найдено то типа закончили
     BoundaryIter {
-        data: data.slice(0, 0),
+        data: &data[0..0],
         sequence: sequence,
     }
 }
@@ -26,9 +26,9 @@ impl<'a, 'b, T:'a + PartialEq> Iterator for BoundaryIter<'a, 'b, T> {
     fn next(&mut self) -> Option<&'a [T]> {
         let mut result = None;
         for pos in range( 0, self.data.len() + 1 ) {
-            if self.data.slice_to( pos ).ends_with( self.sequence ) {
-                result = Some( self.data.slice_to( pos - self.sequence.len() ) );
-                self.data = self.data.slice_from( pos );
+            if self.data[.. pos].ends_with( self.sequence ) {
+                result = Some( &self.data[.. pos - self.sequence.len()] );
+                self.data = &self.data[pos ..];
                 break;
             }
         }
@@ -41,7 +41,7 @@ impl<'a, 'b, T:'a + PartialEq> Iterator for BoundaryIter<'a, 'b, T> {
 pub fn boundary_idx<'a, T:'a + PartialEq>( data: &'a [T], sequence: &'a [T] ) -> BoundaryIdxIter<'a, T> {
     //ищем начало
     for start in range( 0, data.len() ) {
-        if data.slice_from( start ).starts_with( sequence ) {
+        if data[start ..].starts_with( sequence ) {
             return BoundaryIdxIter {
                 data : data,
                 sequence : sequence,
@@ -67,7 +67,7 @@ impl<'a, T:'a + PartialEq> Iterator for BoundaryIdxIter<'a, T> {
     fn next(&mut self) -> Option<(usize, usize)> {
         let mut result = None;
         for pos in range( self.idx, self.data.len() + 1 ) {
-            if self.data.slice( self.idx, pos ).ends_with( self.sequence ) {
+            if self.data[self.idx .. pos].ends_with( self.sequence ) {
                 result = Some( ( self.idx, pos - self.sequence.len() ) );
                 self.idx = pos;
                 break;
@@ -81,8 +81,8 @@ impl<'a, T:'a + PartialEq> Iterator for BoundaryIdxIter<'a, T> {
 // делит последовательность на (до, после) опеределённой последовательности
 pub fn split_seq<'a, T:'a + PartialEq>( data: &'a [T], sequence: &'a [T] ) -> Option<(&'a [T], &'a [T])> {
     for pos in range( 0, data.len() ) {
-        if data.slice_from( pos ).starts_with( sequence ) {
-            return Some( (data.slice_to( pos ), data.slice_from( pos + sequence.len() ) ) )
+        if data[pos ..].starts_with( sequence ) {
+            return Some( (&data[.. pos], &data[pos + sequence.len() ..]) )
         }
     }
     None
@@ -91,12 +91,12 @@ pub fn split_seq<'a, T:'a + PartialEq>( data: &'a [T], sequence: &'a [T] ) -> Op
 // делит последовательность на (до, после) опеределённой последовательности или её альтернативой
 pub fn split_seq_alt<'a, T:'a + PartialEq>( data: &'a [T], seq: &'a [T], alt: &'a [T] ) -> Option<(&'a [T], &'a [T])> {
     for pos in range( 0, data.len() ) {
-        let current_slice = data.slice_from( pos );
+        let current_slice = &data[pos ..];
         if current_slice.starts_with( seq ) {
-            return Some( (data.slice_to( pos ), data.slice_from( pos + seq.len() ) ) )
+            return Some( (&data[.. pos], &data[pos + seq.len() ..] ) )
         } 
         else if current_slice.starts_with( alt ) {
-            return Some( (data.slice_to( pos ), data.slice_from( pos + alt.len() ) ) )  
+            return Some( (&data[.. pos], &data[pos + alt.len() ..] ) )  
         }
     }
     None
@@ -107,9 +107,9 @@ pub fn str_between<'a>( source: &'a str, start: &'a str, end: &'a str ) -> Optio
     source
         .find_str( start )
         .and_then( |start_pos| {
-            let after_start = source.slice_from( start_pos + start.len() );
+            let after_start = &source[start_pos + start.len() ..];
             after_start
                 .find_str( end )
-                .and_then( |end_pos| Some( after_start.slice_to( end_pos ) ) )
+                .and_then( |end_pos| Some( &after_start[.. end_pos] ) )
         } )
 }

@@ -132,7 +132,7 @@ impl Autentication {
 impl Key for User { type Value = User; }
 
 impl AroundMiddleware for Autentication {
-    fn around(mut self, handler: Box<Handler>) -> Box<Handler> {
+    fn around(self, handler: Box<Handler>) -> Box<Handler> {
         Box::new( AuthenticationHandler {
             handler: handler,
             authentication: self

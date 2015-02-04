@@ -1,4 +1,4 @@
-use answer::{ AnswerSendable, AnswerResult, Answer };
+use answer::{ AnswerResult, Answer };
 use db::timetable::{ DbTimetable, TimetableEventInfo };
 use db::groups::DbGroups;
 use database::Databaseable;

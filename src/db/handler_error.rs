@@ -1,7 +1,7 @@
 use mysql::error::{ MyError };
 use std::error::FromError;
 use std::fmt;
-use std::fmt::{ Show, Formatter };
+use std::fmt::{ Display, Formatter };
 
 pub type DbHandlerResult<T> = Result<T, DbHandlerError>;
 
@@ -22,7 +22,7 @@ impl FromError<String> for DbHandlerError {
     }
 }
 
-impl Show for DbHandlerError {
+impl Display for DbHandlerError {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         match self {
             &DbHandlerError::MySql( ref e ) => write!(f, "{}", e ),

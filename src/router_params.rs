@@ -1,5 +1,4 @@
 use iron::Request;
-use iron::typemap;
 use router::Router;
 
 pub trait RouterParams {

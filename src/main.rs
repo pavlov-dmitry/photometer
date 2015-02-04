@@ -1,3 +1,5 @@
+#![feature(core, path, collections, io, std_misc, libc)]
+
 extern crate iron;
 extern crate mysql;
 extern crate image;
@@ -113,5 +115,5 @@ fn main() {
 
     let addr = format!( "{}:{}", cfg.server_ip(), cfg.server_port );
     println!( "starting listen on {}", addr );
-    Iron::new( chain ).listen( addr.as_slice() ).unwrap();
+    Iron::new( chain ).listen( &addr[] ).unwrap();
 }

@@ -1,5 +1,5 @@
 use photo_store::{ PhotoStoreable, PhotoStoreError };
-use answer::{ AnswerSendable, AnswerResult, Answer };
+use answer::{ AnswerResult, Answer };
 use get_param::{ GetParamable };
 use database::{ Databaseable };
 use err_msg;

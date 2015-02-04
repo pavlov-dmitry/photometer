@@ -1,4 +1,4 @@
-use answer::{ AnswerResult, AnswerSendable, Answer };
+use answer::{ AnswerResult, Answer };
 use events::events_manager::EventsManager;
 use types::{ Id };
 use iron::prelude::*;

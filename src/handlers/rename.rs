@@ -1,6 +1,6 @@
 use authentication::{ Userable };
 
-use answer::{ AnswerSendable, AnswerResult, Answer };
+use answer::{ AnswerResult, Answer };
 use get_param::{ GetParamable };
 use database::{ Databaseable };
 use db::photos::{ DbPhotos };

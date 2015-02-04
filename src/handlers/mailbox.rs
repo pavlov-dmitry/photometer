@@ -1,4 +1,4 @@
-use answer::{ AnswerResult, AnswerSendable, Answer };
+use answer::{ AnswerResult, Answer };
 use database::{ Databaseable };
 use db::mailbox::{ DbMailbox };
 use authentication::{ Userable };

@@ -5,7 +5,7 @@
 use std::collections::HashMap;
 use std::str;
 use parse_utils;
-use iron::{ BeforeMiddleware, status, Headers, headers };
+use iron::{ BeforeMiddleware, status, headers };
 use iron::mime::{ self, Mime, TopLevel, SubLevel };
 use iron::prelude::*;
 use iron::typemap::Key;
@@ -43,14 +43,14 @@ impl BeforeMiddleware for ParamsBodyParser {
                         if let Some( &(_, ref val) ) = params.iter().find( |&&(ref attr,_)| *attr == mime::Attr::Ext( "boundary".to_string() ) ) {
                             if let &mime::Value::Ext( ref boundary ) = val {
                                 // то перебираем все части ограниченные спец ограничителем
-                                read_all_binary_parts( body.as_slice(), boundary.as_bytes(), &mut bin_params, &mut params_hash );
+                                read_all_binary_parts( &body[], boundary.as_bytes(), &mut bin_params, &mut params_hash );
                                 req.extensions.insert::<BinaryDataKey>( body );     
                             }
                         }
                     }
                     // елси просто в текстовом виде
                     _ => {
-                        let body_str = str::from_utf8( body.as_slice() ).unwrap_or( "" );
+                        let body_str = str::from_utf8( &body[] ).unwrap_or( "" );
                     
                         // то просто парсим их
                         for &( ref key, ref value ) in url::form_urlencoded::parse( body_str.as_bytes() ).iter() {
@@ -100,7 +100,7 @@ macro_rules! try_opt{
 }
 
 fn read_binary_part( body: &[u8], (from, to) : (usize, usize), bin_hash: &mut BinaryHashMap, str_hash: &mut StringHashMap) {
-    let chunk = body.slice( from, to );
+    let chunk = &body[from .. to];
     //делим их на описательную часть и сами данные
     let (desc, data) = try_opt!( parse_utils::split_seq_alt( chunk, b"\r\n\r\n", b"\n\n" ) );
     let desc_str = str::from_utf8( desc ).unwrap_or( "" );
@@ -135,7 +135,7 @@ impl<'a> ParamsBody for Request<'a> {
                 self.extensions.get::<BinaryDataKey>()
                     .and_then( |body| {
                         hash.get( &key.to_string() )
-                            .map( |&(from, to)| body.slice( from, to ) )  
+                            .map( |&(from, to)| &body[from .. to] )  
                     })
             })
     }

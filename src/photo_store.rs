@@ -78,7 +78,7 @@ impl PhotoStore {
                             ( crop_size, crop_size ) 
                         )
                         .and_then( |_| File::create( &self.make_filename( &user.name, upload_time, &img_type, false ) ) )
-                        .and_then( |mut file| file.write( img_data ) );
+                        .and_then( |mut file| file.write_all( img_data ) );
                     match fs_sequience {
                         Ok(_) => Ok( (w, h) ),
                         Err( e ) => Err( PhotoStoreError::Fs( e ) )

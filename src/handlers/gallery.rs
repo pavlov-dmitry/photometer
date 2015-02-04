@@ -1,4 +1,4 @@
-use answer::{ AnswerSendable, AnswerResult, Answer };
+use answer::{ AnswerResult, Answer };
 use err_msg;
 use time;
 use get_param::{ GetParamable };

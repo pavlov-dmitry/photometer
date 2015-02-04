@@ -1,6 +1,4 @@
-use err_msg;
-use std::old_io as io;
-use types::{ Id, CommonResult };
+use types::{ Id };
 use database::{ Databaseable };
 use db::photos::{ DbPhotos };
 use photo_store::{ PhotoStoreable };

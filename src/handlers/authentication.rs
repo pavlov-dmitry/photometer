@@ -1,4 +1,4 @@
-use answer::{ Answer, AnswerSendable, AnswerResult };
+use answer::{ Answer, AnswerResult };
 use database::{ Databaseable };
 use db::users::{ DbUsers };
 use authentication::{ SessionsStoreable };
