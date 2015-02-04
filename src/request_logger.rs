@@ -30,7 +30,7 @@ impl<H: Handler> Handler for RequestLoggerHandler<H> {
     fn handle(&self, req: &mut Request) -> IronResult<Response> {
         if log_enabled!( log::LogLevel::Info ) {
             info!( "_______________________________________" );
-            let request = format!( "request {}:{}", req.origin.method, req.origin.request_uri );
+            let request = format!( "request {}:{}", req.method, req.url );
             info!( "{}", request );
             let _profiler = SimpleTimeProfiler::new( request.as_slice() );
             self.handler.handle( req )

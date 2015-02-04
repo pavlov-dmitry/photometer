@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 use std::sync::{ Arc, RwLock };
-use cookies_parser::{ Cookieable };
+use cookies::{ Cookieable };
 use iron::middleware::{ BeforeMiddleware, AroundMiddleware };
 use iron::prelude::*;
 use iron::typemap::Key;
@@ -93,7 +93,7 @@ impl Key for SessionsStoreMiddleware { type Value = SessionsStoreMiddleware; }
 
 impl BeforeMiddleware for SessionsStoreMiddleware {
     fn before( &self, req: &mut Request ) -> IronResult<()> {
-        req.extensions_mut().insert::<SessionsStoreMiddleware>( (*self).clone() );
+        req.extensions.insert::<SessionsStoreMiddleware>( (*self).clone() );
         Ok( () )
     } 
 }
@@ -102,9 +102,9 @@ pub trait SessionsStoreable {
     fn sessions_store( &self ) -> &SessionsStoreMiddleware;
 }
 
-impl<'a, 'b> SessionsStoreable for Request<'a, 'b> {
+impl<'a> SessionsStoreable for Request<'a> {
     fn sessions_store( &self ) -> &SessionsStoreMiddleware {
-        self.extensions().get::<SessionsStoreMiddleware>().unwrap()
+        self.extensions.get::<SessionsStoreMiddleware>().unwrap()
     }
 }
 
@@ -125,7 +125,7 @@ pub struct AuthenticationHandler<H: Handler> {
 
 impl Autentication {
     fn make_login ( &self ) -> IronResult<Response> { 
-        Ok( Response::with(( status::Found, Redirect( self.login_url.clone() ) )) )
+        Ok( Response::with(( status::Found, Redirect( (*self.login_url).clone() ) )) )
     }
 }
 
@@ -140,7 +140,7 @@ impl AroundMiddleware for Autentication {
     }
 }
 
-impl Handler for AuthenticationHandler {
+impl<H: Handler> Handler for AuthenticationHandler<H> {
     fn handle(&self, req: &mut Request) -> IronResult<Response> {
         let some_user = req.cookie( SESSION_ID ).map_or( None, |session| {
             req.sessions_store().user_by_session_id( session )
@@ -151,7 +151,7 @@ impl Handler for AuthenticationHandler {
                 self.authentication.make_login()
             }
             Some( user ) => {
-                req.extensions_mut().insert::<User>( user );
+                req.extensions.insert::<User>( user );
                 self.handler.handle( req )
             }
         }
@@ -159,16 +159,16 @@ impl Handler for AuthenticationHandler {
 }
 
 /// простой доступ из Request-a к информации о пользователе
-pub fn middleware( c: &String ) -> Autentication {
-    Autentication{ login_page_path : Arc::new( (*c).clone() ) }
+pub fn middleware( c: &Url ) -> Autentication {
+    Autentication{ login_url : Arc::new( c.clone() ) }
 }
 
 pub trait Userable {
     fn user( &self ) -> &User;
 }
 
-impl<'a, 'b> Userable for Request<'a, 'b> {
+impl<'a> Userable for Request<'a> {
     fn user( &self ) -> &User {
-        self.extensions().get::<User>().unwrap()
+        self.extensions.get::<User>().unwrap()
     }
 }

@@ -4,18 +4,18 @@ use iron::status;
 
 #[derive(Clone)]
 pub struct NotFoundSwitcher<H: Handler> {
-	switch_to: H
+	switch_to: Box<H>
 }
 
-impl NotFoundSwitcher {
-	pub fn new<H: Handler>( handler: H ) {
+impl<H: Handler> NotFoundSwitcher<H> {
+	pub fn new( handler: H ) -> NotFoundSwitcher<H> {
 		NotFoundSwitcher {
-			switch_to : handler
+			switch_to : Box::new( handler )
 		}
 	}
 }
 
-impl AroundMiddleware for NotFoundSwitcher {
+impl<H: Handler> AroundMiddleware for NotFoundSwitcher<H> {
 	fn around(self, handler: Box<Handler>) -> Box<Handler> {
 		Box::new( NotFoundSwitcherHandler {
 			handler: handler,
@@ -29,7 +29,7 @@ struct NotFoundSwitcherHandler<H: Handler> {
 	switch_to: H
 }
 
-impl Handler for NotFoundSwitcherHandler {
+impl<H: Handler> Handler for NotFoundSwitcherHandler<H> {
 	fn handle( &self, req: &mut Request ) -> IronResult<Response> {
 		let response = self.handler.handle( req );
 		match response {

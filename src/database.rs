@@ -82,7 +82,7 @@ impl Key for Database { type Value = Database; }
 
 impl BeforeMiddleware for Database {
     fn before( &self, req: &mut Request ) -> IronResult<()> {
-        req.extensions_mut().insert::<Database>( self.clone() );
+        req.extensions.insert::<Database>( self.clone() );
         Ok( () )
     }
 }
@@ -90,17 +90,17 @@ impl BeforeMiddleware for Database {
 struct ConnectionKey;
 impl Key for ConnectionKey { type Value = MyPooledConn; }
 
-impl<'a, 'b> Databaseable for Request<'a, 'b> {
+impl<'a> Databaseable for Request<'a> {
     fn get_new_db_conn(&self) -> CommonResult<MyPooledConn> {
-        self.extensions().get::<Database>().unwrap()
+        self.extensions.get::<Database>().unwrap()
             .pool.get_conn()
             .map_err( |e| format!( "Can't create db connection: {}", e ) )
     }
     fn get_current_db_conn(&mut self) -> CommonResult<&mut MyPooledConn> {
-        if self.extensions().contains::<ConnectionKey>() == false {
+        if self.extensions.contains::<ConnectionKey>() == false {
             let conn = try!( self.get_new_db_conn() );
-            self.extensions_mut().insert::<ConnectionKey>( conn );
+            self.extensions.insert::<ConnectionKey>( conn );
         }
-        Ok( self.extensions_mut().get_mut::<ConnectionKey>().unwrap() )
+        Ok( self.extensions.get_mut::<ConnectionKey>().unwrap() )
     }
 }

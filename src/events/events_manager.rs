@@ -30,7 +30,7 @@ pub trait EventsManager {
     fn event_user_creation_post(&mut self, scheduled_id: Id ) -> AnswerResult;
 }
 
-impl EventsManager for Request {
+impl<'a> EventsManager for Request<'a> {
     
     /// исполняет события на старт
     fn maybe_start_some_events( &mut self ) -> EmptyResult {
@@ -123,9 +123,9 @@ trait EventsManagerPrivate {
     fn check_timetables( &mut self, from: &Timespec, to: &Timespec ) -> EmptyResult;
 }
 
-impl<'a, 'b> EventsManagerPrivate for Request<'a, 'b> {
+impl<'a> EventsManagerPrivate for Request<'a> {
     fn get_body( &self ) -> &EventsManagerMiddleware {
-        self.extensions().get::<EventsManagerMiddleware>().unwrap()  
+        self.extensions.get::<EventsManagerMiddleware>().unwrap()  
     }
     fn set_event_state( &mut self, scheduled_id: Id, state: EventState ) -> EmptyResult {
         let db = try!( self.get_current_db_conn() );
@@ -214,7 +214,7 @@ impl Key for EventsManagerMiddleware { type Value = EventsManagerMiddleware; }
 
 impl BeforeMiddleware for EventsManagerMiddleware {
     fn before(&self, req: &mut Request) -> IronResult<()> {
-        req.extensions_mut().insert::<EventsManagerMiddleware>( self.clone() );
+        req.extensions.insert::<EventsManagerMiddleware>( self.clone() );
         Ok( () )
     } 
 }

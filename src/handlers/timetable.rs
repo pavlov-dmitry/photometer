@@ -7,6 +7,7 @@ use types::{ Id };
 use iron::status;
 use iron::prelude::*;
 use std::str::FromStr;
+use router_params::RouterParams;
 
 pub fn timetable_path() -> &'static str {
     "/timetable/:group_id"

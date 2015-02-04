@@ -28,7 +28,7 @@ pub trait FromParams<'a> {
     fn from_params( params: &'a GetParamable, prm: &str ) -> CommonResult<Self>;
 }
 
-impl GetParamable for Request {
+impl<'a> GetParamable for Request<'a> {
     //инкапсулирует поиск параметра сначало в текстовом виде, потом в бинарном
     fn get_param( &self, prm: &str ) -> CommonResult<&str> {
         match self.parameter( prm ) {

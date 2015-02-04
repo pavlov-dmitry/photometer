@@ -8,6 +8,7 @@ use authentication::{ Userable };
 use db::photos::{ DbPhotos };
 use iron::prelude::*;
 use iron::status;
+use router_params::RouterParams;
 
 static YEAR: &'static str = "year";
 static PAGE: &'static str = "page";
@@ -35,26 +36,26 @@ pub fn current_year_count( request: &mut Request ) -> IronResult<Response> {
     Ok( Response::with( (status::Ok, by_year_count_answer( request, time::now().tm_year + FROM_YEAR )) ) )
 }
 
-pub fn by_year_count( request: &mut Request, response: &mut Response ) {
+pub fn by_year_count( request: &mut Request ) -> IronResult<Response> {
     let year = FromStr::from_str( request.param( YEAR ) );
     let answer = match year {
         Some( year ) => by_year_count_answer( request, year ),
         None => Err( err_msg::invalid_path_param( YEAR ) )
     };
-    response.send_answer( &answer );
+    Ok( Response::with( (status::Ok, answer) ) )
 }
 
-pub fn current_year( request: &mut Request, response: &mut Response ) {
-     response.send_answer( &by_year_answer( request, time::now().tm_year + FROM_YEAR ) );
+pub fn current_year( request: &mut Request ) -> IronResult<Response> {
+    Ok( Response::with( (status::Ok, by_year_answer( request, time::now().tm_year + FROM_YEAR )) ) )
 }
 
-pub fn by_year( request: &mut Request, response: &mut Response ) {
+pub fn by_year( request: &mut Request ) -> IronResult<Response> {
     let year = FromStr::from_str( request.param( YEAR ) );
     let answer = match year {
         Some( year ) => by_year_answer( request, year ),
         None => Err( err_msg::invalid_path_param( YEAR ) )
     };
-    response.send_answer( &answer );
+    Ok( Response::with( (status::Ok, answer) ) )
 }
 
 fn by_year_count_answer( req: &mut Request, year: i32 ) -> AnswerResult {

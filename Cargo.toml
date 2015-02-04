@@ -14,8 +14,14 @@ log = "*"
 env_logger = "*"
 iron = "*"
 router = "*"
-mount = "*"
-static = "*"
+# mount = "*"
+# static = "*"
+
+[dependencies.mount]
+path = "../temp/mount"
+
+[dependencies.static]
+path = "../temp/static"
 
 [dependencies.mysql]
 version="*"

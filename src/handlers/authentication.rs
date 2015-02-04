@@ -24,8 +24,8 @@ fn login_answer( request: &mut Request ) -> AnswerResult {
 }
 
 // регистрация пользователя
-pub fn join_us( request: &mut Request, response: &mut Response ) {
-    response.send_answer( &join_us_answer( request ) );
+pub fn join_us( request: &mut Request ) -> IronResult<Response> {
+    Ok( Response::with( (status::Ok, join_us_answer( request )) ) )
 }
 
 fn join_us_answer( request: &mut Request ) -> AnswerResult {

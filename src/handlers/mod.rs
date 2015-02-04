@@ -17,7 +17,7 @@ pub mod mailbox;
 pub mod events;
 pub mod timetable;
 
-pub fn hello ( request: &Request ) -> IronResult<Response> { 
+pub fn hello ( request: &mut Request ) -> IronResult<Response> { 
     let answer = format!( "Hello {}!!! Glad to see you!", request.user().name );
-    Ok( Response::with( status::Ok, answer ) )
+    Ok( Response::with( (status::Ok, answer) ) )
 }

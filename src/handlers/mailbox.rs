@@ -10,11 +10,11 @@ static PAGE: &'static str = "page";
 const IN_PAGE_COUNT: u32 = 10;
 
 pub fn count(request: &mut Request ) -> IronResult<Response> {
-    Ok( Response::with( status::Ok, count_answer( request, false ) ) )
+    Ok( Response::with( (status::Ok, count_answer( request, false )) ) )
 }
 
-pub fn count_unreaded( request: &mut Request, response: &mut Response ) {
-    Ok( Response::with( status::Ok, count_answer( request, true ) ) )
+pub fn count_unreaded( request: &mut Request ) -> IronResult<Response> {
+    Ok( Response::with( (status::Ok, count_answer( request, true )) ) )
 }
 
 fn count_answer( req: &mut Request, only_unreaded: bool ) -> AnswerResult {
@@ -26,12 +26,12 @@ fn count_answer( req: &mut Request, only_unreaded: bool ) -> AnswerResult {
     Ok( answer )
 }
 
-pub fn get(request: &mut Request, response: &mut Response ) {
-    response.send_answer( &get_answer( request, false ) );
+pub fn get(request: &mut Request ) -> IronResult<Response> {
+   Ok( Response::with( (status::Ok, get_answer( request, false )) ) )
 }
 
-pub fn get_unreaded(request: &mut Request, response: &mut Response ) {
-    response.send_answer( &get_answer( request, true ) );
+pub fn get_unreaded(request: &mut Request) -> IronResult<Response> {
+    Ok( Response::with( (status::Ok, get_answer( request, true )) ) )
 }
 
 fn get_answer( req: &mut Request, only_unreaded: bool ) -> AnswerResult {
@@ -51,8 +51,8 @@ fn get_answer( req: &mut Request, only_unreaded: bool ) -> AnswerResult {
     Ok( answer )
 }
 
-pub fn mark_as_readed( request: &mut Request, response: &mut Response ) {
-    response.send_answer( &mark_as_readed_answer( request ) );
+pub fn mark_as_readed( request: &mut Request) -> IronResult<Response> {
+    Ok( Response::with( (status::Ok, mark_as_readed_answer( request )) ) )
 }
 
 pub fn mark_as_readed_answer( req: &mut Request ) -> AnswerResult {

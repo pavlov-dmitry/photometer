@@ -4,6 +4,7 @@ use types::{ Id };
 use iron::prelude::*;
 use iron::status;
 use std::str::FromStr;
+use router_params::RouterParams;
 
 static ID: &'static str = "id";
 
@@ -44,7 +45,7 @@ pub fn action_post( request: &mut Request ) -> IronResult<Response> {
 }
 
 pub fn trigger( request: &mut Request ) -> IronResult<Response> {
-    Ok( Response::with( status::Ok, trigger_impl( request ) ) );
+    Ok( Response::with( (status::Ok, trigger_impl( request )) ) )
 }
 
 pub fn create_path() -> &'static str {

@@ -143,7 +143,7 @@ impl Key for PhotoStore { type Value = PhotoStore; }
 
 impl BeforeMiddleware for PhotoStore {
     fn before(&self, req: &mut Request) -> IronResult<()> {
-        req.extensions_mut().insert::<PhotoStore>( self.clone() );
+        req.extensions.insert::<PhotoStore>( self.clone() );
         Ok( () )
     } 
 }
@@ -152,8 +152,8 @@ pub trait PhotoStoreable {
     fn photo_store(&self) -> &PhotoStore;
 }
 
-impl<'a, 'b> PhotoStoreable for Request<'a, 'b> {
+impl<'a> PhotoStoreable for Request<'a> {
     fn photo_store( &self ) -> &PhotoStore {
-        self.extensions().get::<PhotoStore>().unwrap()
+        self.extensions.get::<PhotoStore>().unwrap()
     }
 }

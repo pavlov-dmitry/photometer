@@ -21,7 +21,7 @@ use static_file::Static;
 mod params_body_parser;
 mod authentication;
 mod config;
-mod cookies_parser;
+mod cookies;
 mod database;
 mod answer;
 mod parse_utils;
@@ -36,6 +36,7 @@ mod get_param;
 mod simple_time_profiler;
 mod request_logger;
 mod not_found_switcher;
+mod router_params;
 
 fn main() {
     env_logger::init().unwrap();
@@ -79,9 +80,9 @@ fn main() {
 
     router.post( handlers::timetable::timetable_path(), handlers::timetable::set_timetable );
 
-    let auth_chain = Chain::new( router );
-    auth_chain.around( authentication::middleware( Url::parse( &cfg.login_page_path ).unwrap() ) );
-    auth_chain.before(
+    let mut auth_chain = Chain::new( router );
+    auth_chain.around( authentication::middleware( &Url::parse( &cfg.login_page_path[] ).unwrap() ) );
+    auth_chain.link_before(
         photo_store::middleware( 
             &cfg.photo_store_path, 
             cfg.photo_store_max_photo_size_bytes,
@@ -91,25 +92,26 @@ fn main() {
 
     let not_found_switch_to_auth = NotFoundSwitcher::new( auth_chain );
 
-    let no_auth_router = Router::new();
+    let mut no_auth_router = Router::new();
 
     no_auth_router.post( "/login", handlers::login );
     no_auth_router.post( "/join_us", handlers::join_us );
     no_auth_router.get( handlers::events::trigger_path(), handlers::events::trigger );
-    let static_mount = Mount::new();
-    static_mount.mount( "/static/", Static::new( Path::new( "../www/" ) );
+
+    let mut static_mount = Mount::new();
+    static_mount.mount( "/static/", Static::new( Path::new( "../www/" ) ) );
     no_auth_router.get( "/static/*", static_mount );
     
-    let chain = Chain::new( no_auth_router );
-    chain.before( authentication::create_session_store() );
-    chain.before( request_logger::middleware() );
-    chain.before( db );
-    chain.before( cookies_parser::middleware() );
-    chain.before( params_body_parser::middleware() );
-    chain.before( events::events_manager::middleware( &cfg.time_store_file_path ) );
+    let mut chain = Chain::new( no_auth_router );
+    chain.link_before( authentication::create_session_store() );
+    //chain.link_before( request_logger::middleware() );
+    chain.link_before( db );
+    chain.link_before( params_body_parser::middleware() );
+    chain.link_before( events::events_manager::middleware( &cfg.time_store_file_path ) );
     chain.around( not_found_switch_to_auth );
+    chain.around( request_logger::middleware() );
 
     let addr = format!( "{}:{}", cfg.server_ip(), cfg.server_port );
     println!( "starting listen on {}", addr );
-    Iron::new( chain ).listen( addr ).unwrap();
+    Iron::new( chain ).listen( addr.as_slice() ).unwrap();
 }

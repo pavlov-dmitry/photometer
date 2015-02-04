@@ -8,7 +8,7 @@ use iron::prelude::*;
 use iron::status;
 
 pub fn rename_photo( req: &mut Request ) -> IronResult<Response> {
-    Ok( Response::with( (status::Ok, rename_answer( req )) ) );
+    Ok( Response::with( (status::Ok, rename_answer( req )) ) )
 }
 
 fn rename_answer( request: &mut Request ) -> AnswerResult {

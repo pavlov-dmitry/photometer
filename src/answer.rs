@@ -50,7 +50,7 @@ impl Modifier<Response> for AnswerResult {
     #[inline]
     fn modify(self, res: &mut Response) {
         match self {
-            Ok( answer ) => {
+            Ok( ref answer ) => {
                 let mime: mime::Mime = "application/json;charset=utf8".parse().unwrap();
                 mime.modify( res );
                 json::encode( answer ).unwrap().modify( res );        
