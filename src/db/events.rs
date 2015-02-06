@@ -130,7 +130,7 @@ fn get_events_impl( conn: &mut MyPooledConn, where_cond: &str, values: &[&ToValu
         where_cond
     );
     let mut stmt = try!( conn.prepare( query.as_slice() ) );
-    let mut sql_result = try!( stmt.execute( values ) );
+    let sql_result = try!( stmt.execute( values ) );
     let mut events = Vec::new();
     for sql_row in sql_result {
         let row = try!( sql_row );

@@ -118,7 +118,7 @@ fn get_unpublished_users_impl( conn: &mut MyPooledConn, scheduled: Id, group: Id
             `g`.group_id = ?
             AND `p`.`id` IS NULL
     "));
-    let mut result = try!( stmt.execute( &[ &scheduled, &group ] ) );
+    let result = try!( stmt.execute( &[ &scheduled, &group ] ) );
     let mut users = Vec::new();
     for row in result {
         let row = try!( row );

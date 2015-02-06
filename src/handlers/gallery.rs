@@ -39,8 +39,8 @@ pub fn current_year_count( request: &mut Request ) -> IronResult<Response> {
 pub fn by_year_count( request: &mut Request ) -> IronResult<Response> {
     let year = FromStr::from_str( request.param( YEAR ) );
     let answer = match year {
-        Some( year ) => by_year_count_answer( request, year ),
-        None => Err( err_msg::invalid_path_param( YEAR ) )
+        Ok( year ) => by_year_count_answer( request, year ),
+        Err( _ ) => Err( err_msg::invalid_path_param( YEAR ) )
     };
     Ok( Response::with( (status::Ok, answer) ) )
 }
@@ -52,8 +52,8 @@ pub fn current_year( request: &mut Request ) -> IronResult<Response> {
 pub fn by_year( request: &mut Request ) -> IronResult<Response> {
     let year = FromStr::from_str( request.param( YEAR ) );
     let answer = match year {
-        Some( year ) => by_year_answer( request, year ),
-        None => Err( err_msg::invalid_path_param( YEAR ) )
+        Ok( year ) => by_year_answer( request, year ),
+        Err( _ ) => Err( err_msg::invalid_path_param( YEAR ) )
     };
     Ok( Response::with( (status::Ok, answer) ) )
 }

@@ -223,7 +223,7 @@ impl FromError<String> for AnswerResult {
 }
 
 fn convert_member( s: &String ) -> CommonResult<Id> {
-    match FromStr::from_str( s.as_slice() ) {
+    match FromStr::from_str( s.as_slice() ).ok() {
         Some( id ) => Ok( id ),
         None => Err( err_msg::invalid_type_param( MEMBERS ) )
     }

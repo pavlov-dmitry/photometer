@@ -93,5 +93,5 @@ fn create_post_answer( event_id: Id, req: &mut Request ) -> AnswerResult {
 
 fn get_id( req: &Request ) -> Option<Id> {
     let id = req.param( ID );
-    FromStr::from_str( id )
+    FromStr::from_str( id ).ok()
 }

@@ -20,7 +20,7 @@ pub fn get_photo( req: &mut Request ) -> IronResult<Response> {
 fn image_id_from_filename( filename: &str ) -> Option<Id> {
     filename.split( '.' )
         .next() // берем только первый элемент
-        .and_then( |name| FromStr::from_str( name ) )
+        .and_then( |name| FromStr::from_str( name ).ok() )
 }
 
 macro_rules! try_notfound{

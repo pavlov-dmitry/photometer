@@ -58,5 +58,5 @@ fn set_timetable_answer( group_id: Id, req: &mut Request ) -> AnswerResult {
 
 fn get_group_id( req: &Request ) -> Option<Id> {
     let group_id_str = req.param( "group_id" );
-    FromStr::from_str( group_id_str )
+    FromStr::from_str( group_id_str ).ok()
 }

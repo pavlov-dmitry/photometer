@@ -51,11 +51,11 @@ impl<'a> GetParamable for Request<'a> {
     }
     fn get_param_uint( &self, prm: &str ) -> CommonResult<usize> {
         self.get_param( prm )
-            .and_then( |s| FromStr::from_str( s ).ok_or( err_msg::invalid_type_param( prm ) ) )
+            .and_then( |s| FromStr::from_str( s ).map_err( |_| err_msg::invalid_type_param( prm ) ) )
     }
     fn get_param_id( &self, prm: &str ) -> CommonResult<Id> {
         self.get_param( prm )
-            .and_then( |s| FromStr::from_str( s ).ok_or( err_msg::invalid_type_param( prm ) ) ) 
+            .and_then( |s| FromStr::from_str( s ).map_err( |_| err_msg::invalid_type_param( prm ) ) ) 
     }
 
     fn get_param_time( &self, prm: &str ) -> CommonResult<Timespec> {
@@ -111,6 +111,6 @@ impl<'a> FromParams<'a> for &'a str {
 impl<'a, T: FromStr> FromParams<'a> for T {
     fn from_params( params: &'a GetParamable, prm: &str ) -> CommonResult<T> {
         params.get_param( prm )
-            .and_then( |s| FromStr::from_str( s ).ok_or( err_msg::invalid_type_param( prm ) ) )
+            .and_then( |s| FromStr::from_str( s ).map_err( |_| err_msg::invalid_type_param( prm ) ) )
     }
 }

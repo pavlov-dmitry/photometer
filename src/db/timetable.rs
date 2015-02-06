@@ -91,7 +91,7 @@ fn timetable_events_impl( conn: &mut MyPooledConn, from: &Timespec, to: &Timespe
             AND ( ? < `tt`.`start_time` AND `tt`.`start_time` <= ? )
     "));
     
-    let mut result = try!( stmt.execute( &[ &from.sec, &to.sec ] ) );
+    let result = try!( stmt.execute( &[ &from.sec, &to.sec ] ) );
 
     let mut events = Vec::new();
 

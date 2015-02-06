@@ -113,7 +113,7 @@ fn is_user_already_voted_impl( conn: &mut MyPooledConn, scheduled_id: Id, user_i
 
 fn get_votes_impl( conn: &mut MyPooledConn, scheduled_id: Id ) -> MyResult<Votes> {
     let mut stmt = try!( conn.prepare( "SELECT user_id, voted, vote FROM votes WHERE scheduled_id = ?" ) );
-    let mut result = try!( stmt.execute( &[ &scheduled_id ] ) );
+    let result = try!( stmt.execute( &[ &scheduled_id ] ) );
 
     let mut votes = Votes {
         yes: Vec::new(),

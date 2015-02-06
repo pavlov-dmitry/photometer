@@ -18,15 +18,14 @@ router = "*"
 # static = "*"
 
 [dependencies.mount]
-path = "../temp/mount"
+git = "https://github.com/iron/mount.git"
 
 [dependencies.static]
-path = "../temp/static"
+git = "https://github.com/pavlov-dmitry/static.git"
 
 [dependencies.mysql]
 version="*"
 default-features = false
 
 [dependencies.image]
-
 git = "https://github.com/PistonDevelopers/image.git"

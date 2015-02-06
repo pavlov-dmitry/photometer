@@ -129,7 +129,7 @@ fn messages_from_last_impl<F: FnMut(&MailInfo)>(
         LIMIT ? OFFSET ?;
     ", where_postfix );
     let mut stmt = try!( conn.prepare( query.as_slice() ) );
-    let mut sql_result = try!( stmt.execute( &[ &owner_id, &count, &offset ] ) );
+    let sql_result = try!( stmt.execute( &[ &owner_id, &count, &offset ] ) );
 
     for sql_row in sql_result {
         let values = try!( sql_row );
