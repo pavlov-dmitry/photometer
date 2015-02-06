@@ -5,7 +5,9 @@ use photo_store::{ PhotoStoreable };
 use std::str::FromStr;
 use iron::prelude::*;
 use iron::status;
+use iron::mime;
 use router_params::RouterParams;
+use types::ImageType;
 
 static FILENAME : &'static str = "filename";
 
@@ -32,6 +34,13 @@ macro_rules! try_notfound{
     })
 }
 
+fn mime_from_image_type( t: ImageType ) -> mime::Mime {
+    match t {
+        ImageType::Jpeg => mime::Mime( mime::TopLevel::Image, mime::SubLevel::Jpeg, Vec::new() ),
+        ImageType::Png => mime::Mime( mime::TopLevel::Image, mime::SubLevel::Png, Vec::new() )
+    }
+}
+
 pub fn get_image( req: &mut Request, is_preview: bool ) -> IronResult<Response> {
     let image_id = match image_id_from_filename( req.param( FILENAME ) ) {
         Some( id ) => id,
@@ -50,7 +59,8 @@ pub fn get_image( req: &mut Request, is_preview: bool ) -> IronResult<Response> 
                     &info.upload_time,
                     &info.image_type,
                     is_preview
-                )
+                ),
+                mime_from_image_type( info.image_type )
             )))            
         },
         None => {

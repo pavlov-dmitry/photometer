@@ -84,13 +84,6 @@ fn main() {
 
     let mut auth_chain = Chain::new( router );
     auth_chain.around( authentication::middleware( &Url::parse( &cfg.login_page_path[] ).unwrap() ) );
-    auth_chain.link_before(
-        photo_store::middleware( 
-            &cfg.photo_store_path, 
-            cfg.photo_store_max_photo_size_bytes,
-            cfg.photo_store_preview_size
-        )
-    );
 
     let not_found_switch_to_auth = NotFoundSwitcher::new( auth_chain );
 
@@ -101,15 +94,22 @@ fn main() {
     no_auth_router.get( handlers::events::trigger_path(), handlers::events::trigger );
 
     let mut static_mount = Mount::new();
-    static_mount.mount( "/static/", Static::new( Path::new( "../www/" ) ) );
-    no_auth_router.get( "/static/*", static_mount );
+    static_mount.mount( "/", Static::new( Path::new( "../www/" ) ) );
+    static_mount.mount( "/js/", Static::new( Path::new( "../www/js/" ) ) );
+    no_auth_router.get( "/*", static_mount );
     
     let mut chain = Chain::new( no_auth_router );
     chain.link_before( authentication::create_session_store() );
-    //chain.link_before( request_logger::middleware() );
     chain.link_before( db );
     chain.link_before( params_body_parser::middleware() );
     chain.link_before( events::events_manager::middleware( &cfg.time_store_file_path ) );
+    chain.link_before(
+        photo_store::middleware( 
+            &cfg.photo_store_path, 
+            cfg.photo_store_max_photo_size_bytes,
+            cfg.photo_store_preview_size
+        )
+    );
     chain.around( not_found_switch_to_auth );
     chain.around( request_logger::middleware() );
 

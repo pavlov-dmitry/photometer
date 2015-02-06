@@ -142,6 +142,7 @@ impl AroundMiddleware for Autentication {
 
 impl<H: Handler> Handler for AuthenticationHandler<H> {
     fn handle(&self, req: &mut Request) -> IronResult<Response> {
+        debug!( "session_id_cookie={:?}", req.cookie( SESSION_ID ) );
         let some_user = req.cookie( SESSION_ID ).map_or( None, |session| {
             req.sessions_store().user_by_session_id( session )
         } );

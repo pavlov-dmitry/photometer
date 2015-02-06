@@ -68,7 +68,7 @@ fn fn_failed<E: Display>( fn_name: &str, e: E ) -> String {
 fn get_user_impl( conn: &mut MyPooledConn, name: &str, pass: &str ) -> MyResult<Option<User>> {
     let name = name.to_string(); // помогает убрать internal compiler error
     let pass = pass.to_string();
-    let mut stmt = try!( conn.prepare( "select login, id, mail from users where login=? and password=? and activated=true" ) );
+    let mut stmt = try!( conn.prepare( "select login, id, mail from users where login=? and password=?" ) );
     let mut sql_result = try!( stmt.execute( &[ &name, &pass ] ) );
     match sql_result.next() {
         None => Ok( None ),
