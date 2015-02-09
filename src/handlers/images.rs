@@ -70,7 +70,7 @@ pub fn get_image( req: &mut Request, is_preview: bool ) -> IronResult<Response> 
 }
 
 pub fn preview_path() -> &'static str {
-    "/preview/:filename.:ext"
+    "/preview/:filename"
 }
 
 pub fn get_preview( req: &mut Request ) -> IronResult<Response> {

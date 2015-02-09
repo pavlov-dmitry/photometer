@@ -95,8 +95,8 @@ impl PhotoStore {
     pub fn save_preview( &self, img: &mut DynamicImage, filename: Path, (tlx, tly): (u32, u32), (w, h) : (u32, u32) ) -> IoResult<()> {
         let mut preview = img.crop( tlx, tly, w, h );
         preview = preview.resize( self.params.preview_size, self.params.preview_size, image::Nearest );
-        let preview_file = try!( File::create( &filename ) );
-        let _ = try!( preview.save( preview_file, image::PNG ) );
+        let mut preview_file = try!( File::create( &filename ) );
+        let _ = try!( preview.save( &mut preview_file, image::PNG ) );
         Ok( () )
     }
 
