@@ -2,6 +2,7 @@ use super::{ Event, ScheduledEventInfo, FullEventInfo, make_event_action_link };
 use types::{ Id, EmptyResult, CommonResult };
 use answer::{ Answer, AnswerResult };
 use database::{ Databaseable };
+use stuff::Stuffable;
 use db::mailbox::DbMailbox;
 use db::groups::DbGroups;
 use db::publication::DbPublication;
@@ -76,7 +77,7 @@ impl Event for LatePublication {
         let photo_id = try!( req.get_param_id( "photo" ) );
         let current_user_name = req.user().name.clone();
         let user_id = req.user().id;
-        let db = try!( req.get_current_db_conn() );
+        let db = try!( req.stuff().get_current_db_conn() );
 
         let mut answer = Answer::new();
         // если такой пользователь есть должен выложиться
@@ -102,7 +103,7 @@ impl Event for LatePublication {
     /// информация о состоянии события
     fn info_get( &self, req: &mut Request, body: &ScheduledEventInfo ) -> AnswerResult {
         let info = try!( get_info( &body.data ) );
-        let db = try!( req.get_current_db_conn() );
+        let db = try!( req.stuff().get_current_db_conn() );
         let group_members_count = try!( db.get_members_count( info.group_id ) );
         let published_photo_count = try!( db.get_published_photo_count( body.scheduled_id, info.group_id ) );
 
@@ -116,7 +117,7 @@ impl Event for LatePublication {
     /// проверка на возможное досрочное завершение
     fn is_complete( &self, req: &mut Request, body: &ScheduledEventInfo ) -> CommonResult<bool> {
         let info = try!( get_info( &body.data ) );
-        let db = try!( req.get_current_db_conn() );
+        let db = try!( req.stuff().get_current_db_conn() );
         let group_members_count = try!( db.get_members_count( info.group_id ) );
         let published_photo_count = try!( db.get_published_photo_count( body.scheduled_id, info.group_id ) ); 
         Ok( group_members_count == published_photo_count )
@@ -126,7 +127,7 @@ impl Event for LatePublication {
 static SENDER_NAME: &'static str = "Публикация с опозданием";
 
 fn send_mail_you_can_public_photos( req: &mut Request, user: Id, body: &ScheduledEventInfo, _info: &Info ) -> EmptyResult {
-    let db = try!( req.get_current_db_conn() );
+    let db = try!( req.stuff().get_current_db_conn() );
     db.send_mail(
         user,
         SENDER_NAME,

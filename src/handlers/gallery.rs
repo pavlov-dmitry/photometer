@@ -4,6 +4,7 @@ use time;
 use get_param::{ GetParamable };
 use std::str::FromStr;
 use database::{ Databaseable };
+use stuff::Stuffable;
 use authentication::{ Userable };
 use db::photos::{ DbPhotos };
 use iron::prelude::*;
@@ -62,7 +63,7 @@ fn by_year_count_answer( req: &mut Request, year: i32 ) -> AnswerResult {
     let mut answer = Answer::new();
     let ( from, to ) = times_gate_for_year( year );
     let user_id = req.user().id;
-    let db = try!( req.get_current_db_conn() );
+    let db = try!( req.stuff().get_current_db_conn() );
     let photos_count = try!( db.get_photo_infos_count( 
         user_id, 
         from.to_timespec(), 
@@ -78,7 +79,7 @@ fn by_year_answer( req: &mut Request, year: i32 ) -> AnswerResult {
 
     let ( from, to ) = times_gate_for_year( year );
     let user_id = req.user().id;
-    let db = try!( req.get_current_db_conn() );
+    let db = try!( req.stuff().get_current_db_conn() );
     let photo_infos = try!( db.get_photo_infos(  
         user_id,
         from.to_timespec(),

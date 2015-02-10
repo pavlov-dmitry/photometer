@@ -1,5 +1,6 @@
 use answer::{ Answer, AnswerResult };
 use database::{ Databaseable };
+use stuff::Stuffable;
 use db::users::{ DbUsers };
 use authentication::{ SessionsStoreable };
 use get_param::{ GetParamable };
@@ -34,12 +35,12 @@ fn join_us_answer( request: &mut Request ) -> AnswerResult {
     let password = try!( request.get_param( PASSWORD ) ).to_string();
     let password = password.as_slice();
     let user_exists = {
-        let db = try!( request.get_current_db_conn() );
+        let db = try!( request.stuff().get_current_db_conn() );
         try!( db.user_exists( login ) )
     };
     if !user_exists { // нет такого пользователя
         {
-            let db = try!( request.get_current_db_conn() );
+            let db = try!( request.stuff().get_current_db_conn() );
             try!( db.add_user( login, password ) );
         }
         try!( request.photo_store().init_user_dir( login ).map_err( |e| err_msg::fs_error( e ) ) );
@@ -55,7 +56,7 @@ fn join_us_answer( request: &mut Request ) -> AnswerResult {
 fn make_login( req: &mut Request, name: &str, pass: &str ) -> AnswerResult
 {
     let maybe_user = {
-        let db = try!( req.get_current_db_conn() );
+        let db = try!( req.stuff().get_current_db_conn() );
         try!( db.get_user( name, pass ) )
     };
     let mut answer = Answer::new();

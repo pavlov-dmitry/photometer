@@ -11,6 +11,7 @@ use std::comm::{ Sender };
 use db::mailbox::DbMailbox;
 use types::{ EmptyResult };
 use database::{ Databaseable };
+use stuff::{ Stuff, StuffInstallable };
 
 type MailSender = Sender<Mail>;
 

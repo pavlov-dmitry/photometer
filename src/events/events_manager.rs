@@ -1,5 +1,6 @@
 use iron::typemap::Key;
 use database::{ Databaseable };
+use stuff::Stuffable;
 use std::sync::{ Arc };
 use super::{ Event, FullEventInfo, ScheduledEventInfo, EventState };
 use super::events_collection;
@@ -37,7 +38,7 @@ impl<'a> EventsManager for Request<'a> {
         let (from, to) = try!( self.get_time_period() );
         try!( self.check_timetables( &from, &to ) );
         let events = { 
-            let db = try!( self.get_current_db_conn() );
+            let db = try!( self.stuff().get_current_db_conn() );
             try!( db.starting_events( &time::get_time() ) )
         };
         for event_info in events.iter() {
@@ -52,7 +53,7 @@ impl<'a> EventsManager for Request<'a> {
     /// исполняет события на заверщение
     fn maybe_end_some_events( &mut self ) -> EmptyResult {
         let events = {
-            let db = try!( self.get_current_db_conn() );
+            let db = try!( self.stuff().get_current_db_conn() );
             try!( db.ending_events( &time::get_time() ) )
         };
         for event_info in events.iter() {
@@ -100,7 +101,7 @@ impl<'a> EventsManager for Request<'a> {
         match event.user_creating_post( self ) {
             Ok( event ) => {
                 info!( "event created: '{}':{}", event.name, event.id );
-                let db = try!( self.get_current_db_conn() );
+                let db = try!( self.stuff().get_current_db_conn() );
                 try!( db.add_events( &[ event ] ) );
 
                 let mut answer = Answer::new();
@@ -128,13 +129,13 @@ impl<'a> EventsManagerPrivate for Request<'a> {
         self.extensions.get::<EventsManagerMiddleware>().unwrap()  
     }
     fn set_event_state( &mut self, scheduled_id: Id, state: EventState ) -> EmptyResult {
-        let db = try!( self.get_current_db_conn() );
+        let db = try!( self.stuff().get_current_db_conn() );
         db.set_event_state( scheduled_id, state )
     }
 
     fn finish_him( &mut self, event: EventPtr, info: &ScheduledEventInfo ) -> EmptyResult {
         try!( event.finish( self, info ) );
-        let db = try!( self.get_current_db_conn() );
+        let db = try!( self.stuff().get_current_db_conn() );
         try!( db.set_event_state( info.scheduled_id, EventState::Finished ) );  
         Ok( () )
     }
@@ -153,7 +154,7 @@ impl<'a> EventsManagerPrivate for Request<'a> {
         &mut self,  scheduled_id: Id, do_this: F
     ) -> AnswerResult {
         let event_info = {
-            let db = try!( self.get_current_db_conn() );
+            let db = try!( self.stuff().get_current_db_conn() );
             try!( db.event_info( scheduled_id ) )
         };
         match event_info {
@@ -172,7 +173,7 @@ impl<'a> EventsManagerPrivate for Request<'a> {
     /// проверяет расписания всех групп на новые события
     fn check_timetables( &mut self, from: &Timespec, to: &Timespec ) -> EmptyResult {
         let timetable_events = {
-            let db = try!( self.get_current_db_conn() );
+            let db = try!( self.stuff().get_current_db_conn() );
             try!( db.timetable_events( from, to ) )
         };
         // создаём события
@@ -197,7 +198,7 @@ impl<'a> EventsManagerPrivate for Request<'a> {
         // елси хоть что нить создали, то записываем их в запланированные события
         if events.is_empty() == false {
             debug!( "add events from timetable: {:?}", events );
-            let db = try!( self.get_current_db_conn() );
+            let db = try!( self.stuff().get_current_db_conn() );
             try!( db.add_events( events.as_slice() ) );
         }
         Ok( () )

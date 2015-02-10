@@ -9,6 +9,7 @@ use types::{ PhotoInfo, ImageType };
 use exif_reader;
 use exif_reader::{ ExifValues };
 use database::{ Databaseable };
+use stuff::Stuffable;
 use db::photos::{ DbPhotos };
 use iron::prelude::*;
 use iron::status;
@@ -36,7 +37,7 @@ fn upload_photo_answer( request: &mut Request ) -> AnswerResult {
             match photo_info {
                 Ok( photo_info ) => {
                     let user_id = request.user().id;
-                    let db = try!( request.get_current_db_conn() );
+                    let db = try!( request.stuff().get_current_db_conn() );
                     match db.add_photo( user_id, &photo_info ) {
                         Ok( _ ) => answer.add_record( "photo_loaded", &String::from_str( "ok" ) ),
                         Err( e ) => panic!( e )

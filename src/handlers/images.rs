@@ -1,5 +1,6 @@
 use types::{ Id };
 use database::{ Databaseable };
+use stuff::Stuffable;
 use db::photos::{ DbPhotos };
 use photo_store::{ PhotoStoreable };
 use std::str::FromStr;
@@ -47,7 +48,7 @@ pub fn get_image( req: &mut Request, is_preview: bool ) -> IronResult<Response> 
         None => return Ok( Response::with( status::NotFound ) )
     };
     let maybe_info = {
-        let db = try_notfound!( req.get_current_db_conn() );
+        let db = try_notfound!( req.stuff().get_current_db_conn() );
         try_notfound!( db.get_photo_info( image_id ) )
     };
     match maybe_info {

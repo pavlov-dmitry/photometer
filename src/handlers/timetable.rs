@@ -2,6 +2,7 @@ use answer::{ AnswerResult, Answer };
 use db::timetable::{ DbTimetable, TimetableEventInfo };
 use db::groups::DbGroups;
 use database::Databaseable;
+use stuff::Stuffable;
 use get_param::GetParamable;
 use types::{ Id };
 use iron::status;
@@ -24,7 +25,7 @@ pub fn set_timetable( req: &mut Request ) -> IronResult<Response> {
 fn set_timetable_answer( group_id: Id, req: &mut Request ) -> AnswerResult {
     let mut answer = Answer::new();
     let is_group_exists = {
-        let mut db = try!( req.get_current_db_conn() );
+        let mut db = try!( req.stuff().get_current_db_conn() );
         try!( db.is_group_id_exists( group_id ) )
     };
     if is_group_exists {
@@ -43,7 +44,7 @@ fn set_timetable_answer( group_id: Id, req: &mut Request ) -> AnswerResult {
         events.push( timetable_event );
 
         {
-            let mut db = try!( req.get_current_db_conn() );
+            let mut db = try!( req.stuff().get_current_db_conn() );
             let new_version = try!( db.add_new_timetable_version( group_id, &events ) );
             try!( db.set_timetable_version( group_id, new_version ) );
         }

@@ -39,6 +39,7 @@ mod simple_time_profiler;
 mod request_logger;
 mod not_found_switcher;
 mod router_params;
+mod stuff;
 
 fn main() {
     env_logger::init().unwrap();
@@ -98,9 +99,13 @@ fn main() {
     static_mount.mount( "/js/", Static::new( Path::new( "../www/js/" ) ) );
     no_auth_router.get( "/*", static_mount );
     
+    let mut stuff = stuff::StuffMiddleware::new();
+    stuff.add( db );
+
     let mut chain = Chain::new( no_auth_router );
     chain.link_before( authentication::create_session_store() );
-    chain.link_before( db );
+    //chain.link_before( db );
+    chain.link_before( stuff );
     chain.link_before( params_body_parser::middleware() );
     chain.link_before( events::events_manager::middleware( &cfg.time_store_file_path ) );
     chain.link_before(

@@ -1,5 +1,6 @@
 use answer::{ AnswerResult, Answer };
 use database::{ Databaseable };
+use stuff::Stuffable;
 use db::mailbox::{ DbMailbox };
 use authentication::{ Userable };
 use get_param::{ GetParamable };
@@ -19,7 +20,7 @@ pub fn count_unreaded( request: &mut Request ) -> IronResult<Response> {
 
 fn count_answer( req: &mut Request, only_unreaded: bool ) -> AnswerResult {
     let user_id = req.user().id;
-    let db = try!( req.get_current_db_conn() );
+    let db = try!( req.stuff().get_current_db_conn() );
     let count = try!( db.messages_count( user_id, only_unreaded ) );
     let mut answer = Answer::new();
     answer.add_record( "count", &count );
@@ -37,7 +38,7 @@ pub fn get_unreaded(request: &mut Request) -> IronResult<Response> {
 fn get_answer( req: &mut Request, only_unreaded: bool ) -> AnswerResult {
     let page = req.get_param_uint( PAGE ).unwrap_or( 0 ) as u32;
     let user_id = req.user().id;
-    let db = try!( req.get_current_db_conn() );
+    let db = try!( req.stuff().get_current_db_conn() );
     let mut answer = Answer::new();
     try!( 
         db.messages_from_last( 
@@ -58,7 +59,7 @@ pub fn mark_as_readed( request: &mut Request) -> IronResult<Response> {
 pub fn mark_as_readed_answer( req: &mut Request ) -> AnswerResult {
     let id = try!( req.get_param_id( "id" ) );
     let user_id = req.user().id;
-    let db = try!( req.get_current_db_conn() );
+    let db = try!( req.stuff().get_current_db_conn() );
     let success = try!( db.mark_as_readed( user_id, id ) );
     let mut answer = Answer::new();
     if success {

@@ -2,6 +2,7 @@ use photo_store::{ PhotoStoreable, PhotoStoreError };
 use answer::{ AnswerResult, Answer };
 use get_param::{ GetParamable };
 use database::{ Databaseable };
+use stuff::Stuffable;
 use err_msg;
 use authentication::{ Userable };
 use db::photos::{ DbPhotos };
@@ -19,7 +20,7 @@ fn crop_photo_answer( request: &mut Request ) -> AnswerResult {
     let x2 = try!( request.get_param_uint( "x2" ) ) as u32;
     let y2 = try!( request.get_param_uint( "y2" ) ) as u32;
     let maybe_photo_info = { 
-        let db = try!( request.get_current_db_conn() );
+        let db = try!( request.stuff().get_current_db_conn() );
         try!( db.get_photo_info( id ) )
     };
     let mut answer = Answer::new();

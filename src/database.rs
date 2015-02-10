@@ -5,10 +5,10 @@ use std::default::{ Default };
 
 use types::{ CommonResult, EmptyResult };
 use iron::typemap::Key;
-use iron::middleware::BeforeMiddleware;
 use iron::prelude::*;
 use db;
 use err_msg;
+use stuff::{ Stuff, StuffInstallable };
 
 pub trait Databaseable {
     //создаёт новое подключение
@@ -80,17 +80,16 @@ pub fn create_db_connection(
 
 impl Key for Database { type Value = Database; }
 
-impl BeforeMiddleware for Database {
-    fn before( &self, req: &mut Request ) -> IronResult<()> {
-        req.extensions.insert::<Database>( self.clone() );
-        Ok( () )
+impl StuffInstallable for Database {
+    fn install_to(&self, stuff: &mut Stuff ) {
+        stuff.extensions.insert::<Database>( self.clone() );
     }
 }
 
 struct ConnectionKey;
 impl Key for ConnectionKey { type Value = MyPooledConn; }
 
-impl<'a> Databaseable for Request<'a> {
+impl Databaseable for Stuff {
     fn get_new_db_conn(&self) -> CommonResult<MyPooledConn> {
         self.extensions.get::<Database>().unwrap()
             .pool.get_conn()

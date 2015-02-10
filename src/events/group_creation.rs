@@ -16,6 +16,7 @@ use types::{ Id, EmptyResult, CommonResult };
 use answer::{ Answer, AnswerResult };
 use get_param::GetParamable;
 use database::{ DbConnection, Databaseable };
+use stuff::Stuffable;
 use db::votes::DbVotes;
 use db::mailbox::DbMailbox;
 use db::users::DbUsers;
@@ -71,7 +72,7 @@ impl UserEvent for GroupCreation {
             return Err( Ok( answer ) );
         }
         // проверка наличия пользователей
-        let db = try!( req.get_current_db_conn() );
+        let db = try!( req.stuff().get_current_db_conn() );
         for member in info.members.iter() {
             if try!( db.user_id_exists( *member ) ) == false {
                 answer.add_error( "user", "not_found" );
@@ -99,7 +100,7 @@ impl Event for GroupCreation {
     /// действие на начало события
     fn start( &self, req: &mut Request, body: &ScheduledEventInfo ) -> EmptyResult {
         let info = try!( get_info( &body.data ) );
-        let db = try!( req.get_current_db_conn() );
+        let db = try!( req.stuff().get_current_db_conn() );
 
         let mut exists_members = Vec::new();
         for member in info.members.iter() {
@@ -124,7 +125,7 @@ impl Event for GroupCreation {
     /// действие на окончание события
     fn finish( &self, req: &mut Request, body: &ScheduledEventInfo ) -> EmptyResult {
         let info = try!( get_info( &body.data ) );
-        let db = try!( req.get_current_db_conn() );
+        let db = try!( req.stuff().get_current_db_conn() );
         // собиарем голоса
         let votes = try!( db.get_votes( body.scheduled_id ) );
         // проверяем что такой группы нет
@@ -159,7 +160,7 @@ impl Event for GroupCreation {
     fn user_action_get( &self, req: &mut Request, body: &ScheduledEventInfo ) -> AnswerResult {
         //TODO: Согласовать с Саньком, что именно ему здесь надо отсылать
         let user_id = req.user().id;
-        let db = try!( req.get_current_db_conn() );
+        let db = try!( req.stuff().get_current_db_conn() );
         let is_already_voted = try!( db.is_user_already_voted( body.scheduled_id, user_id ) );
         let mut answer = Answer::new();
         if is_already_voted {
@@ -174,7 +175,7 @@ impl Event for GroupCreation {
     fn user_action_post( &self, req: &mut Request, body: &ScheduledEventInfo ) -> AnswerResult {
         let vote: bool = try!( req.get_param( "vote" ) ) == "yes";
         let user_id = req.user().id;
-        let db = try!( req.get_current_db_conn() );
+        let db = try!( req.stuff().get_current_db_conn() );
         let is_already_voted = try!( db.is_user_already_voted( body.scheduled_id, user_id ) );
 
         let mut answer = Answer::new();
@@ -190,7 +191,7 @@ impl Event for GroupCreation {
     /// информация о состоянии события
     fn info_get( &self, req: &mut Request, body: &ScheduledEventInfo ) -> AnswerResult {
         let info = try!( get_info( &body.data ) );
-        let db = try!( req.get_current_db_conn() );
+        let db = try!( req.stuff().get_current_db_conn() );
         let votes = try!( db.get_votes( body.scheduled_id ) );
         let mut answer = Answer::new();
         answer.add_record( "name", &info.name );
@@ -203,7 +204,7 @@ impl Event for GroupCreation {
     /// проверка на возможное досрочное завершение
     fn is_complete( &self, req: &mut Request, body: &ScheduledEventInfo ) -> CommonResult<bool> {
         //досрочно завершается когда все проголосвали
-        let db = try!( req.get_current_db_conn() );
+        let db = try!( req.stuff().get_current_db_conn() );
         db.is_all_voted( body.scheduled_id )
     }
 }
