@@ -8,7 +8,7 @@ pub struct Config {
     server_ip: (u8, u8, u8, u8),
     pub server_port: u16,
     pub static_files_path : String,
-    pub login_page_path : String,
+    pub login_page_url : String,
     pub db_name : String,
     pub db_user : String,
     pub db_password : String,
@@ -33,7 +33,7 @@ impl Config {
         Config{ 
             server_ip : (127, 0, 0, 1),
             server_port : 6767,
-            login_page_path : "../www/login.html".to_string(),
+            login_page_url : "http://localhost:6767/login.html".to_string(),
             static_files_path : "../www/".to_string(),
             db_name : "photometer".to_string(),
             db_user : "photometer".to_string(),

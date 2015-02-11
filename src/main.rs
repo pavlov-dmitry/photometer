@@ -87,7 +87,7 @@ fn main() {
     router.post( handlers::timetable::timetable_path(), handlers::timetable::set_timetable );
 
     let mut auth_chain = Chain::new( router );
-    auth_chain.around( authentication::middleware( &Url::parse( &cfg.login_page_path[] ).unwrap() ) );
+    auth_chain.around( authentication::middleware( &Url::parse( &cfg.login_page_url[] ).unwrap() ) );
 
     let not_found_switch_to_auth = NotFoundSwitcher::new( auth_chain );
 
