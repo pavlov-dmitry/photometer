@@ -95,7 +95,6 @@ fn main() {
 
     no_auth_router.post( "/login", handlers::login );
     no_auth_router.post( "/join_us", handlers::join_us );
-    //no_auth_router.get( handlers::events::trigger_path(), handlers::events::trigger );
 
     let mut static_mount = Mount::new();
     static_mount.mount( "/", Static::new( Path::new( "../www/" ) ) );
@@ -111,10 +110,8 @@ fn main() {
 
     let mut chain = Chain::new( no_auth_router );
     chain.link_before( authentication::create_session_store() );
-    //chain.link_before( db );
     chain.link_before( stuff_middleware );
     chain.link_before( params_body_parser::middleware() );
-    //chain.link_before( events::events_manager::middleware( &cfg.time_store_file_path ) );
     chain.link_before(
         photo_store::middleware( 
             &cfg.photo_store_path, 
