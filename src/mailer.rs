@@ -1,13 +1,13 @@
-use typemap::Assoc;
-use plugin::Extensible;
-use std::sync::{ Arc, RWLock };
-use std::io::process::Command;
-use std::io::IoResult;
-use std::io::fs::File;
-use std::task;
+use iron::typemap::Key;
+use std::old_io::process::Command;
+use std::old_io::IoResult;
+use std::old_io::fs::File;
+use std::old_io::stdio::stderr;
+use std::thread::Thread;
+use std::error::FromError;
 
 use authentication::User;
-use std::comm::{ Sender };
+use std::sync::mpsc::{ Sender, channel, SendError };
 use db::mailbox::DbMailbox;
 use types::{ EmptyResult };
 use database::{ Databaseable };
@@ -16,7 +16,7 @@ use stuff::{ Stuff, StuffInstallable };
 type MailSender = Sender<Mail>;
 
 #[derive(Clone)]
-struct MailerMiddleware {
+struct MailerBody {
     sender: MailSender
 }
 
@@ -24,7 +24,7 @@ pub trait Mailer {
     fn send_mail( &mut self, user: &User, sender: &str, subject: &str, body: &str  ) -> EmptyResult;
 }
 
-impl<'a, 'b> Mailer for Request<'a, 'b>{
+impl Mailer for Stuff {
     fn send_mail( &mut self, user: &User, sender: &str, subject: &str, body: &str ) -> EmptyResult {
         // делаем запись в базе о новом оповещении
         {
@@ -32,15 +32,21 @@ impl<'a, 'b> Mailer for Request<'a, 'b>{
             try!( db.send_mail( user.id, sender, subject, body ) );
         }
         //отсылаем в поток посылки почты новое письмо
-        let tx = self.extensions().get::<MailerMiddleware, MailSender>().unwrap();
-        let _ = tx.send_opt( Mail {
+        let tx = self.extensions.get::<MailerBody>().unwrap();
+        try!( tx.send( Mail {
             to_addr: user.mail.clone(),
             to_name: user.name.clone(),
             sender_name: sender.to_string(),
             subject: subject.to_string(),
             body: body.to_string(),
-        } );
+        } ) );
         Ok( () )
+    }
+}
+
+impl FromError<SendError<Mail>> for String {
+    fn from_error(err: SendError<Mail>) -> String {
+        format!( "error sending mail to mailer channel: {}", err )
     }
 }
 
@@ -51,7 +57,8 @@ struct MailContext {
     auth_info: String
 }
 
-struct Mail {
+// сделал pub потому что иначе компилятор не даёт его использовать в FromError
+pub struct Mail {
     to_addr: String,
     to_name: String,
     sender_name: String,
@@ -59,7 +66,7 @@ struct Mail {
     body: String
 }
 
-impl Assoc<MailSender> for MailerMiddleware {}
+impl Key for MailerBody { type Value = MailSender; }
 
 //curl --url "smtps://smtp.gmail.com:465" --ssl-reqd --mail-from "photometer.org.ru@gmail.com" --mail-rcpt "voidwalker@mail.ru" --upload-file ./mail.txt --user "photometer.org.ru@gmail.com:ajnjvtnhbxtcrbq" --insecure
 impl MailContext {
@@ -74,7 +81,7 @@ impl MailContext {
     fn send_mail( &self, mail: Mail ) {
         //создаём текстовый файл со скриптом
         if let Err( e ) = self.make_mail_file( &mail ) {
-            error!( "fail to create tmp mail file: {}", e );
+            let _ = writeln!( &mut stderr(), "fail to create tmp mail file: {}", e );
             return;
         }
         //запускаем curl на передачу записанного письма
@@ -99,7 +106,7 @@ impl MailContext {
         };
         if process.status.success() == false {
             let err_string = String::from_utf8_lossy(process.error.as_slice());
-            error!( "fail to send mail: {}", err_string );
+            let _ = writeln!( &mut stderr(), "fail to send mail: {}", err_string );
         }
     } 
     fn make_mail_file( &self, mail: &Mail ) -> IoResult<()> {
@@ -113,23 +120,26 @@ impl MailContext {
     }
 }
 
-impl Middleware for MailerMiddleware {
-    fn invoke(&self, req: &mut Request, _res: &mut Response) -> MiddlewareResult {
-        req.extensions_mut().insert::<MailerMiddleware, MailSender>( self.sender.clone() );
-        Ok( Continue )
+impl StuffInstallable for MailerBody {
+    fn install_to( &self, stuff: &mut Stuff ) {
+        stuff.extensions.insert::<MailerBody>( self.sender.clone() );
     }
 }
 
-fn middleware( context: MailContext ) -> MailerMiddleware {
-    let (tx, rx) = sync_channel();
+fn create( context: MailContext ) -> MailerBody {
+    let (tx, rx) = channel();
 
-    task::spawn( move || {  
+    Thread::spawn( move || {  
         loop {
-            context.send_mail( rx.recv() );
+            match rx.recv() {
+                Ok( mail ) => context.send_mail( mail ),
+                // Если все те кто могли послать ушли то и мы закрываемся
+                Err( _ ) => break
+            }
         }
-    })/*.detach()*/;
+    });
 
-    MailerMiddleware {
+    MailerBody {
         sender: tx
     }
 }

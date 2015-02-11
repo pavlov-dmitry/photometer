@@ -41,6 +41,7 @@ mod not_found_switcher;
 mod router_params;
 mod stuff;
 mod trigger;
+mod mailer;
 
 use stuff::{ StuffCollection, StuffMiddleware };
 
