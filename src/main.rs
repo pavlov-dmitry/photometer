@@ -104,6 +104,8 @@ fn main() {
     
     let mut stuff = StuffCollection::new();
     stuff.add( db );
+    stuff.add( events::events_manager::body( &cfg.time_store_file_path ) );
+    
     let stuff_middleware = StuffMiddleware::new( stuff );
     trigger::start( cfg.events_trigger_period_sec, stuff_middleware.clone() );
 
@@ -112,7 +114,7 @@ fn main() {
     //chain.link_before( db );
     chain.link_before( stuff_middleware );
     chain.link_before( params_body_parser::middleware() );
-    chain.link_before( events::events_manager::middleware( &cfg.time_store_file_path ) );
+    //chain.link_before( events::events_manager::middleware( &cfg.time_store_file_path ) );
     chain.link_before(
         photo_store::middleware( 
             &cfg.photo_store_path, 

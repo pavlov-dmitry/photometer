@@ -10,7 +10,7 @@ use db::photos::DbPhotos;
 use db::events::DbEvents;
 use get_param::GetParamable;
 use database::{ Databaseable };
-use stuff::Stuffable;
+use stuff::{ Stuffable, Stuff };
 use authentication::{ Userable };
 use std::time::duration::Duration;
 use time;
@@ -32,9 +32,9 @@ impl Event for Publication {
         ID
     }
     /// действие на начало события
-    fn start( &self, req: &mut Request, body: &ScheduledEventInfo ) -> EmptyResult {
+    fn start( &self, stuff: &mut Stuff, body: &ScheduledEventInfo ) -> EmptyResult {
         let info = try!( get_info( &body.data ) );
-        let db = try!( req.stuff().get_current_db_conn() );
+        let db = try!( stuff.get_current_db_conn() );
         let members = try!( db.get_members( info.group_id ) );
         let sender_name = make_sender_name( &body.name );
         let subject = make_subject( &body.name );
@@ -49,9 +49,9 @@ impl Event for Publication {
         Ok( () )
     }
     /// действие на окончание события
-    fn finish( &self, req: &mut Request, body: &ScheduledEventInfo ) -> EmptyResult {
+    fn finish( &self, stuff: &mut Stuff, body: &ScheduledEventInfo ) -> EmptyResult {
         let info = try!( get_info( &body.data ) );
-        let db = try!( req.stuff().get_current_db_conn() );
+        let db = try!( stuff.get_current_db_conn() );
         try!( db.make_publication_visible( body.scheduled_id, info.group_id ) );
         //TODO: старт голосования
         
@@ -115,7 +115,7 @@ impl Event for Publication {
         Ok( answer )
     }
     /// проверка на возможное досрочное завершение
-    fn is_complete( &self, _req: &mut Request, _body: &ScheduledEventInfo ) -> CommonResult<bool> {
+    fn is_complete( &self, _stuff: &mut Stuff, _body: &ScheduledEventInfo ) -> CommonResult<bool> {
         // публикацию досрочно заверщать не будем, есть в ожидании что-то интересное
         Ok( false )
     }

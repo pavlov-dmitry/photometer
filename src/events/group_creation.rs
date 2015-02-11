@@ -16,7 +16,7 @@ use types::{ Id, EmptyResult, CommonResult };
 use answer::{ Answer, AnswerResult };
 use get_param::GetParamable;
 use database::{ DbConnection, Databaseable };
-use stuff::Stuffable;
+use stuff::{ Stuffable, Stuff };
 use db::votes::DbVotes;
 use db::mailbox::DbMailbox;
 use db::users::DbUsers;
@@ -98,9 +98,9 @@ impl Event for GroupCreation {
         ID
     }
     /// действие на начало события
-    fn start( &self, req: &mut Request, body: &ScheduledEventInfo ) -> EmptyResult {
+    fn start( &self, stuff: &mut Stuff, body: &ScheduledEventInfo ) -> EmptyResult {
         let info = try!( get_info( &body.data ) );
-        let db = try!( req.stuff().get_current_db_conn() );
+        let db = try!( stuff.get_current_db_conn() );
 
         let mut exists_members = Vec::new();
         for member in info.members.iter() {
@@ -123,9 +123,9 @@ impl Event for GroupCreation {
         Ok( () )
     }
     /// действие на окончание события
-    fn finish( &self, req: &mut Request, body: &ScheduledEventInfo ) -> EmptyResult {
+    fn finish( &self, stuff: &mut Stuff, body: &ScheduledEventInfo ) -> EmptyResult {
         let info = try!( get_info( &body.data ) );
-        let db = try!( req.stuff().get_current_db_conn() );
+        let db = try!( stuff.get_current_db_conn() );
         // собиарем голоса
         let votes = try!( db.get_votes( body.scheduled_id ) );
         // проверяем что такой группы нет
@@ -202,9 +202,9 @@ impl Event for GroupCreation {
         Ok( answer )
     }
     /// проверка на возможное досрочное завершение
-    fn is_complete( &self, req: &mut Request, body: &ScheduledEventInfo ) -> CommonResult<bool> {
+    fn is_complete( &self, stuff: &mut Stuff, body: &ScheduledEventInfo ) -> CommonResult<bool> {
         //досрочно завершается когда все проголосвали
-        let db = try!( req.stuff().get_current_db_conn() );
+        let db = try!( stuff.get_current_db_conn() );
         db.is_all_voted( body.scheduled_id )
     }
 }

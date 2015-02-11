@@ -2,7 +2,7 @@ use super::{ Event, ScheduledEventInfo, FullEventInfo, make_event_action_link };
 use types::{ Id, EmptyResult, CommonResult };
 use answer::{ Answer, AnswerResult };
 use database::{ Databaseable };
-use stuff::Stuffable;
+use stuff::{ Stuffable, Stuff };
 use db::mailbox::DbMailbox;
 use db::groups::DbGroups;
 use db::publication::DbPublication;
@@ -45,15 +45,15 @@ impl Event for LatePublication {
         ID
     }
     /// действие на начало события
-    fn start( &self, req: &mut Request, body: &ScheduledEventInfo ) -> EmptyResult {
+    fn start( &self, stuff: &mut Stuff, body: &ScheduledEventInfo ) -> EmptyResult {
         let info = try!( get_info( &body.data ) );
         for user in info.late_users.iter() {
-            try!( send_mail_you_can_public_photos( req, *user, body, &info ) );
+            try!( send_mail_you_can_public_photos( stuff, *user, body, &info ) );
         }
         Ok( () )
     }
     /// действие на окончание события
-    fn finish( &self, _req: &mut Request, _body: &ScheduledEventInfo ) -> EmptyResult {
+    fn finish( &self, _stuff: &mut Stuff, _body: &ScheduledEventInfo ) -> EmptyResult {
         // нечего тут делать
         Ok( () )
     }
@@ -115,9 +115,9 @@ impl Event for LatePublication {
         Ok( answer )
     }
     /// проверка на возможное досрочное завершение
-    fn is_complete( &self, req: &mut Request, body: &ScheduledEventInfo ) -> CommonResult<bool> {
+    fn is_complete( &self, stuff: &mut Stuff, body: &ScheduledEventInfo ) -> CommonResult<bool> {
         let info = try!( get_info( &body.data ) );
-        let db = try!( req.stuff().get_current_db_conn() );
+        let db = try!( stuff.get_current_db_conn() );
         let group_members_count = try!( db.get_members_count( info.group_id ) );
         let published_photo_count = try!( db.get_published_photo_count( body.scheduled_id, info.group_id ) ); 
         Ok( group_members_count == published_photo_count )
@@ -126,8 +126,8 @@ impl Event for LatePublication {
 
 static SENDER_NAME: &'static str = "Публикация с опозданием";
 
-fn send_mail_you_can_public_photos( req: &mut Request, user: Id, body: &ScheduledEventInfo, _info: &Info ) -> EmptyResult {
-    let db = try!( req.stuff().get_current_db_conn() );
+fn send_mail_you_can_public_photos( stuff: &mut Stuff, user: Id, body: &ScheduledEventInfo, _info: &Info ) -> EmptyResult {
+    let db = try!( stuff.get_current_db_conn() );
     db.send_mail(
         user,
         SENDER_NAME,

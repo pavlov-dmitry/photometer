@@ -4,6 +4,7 @@ use std::old_io::timer::sleep;
 use std::time::duration::Duration;
 use std::old_io::stdio::stderr;
 use types::EmptyResult;
+use events::events_manager::EventsManagerStuff;
 
 use stuff::{ Stuff, StuffMiddleware };
 
@@ -22,9 +23,9 @@ pub fn start( interval_sec: u32, stuff_creator: StuffMiddleware ) {
 }
 
 fn process_events( stuff: &mut Stuff ) -> EmptyResult {
-    //try!( stuff.maybe_start_some_events() );
-    //try!( stuff.maybe_end_some_events() );
+    try!( stuff.maybe_start_some_events() );
+    try!( stuff.maybe_end_some_events() );
     // стартуем после стопа еще раз, потому-что некоторые события по стопу создают новые
-    //try!( stuff.maybe_start_some_events() );
+    try!( stuff.maybe_start_some_events() );
     Ok( () )
 }

@@ -2,6 +2,7 @@ use types::{ Id, EmptyResult, CommonResult };
 use answer::{ AnswerResult };
 use time::Timespec;
 use iron::prelude::*;
+use stuff::Stuff;
 
 pub mod events_manager;
 mod time_store;
@@ -38,9 +39,9 @@ pub trait Event {
     /// идентификатор события
     fn id( &self ) -> Id;
     /// действие на начало события
-    fn start( &self, req: &mut Request, body: &ScheduledEventInfo ) -> EmptyResult;
+    fn start( &self, stuff: &mut Stuff, body: &ScheduledEventInfo ) -> EmptyResult;
     /// действие на окончание события
-    fn finish( &self, req: &mut Request, body: &ScheduledEventInfo ) -> EmptyResult;
+    fn finish( &self, stuff: &mut Stuff, body: &ScheduledEventInfo ) -> EmptyResult;
     /// описание действиz пользователя на это событие 
     fn user_action_get( &self, req: &mut Request, body: &ScheduledEventInfo ) -> AnswerResult;
     /// применение действия пользователя на это событие
@@ -48,7 +49,7 @@ pub trait Event {
     /// информация о состоянии события
     fn info_get( &self, req: &mut Request, body: &ScheduledEventInfo ) -> AnswerResult;
     /// проверка на возможное досрочное завершение
-    fn is_complete( &self, req: &mut Request, body: &ScheduledEventInfo ) -> CommonResult<bool>;
+    fn is_complete( &self, stuff: &mut Stuff, body: &ScheduledEventInfo ) -> CommonResult<bool>;
 }
 
 /// абстракция события которое может быть создано из расписания

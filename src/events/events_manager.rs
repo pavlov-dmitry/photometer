@@ -1,6 +1,6 @@
 use iron::typemap::Key;
 use database::{ Databaseable };
-use stuff::Stuffable;
+use stuff::{ Stuff, StuffInstallable, Stuffable };
 use std::sync::{ Arc };
 use super::{ Event, FullEventInfo, ScheduledEventInfo, EventState };
 use super::events_collection;
@@ -14,16 +14,18 @@ use answer::{ Answer, AnswerResult };
 use types::{ Id };
 use super::time_store::TimeStore;
 use iron::prelude::*;
-use iron::middleware::BeforeMiddleware;
 
 #[derive(Clone)]
-struct EventsManagerMiddleware {
+struct EventsManagerBody {
     time_store: Arc<TimeStore>
 }
 
-pub trait EventsManager {
+pub trait EventsManagerStuff {
     fn maybe_start_some_events(&mut self) -> EmptyResult;
     fn maybe_end_some_events(&mut self) -> EmptyResult;
+}
+
+pub trait EventsManagerRequest {
     fn event_info( &mut self, scheduled_id: Id ) -> AnswerResult;
     fn event_action_get( &mut self, scheduled_id: Id ) -> AnswerResult;
     fn event_action_post( &mut self, scheduled_id: Id ) -> AnswerResult;
@@ -31,14 +33,14 @@ pub trait EventsManager {
     fn event_user_creation_post(&mut self, scheduled_id: Id ) -> AnswerResult;
 }
 
-impl<'a> EventsManager for Request<'a> {
+impl EventsManagerStuff for Stuff {
     
     /// исполняет события на старт
     fn maybe_start_some_events( &mut self ) -> EmptyResult {
         let (from, to) = try!( self.get_time_period() );
         try!( self.check_timetables( &from, &to ) );
         let events = { 
-            let db = try!( self.stuff().get_current_db_conn() );
+            let db = try!( self.get_current_db_conn() );
             try!( db.starting_events( &time::get_time() ) )
         };
         for event_info in events.iter() {
@@ -53,7 +55,7 @@ impl<'a> EventsManager for Request<'a> {
     /// исполняет события на заверщение
     fn maybe_end_some_events( &mut self ) -> EmptyResult {
         let events = {
-            let db = try!( self.stuff().get_current_db_conn() );
+            let db = try!( self.get_current_db_conn() );
             try!( db.ending_events( &time::get_time() ) )
         };
         for event_info in events.iter() {
@@ -63,7 +65,10 @@ impl<'a> EventsManager for Request<'a> {
         }
         Ok( () )
     }
+}
 
+
+impl<'a> EventsManagerRequest for Request<'a> {
     /// выдаёт информацию по событию
     fn event_info( &mut self, scheduled_id: Id ) -> AnswerResult {
         self.if_has_event( scheduled_id, |event, event_info, req| {
@@ -82,9 +87,10 @@ impl<'a> EventsManager for Request<'a> {
     fn event_action_post( &mut self, scheduled_id: Id ) -> AnswerResult {
         self.if_has_event( scheduled_id, |event, event_info, req| {
             let result = try!( event.user_action_post( req, &event_info ) );
-            if try!( event.is_complete( req, &event_info ) ) {
+            let stuff = req.stuff();
+            if try!( event.is_complete( stuff, &event_info ) ) {
                 info!( "early finishing '{}':{}", event_info.name, event_info.id );
-                try!( req.finish_him( event, &event_info ) );
+                try!( stuff.finish_him( event, &event_info ) );
             }
             Ok( result )
         })
@@ -113,33 +119,24 @@ impl<'a> EventsManager for Request<'a> {
     }
 }
 
-trait EventsManagerPrivate {
-    fn get_body( &self ) -> &EventsManagerMiddleware;
-    fn set_event_state( &mut self, scheduled_id: Id, state: EventState ) -> EmptyResult;
-    fn finish_him( &mut self, event: EventPtr, info: &ScheduledEventInfo ) -> EmptyResult;
+trait EventsManagerStuffPrivate {
+    fn get_body( &self ) -> &EventsManagerBody;
     fn get_time_period( &self ) -> CommonResult<( Timespec, Timespec )>;
+    fn set_event_state( &mut self, scheduled_id: Id, state: EventState ) -> EmptyResult;
+    fn check_timetables( &mut self, from: &Timespec, to: &Timespec ) -> EmptyResult;
+    fn finish_him( &mut self, event: EventPtr, info: &ScheduledEventInfo ) -> EmptyResult;
+}
+
+trait EventsManagerPrivate {
     fn if_has_event<F: Fn(EventPtr, ScheduledEventInfo, &mut Request) -> AnswerResult>( 
         &mut self, scheduled_id: Id, do_this: F
     ) -> AnswerResult;
-    fn check_timetables( &mut self, from: &Timespec, to: &Timespec ) -> EmptyResult;
 }
 
-impl<'a> EventsManagerPrivate for Request<'a> {
-    fn get_body( &self ) -> &EventsManagerMiddleware {
-        self.extensions.get::<EventsManagerMiddleware>().unwrap()  
+impl EventsManagerStuffPrivate for Stuff {
+    fn get_body( &self ) -> &EventsManagerBody {
+        self.extensions.get::<EventsManagerBody>().unwrap()  
     }
-    fn set_event_state( &mut self, scheduled_id: Id, state: EventState ) -> EmptyResult {
-        let db = try!( self.stuff().get_current_db_conn() );
-        db.set_event_state( scheduled_id, state )
-    }
-
-    fn finish_him( &mut self, event: EventPtr, info: &ScheduledEventInfo ) -> EmptyResult {
-        try!( event.finish( self, info ) );
-        let db = try!( self.stuff().get_current_db_conn() );
-        try!( db.set_event_state( info.scheduled_id, EventState::Finished ) );  
-        Ok( () )
-    }
-
     fn get_time_period( &self ) -> CommonResult<( Timespec, Timespec )> {
         let body = self.get_body();
         let from_time = try!( body.time_store.get_stored_time() ).unwrap_or( Timespec::new( 0, 0 ) );
@@ -148,32 +145,10 @@ impl<'a> EventsManagerPrivate for Request<'a> {
         debug!( "check_period from: {}  to: {}", from_time.sec, to_time.sec );
         Ok( ( from_time, to_time ) )
     }
-
-    // db приходится передавать по цепочке, иначе содается вторая mut ссылка в замыкании, что естественно делать нельзя
-    fn if_has_event<F: Fn(EventPtr, ScheduledEventInfo, &mut Request) -> AnswerResult>( 
-        &mut self,  scheduled_id: Id, do_this: F
-    ) -> AnswerResult {
-        let event_info = {
-            let db = try!( self.stuff().get_current_db_conn() );
-            try!( db.event_info( scheduled_id ) )
-        };
-        match event_info {
-            Some( event_info ) => {
-                let event = try!( events_collection::get_event( event_info.id ) ); 
-                do_this( event, event_info, self )
-            },
-            None => {
-                let mut answer = Answer::new();
-                answer.add_error( "event", "not_found" );
-                Ok( answer )
-            }
-        } 
-    }
-
     /// проверяет расписания всех групп на новые события
     fn check_timetables( &mut self, from: &Timespec, to: &Timespec ) -> EmptyResult {
         let timetable_events = {
-            let db = try!( self.stuff().get_current_db_conn() );
+            let db = try!( self.get_current_db_conn() );
             try!( db.timetable_events( from, to ) )
         };
         // создаём события
@@ -198,24 +173,56 @@ impl<'a> EventsManagerPrivate for Request<'a> {
         // елси хоть что нить создали, то записываем их в запланированные события
         if events.is_empty() == false {
             debug!( "add events from timetable: {:?}", events );
-            let db = try!( self.stuff().get_current_db_conn() );
+            let db = try!( self.get_current_db_conn() );
             try!( db.add_events( events.as_slice() ) );
         }
         Ok( () )
     }
+    fn set_event_state( &mut self, scheduled_id: Id, state: EventState ) -> EmptyResult {
+        let db = try!( self.get_current_db_conn() );
+        db.set_event_state( scheduled_id, state )
+    }
+    fn finish_him( &mut self, event: EventPtr, info: &ScheduledEventInfo ) -> EmptyResult {
+        try!( event.finish( self, info ) );
+        let db = try!( self.get_current_db_conn() );
+        try!( db.set_event_state( info.scheduled_id, EventState::Finished ) );  
+        Ok( () )
+    }
 }
 
-pub fn middleware( time_store_file_path: &String ) -> EventsManagerMiddleware {
-    EventsManagerMiddleware {
+impl<'a> EventsManagerPrivate for Request<'a> {
+    // db приходится передавать по цепочке, иначе содается вторая mut ссылка в замыкании, что естественно делать нельзя
+    fn if_has_event<F: Fn(EventPtr, ScheduledEventInfo, &mut Request) -> AnswerResult>( 
+        &mut self,  scheduled_id: Id, do_this: F
+    ) -> AnswerResult {
+        let event_info = {
+            let db = try!( self.stuff().get_current_db_conn() );
+            try!( db.event_info( scheduled_id ) )
+        };
+        match event_info {
+            Some( event_info ) => {
+                let event = try!( events_collection::get_event( event_info.id ) ); 
+                do_this( event, event_info, self )
+            },
+            None => {
+                let mut answer = Answer::new();
+                answer.add_error( "event", "not_found" );
+                Ok( answer )
+            }
+        } 
+    }
+}
+
+pub fn body( time_store_file_path: &String ) -> EventsManagerBody {
+    EventsManagerBody {
         time_store: Arc::new( TimeStore::new( Path::new( time_store_file_path ) ) )
     }
 }
 
-impl Key for EventsManagerMiddleware { type Value = EventsManagerMiddleware; }
+impl Key for EventsManagerBody { type Value = EventsManagerBody; }
 
-impl BeforeMiddleware for EventsManagerMiddleware {
-    fn before(&self, req: &mut Request) -> IronResult<()> {
-        req.extensions.insert::<EventsManagerMiddleware>( self.clone() );
-        Ok( () )
-    } 
+impl StuffInstallable for EventsManagerBody {
+    fn install_to( &self, stuff: &mut Stuff ) {
+        stuff.extensions.insert::<EventsManagerBody>( self.clone() );   
+    }
 }
