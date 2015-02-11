@@ -40,6 +40,9 @@ mod request_logger;
 mod not_found_switcher;
 mod router_params;
 mod stuff;
+mod trigger;
+
+use stuff::{ StuffCollection, StuffMiddleware };
 
 fn main() {
     env_logger::init().unwrap();
@@ -92,20 +95,22 @@ fn main() {
 
     no_auth_router.post( "/login", handlers::login );
     no_auth_router.post( "/join_us", handlers::join_us );
-    no_auth_router.get( handlers::events::trigger_path(), handlers::events::trigger );
+    //no_auth_router.get( handlers::events::trigger_path(), handlers::events::trigger );
 
     let mut static_mount = Mount::new();
     static_mount.mount( "/", Static::new( Path::new( "../www/" ) ) );
     static_mount.mount( "/js/", Static::new( Path::new( "../www/js/" ) ) );
     no_auth_router.get( "/*", static_mount );
     
-    let mut stuff = stuff::StuffMiddleware::new();
+    let mut stuff = StuffCollection::new();
     stuff.add( db );
+    let stuff_middleware = StuffMiddleware::new( stuff );
+    trigger::start( cfg.events_trigger_period_sec, stuff_middleware.clone() );
 
     let mut chain = Chain::new( no_auth_router );
     chain.link_before( authentication::create_session_store() );
     //chain.link_before( db );
-    chain.link_before( stuff );
+    chain.link_before( stuff_middleware );
     chain.link_before( params_body_parser::middleware() );
     chain.link_before( events::events_manager::middleware( &cfg.time_store_file_path ) );
     chain.link_before(

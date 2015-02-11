@@ -18,6 +18,7 @@ pub struct Config {
     pub photo_store_max_photo_size_bytes : usize,
     pub photo_store_preview_size : usize,
     pub time_store_file_path: String,
+    pub events_trigger_period_sec: u32
 }
 
 impl Config {
@@ -43,6 +44,7 @@ impl Config {
             photo_store_max_photo_size_bytes : 3145728,
             photo_store_preview_size : 300,
             time_store_file_path : "../data/time_store".to_string(),
+            events_trigger_period_sec : 600
         }
     }
 }

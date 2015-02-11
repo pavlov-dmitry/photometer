@@ -3,6 +3,7 @@
 
 use iron::typemap::{ TypeMap, Key };
 use iron::{ BeforeMiddleware, Request, IronResult };
+use std::sync::Arc;
 
 pub struct Stuff {
     pub extensions: TypeMap
@@ -16,23 +17,38 @@ impl Stuff {
     }
 }
 
+type StuffInstallablePtr = Box<StuffInstallable + Send + Sync>;
+
+#[derive(Clone)]
 pub struct StuffMiddleware {
-    parts: Vec<Box<StuffInstallable + Send + Sync>>
+    collection: Arc<StuffCollection>
+}
+
+pub struct StuffCollection {
+    elems : Vec<StuffInstallablePtr>
+}
+
+impl StuffCollection {
+    pub fn new() -> StuffCollection {
+        StuffCollection {
+            elems: Vec::new()
+        }
+    }
+    pub fn add<T: StuffInstallable + Send + Sync>(&mut self, part: T ) {
+        self.elems.push( Box::new( part ) as StuffInstallablePtr );
+    }
 }
 
 impl StuffMiddleware {
-    pub fn new() -> StuffMiddleware {
+    pub fn new( collection: StuffCollection ) -> StuffMiddleware {
         StuffMiddleware {
-            parts : Vec::new()
+            collection : Arc::new( collection )
         }
-    }
-    pub fn add<T: StuffInstallable + Send + Sync>( &mut self, part: T ) {
-        self.parts.push( Box::new( part ) as Box<StuffInstallable + Send + Sync> )
     }
 
     pub fn new_stuff(&self) -> Stuff {
         let mut stuff = Stuff::new();
-        for part in self.parts.iter() {
+        for part in self.collection.elems.iter() {
             part.install_to( &mut stuff );
         }
         stuff

@@ -1,4 +1,4 @@
-use answer::{ AnswerResult, Answer };
+use answer::{ AnswerResult };
 use events::events_manager::EventsManager;
 use types::{ Id };
 use iron::prelude::*;
@@ -24,10 +24,6 @@ pub fn action_path() -> &'static str {
     "/events/action/:id"
 }
 
-pub fn trigger_path() -> &'static str {
-    "/events/trigger"
-}
-
 pub fn action_get( request: &mut Request ) -> IronResult<Response> {
     let response = match get_id( request ) {
         Some( id ) => Response::with( (status::Ok, request.event_action_get( id )) ),
@@ -42,10 +38,6 @@ pub fn action_post( request: &mut Request ) -> IronResult<Response> {
         None => Response::with( status::NotFound )
     };
     Ok( response )
-}
-
-pub fn trigger( request: &mut Request ) -> IronResult<Response> {
-    Ok( Response::with( (status::Ok, trigger_impl( request )) ) )
 }
 
 pub fn create_path() -> &'static str {
@@ -66,17 +58,6 @@ pub fn create_post( request: &mut Request ) -> IronResult<Response> {
         None => Response::with( status::NotFound )
     };
     Ok( response )
-}
-
-fn trigger_impl( req: &mut Request ) -> AnswerResult {
-    try!( req.maybe_start_some_events() );
-    try!( req.maybe_end_some_events() );
-    // стартуем после стопа еще раз, потому-что некоторые события по стопу создают новые
-    try!( req.maybe_start_some_events() );
-
-    let mut answer = Answer::new();
-    answer.add_record( "trigger", &"activated".to_string() );
-    Ok( answer )
 }
 
 fn action_post_answer( id: Id, req: &mut Request ) -> AnswerResult {
