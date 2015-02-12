@@ -38,8 +38,8 @@ impl DbPublication for MyPooledConn {
     fn public_photo( &mut self, scheduled: Id, group: Id, user: Id, photo: Id, visible: bool ) -> EmptyResult {
         public_photo_impl( self, scheduled, group, user, photo, visible )
             .map_err( |e| fn_failed( "public_photo", e ) )
-        
     }
+    
     /// открывает на просмотр определнную группу фото
     fn make_publication_visible( &mut self, scheduled: Id, group: Id ) -> EmptyResult {
         make_publication_visible_impl( self, scheduled, group )

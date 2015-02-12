@@ -15,13 +15,13 @@ use err_msg;
 use types::{ Id, EmptyResult, CommonResult };
 use answer::{ Answer, AnswerResult };
 use get_param::GetParamable;
-use database::{ DbConnection, Databaseable };
+use database::{ Databaseable };
 use stuff::{ Stuffable, Stuff };
 use db::votes::DbVotes;
-use db::mailbox::DbMailbox;
+use mailer::Mailer;
 use db::users::DbUsers;
 use db::groups::DbGroups;
-use authentication::Userable;
+use authentication::{ User, Userable };
 use time;
 use std::time::Duration;
 
@@ -100,21 +100,27 @@ impl Event for GroupCreation {
     /// действие на начало события
     fn start( &self, stuff: &mut Stuff, body: &ScheduledEventInfo ) -> EmptyResult {
         let info = try!( get_info( &body.data ) );
-        let db = try!( stuff.get_current_db_conn() );
+        
+        let exists_members = {
+            let db = try!( stuff.get_current_db_conn() );
+            //пока преобразовываю в vec, до тех пор пока не сделают нормальную передачу итераторов
+            let members : Vec<_> = info.members.iter().cloned().collect(); 
+            try!( db.users_by_id( members.as_slice() ) )
+        };
 
-        let mut exists_members = Vec::new();
-        for member in info.members.iter() {
-            if try!( db.user_id_exists( *member ) ) { // filter итератора нельзя использовать так как это делается через db
-                exists_members.push( *member );
-            }
-        }
+        let exists_ids : Vec<_> = exists_members.iter()
+            .map( |m| m.id )
+            .collect();
 
         // даём право голоса пользователям
-        try!( db.add_rights_of_voting( body.scheduled_id, exists_members.as_slice() ) );
+        {
+            let db = try!( stuff.get_current_db_conn() );
+            try!( db.add_rights_of_voting( body.scheduled_id, exists_ids.as_slice() ) );
+        }
         // рассылаем письма что можно голосовать
         for member in exists_members.iter() {
-            try!( db.send_mail( 
-                *member,  
+            try!( stuff.send_mail( 
+                member,  
                 SENDER_NAME,
                 make_mail_subject( &info.name ).as_slice(),
                 make_mail_body( &info.name, body.scheduled_id ).as_slice()
@@ -125,33 +131,53 @@ impl Event for GroupCreation {
     /// действие на окончание события
     fn finish( &self, stuff: &mut Stuff, body: &ScheduledEventInfo ) -> EmptyResult {
         let info = try!( get_info( &body.data ) );
-        let db = try!( stuff.get_current_db_conn() );
         // собиарем голоса
-        let votes = try!( db.get_votes( body.scheduled_id ) );
+        let mut votes = {
+            let db = try!( stuff.get_current_db_conn() );
+            try!( db.get_votes( body.scheduled_id ) )
+        };
         // проверяем что такой группы нет
-        if try!( db.is_group_exists( &info.name ) ) == false {
+        let group_exist = {
+            let db = try!( stuff.get_current_db_conn() );
+            try!( db.is_group_exists( &info.name ) )
+        };
+        if group_exist == false {
             // елси хоть кто-то решил присоединиться
             if votes.yes.is_empty() == false {
-                // создаём группу
-                let group_id = try!( db.create_group( &info.name, &info.description ) );
-                // и тех кто проголовал ЗА добавляем в эту группу
-                try!( db.add_members( group_id, &[ info.initiator ] ) );
-                try!( db.add_members( group_id, votes.yes.as_slice() ) );
+                let users = {
+                    let db = try!( stuff.get_current_db_conn() );
+                    // создаём группу
+                    let group_id = try!( db.create_group( &info.name, &info.description ) );
+                    // и тех кто проголовал ЗА добавляем в эту группу
+                    votes.yes.push( info.initiator );
+                    try!( db.add_members( group_id, votes.yes.as_slice() ) );
+                    try!( db.users_by_id( votes.yes.as_slice() ) )
+                };
                 // рассылаем письма что группа создана
-                try!( send_mail_welcome_to_group( db, info.initiator, &info.name ) );
-                for member_id in votes.yes.iter() {
-                    try!( send_mail_welcome_to_group( db, *member_id, &info.name ) );
+                for member in users.iter() {
+                    try!( send_mail_welcome_to_group( stuff, member, &info.name ) );
                 }
             }
             else {
-                // отсылаем жалостливое письмо что никто в твою группу не хочет
-                try!( send_mail_nobody_need_your_group( db, &info ) );
+                // отсылаем жалостливое письмо что никто в твою группу не хочет, если он еще здесь
+                let maybe_user = {
+                    let db = try!( stuff.get_current_db_conn() ); 
+                    try!( db.user_by_id( info.initiator ) )
+                };
+                if let Some( user ) = maybe_user {
+                    try!( send_mail_nobody_need_your_group( stuff, &user, &info ) );
+                }
             }            
         }
         else {
             // отсылаем письмо что группа с таким именем уже созданна и надо поменять ей имя
-            for member_id in votes.yes.iter() {
-                try!( send_mail_group_name_already_exists( db, *member_id, &info.name ) );
+            votes.yes.push( info.initiator );
+            let users = {
+                let db = try!( stuff.get_current_db_conn() ); 
+                try!( db.users_by_id( votes.yes.as_slice() ) )
+            };
+            for user in users.iter() {
+                try!( send_mail_group_name_already_exists( stuff, user, &info.name ) );
             }
         }
         Ok( () )
@@ -247,18 +273,18 @@ fn make_mail_body( name: &String, scheduled_id: Id ) -> String {
         make_event_action_link( scheduled_id ) )
 }
 
-fn send_mail_nobody_need_your_group( db: &mut DbConnection, info: &Info ) -> EmptyResult {
-    db.send_mail(
-        info.initiator,
+fn send_mail_nobody_need_your_group( stuff: &mut Stuff, user: &User, info: &Info ) -> EmptyResult {
+    stuff.send_mail(
+        user,
         SENDER_NAME,
         format!( "Группа '{}' не создана", info.name ).as_slice(),
         "К сожалению ни один из приглашенных вами пользователей не согласился создать группу."
     )
 }
 
-fn send_mail_group_name_already_exists( db: &mut DbConnection, id: Id, name: &String ) -> EmptyResult {
-    db.send_mail(
-        id,
+fn send_mail_group_name_already_exists( stuff: &mut Stuff, user: &User, name: &String ) -> EmptyResult {
+    stuff.send_mail(
+        user,
         SENDER_NAME,
         format!( "Группа с именем '{}' уже существует", name ).as_slice(),
         format!( 
@@ -268,9 +294,9 @@ fn send_mail_group_name_already_exists( db: &mut DbConnection, id: Id, name: &St
     )
 }
 
-fn send_mail_welcome_to_group( db: &mut DbConnection, id: Id, name: &String ) -> EmptyResult {
-    db.send_mail(
-        id,
+fn send_mail_welcome_to_group( stuff: &mut Stuff, user: &User, name: &String ) -> EmptyResult {
+    stuff.send_mail(
+        user,
         SENDER_NAME,
         format!( "Добро пожаловать в группу {}", name ).as_slice(),
         format!( "Группа с именем '{}' создана. Развлекайтесь!", name ).as_slice()

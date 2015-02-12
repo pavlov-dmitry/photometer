@@ -3,7 +3,7 @@ use super::late_publication::LatePublication;
 use types::{ Id, EmptyResult, CommonResult };
 use answer::{ Answer, AnswerResult };
 use rustc_serialize::json;
-use db::mailbox::DbMailbox;
+use mailer::Mailer;
 use db::groups::DbGroups;
 use db::publication::DbPublication;
 use db::photos::DbPhotos;
@@ -34,13 +34,15 @@ impl Event for Publication {
     /// действие на начало события
     fn start( &self, stuff: &mut Stuff, body: &ScheduledEventInfo ) -> EmptyResult {
         let info = try!( get_info( &body.data ) );
-        let db = try!( stuff.get_current_db_conn() );
-        let members = try!( db.get_members( info.group_id ) );
+        let members = {
+            let db = try!( stuff.get_current_db_conn() );
+            try!( db.get_members( info.group_id ) )
+        };
         let sender_name = make_sender_name( &body.name );
         let subject = make_subject( &body.name );
         for user in members.iter() {
-            try!( db.send_mail( 
-                user.id, 
+            try!( stuff.send_mail( 
+                user, 
                 sender_name.as_slice(), 
                 subject.as_slice(), 
                 make_text_body( &user.name, body ).as_slice() 

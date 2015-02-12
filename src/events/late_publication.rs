@@ -3,14 +3,15 @@ use types::{ Id, EmptyResult, CommonResult };
 use answer::{ Answer, AnswerResult };
 use database::{ Databaseable };
 use stuff::{ Stuffable, Stuff };
-use db::mailbox::DbMailbox;
+use mailer::Mailer;
 use db::groups::DbGroups;
 use db::publication::DbPublication;
 use db::photos::DbPhotos;
+use db::users::DbUsers;
 use std::time;
 use time::Timespec;
 use rustc_serialize::json;
-use authentication::Userable;
+use authentication::{ Userable, User };
 use get_param::GetParamable;
 use iron::prelude::*;
 
@@ -47,8 +48,12 @@ impl Event for LatePublication {
     /// действие на начало события
     fn start( &self, stuff: &mut Stuff, body: &ScheduledEventInfo ) -> EmptyResult {
         let info = try!( get_info( &body.data ) );
-        for user in info.late_users.iter() {
-            try!( send_mail_you_can_public_photos( stuff, *user, body, &info ) );
+        let users = {
+            let db = try!( stuff.get_current_db_conn() );
+            try!( db.users_by_id( info.late_users.as_slice() ) )
+        };
+        for user in users {
+            try!( send_mail_you_can_public_photos( stuff, &user, body, &info ) );
         }
         Ok( () )
     }
@@ -126,9 +131,8 @@ impl Event for LatePublication {
 
 static SENDER_NAME: &'static str = "Публикация с опозданием";
 
-fn send_mail_you_can_public_photos( stuff: &mut Stuff, user: Id, body: &ScheduledEventInfo, _info: &Info ) -> EmptyResult {
-    let db = try!( stuff.get_current_db_conn() );
-    db.send_mail(
+fn send_mail_you_can_public_photos( stuff: &mut Stuff, user: &User, body: &ScheduledEventInfo, _info: &Info ) -> EmptyResult {
+    stuff.send_mail(
         user,
         SENDER_NAME,
         format!( "{} '{}'", SENDER_NAME, body.name ).as_slice(),

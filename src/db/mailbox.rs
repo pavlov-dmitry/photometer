@@ -11,7 +11,7 @@ use std::str::FromStr;
 
 pub trait DbMailbox {
     /// посылает письмо одному из участников
-    fn send_mail( &mut self, recipient_id: Id, sender_name: &str, subject: &str, body: &str ) -> EmptyResult;
+    fn send_mail_to( &mut self, recipient_id: Id, sender_name: &str, subject: &str, body: &str ) -> EmptyResult;
     /// подсчитывает кол-во писем у определенного участника
     fn messages_count( &mut self, owner_id: Id, only_unreaded: bool ) -> CommonResult<u32>;
     /// читает сообщения с пагинацией в обратном от создания порядке
@@ -40,7 +40,7 @@ pub fn create_tables( db: &Database ) -> EmptyResult {
 
 impl DbMailbox for MyPooledConn {
     /// посылает письмо одному из участников
-    fn send_mail( &mut self, recipient_id: Id, sender_name: &str, subject: &str, body: &str ) -> EmptyResult {
+    fn send_mail_to( &mut self, recipient_id: Id, sender_name: &str, subject: &str, body: &str ) -> EmptyResult {
         send_mail_impl( self, recipient_id, sender_name, subject, body )
             .map_err( |e| fn_failed( "send_mail", e ) )
     }

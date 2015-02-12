@@ -29,7 +29,7 @@ impl Mailer for Stuff {
         // делаем запись в базе о новом оповещении
         {
             let db = try!( self.get_current_db_conn() );
-            try!( db.send_mail( user.id, sender, subject, body ) );
+            try!( db.send_mail_to( user.id, sender, subject, body ) );
         }
         //отсылаем в поток посылки почты новое письмо
         let tx = self.extensions.get::<MailerBody>().unwrap();
