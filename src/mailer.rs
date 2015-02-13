@@ -157,6 +157,7 @@ fn create_mail_thread( context: MailContext ) -> MailSender {
                 Err( _ ) => break
             }
         }
+        info!( "mail send loop closed" );
     });
     
     tx  
