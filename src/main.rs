@@ -105,6 +105,13 @@ fn main() {
     let mut stuff = StuffCollection::new();
     stuff.add( db );
     stuff.add( events::events_manager::body( &cfg.time_store_file_path ) );
+    let postman = mailer::create( mailer::MailContext::new(
+        &cfg.mail_smtp_address[],
+        &cfg.mail_from_address[],
+        &cfg.mail_from_pass[],
+        &cfg.mail_tmp_file_path[]
+    ) );
+    stuff.add( postman );
     
     let stuff_middleware = StuffMiddleware::new( stuff );
     trigger::start( cfg.events_trigger_period_sec, stuff_middleware.clone() );

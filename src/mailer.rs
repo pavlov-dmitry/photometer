@@ -8,6 +8,7 @@ use std::error::FromError;
 
 use authentication::User;
 use std::sync::mpsc::{ Sender, channel, SendError };
+use std::sync::{ Arc, Mutex };
 use db::mailbox::DbMailbox;
 use types::{ EmptyResult };
 use database::{ Databaseable };
@@ -15,13 +16,14 @@ use stuff::{ Stuff, StuffInstallable };
 
 type MailSender = Sender<Mail>;
 
-#[derive(Clone)]
-struct MailerBody {
-    sender: MailSender
-}
-
 pub trait Mailer {
     fn send_mail( &mut self, user: &User, sender: &str, subject: &str, body: &str  ) -> EmptyResult;
+}
+
+pub fn create( context: MailContext ) -> MailerBody {
+    MailerBody {
+        etalon_sender: Arc::new( Mutex::new( create_mail_thread( context ) ) )
+    }
 }
 
 impl Mailer for Stuff {
@@ -31,12 +33,24 @@ impl Mailer for Stuff {
             let db = try!( self.get_current_db_conn() );
             try!( db.send_mail_to( user.id, sender, subject, body ) );
         }
+        // здесь реализовано ленивое создание посыльщика писем с кешированием
+        // елси в этом контексте мы его уже создавали то просто используем
+        // а елси не создавали то создаём копию для текущего потока с эталона и кэшируем его
+        if self.extensions.contains::<MailSender>() == false {
+            let tx = {
+                let body = self.extensions.get::<MailerBody>().unwrap();
+                let tx = body.etalon_sender.lock().unwrap();
+                tx.clone()
+            };
+            //кэшируем
+            self.extensions.insert::<MailSender>( tx );
+        }
         //отсылаем в поток посылки почты новое письмо
-        let tx = self.extensions.get::<MailerBody>().unwrap();
+        let tx = self.extensions.get::<MailSender>().unwrap();
         try!( tx.send( Mail {
             to_addr: user.mail.clone(),
             to_name: user.name.clone(),
-            sender_name: sender.to_string(),
+            //sender_name: sender.to_string(),
             subject: subject.to_string(),
             body: body.to_string(),
         } ) );
@@ -50,7 +64,12 @@ impl FromError<SendError<Mail>> for String {
     }
 }
 
-struct MailContext {
+#[derive(Clone)]
+struct MailerBody {
+    etalon_sender: Arc<Mutex<MailSender>>
+}
+
+pub struct MailContext {
     smtp_addr: String,
     from_addr: String,
     tmp_mail_file: String,
@@ -61,12 +80,13 @@ struct MailContext {
 pub struct Mail {
     to_addr: String,
     to_name: String,
-    sender_name: String,
+    //sender_name: String,
     subject: String,
     body: String
 }
 
-impl Key for MailerBody { type Value = MailSender; }
+impl Key for MailerBody { type Value = MailerBody; }
+impl Key for MailSender { type Value = MailSender; }
 
 //curl --url "smtps://smtp.gmail.com:465" --ssl-reqd --mail-from "photometer.org.ru@gmail.com" --mail-rcpt "voidwalker@mail.ru" --upload-file ./mail.txt --user "photometer.org.ru@gmail.com:ajnjvtnhbxtcrbq" --insecure
 impl MailContext {
@@ -122,11 +142,11 @@ impl MailContext {
 
 impl StuffInstallable for MailerBody {
     fn install_to( &self, stuff: &mut Stuff ) {
-        stuff.extensions.insert::<MailerBody>( self.sender.clone() );
+        stuff.extensions.insert::<MailerBody>( self.clone() );
     }
 }
 
-fn create( context: MailContext ) -> MailerBody {
+fn create_mail_thread( context: MailContext ) -> MailSender {
     let (tx, rx) = channel();
 
     Thread::spawn( move || {  
@@ -138,8 +158,6 @@ fn create( context: MailContext ) -> MailerBody {
             }
         }
     });
-
-    MailerBody {
-        sender: tx
-    }
+    
+    tx  
 }
