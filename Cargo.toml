@@ -14,6 +14,7 @@ log = "*"
 env_logger = "*"
 iron = "*"
 router = "*"
+rand = "*"
 # mount = "*"
 # static = "*"
 

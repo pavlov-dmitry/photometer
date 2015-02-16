@@ -7,6 +7,7 @@ use types::{ CommonResult };
 pub struct Config {
     server_ip: (u8, u8, u8, u8),
     pub server_port: u16,
+    pub root_url: String,
     pub static_files_path : String,
     pub login_page_url : String,
     pub db_name : String,
@@ -37,6 +38,7 @@ impl Config {
         Config{ 
             server_ip : (127, 0, 0, 1),
             server_port : 6767,
+            root_url: "http://localhost:6767".to_string(),
             login_page_url : "http://localhost:6767/login.html".to_string(),
             static_files_path : "../www/".to_string(),
             db_name : "photometer".to_string(),

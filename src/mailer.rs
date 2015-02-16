@@ -18,6 +18,7 @@ type MailSender = Sender<Mail>;
 
 pub trait Mailer {
     fn send_mail( &mut self, user: &User, sender: &str, subject: &str, body: &str  ) -> EmptyResult;
+    fn send_external_mail( &mut self, user: &User, sender: &str, subject: &str, body: &str ) -> EmptyResult;
 }
 
 pub fn create( context: MailContext ) -> MailerBody {
@@ -28,8 +29,21 @@ pub fn create( context: MailContext ) -> MailerBody {
 
 impl Mailer for Stuff {
     fn send_mail( &mut self, user: &User, sender: &str, subject: &str, body: &str ) -> EmptyResult {
+        self.send_mail_impl( user, sender, subject, body, false )
+    }
+    fn send_external_mail( &mut self, user: &User, sender: &str, subject: &str, body: &str ) -> EmptyResult {
+        self.send_mail_impl( user, sender, subject, body, true )
+    }
+}
+
+trait MailerPrivate {
+    fn send_mail_impl( &mut self, user: &User, sender: &str, subject: &str, body: &str, only_external: bool ) -> EmptyResult;
+}
+
+impl MailerPrivate for Stuff {
+    fn send_mail_impl( &mut self, user: &User, sender: &str, subject: &str, body: &str, only_external: bool  ) -> EmptyResult {
         // делаем запись в базе о новом оповещении
-        {
+        if only_external == false {
             let db = try!( self.get_current_db_conn() );
             try!( db.send_mail_to( user.id, sender, subject, body ) );
         }
@@ -55,7 +69,7 @@ impl Mailer for Stuff {
             body: body.to_string(),
         } ) );
         Ok( () )
-    }
+    }   
 }
 
 impl FromError<SendError<Mail>> for String {
@@ -92,10 +106,10 @@ impl Key for MailSender { type Value = MailSender; }
 impl MailContext {
     pub fn new( smtp_addr: &str, from_addr: &str, pass: &str, tmp_file_path: &str ) -> MailContext {
         MailContext {
-            smtp_addr: format!( "\"{}\"", smtp_addr ),
-            from_addr: format!( "\"{}\"", from_addr ),
+            smtp_addr: smtp_addr.to_string(),
+            from_addr: from_addr.to_string(),//format!( "{}", from_addr ),
             tmp_mail_file: tmp_file_path.to_string(),
-            auth_info: format!( "\"{}:{}\"", from_addr, pass )
+            auth_info: format!( "{}:{}", from_addr, pass )
         }
     }
     fn send_mail( &self, mail: Mail ) {
@@ -127,6 +141,9 @@ impl MailContext {
         if process.status.success() == false {
             let err_string = String::from_utf8_lossy(process.error.as_slice());
             let _ = writeln!( &mut stderr(), "fail to send mail: {}", err_string );
+        } 
+        else {
+            debug!( "mail to '{}' with subject='{}' successfully sended.", mail.to_addr, mail.subject );
         }
     } 
     fn make_mail_file( &self, mail: &Mail ) -> IoResult<()> {

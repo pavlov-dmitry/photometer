@@ -12,6 +12,7 @@ extern crate "rustc-serialize" as rustc_serialize;
 extern crate router;
 extern crate mount;
 extern crate "static" as static_file;
+extern crate rand;
 
 use iron::prelude::*;
 use iron::Url;
@@ -42,6 +43,7 @@ mod router_params;
 mod stuff;
 mod trigger;
 mod mailer;
+mod mail_writer;
 
 use stuff::{ StuffCollection, StuffMiddleware };
 
@@ -96,6 +98,10 @@ fn main() {
 
     no_auth_router.post( "/login", handlers::login );
     no_auth_router.post( "/join_us", handlers::join_us );
+    no_auth_router.get( 
+        handlers::authentication::registration_end_path(), 
+        handlers::authentication::registration_end
+    );
 
     let mut static_mount = Mount::new();
     static_mount.mount( "/", Static::new( Path::new( "../www/" ) ) );
@@ -112,6 +118,7 @@ fn main() {
         &cfg.mail_tmp_file_path[]
     ) );
     stuff.add( postman );
+    stuff.add( mail_writer::create( cfg.root_url.as_slice() ) );
     
     let stuff_middleware = StuffMiddleware::new( stuff );
     trigger::start( cfg.events_trigger_period_sec, stuff_middleware.clone() );
