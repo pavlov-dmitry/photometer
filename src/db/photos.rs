@@ -156,7 +156,8 @@ fn get_photo_infos_impl(
     end: Timespec, 
     offset: u32, 
     count: u32 
-) -> MyResult<Vec<PhotoInfo>> {
+) -> MyResult<Vec<PhotoInfo>> 
+{
     let mut stmt = try!( conn.prepare( "SELECT 
        id,
        upload_time,
@@ -177,14 +178,13 @@ fn get_photo_infos_impl(
     " ) );
     let result = try!( stmt.execute( &[ &owner_id, &start.sec, &end.sec, &count, &offset ] ) );
     //что-то с преобразованием на лету через собственный итертор я подупрел =(, пришлось тупо собирать в новый массив
-    Ok( 
-        result.filter_map( |sql_row| 
-            sql_row.ok().map( |sql_values| {
-                let mut values = sql_values.iter();
-                read_photo_info( &mut values )
-            })
-        ).collect()
-    )
+    let photos : Vec<_> = result.filter_map( |sql_row| 
+        sql_row.ok().map( |sql_values| {
+            let mut values = sql_values.iter();
+            read_photo_info( &mut values )
+        })
+    ).collect();
+    Ok( photos )
 }
 
 fn get_photo_infos_count_impl( conn: &mut MyPooledConn, owner_id: Id, start: Timespec, end: Timespec ) -> MyResult<u32> {
