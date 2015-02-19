@@ -4,7 +4,6 @@ pub mod mailbox;
 pub mod events;
 pub mod groups;
 pub mod publication;
-pub mod timetable;
 pub mod votes;
 
 mod handler_error;

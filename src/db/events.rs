@@ -37,7 +37,13 @@ pub fn create_tables( db: &Database ) -> EmptyResult {
             `start_time` int(11) NOT NULL DEFAULT '0',
             `end_time` int(11) NOT NULL DEFAULT '0',
             `data` TEXT NOT NULL DEFAULT '',
-            `state` ENUM( 'not_started_yet', 'active', 'finished' ) NOT NULL DEFAULT 'not_started_yet',
+            `state` ENUM( 
+                'not_started_yet', 
+                'active', 
+                'finished', 
+                'disabled' 
+            ) NOT NULL DEFAULT 'not_started_yet',
+            `user_editable` BOOL NOT NULL DEFAULT false
             PRIMARY KEY ( `id` ),
             KEY `time_idx` ( `start_time`, `end_time`, `state` )
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
@@ -91,13 +97,15 @@ fn fn_failed<E: Display>( fn_name: &str, e: E ) -> String {
 const NOT_STARTED_YET_STR : &'static str = "not_started_yet";
 const ACTIVE_STR : &'static str = "active";
 const FINISHED_STR : &'static str = "finished";
+const DISABLED : &'static str = "disabled";
 
 impl ToValue for EventState {
     fn to_value(&self) -> Value {
         match self {
             &EventState::NotStartedYet => NOT_STARTED_YET_STR.to_value(),
             &EventState::Active => ACTIVE_STR.to_value(),
-            &EventState::Finished => FINISHED_STR.to_value()
+            &EventState::Finished => FINISHED_STR.to_value(),
+            &EventState::Disabled => DISABLED.to_value()
         }
     }
 }

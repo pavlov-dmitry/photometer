@@ -32,7 +32,6 @@ impl Database {
         try!( db::groups::create_tables( self ) );
         try!( db::events::create_tables( self ) );
         try!( db::publication::create_tables( self ) );
-        try!( db::timetable::create_tables( self ) );
         try!( db::votes::create_tables( self ) );
         try!( self.init_names() );
         Ok( () )

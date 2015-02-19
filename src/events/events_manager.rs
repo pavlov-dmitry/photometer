@@ -1,24 +1,14 @@
-use iron::typemap::Key;
 use database::{ Databaseable };
-use stuff::{ Stuff, StuffInstallable, Stuffable };
-use std::sync::{ Arc };
-use super::{ Event, FullEventInfo, ScheduledEventInfo, EventState };
+use stuff::{ Stuff, Stuffable };
+use super::{ Event, ScheduledEventInfo, EventState };
 use super::events_collection;
 use super::events_collection::{ EventPtr };
 use db::events::{ DbEvents };
-use db::timetable::DbTimetable;
-use types::{ EmptyResult, CommonResult };
+use types::{ EmptyResult };
 use time;
-use time::{ Timespec };
 use answer::{ Answer, AnswerResult };
 use types::{ Id };
-use super::time_store::TimeStore;
 use iron::prelude::*;
-
-#[derive(Clone)]
-struct EventsManagerBody {
-    time_store: Arc<TimeStore>
-}
 
 pub trait EventsManagerStuff {
     fn maybe_start_some_events(&mut self) -> EmptyResult;
@@ -37,8 +27,6 @@ impl EventsManagerStuff for Stuff {
     
     /// исполняет события на старт
     fn maybe_start_some_events( &mut self ) -> EmptyResult {
-        let (from, to) = try!( self.get_time_period() );
-        try!( self.check_timetables( &from, &to ) );
         let events = { 
             let db = try!( self.get_current_db_conn() );
             try!( db.starting_events( &time::get_time() ) )
@@ -120,10 +108,7 @@ impl<'a> EventsManagerRequest for Request<'a> {
 }
 
 trait EventsManagerStuffPrivate {
-    fn get_body( &self ) -> &EventsManagerBody;
-    fn get_time_period( &self ) -> CommonResult<( Timespec, Timespec )>;
     fn set_event_state( &mut self, scheduled_id: Id, state: EventState ) -> EmptyResult;
-    fn check_timetables( &mut self, from: &Timespec, to: &Timespec ) -> EmptyResult;
     fn finish_him( &mut self, event: EventPtr, info: &ScheduledEventInfo ) -> EmptyResult;
 }
 
@@ -134,50 +119,6 @@ trait EventsManagerPrivate {
 }
 
 impl EventsManagerStuffPrivate for Stuff {
-    fn get_body( &self ) -> &EventsManagerBody {
-        self.extensions.get::<EventsManagerBody>().unwrap()  
-    }
-    fn get_time_period( &self ) -> CommonResult<( Timespec, Timespec )> {
-        let body = self.get_body();
-        let from_time = try!( body.time_store.get_stored_time() ).unwrap_or( Timespec::new( 0, 0 ) );
-        try!( body.time_store.remember_this_moment() );
-        let to_time = try!( body.time_store.get_stored_time() ).unwrap();
-        debug!( "check_period from: {}  to: {}", from_time.sec, to_time.sec );
-        Ok( ( from_time, to_time ) )
-    }
-    /// проверяет расписания всех групп на новые события
-    fn check_timetables( &mut self, from: &Timespec, to: &Timespec ) -> EmptyResult {
-        let timetable_events = {
-            let db = try!( self.get_current_db_conn() );
-            try!( db.timetable_events( from, to ) )
-        };
-        // создаём события
-        let mut events : Vec<FullEventInfo> = Vec::new();
-        for event_info in  timetable_events.iter() {
-            let timetable_event = try!( events_collection::get_timetable_event( event_info.event_id ) );
-            let data = timetable_event.from_timetable( event_info.group_id, &event_info.params );
-            let data = try!( data.ok_or( 
-                format!( "Creating event id = {} group_id = {} from timetable failed", 
-                    event_info.event_id, 
-                    event_info.group_id 
-                ) 
-            ));
-            events.push( FullEventInfo {
-                id: event_info.event_id,
-                name: event_info.event_name.clone(),
-                start_time: event_info.start_time,
-                end_time: event_info.end_time,
-                data: data
-            });
-        }
-        // елси хоть что нить создали, то записываем их в запланированные события
-        if events.is_empty() == false {
-            debug!( "add events from timetable: {:?}", events );
-            let db = try!( self.get_current_db_conn() );
-            try!( db.add_events( events.as_slice() ) );
-        }
-        Ok( () )
-    }
     fn set_event_state( &mut self, scheduled_id: Id, state: EventState ) -> EmptyResult {
         let db = try!( self.get_current_db_conn() );
         db.set_event_state( scheduled_id, state )
@@ -210,19 +151,5 @@ impl<'a> EventsManagerPrivate for Request<'a> {
                 Ok( answer )
             }
         } 
-    }
-}
-
-pub fn body( time_store_file_path: &String ) -> EventsManagerBody {
-    EventsManagerBody {
-        time_store: Arc::new( TimeStore::new( Path::new( time_store_file_path ) ) )
-    }
-}
-
-impl Key for EventsManagerBody { type Value = EventsManagerBody; }
-
-impl StuffInstallable for EventsManagerBody {
-    fn install_to( &self, stuff: &mut Stuff ) {
-        stuff.extensions.insert::<EventsManagerBody>( self.clone() );   
     }
 }

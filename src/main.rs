@@ -87,8 +87,6 @@ fn main() {
     router.get( handlers::events::create_path(), handlers::events::create_get );
     router.post( handlers::events::create_path(), handlers::events::create_post );
 
-    router.post( handlers::timetable::timetable_path(), handlers::timetable::set_timetable );
-
     let mut auth_chain = Chain::new( router );
     auth_chain.around( authentication::middleware( &Url::parse( &cfg.login_page_url[] ).unwrap() ) );
 
@@ -110,7 +108,6 @@ fn main() {
     
     let mut stuff = StuffCollection::new();
     stuff.add( db );
-    stuff.add( events::events_manager::body( &cfg.time_store_file_path ) );
     let postman = mailer::create( mailer::MailContext::new(
         &cfg.mail_smtp_address[],
         &cfg.mail_from_address[],

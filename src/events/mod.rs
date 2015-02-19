@@ -5,7 +5,6 @@ use iron::prelude::*;
 use stuff::Stuff;
 
 pub mod events_manager;
-mod time_store;
 mod events_collection;
 mod publication;
 mod group_creation;
@@ -29,9 +28,10 @@ pub struct FullEventInfo {
 }
 
 pub enum EventState {
-    NotStartedYet = 0,
-    Active = 1,
-    Finished = 2
+    Disabled = 0,
+    NotStartedYet = 1,
+    Active = 2,
+    Finished = 3
 }
 
 /// абстракция какого-то автоматического события
