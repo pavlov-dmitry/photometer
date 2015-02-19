@@ -7,7 +7,6 @@ use mailer::Mailer;
 use db::groups::DbGroups;
 use db::publication::DbPublication;
 use db::photos::DbPhotos;
-use db::users::DbUsers;
 use std::time;
 use time::Timespec;
 use rustc_serialize::json;
@@ -24,11 +23,10 @@ impl LatePublication {
         LatePublication
     }
 
-    pub fn create_info( parent_id: Id, group_id: Id, name: &str, start_time: Timespec, duration: time::Duration, late_users: &[Id] ) -> FullEventInfo {
+    pub fn create_info( parent_id: Id, group_id: Id, name: &str, start_time: Timespec, duration: time::Duration ) -> FullEventInfo {
         let info = Info {
             group_id: group_id,
             parent_id: parent_id,
-            late_users: late_users.to_vec()
         };
         FullEventInfo {
             id: ID,
@@ -50,7 +48,7 @@ impl Event for LatePublication {
         let info = try!( get_info( &body.data ) );
         let users = {
             let db = try!( stuff.get_current_db_conn() );
-            try!( db.users_by_id( info.late_users.as_slice() ) )
+            try!( db.get_unpublished_users( info.parent_id, info.group_id ) )
         };
         for user in users {
             try!( send_mail_you_can_public_photos( stuff, &user, body, &info ) );
@@ -66,8 +64,10 @@ impl Event for LatePublication {
     fn user_action_get( &self, req: &mut Request, body: &ScheduledEventInfo ) -> AnswerResult {
         let info = try!( get_info( &body.data ) );
         let mut answer = Answer::new();
-        // если такой пользователь есть должен выложиться
-        if info.late_users.iter().any( |c| *c == req.user().id ) {
+        let user_id = req.user().id;
+        // если такой пользователь должен выложиться
+        let db = try!( req.stuff().get_current_db_conn() );
+        if try!( db.is_unpublished_user( info.parent_id, info.group_id, user_id ) ) {
             // TODO: переделать на нормальное отдачу, поговорить с Саньком, что ему нужно в этот момент
             answer.add_record( "choose", &"from_gallery".to_string() );
         }
@@ -86,14 +86,14 @@ impl Event for LatePublication {
 
         let mut answer = Answer::new();
         // если такой пользователь есть должен выложиться
-        if info.late_users.iter().any( |c| *c == user_id ) {
+        if try!( db.is_unpublished_user( info.parent_id, info.group_id, user_id ) ) {
             if let Some( (user_name, _) ) = try!( db.get_photo_info( photo_id ) ) {
                 if user_name == current_user_name {
                     try!( db.public_photo( info.parent_id, info.group_id, user_id, photo_id, true ) );
                     answer.add_record( "published", &"ok".to_string() );
                 }
                 else {
-                    answer.add_error( "permisson", "denied" );
+                    answer.add_error( "access", "denied" );
                 }
             }
             else {
@@ -148,8 +148,7 @@ fn send_mail_you_can_public_photos( stuff: &mut Stuff, user: &User, body: &Sched
 #[derive(RustcEncodable, RustcDecodable)]
 struct Info {
     group_id: Id,
-    parent_id: Id,
-    late_users:Vec<Id>
+    parent_id: Id
 }
 
 fn get_info( str_body: &String ) -> CommonResult<Info> {

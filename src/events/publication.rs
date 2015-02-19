@@ -58,16 +58,15 @@ impl Event for Publication {
         //TODO: старт голосования
         
         //старт события загрузки опоздавших
+        //FIXME: использовать более "дешевую" функцию для определения что есть отставшие
         let unpublished_users = try!( db.get_unpublished_users( body.scheduled_id, info.group_id ) );
         if unpublished_users.is_empty() == false {
-            let unpublished_users_ids = unpublished_users.iter().map( |&(id, _)| id ).collect::<Vec<_>>();
             let event_info = LatePublication::create_info( 
                 body.scheduled_id,
                 info.group_id, 
                 body.name.as_slice(), 
                 time::get_time(), 
-                Duration::days( 365 ), 
-                unpublished_users_ids.as_slice() 
+                Duration::days( 365 )
             );
             try!( db.add_events( &[ event_info ] ) );
         }

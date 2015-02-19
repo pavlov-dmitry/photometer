@@ -4,6 +4,7 @@ use mysql::value::{ from_value };
 use types::{ Id, EmptyResult, CommonResult };
 use std::fmt::Display;
 use database::Database;
+use authentication::User;
 
 pub trait DbPublication {
     /// публикует фото
@@ -13,7 +14,9 @@ pub trait DbPublication {
     /// кол-во уже опубликованных фото
     fn get_published_photo_count( &mut self, scheduled: Id, group: Id ) -> CommonResult<u32>;
     /// возвращает идентификаторы пользователей которые не проголосовали
-    fn get_unpublished_users( &mut self, scheduled: Id, group: Id ) -> CommonResult<Vec<(Id, String)>>;
+    fn get_unpublished_users( &mut self, scheduled: Id, group: Id ) -> CommonResult<Vec<User>>;
+    /// проверяет на неопубликованность пользователя
+    fn is_unpublished_user( &mut self, scheduled: Id, group: Id, user: Id ) -> CommonResult<bool>;
 }
 
 pub fn create_tables( db: &Database ) -> EmptyResult {
@@ -53,9 +56,14 @@ impl DbPublication for MyPooledConn {
     }
 
     /// возвращает идентификаторы пользователей которые не проголосовали
-    fn get_unpublished_users( &mut self, scheduled: Id, group: Id ) -> CommonResult<Vec<(Id, String)>> {
+    fn get_unpublished_users( &mut self, scheduled: Id, group: Id ) -> CommonResult<Vec<User>> {
         get_unpublished_users_impl( self, scheduled, group )
             .map_err( |e| fn_failed( "get_unpublished_users", e ) )
+    }
+    /// проверяет на неопубликованность пользователя
+    fn is_unpublished_user( &mut self, scheduled: Id, group: Id, user: Id ) -> CommonResult<bool> {
+        is_unpublished_user_impl( self, scheduled, group, user )
+            .map_err( |e| fn_failed( "is_unpublished_user", e ) )
     }
 }
 
@@ -104,10 +112,10 @@ fn get_published_photo_count_impl( conn: &mut MyPooledConn, scheduled: Id, group
     Ok( from_value( &row[ 0 ] ) )
 }
 
-fn get_unpublished_users_impl( conn: &mut MyPooledConn, scheduled: Id, group: Id ) -> MyResult<Vec<(Id, String)>> {
+fn get_unpublished_users_impl( conn: &mut MyPooledConn, scheduled: Id, group: Id ) -> MyResult<Vec<User>> {
     let mut stmt = try!( conn.prepare( 
         "SELECT
-            `g`.`user_id`, `u`.`login`
+            `g`.`user_id`, `u`.`login`, `u`.`mail`
         FROM
             `group_members` AS `g`
         LEFT JOIN
@@ -122,7 +130,27 @@ fn get_unpublished_users_impl( conn: &mut MyPooledConn, scheduled: Id, group: Id
     let mut users = Vec::new();
     for row in result {
         let row = try!( row );
-        users.push( ( from_value( &row[ 0 ] ), from_value( &row[ 1 ] ) ) );
+        users.push( User {
+            id: from_value( &row[ 0 ] ),
+            name: from_value( &row[ 1 ] ),
+            mail: from_value( &row[ 2 ] )
+        });
     }
     Ok( users )
+}
+
+fn is_unpublished_user_impl( conn: &mut MyPooledConn, scheduled: Id, group: Id, user: Id ) -> MyResult<bool> {
+    let mut stmt = try!( conn.prepare(
+        "SELECT 
+            COUNT( `id` )
+        FROM
+            `publication`
+        WHERE
+            `scheduled` = ? AND
+            `group_id` = ? AND
+            `user_id` = ?
+        "
+    ));
+    let result = try!( stmt.execute( &[ &scheduled, &group, &user ] ) );
+    Ok( result.count() == 0 )
 }
