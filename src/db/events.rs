@@ -97,7 +97,7 @@ fn fn_failed<E: Display>( fn_name: &str, e: E ) -> String {
 const NOT_STARTED_YET_STR : &'static str = "not_started_yet";
 const ACTIVE_STR : &'static str = "active";
 const FINISHED_STR : &'static str = "finished";
-const DISABLED : &'static str = "disabled";
+const DISABLED_STR : &'static str = "disabled";
 
 impl ToValue for EventState {
     fn to_value(&self) -> Value {
@@ -105,7 +105,7 @@ impl ToValue for EventState {
             &EventState::NotStartedYet => NOT_STARTED_YET_STR.to_value(),
             &EventState::Active => ACTIVE_STR.to_value(),
             &EventState::Finished => FINISHED_STR.to_value(),
-            &EventState::Disabled => DISABLED.to_value()
+            &EventState::Disabled => DISABLED_STR.to_value()
         }
     }
 }
@@ -120,6 +120,7 @@ impl FromValue for EventState {
                 NOT_STARTED_YET_STR => Some( EventState::NotStartedYet ),
                 ACTIVE_STR => Some( EventState::Active ),
                 FINISHED_STR => Some( EventState::Finished ),
+                DISABLED_STR => Some( EventState::Disabled ),
                 _ => None
             })
     }
