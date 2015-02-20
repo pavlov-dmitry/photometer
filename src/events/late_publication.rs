@@ -1,4 +1,4 @@
-use super::{ Event, ScheduledEventInfo, FullEventInfo, make_event_action_link };
+use super::{ Event, ScheduledEventInfo, FullEventInfo };
 use types::{ Id, EmptyResult, CommonResult };
 use answer::{ Answer, AnswerResult };
 use database::{ Databaseable };
@@ -7,10 +7,11 @@ use mailer::Mailer;
 use db::groups::DbGroups;
 use db::publication::DbPublication;
 use db::photos::DbPhotos;
+use mail_writer::MailWriter;
 use std::time;
 use time::Timespec;
 use rustc_serialize::json;
-use authentication::{ Userable, User };
+use authentication::Userable;
 use get_param::GetParamable;
 use iron::prelude::*;
 
@@ -51,7 +52,12 @@ impl Event for LatePublication {
             try!( db.get_unpublished_users( info.parent_id, info.group_id ) )
         };
         for user in users {
-            try!( send_mail_you_can_public_photos( stuff, &user, body, &info ) );
+            let (subject, mail) = stuff.write_late_publication_mail(
+                &body.name,
+                &user.name,
+                body.scheduled_id
+            );
+            try!( stuff.send_mail( &user, &subject, &mail ) );
         }
         Ok( () )
     }
@@ -127,21 +133,6 @@ impl Event for LatePublication {
         let published_photo_count = try!( db.get_published_photo_count( body.scheduled_id, info.group_id ) ); 
         Ok( group_members_count == published_photo_count )
     }
-}
-
-static SENDER_NAME: &'static str = "Публикация с опозданием";
-
-fn send_mail_you_can_public_photos( stuff: &mut Stuff, user: &User, body: &ScheduledEventInfo, _info: &Info ) -> EmptyResult {
-    stuff.send_mail(
-        user,
-        &format!( "{} '{}'", SENDER_NAME, body.name ),
-        &format!( 
-"Ну что не получилось вовремя опубликовать свою фотографию? Ну ничего, не растраивайся!
-Ты всё равно можешь это сделать по вот этой ссылке {}. Возможно она уже не будет участвовать в конкурсах,
-но хотя бы не будет этого Гомера.",
-            make_event_action_link( body.scheduled_id )
-        )
-    )
 }
 
 #[derive(RustcEncodable, RustcDecodable)]

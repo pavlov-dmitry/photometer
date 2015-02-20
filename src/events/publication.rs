@@ -1,4 +1,4 @@
-use super::{ Event, CreateFromTimetable, ScheduledEventInfo, make_event_action_link };
+use super::{ Event, CreateFromTimetable, ScheduledEventInfo };
 use super::late_publication::LatePublication;
 use types::{ Id, EmptyResult, CommonResult };
 use answer::{ Answer, AnswerResult };
@@ -8,6 +8,7 @@ use db::groups::DbGroups;
 use db::publication::DbPublication;
 use db::photos::DbPhotos;
 use db::events::DbEvents;
+use mail_writer::MailWriter;
 use get_param::GetParamable;
 use database::{ Databaseable };
 use stuff::{ Stuffable, Stuff };
@@ -38,13 +39,13 @@ impl Event for Publication {
             let db = try!( stuff.get_current_db_conn() );
             try!( db.get_members( info.group_id ) )
         };
-        let subject = make_subject( &body.name );
         for user in members.iter() {
-            try!( stuff.send_mail( 
-                user, 
-                &subject, 
-                &make_text_body( &user.name, body )
-            ) );
+            let (subject, mail) = stuff.write_time_for_publication_mail( 
+                &body.name, 
+                &user.name, 
+                body.scheduled_id 
+            );
+            try!( stuff.send_mail( user, &subject, &mail ) );
         }
         Ok( () )
     }
@@ -130,21 +131,6 @@ impl CreateFromTimetable for Publication {
         let data = Info{ group_id: group_id };
         Some( json::encode( &data ).unwrap() )
     }
-}
-
-fn make_subject( name: &String ) -> String {
-    format!( "Пора выкладывать {}", name )
-}
-
-fn make_text_body( user: &String, info: &ScheduledEventInfo ) -> String {
-    format!( 
-"Привет {}!
-Настало время публиковать фотографии для '{}'.
-Ты можешь сделать перейдя по вот этой ссылке: {}", 
-        user,
-        info.name,
-        make_event_action_link( info.scheduled_id )
-    )
 }
 
 fn get_info( str_body: &String ) -> CommonResult<Info> {

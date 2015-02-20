@@ -6,9 +6,11 @@ use types::Id;
 
 /// возвращает для всех писем (тема, само_письмо)
 pub trait MailWriter {
+    /// РЕГИСТРАЦИЯ
     /// сочиняет письмо о подтверждении регистрации 
     fn write_registration_accept_mail( &self, reg_key: &str ) -> (String, String);
 
+    /// СОЗДАНИЕ ГРУППЫ
     /// cочиняет письмо о создании новой группы
     fn write_group_creation_mail( &self, group_name: &str, scheduled_id: Id ) -> (String, String);
     /// сочиняет письмо о том что никто не захотел в твою группу
@@ -17,6 +19,20 @@ pub trait MailWriter {
     fn write_group_name_already_exists_mail( &self, group_name: &str ) -> (String, String);
     /// сочиняет письмо что группа создана, и всё хорошо
     fn write_welcome_to_group_mail( &self, group_name: &str ) -> (String, String);
+
+    /// ПУБЛИКАЦИЯ
+    /// сочиняет письмо о том что пора выкладываться
+    fn write_time_for_publication_mail( &self, 
+        event_name: &str, 
+        user_name: &str, 
+        scheduled_id: Id 
+    ) -> (String, String);
+    /// сочиняет письмо о том что опоздал конечно, но выложиться можешь
+    fn write_late_publication_mail( &self, 
+        event_name: &str, 
+        user_name: &str, 
+        scheduled_id: Id 
+    ) -> (String, String);
 }
 
 // саоздаёт экземпляр Сочинителя Писем для установки его в Stuff
@@ -66,7 +82,7 @@ impl MailWriter for Stuff {
         let subject = format!( "Создание новой группы `{}`", group_name );
         let mail = format!(  
 "Вас приглашают создать новую группу `{}`.
-Узнать подробности и принять решение о присоединении вы можете пройдя по этой ссылке {}/{}.
+Узнать подробности и принять решение о присоединении вы можете пройдя по этой ссылке {}{}.
 У вас есть сутки чтобы принять решение.",
             group_name,
             &body.root_url,
@@ -96,6 +112,45 @@ impl MailWriter for Stuff {
     fn write_welcome_to_group_mail( &self, group_name: &str ) -> (String, String) {
         let subject = format!( "Добро пожаловать в группу {}", group_name );
         let mail = format!( "Группа с именем '{}' создана. Развлекайтесь!", group_name );
+        ( subject, mail )
+    }
+
+
+    /// сочиняет письмо о том что пора выкладываться
+    fn write_time_for_publication_mail( &self, 
+        event_name: &str, 
+        user_name: &str, 
+        scheduled_id: Id 
+    ) -> (String, String) {
+        let body = self.get_body();
+        let subject = format!( "Пора выкладывать {}", event_name );
+        let mail = format!(  
+"Привет {}!
+Настало время публиковать фотографии для '{}'.
+Ты можешь сделать перейдя по вот этой ссылке: {}{}", 
+            user_name,
+            event_name,
+            &body.root_url,
+            events::make_event_action_link( scheduled_id )
+        );
+        ( subject, mail )
+    }
+    /// сочиняет письмо о том что опоздал конечно, но выложиться можешь
+    fn write_late_publication_mail( &self, 
+        event_name: &str, 
+        user_name: &str, 
+        scheduled_id: Id 
+    ) -> (String, String) {
+        let body = self.get_body();
+        let subject = format!( "Выкладываемся с опозданием {}", event_name );
+        let mail = format!(
+"Ну что, {}, не получилось вовремя опубликовать свою фотографию? Ну ничего, не растраивайся!
+Ты всё равно можешь это сделать по вот этой ссылке {}{}. Возможно она уже не будет участвовать в конкурсах,
+но хотя бы не будет этого слюнявого Гомера.",
+            user_name,
+            &body.root_url,
+            events::make_event_action_link( scheduled_id )
+        );
         ( subject, mail )
     }
 }
