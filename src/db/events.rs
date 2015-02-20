@@ -138,7 +138,7 @@ fn get_events_impl( conn: &mut MyPooledConn, where_cond: &str, values: &[&ToValu
         WHERE {}",
         where_cond
     );
-    let mut stmt = try!( conn.prepare( query.as_slice() ) );
+    let mut stmt = try!( conn.prepare( &query ) );
     let sql_result = try!( stmt.execute( values ) );
     let mut events = Vec::new();
     for sql_row in sql_result {
@@ -199,7 +199,7 @@ fn add_events_impl( conn: &mut MyPooledConn, events: &[FullEventInfo] ) -> MyRes
         query.push_str( ", ( ?, ?, ?, ?, ? )" );
     }
 
-    let mut stmt = try!( conn.prepare( query.as_slice() ) );
+    let mut stmt = try!( conn.prepare( &query ) );
     let mut values: Vec<&ToValue> = Vec::new();
     for i in range( 0, events.len() ) {
         let event = &events[ i ];
@@ -210,7 +210,7 @@ fn add_events_impl( conn: &mut MyPooledConn, events: &[FullEventInfo] ) -> MyRes
         values.push( &event.data );
     }
 
-    try!( stmt.execute( values.as_slice() ) );
+    try!( stmt.execute( &values ) );
     Ok( () )
 }
 

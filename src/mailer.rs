@@ -121,16 +121,16 @@ impl MailContext {
         //запускаем curl на передачу записанного письма
         let process = Command::new( "curl" )
             .arg( "--url" )
-            .arg( self.smtp_addr.as_slice() )
+            .arg( &self.smtp_addr )
             .arg( "--ssl-reqd" )
             .arg( "--mail-from" )
-            .arg( self.from_addr.as_slice() )
+            .arg( &self.from_addr )
             .arg( "--mail-rcpt" )
             .arg( format!( "\"{}\"", mail.to_addr ) )
             .arg( "--upload-file" )
-            .arg( self.tmp_mail_file.as_slice() )
+            .arg( &self.tmp_mail_file )
             .arg( "--user" )
-            .arg( self.auth_info.as_slice() )
+            .arg( &self.auth_info )
             .arg( "--insecure" )
             .output();
 
@@ -139,7 +139,7 @@ impl MailContext {
             Err( e ) => panic!( "fail to create 'curl' process: {}", e )
         };
         if process.status.success() == false {
-            let err_string = String::from_utf8_lossy(process.error.as_slice());
+            let err_string = String::from_utf8_lossy( &process.error );
             let _ = writeln!( &mut stderr(), "fail to send mail: {}", err_string );
         } 
         else {
@@ -147,12 +147,12 @@ impl MailContext {
         }
     } 
     fn make_mail_file( &self, mail: &Mail ) -> IoResult<()> {
-        let mut file = try!( File::create( &Path::new( self.tmp_mail_file.as_slice() ) ) );
-        try!( file.write_line( format!( "From: \"photometer\" <{}>", self.from_addr ).as_slice() ) );
-        try!( file.write_line( format!( "To: \"{}\" <{}>", mail.to_name, mail.to_addr ).as_slice() ) );
-        try!( file.write_line( format!( "Subject: {}", mail.subject ).as_slice() ) );
+        let mut file = try!( File::create( &Path::new( &self.tmp_mail_file ) ) );
+        try!( file.write_line( &format!( "From: \"photometer\" <{}>", self.from_addr ) ) );
+        try!( file.write_line( &format!( "To: \"{}\" <{}>", mail.to_name, mail.to_addr ) ) );
+        try!( file.write_line( &format!( "Subject: {}", mail.subject ) ) );
         try!( file.write_line( "" ) );
-        try!( file.write_str( mail.body.as_slice() ) );
+        try!( file.write_str( &mail.body ) );
         Ok( () )
     }
 }

@@ -72,7 +72,7 @@ impl DbGroups for MyPooledConn {
     }
     /// проверяет существоание группы
     fn is_group_exists( &mut self, name: &String ) -> CommonResult<bool> {
-        is_group_exists_impl( self, name.as_slice() )
+        is_group_exists_impl( self, &name )
             .map_err( |e| fn_failed( "is_group_exists", e ) )
     }
     /// создать новую группу
@@ -167,7 +167,7 @@ fn add_members_impl( conn: &mut MyPooledConn, group_id: Id, members: &[ Id ] ) -
         query.push_str( ", ( ?, ? )" );
     }
 
-    let mut stmt = try!( conn.prepare( query.as_slice() ) );
+    let mut stmt = try!( conn.prepare( &query ) );
 
     let mut values: Vec<&ToValue> = Vec::new();
     for i in range( 0, members.len() ) {
@@ -175,7 +175,7 @@ fn add_members_impl( conn: &mut MyPooledConn, group_id: Id, members: &[ Id ] ) -
         values.push( &group_id );
     }
 
-    try!( stmt.execute( values.as_slice() ) );
+    try!( stmt.execute( &values ) );
     Ok( () )
 }
 

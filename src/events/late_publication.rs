@@ -135,13 +135,13 @@ fn send_mail_you_can_public_photos( stuff: &mut Stuff, user: &User, body: &Sched
     stuff.send_mail(
         user,
         SENDER_NAME,
-        format!( "{} '{}'", SENDER_NAME, body.name ).as_slice(),
-        format!( 
+        &format!( "{} '{}'", SENDER_NAME, body.name ),
+        &format!( 
 "Ну что не получилось вовремя опубликовать свою фотографию? Ну ничего, не растраивайся!
 Ты всё равно можешь это сделать по вот этой ссылке {}. Возможно она уже не будет участвовать в конкурсах,
 но хотя бы не будет этого Гомера.",
             make_event_action_link( body.scheduled_id )
-        ).as_slice()
+        )
     )
 }
 
@@ -152,6 +152,6 @@ struct Info {
 }
 
 fn get_info( str_body: &String ) -> CommonResult<Info> {
-    json::decode( str_body.as_slice() )
+    json::decode( &str_body )
         .map_err( |e| format!( "LatePublication event decode error: {}", e ) )   
 }

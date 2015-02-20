@@ -43,9 +43,9 @@ impl Event for Publication {
         for user in members.iter() {
             try!( stuff.send_mail( 
                 user, 
-                sender_name.as_slice(), 
-                subject.as_slice(), 
-                make_text_body( &user.name, body ).as_slice() 
+                &sender_name, 
+                &subject, 
+                &make_text_body( &user.name, body )
             ) );
         }
         Ok( () )
@@ -64,7 +64,7 @@ impl Event for Publication {
             let event_info = LatePublication::create_info( 
                 body.scheduled_id,
                 info.group_id, 
-                body.name.as_slice(), 
+                &body.name, 
                 time::get_time(), 
                 Duration::days( 365 )
             );
@@ -154,7 +154,7 @@ fn make_text_body( user: &String, info: &ScheduledEventInfo ) -> String {
 }
 
 fn get_info( str_body: &String ) -> CommonResult<Info> {
-    json::decode( str_body.as_slice() ).map_err( |e| format!( "Publication event decode error: {}", e ) )   
+    json::decode( &str_body ).map_err( |e| format!( "Publication event decode error: {}", e ) )   
 }
 
 #[derive(RustcEncodable, RustcDecodable)]

@@ -24,7 +24,7 @@ fn rename_answer( request: &mut Request ) -> AnswerResult {
         Some( (user, _ ) ) => {
             if user == request.user().name {
                 let db = try!( request.stuff().get_current_db_conn() );
-                let _ = try!( db.rename_photo( id, name.as_slice() ) );
+                let _ = try!( db.rename_photo( id, &name ) );
                 answer.add_record( "rename", &String::from_str( "ok" ) );
             }
             else {

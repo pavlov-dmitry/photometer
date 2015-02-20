@@ -117,7 +117,7 @@ impl ExifValue {
 	#[allow(dead_code)]
     pub fn as_text<'a>(&'a self) -> Option<&'a str> {
         match self {
-            &ExifValue::Text( ref v ) => Some( v.as_slice() ),
+            &ExifValue::Text( ref v ) => Some( &v ),
             _ => None
         }
     }

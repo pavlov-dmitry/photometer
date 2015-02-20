@@ -85,7 +85,7 @@ fn add_rights_of_voting_impl( conn: &mut MyPooledConn, scheduled_id: Id, users: 
         query.push_str( ", ( ?, ? )" );
     }
 
-    let mut stmt = try!( conn.prepare( query.as_slice() ) );
+    let mut stmt = try!( conn.prepare( &query ) );
 
     let mut values: Vec<&ToValue> = Vec::new();
     for i in range( 0, users.len() ) {
@@ -93,7 +93,7 @@ fn add_rights_of_voting_impl( conn: &mut MyPooledConn, scheduled_id: Id, users: 
         values.push( &users[ i ] );
     }
 
-    try!( stmt.execute( values.as_slice() ) );
+    try!( stmt.execute( &values ) );
     Ok( () )
 }
 

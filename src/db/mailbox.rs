@@ -98,7 +98,7 @@ fn messages_count_impl( conn: &mut MyPooledConn, owner_id: Id, only_unreaded: bo
     let where_postfix = if only_unreaded { " AND readed='false'" } else { "" };
     let query = format!( "SELECT COUNT(id) FROM mailbox WHERE recipient_id=? {};", where_postfix );
     
-    let mut stmt = try!( conn.prepare( query.as_slice() ) );
+    let mut stmt = try!( conn.prepare( &query ) );
     let mut sql_result = try!( stmt.execute( &[ &owner_id ] ) );
 
     let sql_row = try!( sql_result.next().unwrap() );
@@ -128,7 +128,7 @@ fn messages_from_last_impl<F: FnMut(&MailInfo)>(
         ORDER BY creation_time DESC
         LIMIT ? OFFSET ?;
     ", where_postfix );
-    let mut stmt = try!( conn.prepare( query.as_slice() ) );
+    let mut stmt = try!( conn.prepare( &query ) );
     let sql_result = try!( stmt.execute( &[ &owner_id, &count, &offset ] ) );
 
     for sql_row in sql_result {
@@ -151,7 +151,7 @@ fn mark_as_readed_impl( conn: &mut MyPooledConn, owner_id: Id, message_id: Id ) 
     let sql_result = try!( stmt.execute( &[ &message_id, &owner_id ] ) );
     //узнать сколько строчек подошло под запрос можно только распарсив строку информации после запроса
     let info = String::from_utf8( sql_result.info() ).unwrap();
-    let matched_count_str = parse_utils::str_between( info.as_slice(), "matched: ", " " ).unwrap();
+    let matched_count_str = parse_utils::str_between( &info, "matched: ", " " ).unwrap();
     let matched : u32 = FromStr::from_str( matched_count_str ).unwrap();
     Ok( 1 == matched )
 }

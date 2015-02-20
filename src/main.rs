@@ -115,7 +115,7 @@ fn main() {
         &cfg.mail_tmp_file_path[]
     ) );
     stuff.add( postman );
-    stuff.add( mail_writer::create( cfg.root_url.as_slice() ) );
+    stuff.add( mail_writer::create( &cfg.root_url ) );
     
     let stuff_middleware = StuffMiddleware::new( stuff );
     trigger::start( cfg.events_trigger_period_sec, stuff_middleware.clone() );

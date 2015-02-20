@@ -32,7 +32,7 @@ impl<'a> GetParamable for Request<'a> {
     //инкапсулирует поиск параметра сначало в текстовом виде, потом в бинарном
     fn get_param( &self, prm: &str ) -> CommonResult<&str> {
         match self.parameter( prm ) {
-            Some( s ) => Ok( s.as_slice() ),
+            Some( s ) => Ok( &s ),
             None => match self.bin_parameter( prm ) {
                 Some( b ) => match str::from_utf8( b ) {
                     Ok( s ) => Ok( s ),

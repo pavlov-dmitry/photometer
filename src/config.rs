@@ -65,7 +65,7 @@ pub fn load( path: &Path ) -> CommonResult<Config> {
     match File::open( path ).read_to_string() {
         Err( e ) => Err( format!( "Config fail to load, description: {}", e ) ),
         Ok ( content ) => {
-            json::decode::<Config>( content.as_slice() )
+            json::decode::<Config>( &content )
                 .map_err( | e | {
                     format!( "Config fail to decode, description: {}", e )
                 })
@@ -77,7 +77,7 @@ pub fn load_or_default( path: &Path ) -> Config {
     match load( path ) {
         Ok( cfg ) => cfg,
         Err( e ) => {
-            stdio::stderr().write_line( e.as_slice() ).ok().expect( "can`t write to stderr!" );
+            stdio::stderr().write_line( &e ).ok().expect( "can`t write to stderr!" );
             default()
         }
     }

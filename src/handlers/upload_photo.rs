@@ -25,7 +25,7 @@ pub fn upload_photo( request: &mut Request ) -> IronResult<Response> {
 fn upload_photo_answer( request: &mut Request ) -> AnswerResult {
     let filename = try!( request.get_param( IMAGE_FILENAME ) ).to_string();
     let mut answer = Answer::new();
-    match check_image_type( filename.as_slice() ) {
+    match check_image_type( &filename ) {
         Some( tp ) => {
             let photo_info = {
                 let photo_store = request.photo_store();

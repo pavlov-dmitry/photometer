@@ -50,30 +50,26 @@ pub fn registration_end( req: &mut Request ) -> IronResult<Response> {
 fn join_us_answer( request: &mut Request ) -> AnswerResult {
     //считывание параметров
     let login = try!( request.get_param( LOGIN ) ).to_string();
-    let login = login.as_slice();
     let password = try!( request.get_param( PASSWORD ) ).to_string();
-    let password = password.as_slice();
     let mail = try!( request.get_param( MAIL ) ).to_string();
-    let mail = mail.as_slice();
     //проверка на то что такого пользователя больше нет
     let user_exists = {
         let db = try!( request.stuff().get_current_db_conn() );
-        try!( db.user_exists( login, mail ) )
+        try!( db.user_exists( &login, &mail ) )
     };
 
     let mut answer = Answer::new();
 
     if user_exists == false { // нет такого пользователя
         let reg_key = gen_reg_key();
-        let reg_key = reg_key.as_slice();
         let new_user = {
             let db = try!( request.stuff().get_current_db_conn() );
-            try!( db.add_user( login, password, mail, reg_key ) )
+            try!( db.add_user( &login, &password, &mail, &reg_key ) )
         };
-        info!( "add user {} reg_key = {}", login, reg_key );
+        info!( "add user {} reg_key = {}", &login, &reg_key );
         let stuff = request.stuff();
-        let mail_body = stuff.write_registration_accept_mail( reg_key );
-        try!( stuff.send_external_mail( &new_user, "Фотометр", "Регистрация", mail_body.as_slice() ) );
+        let (subject, mail_body) = stuff.write_registration_accept_mail( &reg_key );
+        try!( stuff.send_external_mail( &new_user, "Фотометр", &subject, &mail_body ) );
         //try!( request.photo_store().init_user_dir( login ).map_err( |e| err_msg::fs_error( e ) ) );
         //make_login( request, login, password )
         answer.add_record( "user", &String::from_str( "added" ) );
@@ -88,11 +84,11 @@ fn registration_end_answer( req: &mut Request ) -> AnswerResult {
     let regkey = req.param( "regkey" ).to_string();
     let maybe_user = {
         let db = try!( req.stuff().get_current_db_conn() );
-        try!( db.activate_user( regkey.as_slice() ) )
+        try!( db.activate_user( &regkey ) )
     };
     if let Some( ref user ) = maybe_user {
         try!( 
-            req.photo_store().init_user_dir( user.name.as_slice() )
+            req.photo_store().init_user_dir( &user.name )
                 .map_err( |e| err_msg::fs_error( e ) ) 
         );
     }

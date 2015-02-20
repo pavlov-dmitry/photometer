@@ -32,7 +32,7 @@ impl<H: Handler> Handler for RequestLoggerHandler<H> {
             info!( "_______________________________________" );
             let request = format!( "request {}:{}", req.method, req.url );
             info!( "{}", request );
-            let _profiler = SimpleTimeProfiler::new( request.as_slice() );
+            let _profiler = SimpleTimeProfiler::new( &request );
             self.handler.handle( req )
         }
         else {

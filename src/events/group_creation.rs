@@ -105,7 +105,7 @@ impl Event for GroupCreation {
             let db = try!( stuff.get_current_db_conn() );
             //пока преобразовываю в vec, до тех пор пока не сделают нормальную передачу итераторов
             let members : Vec<_> = info.members.iter().cloned().collect(); 
-            try!( db.users_by_id( members.as_slice() ) )
+            try!( db.users_by_id( &members ) )
         };
 
         let exists_ids : Vec<_> = exists_members.iter()
@@ -115,7 +115,7 @@ impl Event for GroupCreation {
         // даём право голоса пользователям
         {
             let db = try!( stuff.get_current_db_conn() );
-            try!( db.add_rights_of_voting( body.scheduled_id, exists_ids.as_slice() ) );
+            try!( db.add_rights_of_voting( body.scheduled_id, &exists_ids ) );
         }
         // рассылаем письма что можно голосовать
         let (subject, mail) = stuff.write_group_creation_mail( &info.name, body.scheduled_id );
@@ -151,8 +151,8 @@ impl Event for GroupCreation {
                     let group_id = try!( db.create_group( &info.name, &info.description ) );
                     // и тех кто проголовал ЗА добавляем в эту группу
                     votes.yes.push( info.initiator );
-                    try!( db.add_members( group_id, votes.yes.as_slice() ) );
-                    try!( db.users_by_id( votes.yes.as_slice() ) )
+                    try!( db.add_members( group_id, &votes.yes ) );
+                    try!( db.users_by_id( &votes.yes ) )
                 };
                 // рассылаем письма что группа создана
                 let (subject, mail) = stuff.write_welcome_to_group_mail( &info.name );
@@ -254,12 +254,12 @@ impl FromError<String> for AnswerResult {
 }
 
 fn convert_member( s: &String ) -> CommonResult<Id> {
-    match FromStr::from_str( s.as_slice() ).ok() {
+    match FromStr::from_str( &s ).ok() {
         Some( id ) => Ok( id ),
         None => Err( err_msg::invalid_type_param( MEMBERS ) )
     }
 }
 
 fn get_info( str_body: &String ) -> CommonResult<Info> {
-    json::decode( str_body.as_slice() ).map_err( |e| format!( "GroupCreation event data decode error: {}", e ) )   
+    json::decode( &str_body ).map_err( |e| format!( "GroupCreation event data decode error: {}", e ) )   
 }

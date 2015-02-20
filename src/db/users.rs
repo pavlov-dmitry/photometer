@@ -208,7 +208,7 @@ fn users_by_id_impl( conn: &mut MyPooledConn, ids: &[Id] ) -> MyResult<Vec<User>
     }
 
     let mut users = Vec::new();
-    let sql_result = try!( stmt.execute( values.as_slice() ) );
+    let sql_result = try!( stmt.execute( &values ) );
     for row in sql_result {
         let row = try!( row );
         let user = User {
