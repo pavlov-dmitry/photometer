@@ -16,9 +16,11 @@ use stuff::{ Stuff, StuffInstallable };
 
 type MailSender = Sender<Mail>;
 
+const PHOTOMETER : &'static str = "Фотометр";
+
 pub trait Mailer {
-    fn send_mail( &mut self, user: &User, sender: &str, subject: &str, body: &str  ) -> EmptyResult;
-    fn send_external_mail( &mut self, user: &User, sender: &str, subject: &str, body: &str ) -> EmptyResult;
+    fn send_mail( &mut self, user: &User, subject: &str, body: &str  ) -> EmptyResult;
+    fn send_external_mail( &mut self, user: &User, subject: &str, body: &str ) -> EmptyResult;
 }
 
 pub fn create( context: MailContext ) -> MailerBody {
@@ -28,11 +30,11 @@ pub fn create( context: MailContext ) -> MailerBody {
 }
 
 impl Mailer for Stuff {
-    fn send_mail( &mut self, user: &User, sender: &str, subject: &str, body: &str ) -> EmptyResult {
-        self.send_mail_impl( user, sender, subject, body, false )
+    fn send_mail( &mut self, user: &User, subject: &str, body: &str ) -> EmptyResult {
+        self.send_mail_impl( user, PHOTOMETER, subject, body, false )
     }
-    fn send_external_mail( &mut self, user: &User, sender: &str, subject: &str, body: &str ) -> EmptyResult {
-        self.send_mail_impl( user, sender, subject, body, true )
+    fn send_external_mail( &mut self, user: &User, subject: &str, body: &str ) -> EmptyResult {
+        self.send_mail_impl( user, PHOTOMETER, subject, body, true )
     }
 }
 

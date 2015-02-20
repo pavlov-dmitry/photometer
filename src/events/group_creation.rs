@@ -36,7 +36,6 @@ impl GroupCreation {
 }
 
 static MEMBERS: &'static str = "members";
-static SENDER_NAME: &'static str = "Создание группы";
 type Members = HashSet<Id>;
 
 impl UserEvent for GroupCreation {
@@ -120,12 +119,7 @@ impl Event for GroupCreation {
         // рассылаем письма что можно голосовать
         let (subject, mail) = stuff.write_group_creation_mail( &info.name, body.scheduled_id );
         for member in exists_members.iter() {
-            try!( stuff.send_mail( 
-                member,  
-                SENDER_NAME,
-                &subject,
-                &mail
-            ));
+            try!( stuff.send_mail( member, &subject, &mail ) );
         }
         Ok( () )
     }
@@ -157,7 +151,7 @@ impl Event for GroupCreation {
                 // рассылаем письма что группа создана
                 let (subject, mail) = stuff.write_welcome_to_group_mail( &info.name );
                 for member in users.iter() {
-                    try!( stuff.send_mail( member, SENDER_NAME, &subject, &mail ) );
+                    try!( stuff.send_mail( member, &subject, &mail ) );
                 }
             }
             else {
@@ -168,7 +162,7 @@ impl Event for GroupCreation {
                 };
                 if let Some( user ) = maybe_user {
                     let (subject, mail) = stuff.write_nobody_need_your_group_mail( &info.name );
-                    try!( stuff.send_mail( &user, SENDER_NAME, &subject, &mail ) );
+                    try!( stuff.send_mail( &user, &subject, &mail ) );
                 }
             }            
         }
@@ -181,7 +175,7 @@ impl Event for GroupCreation {
             };
             let (subject, mail) = stuff.write_group_name_already_exists_mail( &info.name );
             for user in users.iter() {
-                try!( stuff.send_mail( user, SENDER_NAME, &subject, &mail ) );
+                try!( stuff.send_mail( user, &subject, &mail ) );
             }
         }
         Ok( () )

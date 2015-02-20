@@ -69,7 +69,7 @@ fn join_us_answer( request: &mut Request ) -> AnswerResult {
         info!( "add user {} reg_key = {}", &login, &reg_key );
         let stuff = request.stuff();
         let (subject, mail_body) = stuff.write_registration_accept_mail( &reg_key );
-        try!( stuff.send_external_mail( &new_user, "Фотометр", &subject, &mail_body ) );
+        try!( stuff.send_external_mail( &new_user, &subject, &mail_body ) );
         //try!( request.photo_store().init_user_dir( login ).map_err( |e| err_msg::fs_error( e ) ) );
         //make_login( request, login, password )
         answer.add_record( "user", &String::from_str( "added" ) );

@@ -38,12 +38,10 @@ impl Event for Publication {
             let db = try!( stuff.get_current_db_conn() );
             try!( db.get_members( info.group_id ) )
         };
-        let sender_name = make_sender_name( &body.name );
         let subject = make_subject( &body.name );
         for user in members.iter() {
             try!( stuff.send_mail( 
                 user, 
-                &sender_name, 
                 &subject, 
                 &make_text_body( &user.name, body )
             ) );
@@ -132,10 +130,6 @@ impl CreateFromTimetable for Publication {
         let data = Info{ group_id: group_id };
         Some( json::encode( &data ).unwrap() )
     }
-}
-
-fn make_sender_name( name: &String ) -> String {
-    format!( "Публикация {}", name )
 }
 
 fn make_subject( name: &String ) -> String {

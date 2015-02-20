@@ -134,7 +134,6 @@ static SENDER_NAME: &'static str = "Публикация с опозданием
 fn send_mail_you_can_public_photos( stuff: &mut Stuff, user: &User, body: &ScheduledEventInfo, _info: &Info ) -> EmptyResult {
     stuff.send_mail(
         user,
-        SENDER_NAME,
         &format!( "{} '{}'", SENDER_NAME, body.name ),
         &format!( 
 "Ну что не получилось вовремя опубликовать свою фотографию? Ну ничего, не растраивайся!
