@@ -185,13 +185,13 @@ impl Event for GroupCreation {
         //TODO: Согласовать с Саньком, что именно ему здесь надо отсылать
         let user_id = req.user().id;
         let db = try!( req.stuff().get_current_db_conn() );
-        let is_already_voted = try!( db.is_user_already_voted( body.scheduled_id, user_id ) );
+        let is_need_vote = try!( db.is_need_user_vote( body.scheduled_id, user_id ) );
+        
         let mut answer = Answer::new();
-        if is_already_voted {
-            answer.add_error( "user", "no_need_vote" );
-        }
-        else {
+        if is_need_vote {
             answer.add_record( "user", &"need_some_voting".to_string() );    
+        } else {
+            answer.add_record( "user", &"no_need_vote".to_string() );
         }
         Ok( answer )
     }
@@ -200,10 +200,10 @@ impl Event for GroupCreation {
         let vote: bool = try!( req.get_param( "vote" ) ) == "yes";
         let user_id = req.user().id;
         let db = try!( req.stuff().get_current_db_conn() );
-        let is_already_voted = try!( db.is_user_already_voted( body.scheduled_id, user_id ) );
+        let is_need_vote = try!( db.is_need_user_vote( body.scheduled_id, user_id ) );
 
         let mut answer = Answer::new();
-        if is_already_voted == false {
+        if is_need_vote {
             try!( db.set_vote( body.scheduled_id, user_id, vote ) );
             answer.add_record( "vote", &"accepted".to_string() );
         }

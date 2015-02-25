@@ -9,6 +9,7 @@ mod events_collection;
 mod publication;
 mod group_creation;
 mod late_publication;
+mod group_voting;
 
 pub struct ScheduledEventInfo {
     pub id: Id,
@@ -27,6 +28,7 @@ pub struct FullEventInfo {
     pub data: String
 }
 
+#[derive(Copy, Clone)]
 pub enum EventState {
     Disabled = 0,
     NotStartedYet = 1,

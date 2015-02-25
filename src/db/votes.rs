@@ -6,7 +6,7 @@ use types::{ Id, EmptyResult, CommonResult };
 use database::Database;
 
 pub struct Votes {
-    pub all_count: u32,
+    pub all_count: usize,
     pub yes: Vec<Id>,
     pub no: Vec<Id>
 }
@@ -14,10 +14,12 @@ pub struct Votes {
 pub trait DbVotes {
     /// добавляет право голоса по какому-то событию
     fn add_rights_of_voting( &mut self, scheduled_id: Id, users: &[Id]  ) -> EmptyResult;
+    /// добавляет право голоса по какому-то событию для всей группы
+    fn add_rights_of_voting_for_group( &mut self, scheduled_id: Id, group_id: Id ) -> EmptyResult;
     /// проверяет на то что все проголосовали 
     fn is_all_voted( &mut self, scheduled_id: Id ) -> CommonResult<bool>;
     /// проверяет голосвал ли этот пользователь уже или нет
-    fn is_user_already_voted( &mut self, scheduled_id: Id, user_id: Id ) -> CommonResult<bool>;
+    fn is_need_user_vote( &mut self, scheduled_id: Id, user_id: Id ) -> CommonResult<bool>;
     /// возращает голоса
     fn get_votes( &mut self, scheduled_id: Id ) -> CommonResult<Votes>;
     /// голосуем 
@@ -46,15 +48,20 @@ impl DbVotes for MyPooledConn {
         add_rights_of_voting_impl( self, scheduled_id, users )
             .map_err( |e| fn_failed( "add_rights_of_voting", e ) )
     }
+    /// добавляет право голоса по какому-то событию для всей группы
+    fn add_rights_of_voting_for_group( &mut self, scheduled_id: Id, group_id: Id ) -> EmptyResult {
+        add_rights_of_voting_for_group_impl( self, scheduled_id, group_id )
+            .map_err( |e| fn_failed( "add_rights_of_voting_for_group", e ) )
+    }
     /// проверяет на то что все проголосовали 
     fn is_all_voted( &mut self, scheduled_id: Id ) -> CommonResult<bool> {
         is_all_voted_impl( self, scheduled_id )
             .map_err( |e| fn_failed( "is_all_voted", e ) )
     }
     /// проверяет голосвал ли этот пользователь уже или нет
-    fn is_user_already_voted( &mut self, scheduled_id: Id, user_id: Id ) -> CommonResult<bool> {
-        is_user_already_voted_impl( self, scheduled_id, user_id )
-            .map_err( |e| fn_failed( "is_user_already_voted", e ) )
+    fn is_need_user_vote( &mut self, scheduled_id: Id, user_id: Id ) -> CommonResult<bool> {
+        is_need_user_vote_impl( self, scheduled_id, user_id )
+            .map_err( |e| fn_failed( "is_need_user_vote", e ) )
     }
     /// возращает голоса
     fn get_votes( &mut self, scheduled_id: Id ) -> CommonResult<Votes> {
@@ -97,6 +104,24 @@ fn add_rights_of_voting_impl( conn: &mut MyPooledConn, scheduled_id: Id, users: 
     Ok( () )
 }
 
+fn add_rights_of_voting_for_group_impl( conn: &mut MyPooledConn, scheduled_id: Id, group_id: Id ) -> MyResult<()> {
+    let mut stmt = try!( conn.prepare( 
+        "INSERT 
+            INTO `votes` ( `scheduled_id`, `user_id` )
+        SELECT
+            ? as `scheduled_id`,
+            `gm`.`user_id`
+        FROM
+            `group_members` as `gm`
+        WHERE
+           `gm`.`group_id` = ?
+        "
+    ));
+
+    try!( stmt.execute( &[ &scheduled_id, &group_id ] ) );
+    Ok( () )
+}
+
 fn is_all_voted_impl( conn: &mut MyPooledConn, scheduled_id: Id ) -> MyResult<bool> {
     let mut stmt = try!( conn.prepare( "SELECT COUNT( id ) FROM votes WHERE scheduled_id = ? AND voted=false" ) );
     let mut result = try!( stmt.execute( &[ &scheduled_id ] ) );
@@ -104,8 +129,17 @@ fn is_all_voted_impl( conn: &mut MyPooledConn, scheduled_id: Id ) -> MyResult<bo
     Ok( from_value::<u32>( &row[ 0 ] ) == 0 )
 }
 
-fn is_user_already_voted_impl( conn: &mut MyPooledConn, scheduled_id: Id, user_id: Id ) -> MyResult<bool> {
-    let mut stmt = try!( conn.prepare( "SELECT COUNT( id ) FROM votes WHERE scheduled_id = ? AND user_id = ? AND voted=true" ) );
+fn is_need_user_vote_impl( conn: &mut MyPooledConn, scheduled_id: Id, user_id: Id ) -> MyResult<bool> {
+    let mut stmt = try!( conn.prepare( "
+        SELECT 
+            COUNT( `id` ) 
+        FROM 
+            `votes` 
+        WHERE 
+            `scheduled_id` = ? 
+            AND `user_id` = ? 
+            AND `voted` = false
+    "));
     let mut result = try!( stmt.execute( &[ &scheduled_id, &user_id ] ) );
     let row = try!( result.next().unwrap() );
     Ok( from_value::<u32>( &row[ 0 ] ) == 1 )
