@@ -21,9 +21,11 @@ pub trait DbEvents {
     fn event_info( &mut self, scheduled_id: Id ) -> CommonResult<Option<ScheduledEventInfo>>;
     /// добавляет события пачкой
     fn add_events( &mut self, events: &[FullEventInfo] ) -> EmptyResult;
+    fn add_disabled_event( &mut self, event: &FullEventInfo ) -> CommonResult<Id>;
     /// помечает что данное событие завершено
     fn set_event_state( &mut self, scheduled_id: Id, state: EventState ) -> EmptyResult;
-    
+    /// информация о вермени начала определeнного события
+    fn event_start_time( &mut self, scheduled_id: Id ) -> CommonResult<Option<Timespec>>;
 }
 
 /// scheduled_events.state { NOT_STARTED_YET = 0, ACTIVE = 1, FINISHED = 2 }
@@ -82,11 +84,21 @@ impl DbEvents for MyPooledConn {
         add_events_impl( self, events )
             .map_err( |e| fn_failed( "add_events", e ) )
     }
+    fn add_disabled_event( &mut self, event: &FullEventInfo ) -> CommonResult<Id> {
+        add_disabled_event_impl( self, event )
+            .map_err( |e| fn_failed( "add_events", e ) )   
+    }
 
     /// помечает что данное событие завершено
     fn set_event_state( &mut self, scheduled_id: Id, state: EventState ) -> EmptyResult {
         set_event_state_impl( self, scheduled_id, state )
             .map_err( |e| fn_failed( "set_event_state", e ) )
+    }
+
+    /// информация о вермени начала определeнного события
+    fn event_start_time( &mut self, scheduled_id: Id ) -> CommonResult<Option<Timespec>> {
+        event_start_time_impl( self, scheduled_id )
+            .map_err( |e| fn_failed( "event_start_time", e ) )
     }
 }
 
@@ -183,6 +195,27 @@ fn event_info_impl( conn: &mut MyPooledConn, scheduled_id: Id ) -> MyResult<Opti
     Ok( result )
 }
 
+fn event_start_time_impl( conn: &mut MyPooledConn, scheduled_id: Id ) -> MyResult<Option<Timespec>> {
+    let mut stmt = try!( conn.prepare("
+        SELECT
+            `start_time`
+        FROM
+            `scheduled_events`
+        WHERE
+            `id` = ?
+    ") );
+
+    let mut sql_result = try!( stmt.execute( &[ &scheduled_id ] ) );
+    let result = match sql_result.next() {
+        Some( row ) => {
+            let row = try!( row );
+            Some( Timespec{ sec: from_value( &row[ 0 ] ), nsec: 0 } )
+        }
+        None => None
+    };
+    Ok( result )
+}
+
 fn add_events_impl( conn: &mut MyPooledConn, events: &[FullEventInfo] ) -> MyResult<()> {
     let mut query = format!( 
         "INSERT INTO scheduled_events (
@@ -212,6 +245,33 @@ fn add_events_impl( conn: &mut MyPooledConn, events: &[FullEventInfo] ) -> MyRes
 
     try!( stmt.execute( &values ) );
     Ok( () )
+}
+
+fn add_disabled_event_impl( conn: &mut MyPooledConn, event: &FullEventInfo ) -> MyResult<Id> {
+    let mut stmt = try!( conn.prepare("
+        INSERT
+            INTO `scheduled_events` (
+                `event_id`,
+                `event_name`,
+                `start_time`,
+                `end_time`,
+                `data`,
+                `state`,
+                `user_editable`
+            )
+        VALUES ( ?, ?, ?, ?, ?, ?, true )
+    ") );
+
+    let result = try!( stmt.execute( &[ 
+        &event.id, 
+        &event.name, 
+        &event.start_time.sec,
+        &event.end_time.sec,
+        &event.data,
+        &EventState::Disabled
+    ] ) );
+
+    Ok( result.last_insert_id() )
 }
 
 fn set_event_state_impl( conn: &mut MyPooledConn, scheduled_id: Id, state: EventState ) -> MyResult<()> {

@@ -1,19 +1,18 @@
-use super::{ Event, CreateFromTimetable, UserEvent };
+use super::{ Event, CreateFromTimetable, UserEvent, GroupEvent };
 use std::boxed::{ Box };
 use types::{ Id, CommonResult };
-use super::publication;
-use super::publication::Publication;
-use super::group_creation;
-use super::group_creation::GroupCreation;
-use super::late_publication;
-use super::late_publication::LatePublication;
+use super::publication::{ self, Publication };
+use super::group_creation::{ self, GroupCreation };
+use super::late_publication::{ self, LatePublication };
 use super::group_voting::{ self, GroupVoting, ChangeByVoting };
+use super::change_timetable::{ self, ChangeTimetable };
 
 
 pub type EventPtr = Box<Event + Send + Sync>;
 pub type TimetableEventPtr = Box<CreateFromTimetable + Send + Sync>;
 pub type UserEventPtr = Box<UserEvent + Send + Sync>;
 pub type ChangeByVotingPtr = Box<ChangeByVoting + Send + Sync>;
+pub type GroupEventPtr = Box<GroupEvent + Send + Sync>;
 
 pub fn get_event( id: Id ) -> CommonResult<EventPtr> {
     match id {
@@ -41,6 +40,14 @@ pub fn get_user_event( id: Id ) -> CommonResult<UserEventPtr> {
 
 pub fn get_change_by_voting( id: Id ) -> CommonResult<ChangeByVotingPtr> {
     match id {
+        change_timetable::ID => Ok( Box::new( ChangeTimetable::new() ) as ChangeByVotingPtr ),
         _ => Err( format!( "EventsCollection, apply to group with id={} not found.", id ) )
+    }
+}
+
+pub fn get_group_event( id: Id ) -> CommonResult<GroupEventPtr> {
+    match id {
+        change_timetable::ID => Ok( Box::new( ChangeTimetable::new() ) as GroupEventPtr ),
+        _ => Err( format!( "EventsCollection, group user creating event with id={} not found.", id ) )
     }
 }

@@ -14,6 +14,8 @@ pub trait GetParamable {
     fn get_param_id( &self, prm: &str ) -> CommonResult<Id>;
     fn get_param_time( &self, prm: &str ) -> CommonResult<Timespec>;
     fn get_params( &self, prm: &str ) -> CommonResult<&Vec<String>>;
+    fn get_params_id( &self, prm: &str ) -> CommonResult<Vec<Id>>;
+    fn get_params_time( &self, prm: &str ) -> CommonResult<Vec<Timespec>>;
 }
 
 //TODO: проверить на следующей версии раста, а пока ICE =(
@@ -60,12 +62,36 @@ impl<'a> GetParamable for Request<'a> {
 
     fn get_param_time( &self, prm: &str ) -> CommonResult<Timespec> {
         self.get_param( prm )
-            .and_then( |s| time::strptime( s, "%Y.%m.%d %k:%M:%S" )
+            .and_then( |s| time::strptime( s, TIME_FORMAT )
                 .map_err( |_| err_msg::parsing_error_param( prm ) )
                 .map( |t| t.to_timespec() )
             )
     }
+
+    fn get_params_id( &self, prm: &str ) -> CommonResult<Vec<Id>> {
+        let strings = try!( self.get_params( prm ) );
+        let mut ids = Vec::new();
+        for s in strings {
+            let id = try!( FromStr::from_str( &s ).map_err( |_| err_msg::invalid_type_param( prm ) ) );
+            ids.push( id );
+        }
+        Ok( ids )
+    }
+
+    fn get_params_time( &self, prm: &str ) -> CommonResult<Vec<Timespec>> {
+        let strings = try!( self.get_params( prm ) );
+        let mut times = Vec::new();
+        for s in strings {
+            match time::strptime( s, TIME_FORMAT ) {
+                Ok( t ) => times.push( t.to_timespec() ),
+                Err( _ ) => return Err( err_msg::parsing_error_param( prm ) )
+            }
+        }
+        Ok( times )
+    }
 }
+
+static TIME_FORMAT: &'static str = "%Y.%m.%d %k:%M:%S";
 
 /*impl<'a, Params: GetParamable> GetManyParams for Params {
     fn get_prm<'x, T: FromParams<'x>>( &'x self, prm: &str ) -> CommonResult<T> {

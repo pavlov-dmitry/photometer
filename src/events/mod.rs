@@ -10,6 +10,7 @@ mod publication;
 mod group_creation;
 mod late_publication;
 mod group_voting;
+mod change_timetable;
 
 pub struct ScheduledEventInfo {
     pub id: Id,
@@ -54,7 +55,7 @@ pub trait Event {
     fn is_complete( &self, stuff: &mut Stuff, body: &ScheduledEventInfo ) -> CommonResult<bool>;
 }
 
-/// абстракция события которое может быть создано из расписания
+/// абстракция события которое может быть создано добавлено в расписание группы
 pub trait CreateFromTimetable {
     /// проверяет параметры на достоверность
     fn is_valid_params( &self, params: &String ) -> bool;
@@ -68,6 +69,14 @@ pub trait UserEvent {
     fn user_creating_get( &self, req: &mut Request ) -> AnswerResult;
     /// применение создания
     fn user_creating_post( &self, req: &mut Request ) -> Result<FullEventInfo, AnswerResult>;
+}
+
+/// абстракция событий которые могут быть созданы пользователями для группы
+pub trait GroupEvent {
+    /// описание создания
+    fn user_creating_get( &self, req: &mut Request, group_id: Id ) -> AnswerResult;
+    /// применение создания
+    fn user_creating_post( &self, req: &mut Request, group_id: Id ) -> Result<FullEventInfo, AnswerResult>;   
 }
 
 pub fn make_event_action_link( id: Id ) -> String {
