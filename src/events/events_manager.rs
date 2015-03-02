@@ -1,6 +1,6 @@
 use database::{ Databaseable };
 use stuff::{ Stuff, Stuffable };
-use super::{ Event, ScheduledEventInfo, EventState };
+use super::{ Event, ScheduledEventInfo, EventState, FullEventInfo };
 use super::events_collection;
 use super::events_collection::{ EventPtr };
 use db::events::{ DbEvents };
@@ -9,6 +9,8 @@ use time;
 use answer::{ Answer, AnswerResult };
 use types::{ Id };
 use iron::prelude::*;
+use authentication::Userable;
+use db::groups::DbGroups;
 
 pub trait EventsManagerStuff {
     fn maybe_start_some_events(&mut self) -> EmptyResult;
@@ -19,8 +21,10 @@ pub trait EventsManagerRequest {
     fn event_info( &mut self, scheduled_id: Id ) -> AnswerResult;
     fn event_action_get( &mut self, scheduled_id: Id ) -> AnswerResult;
     fn event_action_post( &mut self, scheduled_id: Id ) -> AnswerResult;
-    fn event_user_creation_get(&mut self, scheduled_id: Id ) -> AnswerResult;
-    fn event_user_creation_post(&mut self, scheduled_id: Id ) -> AnswerResult;
+    fn event_user_creation_get(&mut self, event_id: Id ) -> AnswerResult;
+    fn event_user_creation_post(&mut self, event_id: Id ) -> AnswerResult;
+    fn event_group_creation_get(&mut self, group_id: Id, event_id: Id ) -> AnswerResult;
+    fn event_group_creation_post(&mut self, group_id: Id, event_id: Id ) -> AnswerResult;
 }
 
 impl EventsManagerStuff for Stuff {
@@ -93,18 +97,47 @@ impl<'a> EventsManagerRequest for Request<'a> {
     fn event_user_creation_post( &mut self, event_id: Id ) -> AnswerResult {
         let event = try!( events_collection::get_user_event( event_id ) );
         match event.user_creating_post( self ) {
-            Ok( event ) => {
-                info!( "event created: '{}':{}", event.name, event.id );
-                let db = try!( self.stuff().get_current_db_conn() );
-                try!( db.add_events( &[ event ] ) );
-
-                let mut answer = Answer::new();
-                answer.add_record( "event", &"created".to_string() );
-                Ok( answer )
-            }
+            Ok( event ) => apply_event( event, self ),
             Err( answer_result ) => answer_result
         }
     }
+
+    fn event_group_creation_get(&mut self, group_id: Id, event_id: Id ) -> AnswerResult {
+        let event = try!( events_collection::get_group_event( event_id ) );
+        event.user_creating_get( self, group_id )
+    }
+
+    fn event_group_creation_post(&mut self, group_id: Id, event_id: Id ) -> AnswerResult {
+        let event = try!( events_collection::get_group_event( event_id ) );
+
+        let user_id = self.user().id;
+        let member_of_group = {
+            let db = try!( self.stuff().get_current_db_conn() );
+            try!( db.is_member( user_id, group_id ) )
+        };
+
+        // проверка на то что пользователь в группе
+        if member_of_group {
+            match event.user_creating_post( self, group_id ) {
+                Ok( event ) => apply_event( event, self ),
+                Err( answer_result ) => answer_result
+            }
+        } else {
+            let mut answer = Answer::new();
+            answer.add_error( "user", "not_in_group" );
+            Ok( answer )
+        }
+    }
+}
+
+fn apply_event( event: FullEventInfo, req: &mut Request ) -> AnswerResult {
+    info!( "event created: '{}':{}", event.name, event.id );
+    let db = try!( req.stuff().get_current_db_conn() );
+    try!( db.add_events( &[ event ] ) );
+
+    let mut answer = Answer::new();
+    answer.add_record( "event", &"created".to_string() );
+    Ok( answer )
 }
 
 trait EventsManagerStuffPrivate {

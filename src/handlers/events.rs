@@ -8,13 +8,14 @@ use std::str::FromStr;
 use router_params::RouterParams;
 
 static ID: &'static str = "id";
+static GROUP_ID: &'static str = "group_id";
 
 pub fn info_path() -> &'static str {
     "/events/info/:id"
 }
 
 pub fn info( request: &mut Request ) -> IronResult<Response> {
-    let response = match get_id( request ) {
+    let response = match get_id( ID, request ) {
         Some( id ) => Response::with( (status::Ok, request.event_info( id )) ),
         None => Response::with( status::NotFound )
     };
@@ -26,7 +27,7 @@ pub fn action_path() -> &'static str {
 }
 
 pub fn action_get( request: &mut Request ) -> IronResult<Response> {
-    let response = match get_id( request ) {
+    let response = match get_id( ID, request ) {
         Some( id ) => Response::with( (status::Ok, request.event_action_get( id )) ),
         None => Response::with( status::NotFound )
     };
@@ -34,7 +35,7 @@ pub fn action_get( request: &mut Request ) -> IronResult<Response> {
 }
 
 pub fn action_post( request: &mut Request ) -> IronResult<Response> {
-    let response = match get_id( request ) {
+    let response = match get_id( ID, request ) {
         Some( id ) => Response::with( (status::Ok, action_post_answer( id, request )) ),
         None => Response::with( status::NotFound )
     };
@@ -46,7 +47,7 @@ pub fn create_path() -> &'static str {
 }
 
 pub fn create_get( request: &mut Request ) -> IronResult<Response> {
-    let response = match get_id( request ) {
+    let response = match get_id( ID, request ) {
         Some( id ) => Response::with( (status::Ok, request.event_user_creation_get( id )) ),
         None => Response::with( status::NotFound )
     };
@@ -54,7 +55,7 @@ pub fn create_get( request: &mut Request ) -> IronResult<Response> {
 }
 
 pub fn create_post( request: &mut Request ) -> IronResult<Response> {
-    let response = match get_id( request ) {
+    let response = match get_id( ID, request ) {
         Some( id ) => Response::with( (status::Ok, create_post_answer( id, request )) ),
         None => Response::with( status::NotFound )
     };
@@ -73,7 +74,42 @@ fn create_post_answer( event_id: Id, req: &mut Request ) -> AnswerResult {
     result
 }
 
-fn get_id( req: &Request ) -> Option<Id> {
-    let id = req.param( ID );
+pub fn group_create_path() -> &'static str {
+    "/events/group/:group_id/create/:id"
+}
+
+pub fn group_create_get( request: &mut Request ) -> IronResult<Response> {
+    let response = match get_group_and_event_id( request ) {
+        Some( (group_id, id) ) => Response::with( (
+            status::Ok, 
+            request.event_group_creation_get( group_id, id ) 
+        ) ),
+        None => Response::with( status::NotFound )
+    };
+    Ok( response )
+}
+
+pub fn group_create_post( request: &mut Request ) -> IronResult<Response> {
+    let response = match get_group_and_event_id( request ) {
+        Some( (group_id, id) ) => Response::with( (
+            status::Ok, 
+            request.event_group_creation_post( group_id, id )
+        ) ),
+        None => Response::with( status::NotFound )
+    };
+    Ok( response )
+}
+
+
+fn get_id( prm: &str, req: &Request ) -> Option<Id> {
+    let id = req.param( prm );
     FromStr::from_str( id ).ok()
+}
+
+fn get_group_and_event_id( request: &mut Request ) -> Option<(Id, Id)> {
+    get_id( GROUP_ID, request )
+        .and_then( |group_id| 
+            get_id( ID, request )
+                .map( |id| ( group_id, id ) )
+        )
 }

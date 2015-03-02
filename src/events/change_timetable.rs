@@ -5,8 +5,6 @@ use super::group_voting::{ self, ChangeByVoting };
 use super::events_collection;
 use stuff::{ Stuff, Stuffable };
 use database::{ Databaseable };
-use authentication::Userable;
-use db::groups::DbGroups;
 use db::events::DbEvents;
 use answer::{ Answer, AnswerResult };
 use types::{ Id, CommonResult, EmptyResult };
@@ -35,95 +33,84 @@ impl GroupEvent for ChangeTimetable {
     }
     /// применение создания
     fn user_creating_post( &self, req: &mut Request, group_id: Id ) -> Result<FullEventInfo, AnswerResult> {
-        let user_id = req.user().id;
-        let member_of_group = {
-            let db = try!( req.stuff().get_current_db_conn() );
-            try!( db.is_member( user_id, group_id ) )
-        };
         let mut answer = Answer::new();
-        // проверка на то что пользователь в группе
-        if member_of_group {
-            let days_for_voting = try!( req.get_param_uint( "days" ) );
-            let ids_for_remove = try!( req.get_params_id( "remove" ) );
+        
+        let days_for_voting = try!( req.get_param_uint( "days" ) );
+        let ids_for_remove = try!( req.get_params_id( "remove" ) );
 
-            let event_ids_for_add = try!( req.get_params_id( "add" ) );
-            let names = try!( req.get_params( "name" ) ).clone();
-            let start_times = try!( req.get_params_time( "start_time" ) );
-            let end_times = try!( req.get_params_time( "end_time" ) );
-            let params = try!( req.get_params( "params" ) ).clone();
+        let event_ids_for_add = try!( req.get_params_id( "add" ) );
+        let names = try!( req.get_params( "name" ) ).clone();
+        let start_times = try!( req.get_params_time( "start_time" ) );
+        let end_times = try!( req.get_params_time( "end_time" ) );
+        let params = try!( req.get_params( "params" ) ).clone();
 
-            let self_start_time = time::get_time();
-            let self_end_time = self_start_time + Duration::days( days_for_voting as i64 );
+        let self_start_time = time::get_time();
+        let self_end_time = self_start_time + Duration::days( days_for_voting as i64 );
 
-            try!( validate( 
-                &event_ids_for_add, 
-                &names, 
-                &start_times, 
-                &end_times,
-                &params,
-                &self_end_time 
-            ));
+        try!( validate( 
+            &event_ids_for_add, 
+            &names, 
+            &start_times, 
+            &end_times,
+            &params,
+            &self_end_time 
+        ));
 
-            // просматриваем всех на отключение
-            for &id in &ids_for_remove {
-                let maybe_event_start_time = {
-                    let db  = try!( req.stuff().get_current_db_conn() );
-                    try!( db.event_start_time( id ) )
-                };
-                match maybe_event_start_time {
-                    // проверяем что оно не началось или не начнётся за время голосования
-                    Some( remove_start_time ) => {
-                        if remove_start_time < self_end_time {
-                            answer.add_error( "remove_id", "start_before_end_of_voting" );
-                            return Err( Ok( answer ) );
-                        }
-                    }
-                    // событие для отключения не найдено
-                    None => {
-                        answer.add_error( "remove_id", "not_found" );
+        // просматриваем всех на отключение
+        for &id in &ids_for_remove {
+            let maybe_event_start_time = {
+                let db  = try!( req.stuff().get_current_db_conn() );
+                try!( db.event_start_time( id ) )
+            };
+            match maybe_event_start_time {
+                // проверяем что оно не началось или не начнётся за время голосования
+                Some( remove_start_time ) => {
+                    if remove_start_time < self_end_time {
+                        answer.add_error( "remove_id", "start_before_end_of_voting" );
                         return Err( Ok( answer ) );
                     }
                 }
+                // событие для отключения не найдено
+                None => {
+                    answer.add_error( "remove_id", "not_found" );
+                    return Err( Ok( answer ) );
+                }
             }
-
-            //создаём выключенными события которые должны будут добавиться
-            let db = try!( req.stuff().get_current_db_conn() );
-            let mut added_ids : Vec<Id> = Vec::new();
-            for i in ( 0 .. event_ids_for_add.len() ) {
-                // так как validate пройдено то событие точно существует, потому исползуем unwrap
-                let id = event_ids_for_add[ i ];
-                let event = events_collection::get_timetable_event( id ).unwrap();
-                let event_data = event.from_timetable( group_id, &params[ i ] ).unwrap();
-                let new_event_info = FullEventInfo {
-                    id: id,
-                    name: names[ i ].clone(),
-                    start_time: start_times[ i ],
-                    end_time: end_times[ i ],
-                    data: event_data
-                };
-                let new_event_id = try!( db.add_disabled_event( &new_event_info ) );
-                added_ids.push( new_event_id );
-            }
-            
-            //добавляемся сами
-            let data = Data {
-                disable: ids_for_remove,
-                enable: added_ids
-            };
-            let self_info = FullEventInfo {
-                id: ID,
-                name: String::from_str( "Изменения расписания" ),
-                start_time: self_start_time,
-                end_time: self_end_time,
-                data: json::encode( &data ).unwrap()
-            };
-            // создаём голосование и хотим что бы за изменение расписания проголосовала хотя бы половина
-            Ok( group_voting::new( group_id, 0.5, &self_info ) )
-            
-        } else {
-            answer.add_error( "user", "not_in_group" );
-            Err( Ok( answer ) )
         }
+
+        //создаём выключенными события которые должны будут добавиться
+        let db = try!( req.stuff().get_current_db_conn() );
+        let mut added_ids : Vec<Id> = Vec::new();
+        for i in ( 0 .. event_ids_for_add.len() ) {
+            // так как validate пройдено то событие точно существует, потому исползуем unwrap
+            let id = event_ids_for_add[ i ];
+            let event = events_collection::get_timetable_event( id ).unwrap();
+            let event_data = event.from_timetable( group_id, &params[ i ] ).unwrap();
+            let new_event_info = FullEventInfo {
+                id: id,
+                name: names[ i ].clone(),
+                start_time: start_times[ i ],
+                end_time: end_times[ i ],
+                data: event_data
+            };
+            let new_event_id = try!( db.add_disabled_event( &new_event_info ) );
+            added_ids.push( new_event_id );
+        }
+        
+        //добавляемся сами
+        let data = Data {
+            disable: ids_for_remove,
+            enable: added_ids
+        };
+        let self_info = FullEventInfo {
+            id: ID,
+            name: String::from_str( "Изменения расписания" ),
+            start_time: self_start_time,
+            end_time: self_end_time,
+            data: json::encode( &data ).unwrap()
+        };
+        // создаём голосование и хотим что бы за изменение расписания проголосовала хотя бы половина
+        Ok( group_voting::new( group_id, 0.5, &self_info ) )
     }
 }
 
