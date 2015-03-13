@@ -3,7 +3,7 @@ extern crate num;
 use self::libc::{ size_t, c_int, c_char };
 use self::num::rational::Ratio;
 use std::collections::HashMap;
-use std::ffi;
+use std::ffi::CStr;
 use std::str;
 use std::num::ToPrimitive;
 use std::ops::Neg;
@@ -266,8 +266,8 @@ fn to_exif_value( entry: &ExifEntry, byte_order: c_int ) -> ExifValue {
         },
         ExifFormat::ASCII => {
             let entry_data_c_char = entry.data as *const c_char;
-            let name_slice = unsafe { ffi::c_str_to_bytes( &entry_data_c_char ) };
-            match str::from_utf8( name_slice ) {
+            let name_slice = unsafe { CStr::from_ptr( entry_data_c_char ) };
+            match str::from_utf8( name_slice.to_bytes() ) {
                 Ok( s ) => ExifValue::Text( s.to_string() ),
                 Err( _ ) => ExifValue::Text( "[bad utf8]".to_string() )
             }
@@ -303,8 +303,8 @@ extern fn read_exif_entry( e: *mut ExifEntry, b: *mut ReadBody ) {
     let entry = unsafe{ e.as_ref().unwrap() };
     let body = unsafe{ b.as_mut().unwrap() };
     let name_c_char = unsafe { exif_tag_get_name_in_ifd( entry.tag, body.ifd ) as *const c_char };
-    let name_slice = unsafe { ffi::c_str_to_bytes( &name_c_char ) };
-    if let Ok( name_utf8 ) = str::from_utf8( name_slice ) {
+    let name_slice = unsafe { CStr::from_ptr( name_c_char ) };
+    if let Ok( name_utf8 ) = str::from_utf8( name_slice.to_bytes() ) {
         let value = to_exif_value( entry, body.byte_order );
         body.entries.insert( name_utf8.to_string(), value );
     }

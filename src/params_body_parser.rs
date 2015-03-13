@@ -4,6 +4,7 @@
 
 use std::collections::HashMap;
 use std::str;
+use std::io::Read;
 use parse_utils;
 use iron::{ BeforeMiddleware, status, headers };
 use iron::mime::{ self, Mime, TopLevel, SubLevel };
@@ -24,10 +25,10 @@ impl Key for BinaryDataKey { type Value = Vec<u8>; }
 
 impl BeforeMiddleware for ParamsBodyParser {
     fn before( &self, req: &mut Request ) -> IronResult<()> {
-        let body = match req.body.read_to_end() {
-            Ok( body ) => body,
-            Err( e ) => return Err( IronError::new( e, status::InternalServerError ) )
-        };
+        let mut body = Vec::new();
+        if let Err( e ) = req.body.read_to_end( &mut body ) {
+            return Err( IronError::new( e, status::InternalServerError ) )
+        }
 
         if !body.is_empty() {
             let mut bin_params = HashMap::new();
@@ -43,14 +44,14 @@ impl BeforeMiddleware for ParamsBodyParser {
                         if let Some( &(_, ref val) ) = params.iter().find( |&&(ref attr,_)| *attr == mime::Attr::Ext( "boundary".to_string() ) ) {
                             if let &mime::Value::Ext( ref boundary ) = val {
                                 // то перебираем все части ограниченные спец ограничителем
-                                read_all_binary_parts( &body[], boundary.as_bytes(), &mut bin_params, &mut params_hash );
+                                read_all_binary_parts( &body, boundary.as_bytes(), &mut bin_params, &mut params_hash );
                                 req.extensions.insert::<BinaryDataKey>( body );     
                             }
                         }
                     }
                     // елси просто в текстовом виде
                     _ => {
-                        let body_str = str::from_utf8( &body[] ).unwrap_or( "" );
+                        let body_str = str::from_utf8( &body ).unwrap_or( "" );
                     
                         // то просто парсим их
                         for &( ref key, ref value ) in url::form_urlencoded::parse( body_str.as_bytes() ).iter() {

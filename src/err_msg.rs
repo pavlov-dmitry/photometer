@@ -1,6 +1,7 @@
 // формирование стандартных описаний ошибок
-use std::old_io::{ IoError };
+use std::io;
 use std::fmt::Display;
+use std::old_io;
 
 #[inline]
 pub fn param_not_found( prm: &str ) -> String {
@@ -18,9 +19,15 @@ pub fn not_a_string_param( prm: &str ) -> String {
 }
 
 #[inline]
-pub fn fs_error( e: IoError ) -> String {
+pub fn fs_error( e: io::Error ) -> String {
     format!( "filesystem error: {}", e )
 }
+
+#[inline]
+pub fn old_fs_error( e: old_io::IoError ) -> String {
+    format!( "filesystem error: {}", e )
+}
+
 
 #[inline]
 pub fn invalid_path_param( prm: &str ) -> String {

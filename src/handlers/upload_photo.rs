@@ -44,7 +44,7 @@ fn upload_photo_answer( request: &mut Request ) -> AnswerResult {
                     }
                 }
                 Err( e ) => match e {
-                    PhotoStoreError::Fs( e ) => return Err( err_msg::fs_error( e ) ),
+                    PhotoStoreError::Fs( e ) => return Err( err_msg::old_fs_error( e ) ),
                     PhotoStoreError::Format => answer.add_error( "photo", "bad_image" ),
                     PhotoStoreError::FileSize => answer.add_error( "photo", "too_big" )
                 }

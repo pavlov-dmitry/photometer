@@ -17,7 +17,7 @@ impl Stuff {
     }
 }
 
-type StuffInstallablePtr = Box<StuffInstallable + Send + Sync>;
+type StuffInstallablePtr = Box<StuffInstallable + Send + Sync + 'static>;
 
 #[derive(Clone)]
 pub struct StuffMiddleware {
@@ -34,7 +34,7 @@ impl StuffCollection {
             elems: Vec::new()
         }
     }
-    pub fn add<T: StuffInstallable + Send + Sync>(&mut self, part: T ) {
+    pub fn add<T: StuffInstallable + Send + Sync + 'static>(&mut self, part: T ) {
         self.elems.push( Box::new( part ) as StuffInstallablePtr );
     }
 }

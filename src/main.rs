@@ -1,4 +1,4 @@
-#![feature(core, path, collections, io, std_misc, libc)]
+#![feature(core, path, collections, io, std_misc, libc, net, old_io, old_path)]
 
 extern crate iron;
 extern crate mysql;
@@ -20,6 +20,8 @@ use router::Router;
 use not_found_switcher::NotFoundSwitcher;
 use mount::Mount;
 use static_file::Static;
+use std::net::SocketAddr;
+use std::path::Path;
 
 mod params_body_parser;
 mod authentication;
@@ -90,7 +92,7 @@ fn main() {
     router.post( handlers::events::group_create_path(), handlers::events::group_create_post );
 
     let mut auth_chain = Chain::new( router );
-    auth_chain.around( authentication::middleware( &Url::parse( &cfg.login_page_url[] ).unwrap() ) );
+    auth_chain.around( authentication::middleware( &Url::parse( cfg.login_page_url.as_slice() ).unwrap() ) );
 
     let not_found_switch_to_auth = NotFoundSwitcher::new( auth_chain );
 
@@ -111,10 +113,10 @@ fn main() {
     let mut stuff = StuffCollection::new();
     stuff.add( db );
     let postman = mailer::create( mailer::MailContext::new(
-        &cfg.mail_smtp_address[],
-        &cfg.mail_from_address[],
-        &cfg.mail_from_pass[],
-        &cfg.mail_tmp_file_path[]
+        cfg.mail_smtp_address.as_slice(),
+        cfg.mail_from_address.as_slice(),
+        cfg.mail_from_pass.as_slice(),
+        cfg.mail_tmp_file_path.as_slice()
     ) );
     stuff.add( postman );
     stuff.add( mail_writer::create( &cfg.root_url ) );
@@ -136,7 +138,8 @@ fn main() {
     chain.around( not_found_switch_to_auth );
     chain.around( request_logger::middleware() );
 
-    let addr = format!( "{}:{}", cfg.server_ip(), cfg.server_port );
+    //let addr = format!( "{}:{}", cfg.server_ip(), cfg.server_port );
+    let addr = SocketAddr::new( cfg.server_ip(), cfg.server_port );
     println!( "starting listen on {}", addr );
-    Iron::new( chain ).listen( &addr[] ).unwrap();
+    Iron::new( chain ).http( addr ).unwrap();
 }

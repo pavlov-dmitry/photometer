@@ -15,14 +15,15 @@ env_logger = "*"
 iron = "*"
 router = "*"
 rand = "*"
-# mount = "*"
-# static = "*"
+mount = "*"
+#static = "*"
 
-[dependencies.mount]
-git = "https://github.com/iron/mount.git"
+#[dependencies.mount]
+#git = "https://github.com/iron/mount.git"
 
 [dependencies.static]
-git = "https://github.com/pavlov-dmitry/static.git"
+#git = "https://github.com/pavlov-dmitry/static.git"
+git = "https://github.com/iron/static.git"
 
 [dependencies.mysql]
 version="*"

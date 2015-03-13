@@ -45,7 +45,7 @@ pub fn create_tables( db: &Database ) -> EmptyResult {
                 'finished', 
                 'disabled' 
             ) NOT NULL DEFAULT 'not_started_yet',
-            `user_editable` BOOL NOT NULL DEFAULT false
+            `user_editable` BOOL NOT NULL DEFAULT false,
             PRIMARY KEY ( `id` ),
             KEY `time_idx` ( `start_time`, `end_time`, `state` )
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8;

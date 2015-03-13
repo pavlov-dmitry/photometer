@@ -20,7 +20,7 @@ pub struct BoundaryIter<'a, 'b, T:'a + 'b + PartialEq> {
     data: &'a [T],
     sequence: &'b [T]
 }
-impl<'a, 'b, T:'a + PartialEq> Iterator for BoundaryIter<'a, 'b, T> {
+impl<'a, 'b, T:'a + 'b + PartialEq> Iterator for BoundaryIter<'a, 'b, T> {
     type Item = &'a [T];
 
     fn next(&mut self) -> Option<&'a [T]> {
@@ -105,11 +105,11 @@ pub fn split_seq_alt<'a, T:'a + PartialEq>( data: &'a [T], seq: &'a [T], alt: &'
 // находит подстроку находящуюся между двумя подстроками
 pub fn str_between<'a>( source: &'a str, start: &'a str, end: &'a str ) -> Option<&'a str> {
     source
-        .find_str( start )
+        .find( start )
         .and_then( |start_pos| {
             let after_start = &source[start_pos + start.len() ..];
             after_start
-                .find_str( end )
+                .find( end )
                 .and_then( |end_pos| Some( &after_start[.. end_pos] ) )
         } )
 }

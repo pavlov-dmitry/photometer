@@ -28,7 +28,7 @@ fn login_answer( request: &mut Request ) -> AnswerResult {
     let password = try!( request.get_param( PASSWORD ) ).to_string();
     let maybe_user = {
         let db = try!( request.stuff().get_current_db_conn() );
-        try!( db.get_user( &user[], &password[] ) )
+        try!( db.get_user( &user, &password ) )
     };
     make_login( request, maybe_user )
 }

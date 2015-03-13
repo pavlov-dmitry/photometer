@@ -1,7 +1,10 @@
-use std::old_io::{ File, stdio };
+use std::io;
+use std::io::{ Read, Write };
+use std::fs::File;
 use rustc_serialize::json;
-use std::old_io::net::ip::{ Ipv4Addr, IpAddr };
+use std::net::IpAddr;
 use types::{ CommonResult };
+use std::path::Path;
 
 #[derive(RustcEncodable, RustcDecodable)]
 pub struct Config {
@@ -28,7 +31,7 @@ pub struct Config {
 impl Config {
     pub fn server_ip(&self) -> IpAddr {
         let (fst, snd, thr, fth) = self.server_ip;
-        Ipv4Addr( fst, snd, thr, fth )
+        IpAddr::new_v4( fst, snd, thr, fth )
     }
 }
 
@@ -62,14 +65,20 @@ pub fn default() -> Config {
 }
 
 pub fn load( path: &Path ) -> CommonResult<Config> {
-    match File::open( path ).read_to_string() {
-        Err( e ) => Err( format!( "Config fail to load, description: {}", e ) ),
-        Ok ( content ) => {
+    let mut file = match File::open( path ) {
+        Ok( file ) => file,
+        Err( e ) => return Err( format!( "Fail to open config file, description: {}", e ) ),
+    };
+    let mut content = String::new();
+    match file.read_to_string(&mut content) {
+        Ok ( _ ) => {
             json::decode::<Config>( &content )
                 .map_err( | e | {
                     format!( "Config fail to decode, description: {}", e )
                 })
         }
+
+        Err( e ) => Err( format!( "Config fail to load, description: {}", e ) )
     }
 }
 
@@ -77,7 +86,7 @@ pub fn load_or_default( path: &Path ) -> Config {
     match load( path ) {
         Ok( cfg ) => cfg,
         Err( e ) => {
-            stdio::stderr().write_line( &e ).ok().expect( "can`t write to stderr!" );
+            let _ = writeln!( &mut io::stderr(), "{}", &e );
             default()
         }
     }

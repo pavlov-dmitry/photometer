@@ -1,10 +1,12 @@
 use iron::typemap::Key;
-use std::old_io::process::Command;
-use std::old_io::IoResult;
-use std::old_io::fs::File;
-use std::old_io::stdio::stderr;
-use std::thread::Thread;
+use std::io;
+use std::process::Command;
+use std::fs::File;
+use std::io::stderr;
+use std::io::Write;
+use std::thread;
 use std::error::FromError;
+use std::path::Path;
 
 use authentication::User;
 use std::sync::mpsc::{ Sender, channel, SendError };
@@ -128,7 +130,7 @@ impl MailContext {
             .arg( "--mail-from" )
             .arg( &self.from_addr )
             .arg( "--mail-rcpt" )
-            .arg( format!( "\"{}\"", mail.to_addr ) )
+            .arg( &format!( "\"{}\"", mail.to_addr ) )
             .arg( "--upload-file" )
             .arg( &self.tmp_mail_file )
             .arg( "--user" )
@@ -141,20 +143,20 @@ impl MailContext {
             Err( e ) => panic!( "fail to create 'curl' process: {}", e )
         };
         if process.status.success() == false {
-            let err_string = String::from_utf8_lossy( &process.error );
+            let err_string = String::from_utf8_lossy( &process.stderr );
             let _ = writeln!( &mut stderr(), "fail to send mail: {}", err_string );
         } 
         else {
             debug!( "mail to '{}' with subject='{}' successfully sended.", mail.to_addr, mail.subject );
         }
     } 
-    fn make_mail_file( &self, mail: &Mail ) -> IoResult<()> {
-        let mut file = try!( File::create( &Path::new( &self.tmp_mail_file ) ) );
-        try!( file.write_line( &format!( "From: \"photometer\" <{}>", self.from_addr ) ) );
-        try!( file.write_line( &format!( "To: \"{}\" <{}>", mail.to_name, mail.to_addr ) ) );
-        try!( file.write_line( &format!( "Subject: {}", mail.subject ) ) );
-        try!( file.write_line( "" ) );
-        try!( file.write_str( &mail.body ) );
+    fn make_mail_file( &self, mail: &Mail ) -> io::Result<()> {
+        let ref mut file = try!( File::create( &Path::new( &self.tmp_mail_file ) ) );
+        try!( writeln!( file, "From: \"photometer\" <{}>", self.from_addr ) );
+        try!( writeln!( file, "To: \"{}\" <{}>", mail.to_name, mail.to_addr ) );
+        try!( writeln!( file, "Subject: {}", mail.subject ) );
+        try!( writeln!( file, "" ) );
+        try!( write!( file, "{}", &mail.body ) );
         Ok( () )
     }
 }
@@ -168,7 +170,7 @@ impl StuffInstallable for MailerBody {
 fn create_mail_thread( context: MailContext ) -> MailSender {
     let (tx, rx) = channel();
 
-    Thread::spawn( move || {  
+    thread::spawn( move || {  
         loop {
             match rx.recv() {
                 Ok( mail ) => context.send_mail( mail ),

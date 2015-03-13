@@ -201,7 +201,7 @@ fn users_by_id_impl( conn: &mut MyPooledConn, ids: &[Id] ) -> MyResult<Vec<User>
         query.push_str( ", ?" );
     }
 
-    let mut stmt = try!( conn.prepare( &query[] ) );
+    let mut stmt = try!( conn.prepare( query.as_slice() ) );
     let mut values: Vec<&ToValue> = Vec::new();
     for id in ids.iter() {
         values.push( id );
