@@ -7,6 +7,7 @@ use std::str::FromStr;
 use iron::prelude::*;
 use iron::status;
 use router_params::RouterParams;
+use std::path::Path;
 
 static FILENAME : &'static str = "filename";
 
@@ -55,12 +56,13 @@ pub fn get_image( req: &mut Request, is_preview: bool ) -> IronResult<Response> 
         Some( (user, info) ) => {
             Ok( Response::with( (
                 status::Ok, 
-                req.photo_store().make_filename(
+                //временно используем Path, пока image не перейдёт на новое io
+                Path::new( &req.photo_store().make_filename(
                     &user,
                     &info.upload_time,
                     &info.image_type,
                     is_preview
-                )
+                ))
             )))            
         },
         None => {
