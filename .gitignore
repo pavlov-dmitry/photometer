@@ -1,2 +1,4 @@
 /target
 *.lock
+/www-release
+/data

@@ -1,0 +1,1 @@
+handlebars %1 --extension=hbs --amd --output %1_js && ren *.hbs_js *.js

@@ -1,0 +1,17 @@
+<div id="login-container" class="container panel small fly">
+    <p>
+      <form id="form-login" onsubmit="return false;" role="login">
+            <h3 class="form-heading">Вход</h3>
+            <p><input id="login-name" type="text" class="form-control" placeholder="Имя" required autofocus /></p>
+            <p><input id="login-pasw" type="password" class="form-control" placeholder="Пароль" required /></p>
+        <!-- div class="checkbox">
+            <label class="checkbox">
+              <input type="checkbox" value="remember-me">Запомнить меня
+            </label>
+        </div -->
+        <div id="login-error" class="alert alert-danger hidden"><strong>Ошибка:</strong> {{ error }}</div>
+        <button id="login-btn" class="btn btn-lg btn-success btn-block" type="submit">ВХОД</button>
+        <p><br>Еще не с нами? <a href="#register">Пройди регистрацию</a>, чтобы присоединиться.</p>
+      </form>
+    </p>
+</div>

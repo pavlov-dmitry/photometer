@@ -1,0 +1,19 @@
+body {
+  background-image: url(../i/dark_embroidery.png);
+}
+
+.fly-sm {
+    box-shadow: 0 0 20px 7px rgba( 0, 0, 0, 0.4 );
+}
+
+.fly {
+  box-shadow: 0 0 60px 35px rgba( 0, 0, 0, 0.4 )  
+}
+
+.form-heading {
+    text-align: center;
+}
+
+.small {
+    max-width: 30rem;
+}
