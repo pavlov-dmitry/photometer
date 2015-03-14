@@ -1,4 +1,16 @@
-#![feature(core, path, collections, io, std_misc, libc, net, old_io, old_path)]
+#![feature(
+    core, 
+    path, 
+    collections, 
+    io, 
+    std_misc, 
+    libc, 
+    net, 
+    old_io, 
+    old_path,
+    fs_walk,
+    path_ext
+)]
 
 extern crate iron;
 extern crate mysql;
@@ -22,6 +34,9 @@ use mount::Mount;
 use static_file::Static;
 use std::net::SocketAddr;
 use std::path::Path;
+use std::io;
+use std::fs::{ self, PathExt };
+use std::time::Duration;
 
 mod params_body_parser;
 mod authentication;
@@ -105,10 +120,10 @@ fn main() {
         handlers::authentication::registration_end
     );
 
-    let mut static_mount = Mount::new();
-    static_mount.mount( "/", Static::new( Path::new( "../www/" ) ) );
-    static_mount.mount( "/js/", Static::new( Path::new( "../www/js/" ) ) );
-    no_auth_router.get( "/*", static_mount );
+    //let mut static_mount = Mount::new();
+    //static_mount.mount( "/", Static::new( Path::new( "../www/" ) ) );
+    //static_mount.mount( "/js/", Static::new( Path::new( "../www/js/" ) ) );
+    no_auth_router.get( "/*", add_static_path( "../www" ) );
     
     let mut stuff = StuffCollection::new();
     stuff.add( db );
@@ -142,4 +157,36 @@ fn main() {
     let addr = SocketAddr::new( cfg.server_ip(), cfg.server_port );
     println!( "starting listen on {}", addr );
     Iron::new( chain ).http( addr ).unwrap();
+}
+
+fn add_static_path( root_path: &str ) -> Mount {
+    let mut mount = Mount::new();
+    { // этот блок нужен что-бы замыкание make_mount разрушилось перед возвращением mount
+        let mut make_mount = |path: &str, mounted_path: &str| {
+            let handler = Static::new( Path::new( mounted_path ) );
+            let handler = handler.cache( Duration::days( 365 ) );
+            mount.mount( path, handler );
+        };
+
+        make_mount( "/", root_path );
+
+        let root_path_len = root_path.len();
+        let _ = visit_dirs( root_path, |p| {
+            let path_str = p.to_str().unwrap();
+            let mounted_path = &path_str[root_path_len ..];
+            make_mount( &path_str, mounted_path );
+        });
+    }
+    mount
+}
+
+fn visit_dirs<F: FnMut(&Path)>( root: &str, mut callback: F ) -> io::Result<()> {
+    for dir in try!( fs::walk_dir( root ) ) {
+        let dir = try!( dir );
+        let path = dir.path();
+        if path.is_dir() {
+            callback( &path );
+        }
+    }
+    Ok( () )
 }
