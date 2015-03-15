@@ -36,7 +36,7 @@ use std::net::SocketAddr;
 use std::path::Path;
 use std::io;
 use std::fs::{ self, PathExt };
-use std::time::Duration;
+//use std::time::Duration;
 
 mod params_body_parser;
 mod authentication;
@@ -164,7 +164,7 @@ fn add_static_path( root_path: &str ) -> Mount {
     { // этот блок нужен что-бы замыкание make_mount разрушилось перед возвращением mount
         let mut make_mount = |path: &str, mounted_path: &str| {
             let handler = Static::new( Path::new( mounted_path ) );
-            let handler = handler.cache( Duration::days( 365 ) );
+            //let handler = handler.cache( Duration::days( 365 ) );
             mount.mount( path, handler );
         };
 

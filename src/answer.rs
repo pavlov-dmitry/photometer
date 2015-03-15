@@ -4,6 +4,7 @@ use std::collections::BTreeMap;
 use iron::modifier::Modifier;
 use iron::prelude::*;
 use iron::mime;
+use iron::status;
 
 use types::{ PhotoInfo, ImageType, CommonResult, MailInfo };
 
@@ -55,7 +56,12 @@ impl Modifier<Response> for AnswerResult {
                 mime.modify( res );
                 json::encode( answer ).unwrap().modify( res );        
             }
-            Err( err ) => err.modify( res )
+
+            Err( err ) => {
+                let answer_status = status::InternalServerError;
+                answer_status.modify( res );
+                err.modify( res );
+            }
         }
     }
 }
