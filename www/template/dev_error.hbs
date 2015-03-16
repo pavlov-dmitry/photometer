@@ -1,12 +1,27 @@
 <div class="container">
-    <div class="jumbotron">
-        <h2>Произошла ошибка взаимодействия с сервером.</h2>
+    <div class="jumbotron fly">
+        <h2>Ой, что-то пошло не так :(</h2>
         <div class="panel panel-danger">
             <div class="panel-heading">
                  <h3 class="panel-title">Подробная информация:</h3>
             </div>
-            <div class="panel-body">{{ error_msg }}</div>
-            <div class="panel-footer"><em>Будьте добры, передайте её разработчикам</em></div>
+            <table class="table table-striped table-first-row-bold">
+                <tr>
+                    <td>method</td><td>{{ ajax.method }}</td>
+                </tr>
+                <tr>
+                    <td>url</td><td>{{ ajax.url }}</td>
+                </tr>
+                <tr>
+                    <td>data</td><td>{{ ajax.data }}</td>
+                </tr>
+                <tr>
+                    <td>response</td><td>{{ response.status }} - {{ response.statusText }}</td>
+                </tr>
+                <tr>
+                    <td>text</td><td>{{ response.responseText }}</td>
+                </tr>
+            </table>
         </div>
     </div>
 </div>

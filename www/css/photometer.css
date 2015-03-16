@@ -7,7 +7,7 @@ body {
 }
 
 .fly {
-  box-shadow: 0 0 60px 35px rgba( 0, 0, 0, 0.4 )  
+  box-shadow: 0 0 60px 35px rgba( 0, 0, 0, 0.4 )
 }
 
 .form-heading {
@@ -16,4 +16,8 @@ body {
 
 .small {
     max-width: 30rem;
+}
+
+.table-first-row-bold td:first-child {
+    font-weight: bold
 }

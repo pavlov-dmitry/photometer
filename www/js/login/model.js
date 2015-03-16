@@ -13,15 +13,12 @@ define( function(require) {
 
         login: function(usr, psw) {
             var model = this;
-            this.save( 
+            this.save(
                 { user: usr, password: psw }
             )
             .fail( function( resp ) {
                 var app = require( "app" );
-                console.log( "url: " + this.url );
-                console.log( "method: " + this.method );
-                //model.set( {has_error: true, error: resp.responseText} )
-                app.processInternalError( resp );
+                app.processInternalError( resp, this );
             })
             .done( function( data ) {
                 console.log( "done" );
@@ -44,7 +41,7 @@ define( function(require) {
                     options.url = model.url;
                     options.method = 'POST';
                     options.contentType = "application/json";
-                    options.data = JSON.stringify({ 
+                    options.data = JSON.stringify({
                             user: model.get( 'user' ),
                             password: model.get( 'password' )
                         });

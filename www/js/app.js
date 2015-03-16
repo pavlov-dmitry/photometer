@@ -6,11 +6,12 @@ define( function (require) {
 
     var app = {};
 
-    app.processInternalError = function( response ) {
+    app.processInternalError = function( response, ajax ) {
         require( "template/dev_error" );
 
         $( "#workspace" ).html( Handlebars.templates.dev_error( {
-            error_msg: response.responseText
+			ajax: ajax,
+			response: response
         }));
     };
 
@@ -21,8 +22,8 @@ define( function (require) {
         app._backbone_sync = Backbone.sync;
         Backbone.sync = function(method, model, options) {
         	app._backbone_sync( method, model, options )
-        	.fail( function( resp ) { 
-                app.processInternalError( response ); 
+        	.fail( function( resp ) {
+                app.processInternalError( response );
             });
         };
 
