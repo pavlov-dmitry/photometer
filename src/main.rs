@@ -1,12 +1,10 @@
 #![feature(
-    core, 
-    path, 
+    core,
     collections, 
-    io, 
-    std_misc, 
-    libc, 
-    net, 
-    old_io, 
+    std_misc,
+    libc,
+    net,
+    old_io,
     old_path,
     fs_walk,
     path_ext
@@ -17,7 +15,7 @@ extern crate mysql;
 extern crate image;
 extern crate time;
 extern crate url;
-#[macro_use] 
+#[macro_use]
 extern crate log;
 extern crate env_logger;
 extern crate "rustc-serialize" as rustc_serialize;
@@ -66,10 +64,10 @@ use stuff::{ StuffCollection, StuffMiddleware };
 
 fn main() {
     env_logger::init().unwrap();
-    
+
     let cfg = config::load_or_default( &Path::new( "../etc/photometer.cfg" ) );
 
-    let db = database::create_db_connection(  
+    let db = database::create_db_connection(
         cfg.db_name.clone(),
         cfg.db_user.clone(),
         cfg.db_password.clone(),
@@ -86,7 +84,7 @@ fn main() {
 
     router.get( handlers::images::photos_path(), handlers::images::get_photo );
     router.get( handlers::images::preview_path(), handlers::images::get_preview );
-    
+
     router.get( handlers::gallery::current_year_count_path(), handlers::gallery::current_year_count );
     router.get( handlers::gallery::by_year_count_path(), handlers::gallery::by_year_count );
     router.get( handlers::gallery::current_year_path(), handlers::gallery::current_year );
@@ -115,8 +113,8 @@ fn main() {
 
     no_auth_router.post( "/login", handlers::login );
     no_auth_router.post( "/join_us", handlers::join_us );
-    no_auth_router.get( 
-        handlers::authentication::registration_end_path(), 
+    no_auth_router.get(
+        handlers::authentication::registration_end_path(),
         handlers::authentication::registration_end
     );
 
@@ -124,7 +122,7 @@ fn main() {
     //static_mount.mount( "/", Static::new( Path::new( "../www/" ) ) );
     //static_mount.mount( "/js/", Static::new( Path::new( "../www/js/" ) ) );
     no_auth_router.get( "/*", add_static_path( "../www" ) );
-    
+
     let mut stuff = StuffCollection::new();
     stuff.add( db );
     let postman = mailer::create( mailer::MailContext::new(
@@ -135,7 +133,7 @@ fn main() {
     ) );
     stuff.add( postman );
     stuff.add( mail_writer::create( &cfg.root_url ) );
-    
+
     let stuff_middleware = StuffMiddleware::new( stuff );
     trigger::start( cfg.events_trigger_period_sec, stuff_middleware.clone() );
 
@@ -144,8 +142,8 @@ fn main() {
     chain.link_before( stuff_middleware );
     chain.link_before( params_body_parser::middleware() );
     chain.link_before(
-        photo_store::middleware( 
-            &cfg.photo_store_path, 
+        photo_store::middleware(
+            &cfg.photo_store_path,
             cfg.photo_store_max_photo_size_bytes,
             cfg.photo_store_preview_size
         )

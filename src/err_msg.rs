@@ -1,6 +1,7 @@
 // формирование стандартных описаний ошибок
 use std::io;
 use std::fmt::Display;
+#[allow(deprecated)]
 use std::old_io;
 
 #[inline]
@@ -24,6 +25,7 @@ pub fn fs_error( e: io::Error ) -> String {
 }
 
 #[inline]
+#[allow(deprecated)]
 pub fn old_fs_error( e: old_io::IoError ) -> String {
     format!( "filesystem error: {}", e )
 }

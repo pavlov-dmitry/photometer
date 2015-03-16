@@ -1,8 +1,11 @@
 use std::sync::{ Arc };
+#[allow(deprecated)]
 use std::old_io;
+#[allow(deprecated)]
 use std::old_io::IoResult;
 #[allow(deprecated)]
 use std::old_io::fs::File;
+#[allow(deprecated)]
 use std::old_path::posix::Path;
 use std::fs;
 use std::io;
@@ -20,19 +23,19 @@ static GALLERY_DIR : &'static str = "gallery";
 
 pub fn middleware( photo_dir: &String, max_photo_size_bytes: usize, preview_size: usize ) -> PhotoStore {
     PhotoStore {
-        params: Arc::new( 
+        params: Arc::new(
             Params {
                 photos_dir: (*photo_dir).clone(),
                 max_photo_size_bytes: max_photo_size_bytes,
                 preview_size: preview_size as u32
             }
         )
-    }   
+    }
 }
 
 struct Params {
     photos_dir : String,
-    max_photo_size_bytes : usize, 
+    max_photo_size_bytes : usize,
     preview_size : u32,
 }
 
@@ -43,6 +46,7 @@ pub struct PhotoStore {
 
 pub enum PhotoStoreError {
     /// произошла ошибка работы с файловой системой
+    #[allow(deprecated)]
     Fs( old_io::IoError ),
     /// ошибка в формате данных
     Format,
@@ -75,14 +79,14 @@ impl PhotoStore {
                     //let mut preview = img.crop( w / 2 - crop_size / 2, h / 2 - crop_size / 2, crop_size, crop_size );
                     //preview = preview.resize_exact( self.params.preview_size, self.params.preview_size, image::Lanczos3 );
                     let preview_filename = self.make_filename( &user.name, upload_time, &img_type, true );
-                    let fs_sequience = 
-                        self.save_preview( 
-                            &mut img, 
-                            Path::new( preview_filename ), 
-                            ( w / 2 - crop_size / 2, h / 2 - crop_size / 2 ), 
-                            ( crop_size, crop_size ) 
+                    let fs_sequience =
+                        self.save_preview(
+                            &mut img,
+                            Path::new( preview_filename ),
+                            ( w / 2 - crop_size / 2, h / 2 - crop_size / 2 ),
+                            ( crop_size, crop_size )
                         )
-                        .and_then( |_| File::create( 
+                        .and_then( |_| File::create(
                             &Path::new( &self.make_filename( &user.name, upload_time, &img_type, false ) )
                         ) )
                         .and_then( |mut file| file.write_all( img_data ) );
@@ -108,12 +112,13 @@ impl PhotoStore {
         Ok( () )
     }
 
-    pub fn make_crop( 
-        &self, user: &String, 
-        upload_time: Timespec, 
-        image_type: ImageType, 
-        (tlx, tly): (u32, u32), 
-        (brx, bry) : (u32, u32) 
+    #[allow(deprecated)]
+    pub fn make_crop(
+        &self, user: &String,
+        upload_time: Timespec,
+        image_type: ImageType,
+        (tlx, tly): (u32, u32),
+        (brx, bry) : (u32, u32)
     ) -> PhotoStoreResult<()> {
         let filename = self.make_filename( user, &upload_time, &image_type, false );
         match image::open( &Path::new( filename ) ) {
@@ -136,7 +141,7 @@ impl PhotoStore {
     pub fn make_filename( &self, user: &String, upload_time: &Timespec, tp: &ImageType, is_preview: bool ) -> String {
         let extension = if *tp == ImageType::Png || is_preview { "png" } else { "jpg" };
         let postfix = if is_preview { "_preview" } else { "" };
-        //Path::new( 
+        //Path::new(
             format!( "{}/{}/{}/{}{}.{}",
                 self.params.photos_dir,
                 user,
@@ -144,7 +149,7 @@ impl PhotoStore {
                 upload_time.sec,
                 postfix,
                 extension
-            )  
+            )
         //)
     }
 }
@@ -155,7 +160,7 @@ impl BeforeMiddleware for PhotoStore {
     fn before(&self, req: &mut Request) -> IronResult<()> {
         req.extensions.insert::<PhotoStore>( self.clone() );
         Ok( () )
-    } 
+    }
 }
 
 pub trait PhotoStoreable {

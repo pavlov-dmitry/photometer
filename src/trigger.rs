@@ -1,5 +1,6 @@
 /// поток событий по таймеру
 use std::thread;
+#[allow(deprecated)]
 use std::old_io::timer::Timer;
 use std::time::duration::Duration;
 use std::io::stderr;
@@ -9,6 +10,7 @@ use events::events_manager::EventsManagerStuff;
 
 use stuff::{ Stuff, StuffMiddleware };
 
+#[allow(deprecated)]
 pub fn start( interval_sec: u32, stuff_creator: StuffMiddleware ) {
     thread::spawn( move || {
         let mut stuff = stuff_creator.new_stuff();
