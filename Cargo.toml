@@ -17,6 +17,8 @@ router = "*"
 rand = "*"
 mount = "*"
 #static = "*"
+bodyparser = "*"
+persistent = "*"
 
 [dependencies.mysql]
 version="*"

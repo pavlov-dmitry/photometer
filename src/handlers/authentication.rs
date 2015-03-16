@@ -3,7 +3,6 @@ use database::{ Databaseable };
 use stuff::Stuffable;
 use db::users::{ DbUsers };
 use authentication::{ User, SessionsStoreable };
-use get_param::{ GetParamable };
 use photo_store::{ PhotoStoreable };
 use err_msg;
 use iron::prelude::*;
@@ -12,23 +11,24 @@ use rand::{ Rng, OsRng };
 use mail_writer::MailWriter;
 use mailer::Mailer;
 use router_params::RouterParams;
-
-static USER : &'static str = "user";
-static LOGIN : &'static str = "login";
-static PASSWORD : &'static str = "password";
-static MAIL : &'static str = "mail";
+use get_body::GetBody;
 
 /// авторизация пользователя
 pub fn login( request: &mut Request ) -> IronResult<Response> {
     Ok( Response::with( (status::Ok, login_answer( request )) ) )
 }
 
+#[derive(Clone, RustcDecodable)]
+struct LoginInfo {
+    user: String,
+    password: String
+}
+
 fn login_answer( request: &mut Request ) -> AnswerResult {
-    let user = try!( request.get_param( USER ) ).to_string();
-    let password = try!( request.get_param( PASSWORD ) ).to_string();
+    let login_info = try!( request.get_body::<LoginInfo>() );
     let maybe_user = {
         let db = try!( request.stuff().get_current_db_conn() );
-        try!( db.get_user( &user, &password ) )
+        try!( db.get_user( &login_info.user, &login_info.password ) )
     };
     make_login( request, maybe_user )
 }
@@ -47,15 +47,20 @@ pub fn registration_end( req: &mut Request ) -> IronResult<Response> {
     Ok( Response::with( (status::Ok, registration_end_answer( req )) ) )
 }
 
+#[derive(Clone, RustcDecodable)]
+struct RegInfo {
+    user: String,
+    password: String,
+    email: String
+}
+
 fn join_us_answer( request: &mut Request ) -> AnswerResult {
     //считывание параметров
-    let login = try!( request.get_param( LOGIN ) ).to_string();
-    let password = try!( request.get_param( PASSWORD ) ).to_string();
-    let mail = try!( request.get_param( MAIL ) ).to_string();
+    let reg_info = try!( request.get_body::<RegInfo>() );
     //проверка на то что такого пользователя больше нет
     let user_exists = {
         let db = try!( request.stuff().get_current_db_conn() );
-        try!( db.user_exists( &login, &mail ) )
+        try!( db.user_exists( &reg_info.user, &reg_info.email ) )
     };
 
     let mut answer = Answer::new();
@@ -64,14 +69,12 @@ fn join_us_answer( request: &mut Request ) -> AnswerResult {
         let reg_key = gen_reg_key();
         let new_user = {
             let db = try!( request.stuff().get_current_db_conn() );
-            try!( db.add_user( &login, &password, &mail, &reg_key ) )
+            try!( db.add_user( &reg_info.user, &reg_info.password, &reg_info.email, &reg_key ) )
         };
-        info!( "add user {} reg_key = {}", &login, &reg_key );
+        info!( "add user {} reg_key = {}", &reg_info.user, &reg_key );
         let stuff = request.stuff();
         let (subject, mail_body) = stuff.write_registration_accept_mail( &reg_key );
         try!( stuff.send_external_mail( &new_user, &subject, &mail_body ) );
-        //try!( request.photo_store().init_user_dir( login ).map_err( |e| err_msg::fs_error( e ) ) );
-        //make_login( request, login, password )
         answer.add_record( "user", &String::from_str( "added" ) );
     } 
     else {

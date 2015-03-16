@@ -1,6 +1,6 @@
 #![feature(
     core,
-    collections, 
+    collections,
     std_misc,
     libc,
     net,
@@ -23,6 +23,8 @@ extern crate router;
 extern crate mount;
 extern crate "static" as static_file;
 extern crate rand;
+extern crate bodyparser;
+extern crate persistent;
 
 use iron::prelude::*;
 use iron::Url;
@@ -35,6 +37,7 @@ use std::path::Path;
 use std::io;
 use std::fs::{ self, PathExt };
 //use std::time::Duration;
+use persistent::Read;
 
 mod params_body_parser;
 mod authentication;
@@ -59,8 +62,11 @@ mod stuff;
 mod trigger;
 mod mailer;
 mod mail_writer;
+mod get_body;
 
 use stuff::{ StuffCollection, StuffMiddleware };
+
+const MAX_BODY_LENGTH: usize = 1024 * 1024 * 5;
 
 fn main() {
     env_logger::init().unwrap();
@@ -138,9 +144,10 @@ fn main() {
     trigger::start( cfg.events_trigger_period_sec, stuff_middleware.clone() );
 
     let mut chain = Chain::new( no_auth_router );
+    chain.link_before( Read::<bodyparser::MaxBodyLength>::one( MAX_BODY_LENGTH ) );
     chain.link_before( authentication::create_session_store() );
     chain.link_before( stuff_middleware );
-    chain.link_before( params_body_parser::middleware() );
+    //chain.link_before( params_body_parser::middleware() );
     chain.link_before(
         photo_store::middleware(
             &cfg.photo_store_path,
