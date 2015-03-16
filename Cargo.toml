@@ -16,11 +16,15 @@ iron = "*"
 router = "*"
 rand = "*"
 mount = "*"
-static = "*"
+#static = "*"
 
 [dependencies.mysql]
 version="*"
 default-features = false
+
+[dependencies.static]
+git = "https://github.com/fuchsnj/static.git"
+rev = "a08f593162bd69a556edac09633fb7a2e5b650df"
 
 [dependencies.image]
 git = "https://github.com/PistonDevelopers/image.git"
