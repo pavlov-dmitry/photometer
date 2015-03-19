@@ -53,7 +53,7 @@ mod types;
 mod db;
 mod events;
 mod err_msg;
-mod get_param;
+//mod get_param;
 mod simple_time_profiler;
 mod request_logger;
 mod not_found_switcher;

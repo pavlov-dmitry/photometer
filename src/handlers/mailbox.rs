@@ -3,9 +3,10 @@ use database::{ Databaseable };
 use stuff::Stuffable;
 use db::mailbox::{ DbMailbox };
 use authentication::{ Userable };
-use get_param::{ GetParamable };
 use iron::prelude::*;
 use iron::status;
+use get_body::GetBody;
+use types::Id;
 
 static PAGE: &'static str = "page";
 const IN_PAGE_COUNT: u32 = 10;
@@ -35,8 +36,13 @@ pub fn get_unreaded(request: &mut Request) -> IronResult<Response> {
     Ok( Response::with( (status::Ok, get_answer( request, true )) ) )
 }
 
+#[derive(Clone, Copy, RustcDecodable)]
+struct PageInfo {
+    page: u32
+}
+
 fn get_answer( req: &mut Request, only_unreaded: bool ) -> AnswerResult {
-    let page = req.get_param_uint( PAGE ).unwrap_or( 0 ) as u32;
+    let page = try!( req.get_body::<PageInfo>() ).page;
     let user_id = req.user().id;
     let db = try!( req.stuff().get_current_db_conn() );
     let mut answer = Answer::new();
@@ -56,8 +62,13 @@ pub fn mark_as_readed( request: &mut Request) -> IronResult<Response> {
     Ok( Response::with( (status::Ok, mark_as_readed_answer( request )) ) )
 }
 
+#[derive(Clone, Copy, RustcDecodable)]
+struct IdInfo {
+    id: Id
+}
+
 pub fn mark_as_readed_answer( req: &mut Request ) -> AnswerResult {
-    let id = try!( req.get_param_id( "id" ) );
+    let id = try!( req.get_body::<IdInfo>() ).id;
     let user_id = req.user().id;
     let db = try!( req.stuff().get_current_db_conn() );
     let success = try!( db.mark_as_readed( user_id, id ) );

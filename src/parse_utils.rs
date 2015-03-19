@@ -1,3 +1,5 @@
+use time;
+
 #[allow(dead_code)]
 // возвращает итератор "указателей" на последовательности которые ограничены с двух сторон другой последовательностью
 pub fn boundary<'a, 'b, T:'a + 'b + PartialEq>( data: &'a [T], sequence: &'b [T] ) -> BoundaryIter<'a, 'b, T> {
@@ -112,4 +114,11 @@ pub fn str_between<'a>( source: &'a str, start: &'a str, end: &'a str ) -> Optio
                 .find( end )
                 .and_then( |end_pos| Some( &after_start[.. end_pos] ) )
         } )
+}
+
+static TIME_FORMAT: &'static str = "%Y.%m.%d %k:%M:%S";
+
+pub fn parse_timespec( s: &str ) -> Result<time::Timespec, time::ParseError> {
+    time::strptime( s, TIME_FORMAT )
+          .map( |t| t.to_timespec() )    
 }

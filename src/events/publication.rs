@@ -9,13 +9,13 @@ use db::publication::DbPublication;
 use db::photos::DbPhotos;
 use db::events::DbEvents;
 use mail_writer::MailWriter;
-use get_param::GetParamable;
 use database::{ Databaseable };
 use stuff::{ Stuffable, Stuff };
 use authentication::{ Userable };
 use std::time::duration::Duration;
 use time;
 use iron::prelude::*;
+use get_body::GetBody;
 
 #[derive(Clone)]
 pub struct Publication;
@@ -25,6 +25,11 @@ impl Publication {
     pub fn new() -> Publication {
         Publication
     }
+}
+
+#[derive(Clone, Copy, RustcDecodable)]
+struct PhotoInfo {
+    id: Id
 }
 
 impl Event for Publication {
@@ -82,7 +87,7 @@ impl Event for Publication {
     /// применение действия пользователя на это событие
     fn user_action_post( &self, req: &mut Request, body: &ScheduledEventInfo ) -> AnswerResult {
         let info = try!( get_info( &body.data ) );
-        let photo_id = try!( req.get_param_id( "photo" ) );
+        let photo_id = try!( req.get_body::<PhotoInfo>() ).id;
         let user = req.user().clone();
         let db = try!( req.stuff().get_current_db_conn() );
         let mut answer = Answer::new();

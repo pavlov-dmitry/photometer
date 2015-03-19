@@ -4,6 +4,7 @@ use std::fmt::Display;
 #[allow(deprecated)]
 use std::old_io;
 
+/* из-за перехода на json эти функции пока не нужны
 #[inline]
 pub fn param_not_found( prm: &str ) -> String {
     format!( "can not find parameter '{}'", prm )
@@ -18,6 +19,7 @@ pub fn invalid_type_param( prm: &str ) -> String {
 pub fn not_a_string_param( prm: &str ) -> String {
     format!( "not a string param '{}'", prm )
 }
+*/
 
 #[inline]
 pub fn fs_error( e: io::Error ) -> String {

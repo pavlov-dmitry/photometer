@@ -9,8 +9,8 @@ use stuff::{ Stuffable, Stuff };
 use db::votes::{ DbVotes, Votes };
 use iron::prelude::*;
 use answer::{ AnswerResult, Answer };
-use authentication::{ Userable };
-use get_param::GetParamable;
+use authentication::Userable;
+use get_body::GetBody;
 
 /// абстракция события которое применяется после того как группа проголосовала ЗА
 pub trait ChangeByVoting {
@@ -53,6 +53,11 @@ struct Data {
     group_id: Id,
     success_coeff: f32,
     internal_data: String
+}
+
+#[derive(Clone, RustcDecodable)]
+struct VoteInfo {
+    vote: String
 }
 
 impl Event for GroupVoting {
@@ -101,7 +106,8 @@ impl Event for GroupVoting {
     }
     /// применение действия пользователя на это событие
     fn user_action_post( &self, req: &mut Request, body: &ScheduledEventInfo ) -> AnswerResult {
-        let vote: bool = try!( req.get_param( "vote" ) ) == "yes";
+        let vote_info = try!( req.get_body::<VoteInfo>() );
+        let vote: bool = vote_info.vote == "yes";
         let user_id = req.user().id;
         let db = try!( req.stuff().get_current_db_conn() );
         let is_need_vote = try!( db.is_need_user_vote( body.scheduled_id, user_id ) );

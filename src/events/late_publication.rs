@@ -12,8 +12,8 @@ use std::time;
 use time::Timespec;
 use rustc_serialize::json;
 use authentication::Userable;
-use get_param::GetParamable;
 use iron::prelude::*;
+use get_body::GetBody;
 
 #[derive(Clone)]
 pub struct LatePublication;
@@ -37,6 +37,11 @@ impl LatePublication {
             data: json::encode( &info ).unwrap()
         }
     }
+}
+
+#[derive(Clone, RustcDecodable)]
+struct PhotoInfo {
+    id: Id
 }
 
 impl Event for LatePublication {
@@ -85,7 +90,7 @@ impl Event for LatePublication {
     /// применение действия пользователя на это событие
     fn user_action_post( &self, req: &mut Request, body: &ScheduledEventInfo ) -> AnswerResult {
         let info = try!( get_info( &body.data ) );
-        let photo_id = try!( req.get_param_id( "photo" ) );
+        let photo_id = try!( req.get_body::<PhotoInfo>() ).id;
         let current_user_name = req.user().name.clone();
         let user_id = req.user().id;
         let db = try!( req.stuff().get_current_db_conn() );

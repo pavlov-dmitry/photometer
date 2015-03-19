@@ -1,6 +1,5 @@
 use photo_store::{ PhotoStoreable, PhotoStoreError };
 use answer::{ AnswerResult, Answer };
-use get_param::{ GetParamable };
 use authentication::{ Userable };
 use err_msg;
 use time;
@@ -15,7 +14,6 @@ use iron::prelude::*;
 use iron::status;
 
 static IMAGE : &'static str = "upload_img";
-static IMAGE_FILENAME : &'static str = "upload_img_filename";
 
 
 pub fn upload_photo( request: &mut Request ) -> IronResult<Response> {
@@ -23,9 +21,9 @@ pub fn upload_photo( request: &mut Request ) -> IronResult<Response> {
 }
 
 fn upload_photo_answer( request: &mut Request ) -> AnswerResult {
-    let filename = try!( request.get_param( IMAGE_FILENAME ) ).to_string();
+    //let filename = try!( request.get_param( IMAGE_FILENAME ) ).to_string();
     let mut answer = Answer::new();
-    match check_image_type( &filename ) {
+    /*match check_image_type( &filename ) {
         Some( tp ) => {
             let photo_info = {
                 let photo_store = request.photo_store();
@@ -51,7 +49,7 @@ fn upload_photo_answer( request: &mut Request ) -> AnswerResult {
             }
         }
         None => answer.add_record( "photo", &String::from_str( "unknown_format" ) )
-    }
+    }*/
     Ok( answer )
 }
 

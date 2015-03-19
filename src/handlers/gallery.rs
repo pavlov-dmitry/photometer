@@ -1,7 +1,6 @@
 use answer::{ AnswerResult, Answer };
 use err_msg;
 use time;
-use get_param::{ GetParamable };
 use std::str::FromStr;
 use database::{ Databaseable };
 use stuff::Stuffable;
@@ -10,9 +9,9 @@ use db::photos::{ DbPhotos };
 use iron::prelude::*;
 use iron::status;
 use router_params::RouterParams;
+use get_body::GetBody;
 
 static YEAR: &'static str = "year";
-static PAGE: &'static str = "page";
 const IN_PAGE_COUNT: u32 = 10;
 const FROM_YEAR: i32 = 1900;
 
@@ -73,9 +72,14 @@ fn by_year_count_answer( req: &mut Request, year: i32 ) -> AnswerResult {
     Ok( answer )
 }
 
+#[derive(Clone, RustcDecodable)]
+struct PageInfo {
+    page: u32
+}
+
 fn by_year_answer( req: &mut Request, year: i32 ) -> AnswerResult {
     let mut answer = Answer::new();
-    let page = req.get_param_uint( PAGE ).unwrap_or( 0 ) as u32;
+    let page = try!( req.get_body::<PageInfo>() ).page;
 
     let ( from, to ) = times_gate_for_year( year );
     let user_id = req.user().id;

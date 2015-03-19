@@ -13,7 +13,6 @@ use super::{
 use err_msg;
 use types::{ Id, EmptyResult, CommonResult };
 use answer::{ Answer, AnswerResult };
-use get_param::GetParamable;
 use database::{ Databaseable };
 use stuff::{ Stuffable, Stuff };
 use db::votes::DbVotes;
@@ -24,6 +23,7 @@ use authentication::{ Userable };
 use time;
 use std::time::Duration;
 use mail_writer::MailWriter;
+use get_body::GetBody;
 
 #[derive(Clone)]
 pub struct GroupCreation;
@@ -35,8 +35,19 @@ impl GroupCreation {
     }
 }
 
-static MEMBERS: &'static str = "members";
 type Members = HashSet<Id>;
+
+#[derive(Clone, RustcDecodable)]
+struct GroupInfo {
+    name: String,
+    description: String,
+    members: Vec<Id>
+}
+
+#[derive(Clone, RustcDecodable)]
+struct VoteInfo {
+    vote: String
+}
 
 impl UserEvent for GroupCreation {
     /// описание создания
@@ -47,29 +58,22 @@ impl UserEvent for GroupCreation {
     }
     /// применение создания
     fn user_creating_post( &self, req: &mut Request ) -> Result<FullEventInfo, AnswerResult> {
-        let group_name = try!( req.get_param( "name" ) ).to_string();
         let mut answer = Answer::new();
+
+        let group_info = try!( req.get_body::<GroupInfo>() );
 
         let mut info = Info {
             initiator: req.user().id,
             members: HashSet::new(),
-            name: group_name.clone(),
-            description: try!( req.get_param( "description" ) ).to_string()
+            name: group_info.name.clone(),
+            description: group_info.description
         };
-        //конвертация идентификаторов из строк
-        {
-            let members_str = try!( req.get_params( MEMBERS ) );
-            for member_str in members_str.iter() {
-                let member = try!( convert_member( member_str ) );
-                if member != info.initiator {
-                    info.members.insert( member );
-                }
-            }
-        }
-        if info.members.is_empty() {
+
+        if group_info.members.is_empty() {
             answer.add_error( "members", "not_found" );
             return Err( Ok( answer ) );
         }
+
         // проверка наличия пользователей
         let db = try!( req.stuff().get_current_db_conn() );
         for member in info.members.iter() {
@@ -83,7 +87,7 @@ impl UserEvent for GroupCreation {
         let end_time = start_time + Duration::days( 1 );
         Ok( FullEventInfo {
             id: ID,
-            name: group_name,
+            name: group_info.name,
             start_time: start_time,
             end_time: end_time,
             data: json::encode( &info ).unwrap()
@@ -197,7 +201,9 @@ impl Event for GroupCreation {
     }
     /// применение действия пользователя на это событие
     fn user_action_post( &self, req: &mut Request, body: &ScheduledEventInfo ) -> AnswerResult {
-        let vote: bool = try!( req.get_param( "vote" ) ) == "yes";
+        let vote_info = try!( req.get_body::<VoteInfo>() );
+        let vote: bool = vote_info.vote == "yes";
+        
         let user_id = req.user().id;
         let db = try!( req.stuff().get_current_db_conn() );
         let is_need_vote = try!( db.is_need_user_vote( body.scheduled_id, user_id ) );
@@ -244,13 +250,6 @@ struct Info {
 impl FromError<String> for AnswerResult {
     fn from_error( err: String ) -> AnswerResult {
         Err( err )
-    }
-}
-
-fn convert_member( s: &String ) -> CommonResult<Id> {
-    match FromStr::from_str( &s ).ok() {
-        Some( id ) => Ok( id ),
-        None => Err( err_msg::invalid_type_param( MEMBERS ) )
     }
 }
 

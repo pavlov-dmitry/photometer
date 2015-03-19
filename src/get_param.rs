@@ -8,14 +8,14 @@ use time::Timespec;
 use iron::prelude::Request;
 
 pub trait GetParamable {
-    fn get_param( &self, prm: &str ) -> CommonResult<&str>;
-    fn get_param_bin( &self, prm: &str ) -> CommonResult<&[u8]>;
-    fn get_param_uint( &self, prm: &str ) -> CommonResult<usize>;
-    fn get_param_id( &self, prm: &str ) -> CommonResult<Id>;
-    fn get_param_time( &self, prm: &str ) -> CommonResult<Timespec>;
-    fn get_params( &self, prm: &str ) -> CommonResult<&Vec<String>>;
-    fn get_params_id( &self, prm: &str ) -> CommonResult<Vec<Id>>;
-    fn get_params_time( &self, prm: &str ) -> CommonResult<Vec<Timespec>>;
+    fn get_param( &mut self, prm: &str ) -> CommonResult<&str>;
+    fn get_param_bin( &mut self, prm: &str ) -> CommonResult<&[u8]>;
+    fn get_param_uint( &mut self, prm: &str ) -> CommonResult<usize>;
+    fn get_param_id( &mut self, prm: &str ) -> CommonResult<Id>;
+    fn get_param_time( &mut self, prm: &str ) -> CommonResult<Timespec>;
+    fn get_params( &mut self, prm: &str ) -> CommonResult<&Vec<String>>;
+    fn get_params_id( &mut self, prm: &str ) -> CommonResult<Vec<Id>>;
+    fn get_params_time( &mut self, prm: &str ) -> CommonResult<Vec<Timespec>>;
 }
 
 //TODO: проверить на следующей версии раста, а пока ICE =(
@@ -32,7 +32,7 @@ pub trait FromParams<'a> {
 
 impl<'a> GetParamable for Request<'a> {
     //инкапсулирует поиск параметра сначало в текстовом виде, потом в бинарном
-    fn get_param( &self, prm: &str ) -> CommonResult<&str> {
+    fn get_param( &mut self, prm: &str ) -> CommonResult<&str> {
         match self.parameter( prm ) {
             Some( s ) => Ok( &s ),
             None => match self.bin_parameter( prm ) {
@@ -44,23 +44,23 @@ impl<'a> GetParamable for Request<'a> {
             }
         }
     }
-    fn get_params( &self, prm: &str ) -> CommonResult<&Vec<String>> {
+    fn get_params( &mut self, prm: &str ) -> CommonResult<&Vec<String>> {
         self.parameters( prm )
             .ok_or( err_msg::param_not_found( prm ) )
     }
-    fn get_param_bin( &self, prm: &str ) -> CommonResult<&[u8]> {
+    fn get_param_bin( &mut self, prm: &str ) -> CommonResult<&[u8]> {
         self.bin_parameter( prm ).ok_or( err_msg::invalid_type_param( prm ) )
     }
-    fn get_param_uint( &self, prm: &str ) -> CommonResult<usize> {
+    fn get_param_uint( &mut self, prm: &str ) -> CommonResult<usize> {
         self.get_param( prm )
             .and_then( |s| FromStr::from_str( s ).map_err( |_| err_msg::invalid_type_param( prm ) ) )
     }
-    fn get_param_id( &self, prm: &str ) -> CommonResult<Id> {
+    fn get_param_id( &mut self, prm: &str ) -> CommonResult<Id> {
         self.get_param( prm )
             .and_then( |s| FromStr::from_str( s ).map_err( |_| err_msg::invalid_type_param( prm ) ) ) 
     }
 
-    fn get_param_time( &self, prm: &str ) -> CommonResult<Timespec> {
+    fn get_param_time( &mut self, prm: &str ) -> CommonResult<Timespec> {
         self.get_param( prm )
             .and_then( |s| time::strptime( s, TIME_FORMAT )
                 .map_err( |_| err_msg::parsing_error_param( prm ) )
@@ -68,7 +68,7 @@ impl<'a> GetParamable for Request<'a> {
             )
     }
 
-    fn get_params_id( &self, prm: &str ) -> CommonResult<Vec<Id>> {
+    fn get_params_id( &mut self, prm: &str ) -> CommonResult<Vec<Id>> {
         let strings = try!( self.get_params( prm ) );
         let mut ids = Vec::new();
         for s in strings {
@@ -78,7 +78,7 @@ impl<'a> GetParamable for Request<'a> {
         Ok( ids )
     }
 
-    fn get_params_time( &self, prm: &str ) -> CommonResult<Vec<Timespec>> {
+    fn get_params_time( &mut self, prm: &str ) -> CommonResult<Vec<Timespec>> {
         let strings = try!( self.get_params( prm ) );
         let mut times = Vec::new();
         for s in strings {
