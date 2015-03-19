@@ -12,6 +12,7 @@ use stuff::Stuffable;
 use db::photos::{ DbPhotos };
 use iron::prelude::*;
 use iron::status;
+use params_body_parser::{ ParamsBody, BinParamsError };
 
 static IMAGE : &'static str = "upload_img";
 
@@ -21,17 +22,41 @@ pub fn upload_photo( request: &mut Request ) -> IronResult<Response> {
 }
 
 fn upload_photo_answer( request: &mut Request ) -> AnswerResult {
-    //let filename = try!( request.get_param( IMAGE_FILENAME ) ).to_string();
     let mut answer = Answer::new();
-    /*match check_image_type( &filename ) {
+
+    let params = match request.parse_bin_params() {
+        Ok( p ) => p,
+
+        Err( BinParamsError::TooBig ) => {
+            answer.add_error( "photo", "too_big" );
+            return Ok( answer );
+        }
+
+        Err( BinParamsError::NotMultipartFormData ) => {
+            return Err( String::from_str( "not a multiform data" ) );
+        }
+    };
+
+    // проверка правильности переданных параметров
+    let image = match params.get( IMAGE ) {
+        Some( img ) => img,
+        None => return Err( err_msg::param_not_found( IMAGE ) )
+    };
+    let image_filename = match image.filename {
+        Some( ref filename ) => filename,
+        None => return Err( err_msg::invalid_type_param( IMAGE ) )
+    };
+    
+    match check_image_type( &image_filename ) {
         Some( tp ) => {
+
             let photo_info = {
                 let photo_store = request.photo_store();
                 let upload_time = time::get_time();
-                let img_data = try!( request.get_param_bin( IMAGE ) );
-                photo_store.add_new_photo( request.user(), &upload_time, tp.clone(), img_data )
-                    .map( |(w, h)| make_photo_info( upload_time, tp.clone(), w, h, img_data ) )
+                photo_store.add_new_photo( request.user(), &upload_time, tp.clone(), &image.data )
+                    .map( |(w, h)| make_photo_info( upload_time, tp.clone(), w, h, &image.data ) )
             };
+
             match photo_info {
                 Ok( photo_info ) => {
                     let user_id = request.user().id;
@@ -43,13 +68,13 @@ fn upload_photo_answer( request: &mut Request ) -> AnswerResult {
                 }
                 Err( e ) => match e {
                     PhotoStoreError::Fs( e ) => return Err( err_msg::old_fs_error( e ) ),
-                    PhotoStoreError::Format => answer.add_error( "photo", "bad_image" ),
-                    PhotoStoreError::FileSize => answer.add_error( "photo", "too_big" )
+                    PhotoStoreError::Format => answer.add_error( "photo", "bad_image" )
                 }
             }
         }
+
         None => answer.add_record( "photo", &String::from_str( "unknown_format" ) )
-    }*/
+    }
     Ok( answer )
 }
 

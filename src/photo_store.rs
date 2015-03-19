@@ -21,12 +21,11 @@ use iron::prelude::*;
 
 static GALLERY_DIR : &'static str = "gallery";
 
-pub fn middleware( photo_dir: &String, max_photo_size_bytes: usize, preview_size: usize ) -> PhotoStore {
+pub fn middleware( photo_dir: &String, preview_size: usize ) -> PhotoStore {
     PhotoStore {
         params: Arc::new(
             Params {
                 photos_dir: (*photo_dir).clone(),
-                max_photo_size_bytes: max_photo_size_bytes,
                 preview_size: preview_size as u32
             }
         )
@@ -35,7 +34,6 @@ pub fn middleware( photo_dir: &String, max_photo_size_bytes: usize, preview_size
 
 struct Params {
     photos_dir : String,
-    max_photo_size_bytes : usize,
     preview_size : u32,
 }
 
@@ -49,9 +47,7 @@ pub enum PhotoStoreError {
     #[allow(deprecated)]
     Fs( old_io::IoError ),
     /// ошибка в формате данных
-    Format,
-    /// ошибка размера данных
-    FileSize
+    Format
 }
 
 pub type PhotoStoreResult<T> = Result<T, PhotoStoreError>;
@@ -71,35 +67,32 @@ impl PhotoStore {
     /// добавляет фотографию привязанную к опеределнному событию
     #[allow(deprecated)]
     pub fn add_new_photo( &self, user: &User, upload_time: &Timespec, img_type: ImageType, img_data: &[u8] ) -> PhotoStoreResult<(u32, u32)> {
-        if img_data.len() < self.params.max_photo_size_bytes {
-            match image::load_from_memory_with_format( img_data, to_image_format( &img_type ) ) {
-                Ok( mut img ) => {
-                    let (w, h) = img.dimensions();
-                    let crop_size = min( w, h );
-                    //let mut preview = img.crop( w / 2 - crop_size / 2, h / 2 - crop_size / 2, crop_size, crop_size );
-                    //preview = preview.resize_exact( self.params.preview_size, self.params.preview_size, image::Lanczos3 );
-                    let preview_filename = self.make_filename( &user.name, upload_time, &img_type, true );
-                    let fs_sequience =
-                        self.save_preview(
-                            &mut img,
-                            Path::new( preview_filename ),
-                            ( w / 2 - crop_size / 2, h / 2 - crop_size / 2 ),
-                            ( crop_size, crop_size )
-                        )
-                        .and_then( |_| File::create(
-                            &Path::new( &self.make_filename( &user.name, upload_time, &img_type, false ) )
-                        ) )
-                        .and_then( |mut file| file.write_all( img_data ) );
-                    match fs_sequience {
-                        Ok(_) => Ok( (w, h) ),
-                        Err( e ) => Err( PhotoStoreError::Fs( e ) )
-                    }
+        match image::load_from_memory_with_format( img_data, to_image_format( &img_type ) ) {
+            Ok( mut img ) => {
+                let (w, h) = img.dimensions();
+                let crop_size = min( w, h );
+                //let mut preview = img.crop( w / 2 - crop_size / 2, h / 2 - crop_size / 2, crop_size, crop_size );
+                //preview = preview.resize_exact( self.params.preview_size, self.params.preview_size, image::Lanczos3 );
+                let preview_filename = self.make_filename( &user.name, upload_time, &img_type, true );
+
+                let fs_sequience =
+                    self.save_preview(
+                        &mut img,
+                        Path::new( preview_filename ),
+                        ( w / 2 - crop_size / 2, h / 2 - crop_size / 2 ),
+                        ( crop_size, crop_size )
+                    )
+                    .and_then( |_| File::create(
+                        &Path::new( &self.make_filename( &user.name, upload_time, &img_type, false ) )
+                    ) )
+                    .and_then( |mut file| file.write_all( img_data ) );
+
+                match fs_sequience {
+                    Ok(_) => Ok( (w, h) ),
+                    Err( e ) => Err( PhotoStoreError::Fs( e ) )
                 }
-                _ => Err( PhotoStoreError::Format )
             }
-        }
-        else {
-            Err( PhotoStoreError::FileSize )
+            _ => Err( PhotoStoreError::Format )
         }
     }
 

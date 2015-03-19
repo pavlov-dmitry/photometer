@@ -47,8 +47,7 @@ fn crop_photo_answer( request: &mut Request ) -> AnswerResult {
                     Ok( _ ) => answer.add_record( "cropped", &String::from_str( "ok" ) ),
                     Err( e ) => match e {
                         PhotoStoreError::Fs( e ) => return Err( err_msg::old_fs_error( e ) ),
-                        PhotoStoreError::Format => answer.add_error( "photo", "bad_image" ),
-                        _ => return Err( String::from_str( "crop unknown error" ) )
+                        PhotoStoreError::Format => answer.add_error( "photo", "bad_image" )
                     }
                 }
             }

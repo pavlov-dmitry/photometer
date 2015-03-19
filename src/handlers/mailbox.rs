@@ -8,7 +8,6 @@ use iron::status;
 use get_body::GetBody;
 use types::Id;
 
-static PAGE: &'static str = "page";
 const IN_PAGE_COUNT: u32 = 10;
 
 pub fn count(request: &mut Request ) -> IronResult<Response> {

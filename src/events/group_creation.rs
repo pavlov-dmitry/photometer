@@ -1,7 +1,6 @@
 use std::collections::HashSet;
 use rustc_serialize::json;
 use std::error::FromError;
-use std::str::FromStr;
 use iron::prelude::*;
 
 use super::{ 
@@ -10,7 +9,6 @@ use super::{
     UserEvent, 
     FullEventInfo
 };
-use err_msg;
 use types::{ Id, EmptyResult, CommonResult };
 use answer::{ Answer, AnswerResult };
 use database::{ Databaseable };
@@ -62,7 +60,7 @@ impl UserEvent for GroupCreation {
 
         let group_info = try!( req.get_body::<GroupInfo>() );
 
-        let mut info = Info {
+        let info = Info {
             initiator: req.user().id,
             members: HashSet::new(),
             name: group_info.name.clone(),

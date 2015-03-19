@@ -53,7 +53,6 @@ mod types;
 mod db;
 mod events;
 mod err_msg;
-//mod get_param;
 mod simple_time_profiler;
 mod request_logger;
 mod not_found_switcher;
@@ -124,9 +123,6 @@ fn main() {
         handlers::authentication::registration_end
     );
 
-    //let mut static_mount = Mount::new();
-    //static_mount.mount( "/", Static::new( Path::new( "../www/" ) ) );
-    //static_mount.mount( "/js/", Static::new( Path::new( "../www/js/" ) ) );
     no_auth_router.get( "/*", add_static_path( "../www" ) );
 
     let mut stuff = StuffCollection::new();
@@ -147,11 +143,9 @@ fn main() {
     chain.link_before( Read::<bodyparser::MaxBodyLength>::one( MAX_BODY_LENGTH ) );
     chain.link_before( authentication::create_session_store() );
     chain.link_before( stuff_middleware );
-    //chain.link_before( params_body_parser::middleware() );
     chain.link_before(
         photo_store::middleware(
             &cfg.photo_store_path,
-            cfg.photo_store_max_photo_size_bytes,
             cfg.photo_store_preview_size
         )
     );
