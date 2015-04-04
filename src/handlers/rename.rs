@@ -8,6 +8,7 @@ use iron::prelude::*;
 use iron::status;
 use types::Id;
 use get_body::GetBody;
+use answer_types::{ OkInfo, PhotoErrorInfo, AccessErrorInfo };
 
 pub fn rename_photo( req: &mut Request ) -> IronResult<Response> {
     Ok( Response::with( (status::Ok, rename_answer( req )) ) )
@@ -25,19 +26,18 @@ fn rename_answer( request: &mut Request ) -> AnswerResult {
         let db = try!( request.stuff().get_current_db_conn() );
         try!( db.get_photo_info( rename_info.id ) )
     };
-    let mut answer = Answer::new();
-    match maybe_photo_info {
+    let answer = match maybe_photo_info {
         Some( (user, _ ) ) => {
             if user == request.user().name {
                 let db = try!( request.stuff().get_current_db_conn() );
                 let _ = try!( db.rename_photo( rename_info.id, &rename_info.name ) );
-                answer.add_record( "rename", &String::from_str( "ok" ) );
+                Answer::good( OkInfo::new( "rename" ) )
             }
             else {
-                answer.add_error( "access", "denied" );
+                Answer::bad( AccessErrorInfo::new() )
             }
         },
-        None => answer.add_error( "photo", "not_found" ),
-    }
+        None => Answer::bad( PhotoErrorInfo::not_found() )
+    };
     Ok( answer )
 }

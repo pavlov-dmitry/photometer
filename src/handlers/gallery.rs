@@ -10,6 +10,7 @@ use iron::prelude::*;
 use iron::status;
 use router_params::RouterParams;
 use get_body::GetBody;
+use answer_types::CountInfo;
 
 static YEAR: &'static str = "year";
 const IN_PAGE_COUNT: u32 = 10;
@@ -33,7 +34,10 @@ pub fn by_year_path() -> &'static str {
 }
 
 pub fn current_year_count( request: &mut Request ) -> IronResult<Response> {
-    Ok( Response::with( (status::Ok, by_year_count_answer( request, time::now().tm_year + FROM_YEAR )) ) )
+    Ok( Response::with( (
+        status::Ok,
+        by_year_count_answer( request, time::now().tm_year + FROM_YEAR )
+    ) ) )
 }
 
 pub fn by_year_count( request: &mut Request ) -> IronResult<Response> {
@@ -59,16 +63,15 @@ pub fn by_year( request: &mut Request ) -> IronResult<Response> {
 }
 
 fn by_year_count_answer( req: &mut Request, year: i32 ) -> AnswerResult {
-    let mut answer = Answer::new();
     let ( from, to ) = times_gate_for_year( year );
     let user_id = req.user().id;
     let db = try!( req.stuff().get_current_db_conn() );
-    let photos_count = try!( db.get_photo_infos_count( 
-        user_id, 
-        from.to_timespec(), 
-        to.to_timespec() 
+    let photos_count = try!( db.get_photo_infos_count(
+        user_id,
+        from.to_timespec(),
+        to.to_timespec()
     ) );
-    answer.add_record( "photo_count", &photos_count );
+    let answer = Answer::good( CountInfo::new( photos_count ) );
     Ok( answer )
 }
 
@@ -78,27 +81,27 @@ struct PageInfo {
 }
 
 fn by_year_answer( req: &mut Request, year: i32 ) -> AnswerResult {
-    let mut answer = Answer::new();
     let page = try!( req.get_body::<PageInfo>() ).page;
 
     let ( from, to ) = times_gate_for_year( year );
     let user_id = req.user().id;
     let db = try!( req.stuff().get_current_db_conn() );
-    let photo_infos = try!( db.get_photo_infos(  
+    let photo_infos = try!( db.get_photo_infos(
         user_id,
         from.to_timespec(),
         to.to_timespec(),
         page * IN_PAGE_COUNT,
         IN_PAGE_COUNT
     ) );
-    for photo_info in photo_infos.iter() {
-        answer.add_to_records( photo_info );
-    }
+    // for photo_info in photo_infos.iter() {
+    //     answer.add_to_records( photo_info );
+    // }
+    let answer = Answer::good( photo_infos );
     Ok( answer )
 }
 
 fn times_gate_for_year( year: i32 ) -> (time::Tm, time::Tm) {
-    ( 
+    (
         time::Tm {
             tm_year: year - FROM_YEAR,
             ..time::empty_tm()

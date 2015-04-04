@@ -1,49 +1,49 @@
-use rustc_serialize::{ Encodable, Encoder };
-use rustc_serialize::json::{ self, ToJson, Json };
-use std::collections::BTreeMap;
+use rustc_serialize::{ Encodable };
+use rustc_serialize::json;
 use iron::modifier::Modifier;
 use iron::prelude::*;
 use iron::mime;
 use iron::status;
 
-use types::{ PhotoInfo, ImageType, CommonResult, MailInfo };
+use types::{ CommonResult };
 
 pub trait AnswerSendable {
     fn send_answer( &mut self, answer: &AnswerResult );
 }
 
-#[derive(RustcEncodable)]
-pub struct Answer {
-    records_exists: bool,
-    records: Records,
-    errors_exists: bool,
-    errors: Vec<Error>
+type ToStringPtr = Box<ToString>;
+
+//TODO: после обновления до беты убрать static lifetime
+struct AnswerBody<Body: Encodable + 'static> {
+    body: Body
+}
+
+fn new_body<Body: Encodable + 'static>( body: Body ) -> AnswerBody<Body> {
+    AnswerBody {
+        body: body
+    }
+}
+
+impl<Body: Encodable + 'static> ToString for AnswerBody<Body> {
+    fn to_string( &self ) -> String {
+        json::encode( &self.body ).unwrap()
+    }
+}
+
+pub enum Answer {
+    Good( ToStringPtr ),
+    Bad( ToStringPtr )
 }
 
 pub type AnswerResult = CommonResult<Answer>;
 
 impl Answer {
-    pub fn new() -> Answer {
-        Answer{  
-            records_exists: false,
-            records: Vec::new(),
-            errors_exists: false,
-            errors: Vec::new()
-        }
+    pub fn good<Body: Encodable + 'static>(body: Body) -> Answer {
+        Answer::Good( Box::new( new_body( body ) ) as ToStringPtr )
     }
 
-    pub fn add_error( &mut self, field: &str, reason: &str ) {
-        self.errors_exists = true;
-        self.errors.push( Error{ field: field.to_string(), reason: reason.to_string() } );
-    }
-    pub fn add_record( &mut self, field: &str, value: &ToJson ) {
-        self.records_exists = true;
-        self.records.push( Record{ field: field.to_string(), value: value.to_json() }.to_json() );
-    }
-
-    pub fn add_to_records(&mut self, value: &ToJson ) {
-        self.records_exists = true;
-        self.records.push( value.to_json() );
+    pub fn bad<Body: Encodable + 'static>(body: Body) -> Answer {
+        Answer::Bad( Box::new( new_body( body ) ) as ToStringPtr )
     }
 }
 
@@ -54,7 +54,20 @@ impl Modifier<Response> for AnswerResult {
             Ok( ref answer ) => {
                 let mime: mime::Mime = "application/json;charset=utf8".parse().unwrap();
                 mime.modify( res );
-                json::encode( answer ).unwrap().modify( res );        
+
+                match answer {
+                    &Answer::Good( ref body ) => {
+                        let answer_status = status::Ok;
+                        answer_status.modify( res );
+                        body.to_string().modify( res );
+                    }
+
+                    &Answer::Bad( ref body ) => {
+                        let answer_status = status::BadRequest;
+                        answer_status.modify( res );
+                        body.to_string().modify( res );
+                    }
+                }
             }
 
             Err( err ) => {
@@ -66,72 +79,35 @@ impl Modifier<Response> for AnswerResult {
     }
 }
 
-#[derive(RustcEncodable)]
-struct Record {
-    field: String,
-    value: Json
-}
 
-#[derive(RustcEncodable)]
-struct Error {
-    field: String,
-    reason: String
-}
-
-type Records = Vec<Json>;
-
-impl ToJson for Record {
-    fn to_json(&self) -> Json {
-        let mut d = BTreeMap::new();
-        d.insert( self.field.clone(), self.value.to_json() );
-        Json::Object(d)
-    }
-}
-
-impl ToJson for ImageType {
-    fn to_json(&self) -> Json {
-        Json::String( self.to_string() )
-    }
-}
-
-trait AddToJson {
-    fn add( &mut self, name: &str, value: &ToJson );
-}
-
-impl AddToJson for json::Object {
-    fn add( &mut self, name: &str, value: &ToJson ) {
-        self.insert( String::from_str( name ), value.to_json() );
-    }
-}
-
-impl ToJson for PhotoInfo {
-    fn to_json(&self) -> Json {
-        let mut d = BTreeMap::new();
-        d.add( "id", &self.id );
-        d.add( "type", &self.image_type );
-        d.add( "width", &self.width );
-        d.add( "height", &self.height );
-        d.add( "name", &self.name );
-        d.add( "iso", &self.iso );
-        d.add( "shutter", &self.shutter_speed );
-        d.add( "aperture", &self.aperture );
-        d.add( "focal_length", &self.focal_length );
-        d.add( "focal_length_35mm", &self.focal_length_35mm );
-        d.add( "camera_model", &self.camera_model );
-        Json::Object( d )
-    }
-}
+// impl ToJson for PhotoInfo {
+//     fn to_json(&self) -> Json {
+//         let mut d = BTreeMap::new();
+//         d.add( "id", &self.id );
+//         d.add( "type", &self.image_type );
+//         d.add( "width", &self.width );
+//         d.add( "height", &self.height );
+//         d.add( "name", &self.name );
+//         d.add( "iso", &self.iso );
+//         d.add( "shutter", &self.shutter_speed );
+//         d.add( "aperture", &self.aperture );
+//         d.add( "focal_length", &self.focal_length );
+//         d.add( "focal_length_35mm", &self.focal_length_35mm );
+//         d.add( "camera_model", &self.camera_model );
+//         Json::Object( d )
+//     }
+// }
 
 
-impl ToJson for MailInfo {
-    fn to_json( &self ) -> Json {
-        let mut d = BTreeMap::new();
-        d.add( "id", &self.id );
-        d.add( "time", &self.creation_time.sec );
-        d.add( "sender", &self.sender_name );
-        d.add( "subject", &self.subject );
-        d.add( "body", &self.body );
-        d.add( "readed", &self.readed );
-        Json::Object( d )
-    }
-}
+// impl ToJson for MailInfo {
+//     fn to_json( &self ) -> Json {
+//         let mut d = BTreeMap::new();
+//         d.add( "id", &self.id );
+//         d.add( "time", &self.creation_time.sec );
+//         d.add( "sender", &self.sender_name );
+//         d.add( "subject", &self.subject );
+//         d.add( "body", &self.body );
+//         d.add( "readed", &self.readed );
+//         Json::Object( d )
+//     }
+// }

@@ -7,6 +7,7 @@ use iron::prelude::*;
 use iron::status;
 use get_body::GetBody;
 use types::Id;
+use answer_types::{ OkInfo, CountInfo, AccessErrorInfo };
 
 const IN_PAGE_COUNT: u32 = 10;
 
@@ -22,8 +23,7 @@ fn count_answer( req: &mut Request, only_unreaded: bool ) -> AnswerResult {
     let user_id = req.user().id;
     let db = try!( req.stuff().get_current_db_conn() );
     let count = try!( db.messages_count( user_id, only_unreaded ) );
-    let mut answer = Answer::new();
-    answer.add_record( "count", &count );
+    let answer = Answer::good( CountInfo::new( count ) );
     Ok( answer )
 }
 
@@ -44,16 +44,16 @@ fn get_answer( req: &mut Request, only_unreaded: bool ) -> AnswerResult {
     let page = try!( req.get_body::<PageInfo>() ).page;
     let user_id = req.user().id;
     let db = try!( req.stuff().get_current_db_conn() );
-    let mut answer = Answer::new();
-    try!( 
-        db.messages_from_last( 
-            user_id,
-            only_unreaded,
-            page * IN_PAGE_COUNT,
-            IN_PAGE_COUNT,
-            &mut |mail_info| answer.add_to_records( mail_info )
-        )
-    );
+    let infos = {
+        let mut infos = Vec::new();
+        try!( db.messages_from_last( user_id,
+                                     only_unreaded,
+                                     page * IN_PAGE_COUNT,
+                                     IN_PAGE_COUNT,
+                                     &mut |mail_info| infos.push( mail_info ) ) );
+        infos
+    };
+    let answer = Answer::good( infos );
     Ok( answer )
 }
 
@@ -71,12 +71,11 @@ pub fn mark_as_readed_answer( req: &mut Request ) -> AnswerResult {
     let user_id = req.user().id;
     let db = try!( req.stuff().get_current_db_conn() );
     let success = try!( db.mark_as_readed( user_id, id ) );
-    let mut answer = Answer::new();
-    if success {
-        answer.add_record( "marked", &success );
+    let answer = if success {
+        Answer::good( OkInfo::new( "marked" ) )
     }
     else {
-        answer.add_error( "permisson", "denied" );
-    }
+        Answer::bad( AccessErrorInfo::new() )
+    };
     Ok( answer )
 }

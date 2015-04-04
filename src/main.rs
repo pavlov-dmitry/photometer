@@ -62,6 +62,7 @@ mod trigger;
 mod mailer;
 mod mail_writer;
 mod get_body;
+mod answer_types;
 
 use stuff::{ StuffCollection, StuffMiddleware };
 

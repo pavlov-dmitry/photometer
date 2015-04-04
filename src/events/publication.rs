@@ -16,6 +16,7 @@ use std::time::duration::Duration;
 use time;
 use iron::prelude::*;
 use get_body::GetBody;
+use answer_types::{ OkInfo, PhotoErrorInfo, AccessErrorInfo };
 
 #[derive(Clone)]
 pub struct Publication;
@@ -45,10 +46,10 @@ impl Event for Publication {
             try!( db.get_members( info.group_id ) )
         };
         for user in members.iter() {
-            let (subject, mail) = stuff.write_time_for_publication_mail( 
-                &body.name, 
-                &user.name, 
-                body.scheduled_id 
+            let (subject, mail) = stuff.write_time_for_publication_mail(
+                &body.name,
+                &user.name,
+                body.scheduled_id
             );
             try!( stuff.send_mail( user, &subject, &mail ) );
         }
@@ -60,28 +61,27 @@ impl Event for Publication {
         let db = try!( stuff.get_current_db_conn() );
         try!( db.make_publication_visible( body.scheduled_id, info.group_id ) );
         //TODO: старт голосования
-        
+
         //старт события загрузки опоздавших
         //FIXME: использовать более "дешевую" функцию для определения что есть отставшие
         let unpublished_users = try!( db.get_unpublished_users( body.scheduled_id, info.group_id ) );
         if unpublished_users.is_empty() == false {
-            let event_info = LatePublication::create_info( 
+            let event_info = LatePublication::create_info(
                 body.scheduled_id,
-                info.group_id, 
-                &body.name, 
-                time::get_time(), 
+                info.group_id,
+                &body.name,
+                time::get_time(),
                 Duration::days( 365 )
             );
             try!( db.add_events( &[ event_info ] ) );
         }
-        
+
         Ok( () )
     }
-    /// описание действиz пользователя на это событие 
+    /// описание действиz пользователя на это событие
     fn user_action_get( &self, _req: &mut Request, _body: &ScheduledEventInfo ) -> AnswerResult {
-        let mut answer = Answer::new();
         // TODO: переделать на нормальное отдачу, поговорить с Саньком, что ему нужно в этот момент
-        answer.add_record( "choose", &"from_gallery".to_string() );
+        let answer = Answer::good( OkInfo::new( "choose_from_gallery" ) );
         Ok( answer )
     }
     /// применение действия пользователя на это событие
@@ -90,19 +90,26 @@ impl Event for Publication {
         let photo_id = try!( req.get_body::<PhotoInfo>() ).id;
         let user = req.user().clone();
         let db = try!( req.stuff().get_current_db_conn() );
-        let mut answer = Answer::new();
-        if let Some( (user_name, _) ) = try!( db.get_photo_info( photo_id ) ) {
-            if user_name == user.name {
-                try!( db.public_photo( body.scheduled_id, info.group_id, user.id, photo_id, false ) );
-                answer.add_record( "published", &"ok".to_string() );
+
+        let answer = {
+            let photo_info = try!( db.get_photo_info( photo_id ) );
+            if let Some( (user_name, _) ) = photo_info {
+                if user_name == user.name {
+                    try!( db.public_photo( body.scheduled_id,
+                                           info.group_id,
+                                           user.id,
+                                           photo_id,
+                                           false ) );
+                    Answer::good( OkInfo::new( "published" ) )
+                }
+                else {
+                    Answer::bad( AccessErrorInfo::new() )
+                }
             }
             else {
-                answer.add_error( "permisson", "denied" );
+                Answer::bad( PhotoErrorInfo::not_found() )
             }
-        }
-        else {
-            answer.add_error( "photo", "not_found" );
-        }
+        };
         Ok( answer )
     }
     /// информация о состоянии события
@@ -112,11 +119,12 @@ impl Event for Publication {
         let group_members_count = try!( db.get_members_count( info.group_id ) );
         let published_photo_count = try!( db.get_published_photo_count( body.scheduled_id, info.group_id ) );
 
-        let mut answer = Answer::new();
-        answer.add_record( "id", &"publication".to_string() );
-        answer.add_record( "name", &body.name );
-        answer.add_record( "all_count", &group_members_count );
-        answer.add_record( "published", &published_photo_count );
+        let answer = Answer::good( PublicationInfo {
+            id: ID,
+            name: body.name.clone(),
+            all_count: group_members_count,
+            published: published_photo_count
+        } );
         Ok( answer )
     }
     /// проверка на возможное досрочное завершение
@@ -124,6 +132,14 @@ impl Event for Publication {
         // публикацию досрочно заверщать не будем, есть в ожидании что-то интересное
         Ok( false )
     }
+}
+
+#[derive(RustcEncodable)]
+struct PublicationInfo {
+    id: Id,
+    name: String,
+    all_count: u32,
+    published: u32
 }
 
 impl CreateFromTimetable for Publication {
@@ -139,7 +155,7 @@ impl CreateFromTimetable for Publication {
 }
 
 fn get_info( str_body: &String ) -> CommonResult<Info> {
-    json::decode( &str_body ).map_err( |e| format!( "Publication event decode error: {}", e ) )   
+    json::decode( &str_body ).map_err( |e| format!( "Publication event decode error: {}", e ) )
 }
 
 #[derive(RustcEncodable, RustcDecodable)]

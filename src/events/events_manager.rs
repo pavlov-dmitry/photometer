@@ -11,6 +11,7 @@ use types::{ Id };
 use iron::prelude::*;
 use authentication::Userable;
 use db::groups::DbGroups;
+use answer_types::{ OkInfo, FieldErrorInfo };
 
 pub trait EventsManagerStuff {
     fn maybe_start_some_events(&mut self) -> EmptyResult;
@@ -28,10 +29,10 @@ pub trait EventsManagerRequest {
 }
 
 impl EventsManagerStuff for Stuff {
-    
+
     /// исполняет события на старт
     fn maybe_start_some_events( &mut self ) -> EmptyResult {
-        let events = { 
+        let events = {
             let db = try!( self.get_current_db_conn() );
             try!( db.starting_events( &time::get_time() ) )
         };
@@ -123,8 +124,7 @@ impl<'a> EventsManagerRequest for Request<'a> {
                 Err( answer_result ) => answer_result
             }
         } else {
-            let mut answer = Answer::new();
-            answer.add_error( "user", "not_in_group" );
+            let answer = Answer::bad( FieldErrorInfo::new( "user", "not_in_group" ) );
             Ok( answer )
         }
     }
@@ -135,8 +135,7 @@ fn apply_event( event: FullEventInfo, req: &mut Request ) -> AnswerResult {
     let db = try!( req.stuff().get_current_db_conn() );
     try!( db.add_events( &[ event ] ) );
 
-    let mut answer = Answer::new();
-    answer.add_record( "event", &"created".to_string() );
+    let answer = Answer::good( OkInfo::new( "created" ) );
     Ok( answer )
 }
 
@@ -146,7 +145,7 @@ trait EventsManagerStuffPrivate {
 }
 
 trait EventsManagerPrivate {
-    fn if_has_event<F: Fn(EventPtr, ScheduledEventInfo, &mut Request) -> AnswerResult>( 
+    fn if_has_event<F: Fn(EventPtr, ScheduledEventInfo, &mut Request) -> AnswerResult>(
         &mut self, scheduled_id: Id, do_this: F
     ) -> AnswerResult;
 }
@@ -159,14 +158,14 @@ impl EventsManagerStuffPrivate for Stuff {
     fn finish_him( &mut self, event: EventPtr, info: &ScheduledEventInfo ) -> EmptyResult {
         try!( event.finish( self, info ) );
         let db = try!( self.get_current_db_conn() );
-        try!( db.set_event_state( info.scheduled_id, EventState::Finished ) );  
+        try!( db.set_event_state( info.scheduled_id, EventState::Finished ) );
         Ok( () )
     }
 }
 
 impl<'a> EventsManagerPrivate for Request<'a> {
     // db приходится передавать по цепочке, иначе содается вторая mut ссылка в замыкании, что естественно делать нельзя
-    fn if_has_event<F: Fn(EventPtr, ScheduledEventInfo, &mut Request) -> AnswerResult>( 
+    fn if_has_event<F: Fn(EventPtr, ScheduledEventInfo, &mut Request) -> AnswerResult>(
         &mut self,  scheduled_id: Id, do_this: F
     ) -> AnswerResult {
         let event_info = {
@@ -175,14 +174,13 @@ impl<'a> EventsManagerPrivate for Request<'a> {
         };
         match event_info {
             Some( event_info ) => {
-                let event = try!( events_collection::get_event( event_info.id ) ); 
+                let event = try!( events_collection::get_event( event_info.id ) );
                 do_this( event, event_info, self )
             },
             None => {
-                let mut answer = Answer::new();
-                answer.add_error( "event", "not_found" );
+                let answer = Answer::bad( FieldErrorInfo::new( "event", "not_found" ) );
                 Ok( answer )
             }
-        } 
+        }
     }
 }

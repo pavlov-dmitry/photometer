@@ -20,9 +20,9 @@ pub struct User {
 
 /*impl User {
     pub fn new( name: &str, id: Id ) -> User {
-        User { 
-            name: name.to_string(), 
-            id: id 
+        User {
+            name: name.to_string(),
+            id: id
         }
     }
 }*/
@@ -55,9 +55,9 @@ pub struct SessionsStore {
 
 impl SessionsStore {
     pub fn new() -> SessionsStore {
-        SessionsStore { 
-            sessions : HashMap::new(), 
-            sessions_by_user : HashMap::new(), 
+        SessionsStore {
+            sessions : HashMap::new(),
+            sessions_by_user : HashMap::new(),
             session_id_generator : SessionIdGenerator::new()
         }
     }
@@ -95,7 +95,7 @@ impl BeforeMiddleware for SessionsStoreMiddleware {
     fn before( &self, req: &mut Request ) -> IronResult<()> {
         req.extensions.insert::<SessionsStoreMiddleware>( (*self).clone() );
         Ok( () )
-    } 
+    }
 }
 
 pub trait SessionsStoreable {
@@ -124,7 +124,7 @@ pub struct AuthenticationHandler<H: Handler> {
 }
 
 impl Autentication {
-    fn make_login ( &self ) -> IronResult<Response> { 
+    fn make_login ( &self ) -> IronResult<Response> {
         Ok( Response::with(( status::Found, Redirect( (*self.login_url).clone() ) )) )
     }
 }
@@ -148,7 +148,7 @@ impl<H: Handler> Handler for AuthenticationHandler<H> {
         } );
 
         match some_user {
-            None => { 
+            None => {
                 self.authentication.make_login()
             }
             Some( user ) => {
@@ -156,7 +156,7 @@ impl<H: Handler> Handler for AuthenticationHandler<H> {
                 self.handler.handle( req )
             }
         }
-    } 
+    }
 }
 
 /// простой доступ из Request-a к информации о пользователе

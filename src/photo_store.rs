@@ -71,10 +71,13 @@ impl PhotoStore {
             Ok( mut img ) => {
                 let (w, h) = img.dimensions();
                 let crop_size = min( w, h );
-                //let mut preview = img.crop( w / 2 - crop_size / 2, h / 2 - crop_size / 2, crop_size, crop_size );
-                //preview = preview.resize_exact( self.params.preview_size, self.params.preview_size, image::Lanczos3 );
-                let preview_filename = self.make_filename( &user.name, upload_time, &img_type, true );
+                let preview_filename = self.make_filename(
+                    &user.name,
+                    upload_time.sec,
+                    &img_type,
+                    true );
 
+                //TODO: переписать по красивше
                 let fs_sequience =
                     self.save_preview(
                         &mut img,
@@ -83,7 +86,11 @@ impl PhotoStore {
                         ( crop_size, crop_size )
                     )
                     .and_then( |_| File::create(
-                        &Path::new( &self.make_filename( &user.name, upload_time, &img_type, false ) )
+                        &Path::new( &self.make_filename(
+                            &user.name,
+                            upload_time.sec,
+                            &img_type,
+                            false ) )
                     ) )
                     .and_then( |mut file| file.write_all( img_data ) );
 
@@ -108,12 +115,12 @@ impl PhotoStore {
     #[allow(deprecated)]
     pub fn make_crop(
         &self, user: &String,
-        upload_time: Timespec,
+        upload_time: i64,
         image_type: ImageType,
         (tlx, tly): (u32, u32),
         (brx, bry) : (u32, u32)
     ) -> PhotoStoreResult<()> {
-        let filename = self.make_filename( user, &upload_time, &image_type, false );
+        let filename = self.make_filename( user, upload_time, &image_type, false );
         match image::open( &Path::new( filename ) ) {
             Ok( mut img ) => {
                 let (w, h) = img.dimensions();
@@ -122,7 +129,7 @@ impl PhotoStore {
                 let (brx, bry) = ( max( tlx, brx ), max( tly, bry ) );
                 let top_left = ( min( tlx, brx ), min( tly, bry ) );
                 let dimensions = ( brx - tlx, bry - tly );
-                let preview_filename = self.make_filename( user, &upload_time, &image_type, true );
+                let preview_filename = self.make_filename( user, upload_time, &image_type, true );
                 self.save_preview( &mut img, Path::new( preview_filename ), top_left, dimensions )
                     .map_err( |e| PhotoStoreError::Fs( e ) )
             },
@@ -131,7 +138,7 @@ impl PhotoStore {
     }
 
     /// формирует имя файла в зависимости от пользователя и события
-    pub fn make_filename( &self, user: &String, upload_time: &Timespec, tp: &ImageType, is_preview: bool ) -> String {
+    pub fn make_filename( &self, user: &String, upload_time: i64, tp: &ImageType, is_preview: bool ) -> String {
         let extension = if *tp == ImageType::Png || is_preview { "png" } else { "jpg" };
         let postfix = if is_preview { "_preview" } else { "" };
         //Path::new(
@@ -139,7 +146,7 @@ impl PhotoStore {
                 self.params.photos_dir,
                 user,
                 GALLERY_DIR,
-                upload_time.sec,
+                upload_time,
                 postfix,
                 extension
             )

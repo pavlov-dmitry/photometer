@@ -7,7 +7,7 @@ use database::Database;
 
 pub trait DbPhotos {
 	/// добавление фотографии в галлерею пользователя
-	fn add_photo( &mut self, user_id: Id, info: &PhotoInfo ) -> CommonResult<()>;	
+	fn add_photo( &mut self, user_id: Id, info: &PhotoInfo ) -> CommonResult<()>;
 	/// получение информации о фото
 	fn get_photo_info( &mut self, photo_id: Id ) -> CommonResult<Option<(String, PhotoInfo)>>;
 	///возвращает список описаний фоточек
@@ -19,7 +19,7 @@ pub trait DbPhotos {
 }
 
 pub fn create_tables( db: &Database ) -> EmptyResult {
-    db.execute(  
+    db.execute(
         "CREATE TABLE IF NOT EXISTS `images` (
             `id` bigint(20) NOT NULL AUTO_INCREMENT,
             `owner_id` int(4) unsigned DEFAULT '0',
@@ -56,7 +56,7 @@ impl DbPhotos for MyPooledConn {
         add_photo_impl( self, user_id, info )
             .map_err( |e| format!( "DbPhotos func 'add_photo' failed: {}", &e ) )
     }
-    
+
     /// получение информации о фото
     fn get_photo_info( &mut self, photo_id: Id ) -> CommonResult<Option<(String, PhotoInfo)>> {
         get_photo_info_impl( self, photo_id )
@@ -74,20 +74,20 @@ impl DbPhotos for MyPooledConn {
         get_photo_infos_count_impl( self, owner_id, start, end )
             .map_err( |e| format!( "DbPhotos func 'get_photo_infos_count' failed: {}", &e ) )
     }
-    
+
     ///переименование фотографии
     fn rename_photo( &mut self, photo_id: Id, newname: &str ) -> CommonResult<()> {
         rename_photo_impl( self, photo_id, newname )
             .map_err( |e| format!( "DbPhotos func 'rename_photo' failed: {}", &e ) )
     }
-    
+
 }
 
 fn add_photo_impl( conn: &mut MyPooledConn, user_id: Id, info: &PhotoInfo ) -> MyResult<()> {
-    let mut stmt = try!( conn.prepare( 
+    let mut stmt = try!( conn.prepare(
         "insert into images (
-        owner_id, 
-        upload_time, 
+        owner_id,
+        upload_time,
         type,
         width,
         height,
@@ -98,11 +98,11 @@ fn add_photo_impl( conn: &mut MyPooledConn, user_id: Id, info: &PhotoInfo ) -> M
         focal_length,
         focal_length_35mm,
         camera_model )
-        values( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? )" ) 
+        values( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? )" )
     );
     try!( stmt.execute( &[
         &user_id,
-        &info.upload_time.sec,
+        &info.upload_time,
         &info.image_type,
         &info.width,
         &info.height,
@@ -118,8 +118,8 @@ fn add_photo_impl( conn: &mut MyPooledConn, user_id: Id, info: &PhotoInfo ) -> M
 }
 
 fn get_photo_info_impl( conn: &mut MyPooledConn, photo_id: Id ) -> MyResult<Option<(String, PhotoInfo)>> {
-    let mut stmt = try!( conn.prepare( "SELECT 
-        u.login, 
+    let mut stmt = try!( conn.prepare( "SELECT
+        u.login,
         i.id,
         i.upload_time,
         i.type,
@@ -133,11 +133,11 @@ fn get_photo_info_impl( conn: &mut MyPooledConn, photo_id: Id ) -> MyResult<Opti
         i.focal_length_35mm,
         i.camera_model
         FROM images AS i LEFT JOIN users AS u ON ( u.id = i.owner_id )
-        WHERE u.id IS NOT NULL AND i.id = ?" ) 
+        WHERE u.id IS NOT NULL AND i.id = ?" )
     );
     let mut sql_result = try!( stmt.execute( &[ &photo_id ] ) );
     match sql_result.next() {
-        None => Ok( None ), 
+        None => Ok( None ),
         Some( sql_row ) => {
             let row_data = try!( sql_row );
             let mut values = row_data.iter();
@@ -146,19 +146,19 @@ fn get_photo_info_impl( conn: &mut MyPooledConn, photo_id: Id ) -> MyResult<Opti
                 read_photo_info( &mut values )
             ) ) )
         }
-    } 
+    }
 }
 
-fn get_photo_infos_impl( 
-    conn: &mut MyPooledConn, 
-    owner_id: Id, 
-    start: Timespec, 
-    end: Timespec, 
-    offset: u32, 
-    count: u32 
-) -> MyResult<Vec<PhotoInfo>> 
+fn get_photo_infos_impl(
+    conn: &mut MyPooledConn,
+    owner_id: Id,
+    start: Timespec,
+    end: Timespec,
+    offset: u32,
+    count: u32
+) -> MyResult<Vec<PhotoInfo>>
 {
-    let mut stmt = try!( conn.prepare( "SELECT 
+    let mut stmt = try!( conn.prepare( "SELECT
        id,
        upload_time,
        type,
@@ -178,7 +178,7 @@ fn get_photo_infos_impl(
     " ) );
     let result = try!( stmt.execute( &[ &owner_id, &start.sec, &end.sec, &count, &offset ] ) );
     //что-то с преобразованием на лету через собственный итертор я подупрел =(, пришлось тупо собирать в новый массив
-    let photos : Vec<_> = result.filter_map( |sql_row| 
+    let photos : Vec<_> = result.filter_map( |sql_row|
         sql_row.ok().map( |sql_values| {
             let mut values = sql_values.iter();
             read_photo_info( &mut values )
@@ -188,7 +188,7 @@ fn get_photo_infos_impl(
 }
 
 fn get_photo_infos_count_impl( conn: &mut MyPooledConn, owner_id: Id, start: Timespec, end: Timespec ) -> MyResult<u32> {
-    let mut stmt = try!( conn.prepare( "SELECT COUNT(id) FROM images WHERE owner_id = ? AND upload_time BETWEEN ? AND ?" ) ); 
+    let mut stmt = try!( conn.prepare( "SELECT COUNT(id) FROM images WHERE owner_id = ? AND upload_time BETWEEN ? AND ?" ) );
     let mut result = try!( stmt.execute( &[ &owner_id, &start.sec, &end.sec ] ) );
     let sql_row = try!( result.next().unwrap() );
     Ok( from_value( &sql_row[ 0 ] ) )
@@ -201,11 +201,11 @@ fn rename_photo_impl( conn: &mut MyPooledConn, photo_id: Id, newname: &str ) -> 
     Ok( () )
 }
 
-fn read_photo_info<'a, I: Iterator<Item = &'a Value>>( values: &mut I ) -> PhotoInfo 
+fn read_photo_info<'a, I: Iterator<Item = &'a Value>>( values: &mut I ) -> PhotoInfo
 {
     PhotoInfo {
         id: from_value( values.next().unwrap() ),
-        upload_time: Timespec::new( from_value( values.next().unwrap() ), 0 ),
+        upload_time: from_value( values.next().unwrap() ),
         image_type: from_value( values.next().unwrap() ),
         width: from_value( values.next().unwrap() ),
         height: from_value( values.next().unwrap() ),
@@ -215,13 +215,13 @@ fn read_photo_info<'a, I: Iterator<Item = &'a Value>>( values: &mut I ) -> Photo
         aperture: if_not( from_value( values.next().unwrap() ), APERTURE_DEFAULT ),
         focal_length: if_not( from_value( values.next().unwrap() ), FOCAL_LENGTH_DEFAULT ),
         focal_length_35mm: if_not( from_value( values.next().unwrap() ), FOCAL_LENGTH_35MM_DEFAULT ),
-        camera_model: if_not( from_value( values.next().unwrap() ), CAMERA_MODEL_DEFAULT.to_string() )  
+        camera_model: if_not( from_value( values.next().unwrap() ), CAMERA_MODEL_DEFAULT.to_string() )
     }
 }
 
 fn if_not<T: PartialEq>( val: T, bad_value: T ) -> Option<T> {
     if val != bad_value {
-        Some( val ) 
+        Some( val )
     }
     else {
         None

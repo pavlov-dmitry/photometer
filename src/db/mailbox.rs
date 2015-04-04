@@ -2,7 +2,6 @@ use mysql::conn::pool::{ MyPooledConn };
 use mysql::error::{ MyResult };
 use mysql::value::{ from_value };
 use time;
-use time::{ Timespec };
 use types::{ Id, CommonResult, EmptyResult, MailInfo };
 use std::fmt::Display;
 use parse_utils;
@@ -15,7 +14,7 @@ pub trait DbMailbox {
     /// подсчитывает кол-во писем у определенного участника
     fn messages_count( &mut self, owner_id: Id, only_unreaded: bool ) -> CommonResult<u32>;
     /// читает сообщения с пагинацией в обратном от создания порядке
-    fn messages_from_last<F: FnMut(&MailInfo)>( &mut self, owner_id: Id, only_unreaded: bool, offset: u32, count: u32, take_mail: &mut F ) -> EmptyResult;
+    fn messages_from_last<F: FnMut(MailInfo)>( &mut self, owner_id: Id, only_unreaded: bool, offset: u32, count: u32, take_mail: &mut F ) -> EmptyResult;
     /// помечает сообщение как прочитанное
     fn mark_as_readed( &mut self, owner_id: Id, message_id: Id ) -> CommonResult<bool>;
 }
@@ -50,7 +49,7 @@ impl DbMailbox for MyPooledConn {
             .map_err( |e| fn_failed( "messages_count", e ) )
     }
     /// читает сообщения с пагинацией в обратном от создания порядке
-    fn messages_from_last<F: FnMut(&MailInfo)>( &mut self, owner_id: Id, only_unreaded: bool, offset: u32, count: u32, take_mail: &mut F ) -> EmptyResult {
+    fn messages_from_last<F: FnMut(MailInfo)>( &mut self, owner_id: Id, only_unreaded: bool, offset: u32, count: u32, take_mail: &mut F ) -> EmptyResult {
         messages_from_last_impl( self, owner_id, only_unreaded, offset, count, take_mail )
             .map_err( |e| fn_failed( "messages_from_last", e ) )
     }
@@ -97,7 +96,7 @@ fn send_mail_impl( conn: &mut MyPooledConn, recipient_id: Id, sender_name: &str,
 fn messages_count_impl( conn: &mut MyPooledConn, owner_id: Id, only_unreaded: bool ) -> MyResult<u32> {
     let where_postfix = if only_unreaded { " AND readed='false'" } else { "" };
     let query = format!( "SELECT COUNT(id) FROM mailbox WHERE recipient_id=? {};", where_postfix );
-    
+
     let mut stmt = try!( conn.prepare( &query ) );
     let mut sql_result = try!( stmt.execute( &[ &owner_id ] ) );
 
@@ -105,18 +104,18 @@ fn messages_count_impl( conn: &mut MyPooledConn, owner_id: Id, only_unreaded: bo
     Ok( from_value( &sql_row[ 0 ] ) )
 }
 
-fn messages_from_last_impl<F: FnMut(&MailInfo)>( 
-    conn: &mut MyPooledConn, 
-    owner_id: Id, 
-    only_unreaded: bool, 
-    offset: u32, 
-    count: u32, 
-    take_mail: &mut F 
-) -> MyResult<()> 
+fn messages_from_last_impl<F: FnMut(MailInfo)>(
+    conn: &mut MyPooledConn,
+    owner_id: Id,
+    only_unreaded: bool,
+    offset: u32,
+    count: u32,
+    take_mail: &mut F
+) -> MyResult<()>
 {
     let where_postfix = if only_unreaded { "AND readed='false'" } else { "" };
     let query = format!( "
-        SELECT 
+        SELECT
             id,
             creation_time,
             sender_name,
@@ -135,13 +134,13 @@ fn messages_from_last_impl<F: FnMut(&MailInfo)>(
         let values = try!( sql_row );
         let mail_info = MailInfo {
             id: from_value( &values[ 0 ] ),
-            creation_time: Timespec::new( from_value( &values[ 1 ] ), 0 ),
+            creation_time: from_value( &values[ 1 ] ),
             sender_name: from_value( &values[ 2 ] ),
             subject: from_value( &values[ 3 ] ),
             body: from_value( &values[ 4 ] ),
             readed: from_value( &values[ 5 ] )
         };
-        take_mail( &mail_info );
+        take_mail( mail_info );
     }
     Ok( () )
 }

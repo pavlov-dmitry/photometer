@@ -15,6 +15,7 @@ use iron::prelude::*;
 use get_body::GetBody;
 use parse_utils;
 use err_msg;
+use answer_types::{ OkInfo, FieldErrorInfo };
 
 #[derive(Clone)]
 pub struct ChangeTimetable;
@@ -46,7 +47,7 @@ struct AddEventInfoStr {
 struct TimetableDiffInfo {
     days_for_voting: u32,
     remove: Vec<Id>,
-    add: Vec<AddEventInfo>  
+    add: Vec<AddEventInfo>
 }
 
 struct AddEventInfo {
@@ -60,8 +61,7 @@ struct AddEventInfo {
 impl GroupEvent for ChangeTimetable {
     /// описание создания
     fn user_creating_get( &self, _req: &mut Request, _group_id: Id ) -> AnswerResult {
-        let mut answer = Answer::new();
-        answer.add_record( "timetable", &String::from_str( "lets_add_some_events" ) );
+        let answer = Answer::good( OkInfo::new( "lets_add_some_events" ) );
         Ok( answer )
     }
     /// применение создания
@@ -97,7 +97,7 @@ impl GroupEvent for ChangeTimetable {
             let new_event_id = try!( db.add_disabled_event( &new_event_info ) );
             added_ids.push( new_event_id );
         }
-        
+
         //добавляемся сами
         let data = Data {
             disable: diff_info.remove,
@@ -147,10 +147,10 @@ fn check_for_add( for_add: &Vec<AddEventInfo>, self_end_time: &Timespec ) -> Emp
     // проверка диапазонов времен
     for add in for_add {
         if add.end_time.sec < add.start_time.sec {
-            return Err( String::from_str( "invalid time diapasons" ) );  
+            return Err( String::from_str( "invalid time diapasons" ) );
         }
         if add.start_time.sec < self_end_time.sec {
-            return Err( String::from_str( "start time must after end of voting" ) ); 
+            return Err( String::from_str( "start time must after end of voting" ) );
         }
         // проверка что такие события существуют
         match events_collection::get_timetable_event( add.id ) {
@@ -176,19 +176,19 @@ fn check_for_remove( for_remove: &Vec<Id>, self_end_time: &Timespec, stuff: &mut
             // проверяем что оно не началось или не начнётся за время голосования
             Some( remove_start_time ) => {
                 if remove_start_time < *self_end_time {
-                    let mut answer = Answer::new();
-                    answer.add_error( "remove_id", "start_before_end_of_voting" );
+                    let answer = Answer::bad( FieldErrorInfo::new(
+                        "remove_id",
+                        "start_before_end_of_voting" ) );
                     return Err( Ok( answer ) );
                 }
             }
             // событие для отключения не найдено
             None => {
-                let mut answer = Answer::new();
-                answer.add_error( "remove_id", "not_found" );
+                let answer = Answer::bad( FieldErrorInfo::new( "remove_id", "not_found" ) );
                 return Err( Ok( answer ) );
             }
         }
-    }  
+    }
     Ok( () )
 }
 
@@ -199,16 +199,14 @@ struct Data {
 }
 
 fn get_data( str_body: &str ) -> CommonResult<Data> {
-    json::decode( str_body ).map_err( |e| format!( "ChangeTimetable event data decode error: {}", e ) )   
+    json::decode( str_body ).map_err( |e| format!( "ChangeTimetable event data decode error: {}", e ) )
 }
 impl ChangeByVoting for ChangeTimetable {
     /// информация о событии
-    fn get_info( &self, _req: &mut Request, body: &ScheduledEventInfo ) -> AnswerResult {
+    fn get_info( &self, _req: &mut Request, body: &ScheduledEventInfo ) -> CommonResult<String> {
         let data = try!( get_data( &body.data ) );
-        let mut answer = Answer::new();
-        answer.add_record( "disable", &data.disable );
-        answer.add_record( "enable", &data.enable );
-        Ok( answer )
+        let info_as_string = json::encode( &data ).unwrap();
+        Ok( info_as_string )
     }
 
     /// применить елси согласны

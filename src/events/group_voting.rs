@@ -1,4 +1,4 @@
-/// Событие которое агрегирует в себя другое событие и выполняет его только если 
+/// Событие которое агрегирует в себя другое событие и выполняет его только если
 /// за него проголосовало необходимое кол-во членов группы
 
 use super::{ Event, ScheduledEventInfo, FullEventInfo, events_collection };
@@ -11,11 +11,15 @@ use iron::prelude::*;
 use answer::{ AnswerResult, Answer };
 use authentication::Userable;
 use get_body::GetBody;
+use answer_types::{ OkInfo, FieldErrorInfo };
 
 /// абстракция события которое применяется после того как группа проголосовала ЗА
 pub trait ChangeByVoting {
     /// информация о событии
-    fn get_info( &self, req: &mut Request, body: &ScheduledEventInfo ) -> AnswerResult;
+    //TODO: Сейчас информация о событии приходит в виде строки,
+    // закодированного JSON объекта, придумать какой-нить более
+    // элегантный способ, чтобы возвращался сразу объект
+    fn get_info( &self, req: &mut Request, body: &ScheduledEventInfo ) -> CommonResult<String>;
     /// применить елси согласны
     fn apply( &self, stuff: &mut Stuff, group_id: Id, body: &ScheduledEventInfo ) -> EmptyResult;
 }
@@ -86,22 +90,26 @@ impl Event for GroupVoting {
         }
         Ok( () )
     }
-    /// описание действия пользователя на это событие 
+    /// описание действия пользователя на это событие
     fn user_action_get( &self, req: &mut Request, body: &ScheduledEventInfo ) -> AnswerResult {
-        let data = try!( get_data( &body.data ) );
-        let change = try!( events_collection::get_change_by_voting( data.internal_id ) );
-        let internal_body = make_internal_body( &data, &body );
-        let mut answer = try!( change.get_info( req, &internal_body ) );
+        //NOTE: Временно комментирую, так как пока непонятно, нужно ли
+        // высылать информацию о событие в этот момент
+
+        // let data = try!( get_data( &body.data ) );
+        // let change = try!( events_collection::get_change_by_voting(
+        // data.internal_id ) ); let internal_body =
+        // make_internal_body( &data, &body ); let mut answer = try!(
+        // change.get_info( req, &internal_body ) );
 
         let user_id = req.user().id;
         let db = try!( req.stuff().get_current_db_conn() );
         let is_need_vote = try!( db.is_need_user_vote( body.scheduled_id, user_id ) );
-        if is_need_vote {
-            answer.add_record( "user", &"no_need_vote".to_string() );
+        let answer = if is_need_vote {
+            Answer::good( OkInfo::new( "need_some_voting" ) )
         }
         else {
-            answer.add_record( "user", &"need_some_voting".to_string() );    
-        }
+            Answer::good( OkInfo::new( "no_need_vote" ) )
+        };
         Ok( answer )
     }
     /// применение действия пользователя на это событие
@@ -112,14 +120,13 @@ impl Event for GroupVoting {
         let db = try!( req.stuff().get_current_db_conn() );
         let is_need_vote = try!( db.is_need_user_vote( body.scheduled_id, user_id ) );
 
-        let mut answer = Answer::new();
-        if is_need_vote {
+        let answer = if is_need_vote {
             try!( db.set_vote( body.scheduled_id, user_id, vote ) );
-            answer.add_record( "vote", &"accepted".to_string() );
+            Answer::good( OkInfo::new( "accepted" ) )
         }
         else {
-            answer.add_error( "user", "no_need_vote" );
-        }
+            Answer::bad( FieldErrorInfo::new( "user", "no_need_vote" ) )
+        };
         Ok( answer )
     }
     /// информация о состоянии события
@@ -127,16 +134,19 @@ impl Event for GroupVoting {
         let data = try!( get_data( &body.data ) );
         let change = try!( events_collection::get_change_by_voting( data.internal_id ) );
         let internal_body = make_internal_body( &data, &body );
-        let mut answer = try!( change.get_info( req, &internal_body ) );
+        let event_obj_as_string = try!( change.get_info( req, &internal_body ) );
 
-        let votes = { 
+        let votes = {
             let db = try!( req.stuff().get_current_db_conn() );
             try!( db.get_votes( body.scheduled_id ) )
         };
 
-        answer.add_record( "all_count", &votes.all_count );
-        answer.add_record( "yes", &votes.yes.len() );
-        answer.add_record( "no", &votes.no.len() );
+        let answer = Answer::good( GroupVoitingInfo {
+            event_obj: event_obj_as_string,
+            all_count: votes.all_count,
+            yes: votes.yes.len(),
+            no: votes.no.len()
+        } );
         Ok( answer )
     }
     /// проверка на возможное досрочное завершение
@@ -149,9 +159,17 @@ impl Event for GroupVoting {
     }
 }
 
+#[derive(RustcEncodable)]
+struct GroupVoitingInfo {
+    event_obj: String,
+    all_count: usize,
+    yes: usize,
+    no: usize
+}
+
 fn is_success( votes: &Votes, success_coeff: f32 ) -> bool {
     let min_success_count = ( votes.all_count as f32 * success_coeff ) as usize;
-    //нельзя допускать того что-бы действие принималось без чего бы то еще согласия
+    //NOTE: нельзя допускать того что-бы действие принималось без чего бы то еще согласия
     let min_success_count = if min_success_count < 2 { 2 } else { min_success_count };
     min_success_count <= votes.yes.len()
 }
@@ -167,5 +185,5 @@ fn make_internal_body( data: &Data, body: &ScheduledEventInfo ) -> ScheduledEven
 }
 
 fn get_data( str_body: &str ) -> CommonResult<Data> {
-    json::decode( str_body ).map_err( |e| format!( "GroupVoting event data decode error: {}", e ) )   
+    json::decode( str_body ).map_err( |e| format!( "GroupVoting event data decode error: {}", e ) )
 }

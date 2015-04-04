@@ -12,6 +12,7 @@ use mail_writer::MailWriter;
 use mailer::Mailer;
 use router_params::RouterParams;
 use get_body::GetBody;
+use answer_types::{ OkInfo, FieldErrorInfo };
 
 /// авторизация пользователя
 pub fn login( request: &mut Request ) -> IronResult<Response> {
@@ -54,6 +55,7 @@ struct RegInfo {
     email: String
 }
 
+
 fn join_us_answer( request: &mut Request ) -> AnswerResult {
     //считывание параметров
     let reg_info = try!( request.get_body::<RegInfo>() );
@@ -63,9 +65,7 @@ fn join_us_answer( request: &mut Request ) -> AnswerResult {
         try!( db.user_exists( &reg_info.user, &reg_info.email ) )
     };
 
-    let mut answer = Answer::new();
-
-    if user_exists == false { // нет такого пользователя
+    let answer = if user_exists == false { // нет такого пользователя
         let reg_key = gen_reg_key();
         let new_user = {
             let db = try!( request.stuff().get_current_db_conn() );
@@ -75,11 +75,11 @@ fn join_us_answer( request: &mut Request ) -> AnswerResult {
         let stuff = request.stuff();
         let (subject, mail_body) = stuff.write_registration_accept_mail( &reg_key );
         try!( stuff.send_external_mail( &new_user, &subject, &mail_body ) );
-        answer.add_record( "user", &String::from_str( "added" ) );
-    } 
-    else {
-        answer.add_error( "user", "exists" );
+        Answer::good( OkInfo::new( "added" ) )
     }
+    else {
+        Answer::bad( FieldErrorInfo::new( "user", "exists" ) )
+    };
     Ok( answer )
 }
 
@@ -90,29 +90,32 @@ fn registration_end_answer( req: &mut Request ) -> AnswerResult {
         try!( db.activate_user( &regkey ) )
     };
     if let Some( ref user ) = maybe_user {
-        try!( 
+        try!(
             req.photo_store().init_user_dir( &user.name )
-                .map_err( |e| err_msg::fs_error( e ) ) 
+                .map_err( |e| err_msg::fs_error( e ) )
         );
     }
     make_login( req, maybe_user )
 }
 
+
+#[derive(RustcEncodable)]
+struct SidInfo {
+    sid: String
+}
+
 fn make_login( req: &mut Request, maybe_user: Option<User> ) -> AnswerResult
 {
-    /*let maybe_user = {
-        let db = try!( req.stuff().get_current_db_conn() );
-        try!( db.get_user( name, pass ) )
-    };*/
-    let mut answer = Answer::new();
-    match maybe_user {
+    let answer = match maybe_user {
         Some( user ) => {
             info!( "user detected: '{}':{}", user.name, user.id );
-            let sess_id = req.sessions_store().add_new_session( &user );
-            answer.add_record( "sid", &sess_id );
+            Answer::good( SidInfo {
+               sid: req.sessions_store().add_new_session( &user )
+            })
         },
-        None => answer.add_error( "user", "not_found" )
-    }
+
+        None => Answer::bad( FieldErrorInfo::new( "user", "not_found" ) )
+    };
     Ok( answer )
 }
 

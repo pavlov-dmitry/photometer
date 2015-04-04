@@ -30,7 +30,7 @@ macro_rules! try_notfound{
         match $expr {
             Ok( val ) => val,
             Err( _ ) => return Ok( Response::with( status::NotFound ) )
-        }  
+        }
     })
 }
 
@@ -55,15 +55,15 @@ pub fn get_image( req: &mut Request, is_preview: bool ) -> IronResult<Response> 
     match maybe_info {
         Some( (user, info) ) => {
             Ok( Response::with( (
-                status::Ok, 
+                status::Ok,
                 //временно используем Path, пока image не перейдёт на новое io
                 Path::new( &req.photo_store().make_filename(
                     &user,
-                    &info.upload_time,
+                    info.upload_time,
                     &info.image_type,
                     is_preview
                 ))
-            )))            
+            )))
         },
         None => {
             Ok( Response::with( status::NotFound ) )

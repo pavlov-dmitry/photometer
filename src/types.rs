@@ -1,15 +1,15 @@
-use time::{ Timespec };
 use std::fmt;
 use std::fmt::{ Display, Formatter };
+use rustc_serialize::{ Encodable, Encoder };
 
 pub type Id = u64;
 pub type CommonResult<T> = Result<T, String>;
 pub type EmptyResult = CommonResult<()>;
 
-#[derive(Debug)]
+#[derive(Debug, RustcEncodable)]
 pub struct PhotoInfo {
     pub id: Id,
-    pub upload_time: Timespec,
+    pub upload_time: i64,
     pub image_type: ImageType,
     pub width: u32,
     pub height: u32,
@@ -34,12 +34,19 @@ impl Display for ImageType {
             &ImageType::Jpeg => write!(f, "{}", "jpg".to_string() ),
             &ImageType::Png => write!(f, "{}", "png".to_string() )
         }
-    }   
+    }
 }
 
+impl Encodable for ImageType {
+    fn encode<S: Encoder>(&self, s: &mut S) -> Result<(), S::Error> {
+        format!( "{}", self ).encode( s )
+    }
+}
+
+#[derive(RustcEncodable)]
 pub struct MailInfo {
     pub id: Id,
-    pub creation_time: Timespec,
+    pub creation_time: i64,
     pub sender_name: String,
     pub subject: String,
     pub body: String,

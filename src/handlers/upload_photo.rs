@@ -5,6 +5,7 @@ use err_msg;
 use time;
 use time::{ Timespec };
 use types::{ PhotoInfo, ImageType };
+use answer_types::{ OkInfo, PhotoErrorInfo };
 use exif_reader;
 use exif_reader::{ ExifValues };
 use database::{ Databaseable };
@@ -22,13 +23,11 @@ pub fn upload_photo( request: &mut Request ) -> IronResult<Response> {
 }
 
 fn upload_photo_answer( request: &mut Request ) -> AnswerResult {
-    let mut answer = Answer::new();
-
     let params = match request.parse_bin_params() {
         Ok( p ) => p,
 
         Err( BinParamsError::TooBig ) => {
-            answer.add_error( "photo", "too_big" );
+            let answer = Answer::bad( PhotoErrorInfo::too_big() );
             return Ok( answer );
         }
 
@@ -46,8 +45,8 @@ fn upload_photo_answer( request: &mut Request ) -> AnswerResult {
         Some( ref filename ) => filename,
         None => return Err( err_msg::invalid_type_param( IMAGE ) )
     };
-    
-    match check_image_type( &image_filename ) {
+
+    let answer = match check_image_type( &image_filename ) {
         Some( tp ) => {
 
             let photo_info = {
@@ -62,28 +61,33 @@ fn upload_photo_answer( request: &mut Request ) -> AnswerResult {
                     let user_id = request.user().id;
                     let db = try!( request.stuff().get_current_db_conn() );
                     match db.add_photo( user_id, &photo_info ) {
-                        Ok( _ ) => answer.add_record( "photo_loaded", &String::from_str( "ok" ) ),
-                        Err( e ) => panic!( e )
+                        Ok( _ ) => Answer::good( OkInfo::new( "photo_loaded" ) ),
+                        Err( e ) => return Err( format!( "{}", e ) )
                     }
                 }
                 Err( e ) => match e {
                     PhotoStoreError::Fs( e ) => return Err( err_msg::old_fs_error( e ) ),
-                    PhotoStoreError::Format => answer.add_error( "photo", "bad_image" )
+                    PhotoStoreError::Format => Answer::bad( PhotoErrorInfo::bad_image() )
                 }
             }
         }
 
-        None => answer.add_record( "photo", &String::from_str( "unknown_format" ) )
-    }
+        None => Answer::bad( PhotoErrorInfo::unknown_format() )
+    };
     Ok( answer )
 }
 
-fn make_photo_info( upload_time: Timespec, img_type: ImageType, w: u32, h: u32, img_data: &[u8] ) -> PhotoInfo {
+fn make_photo_info( upload_time: Timespec,
+                    img_type: ImageType,
+                    w: u32,
+                    h: u32,
+                    img_data: &[u8] ) -> PhotoInfo
+{
     let exif = exif_reader::from_memory( img_data );
     let exif_ref = exif.as_ref();
     PhotoInfo {
         id: 0,
-        upload_time: upload_time,
+        upload_time: upload_time.sec,
         image_type: img_type,
         width: w,
         height: h,
