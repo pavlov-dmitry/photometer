@@ -101,6 +101,7 @@ fn registration_end_answer( req: &mut Request ) -> AnswerResult {
 
 #[derive(RustcEncodable)]
 struct SidInfo {
+    name: String,
     sid: String
 }
 
@@ -110,7 +111,8 @@ fn make_login( req: &mut Request, maybe_user: Option<User> ) -> AnswerResult
         Some( user ) => {
             info!( "user detected: '{}':{}", user.name, user.id );
             Answer::good( SidInfo {
-               sid: req.sessions_store().add_new_session( &user )
+                name: user.name.clone(),
+                sid: req.sessions_store().add_new_session( &user )
             })
         },
 

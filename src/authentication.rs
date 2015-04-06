@@ -7,6 +7,7 @@ use iron::typemap::Key;
 use iron::{ Handler, status, Url };
 use iron::modifiers::Redirect;
 use types::Id;
+use rand::{ Rng, OsRng };
 
 static SESSION_ID : &'static str = "sid";
 
@@ -33,17 +34,20 @@ type SessionsHash = HashMap<SessionId, User>;
 type UserIdSessionsHash = HashMap<Id, SessionId>;
 
 struct SessionIdGenerator {
-    state : Id
+    generator: OsRng
 }
 
 /// примитивный генератор идентификаторов сессий
 impl SessionIdGenerator {
     fn new() -> SessionIdGenerator {
-        SessionIdGenerator { state : 0 }
+        SessionIdGenerator {
+            generator : OsRng::new().unwrap()
+        }
     }
     fn gen(&mut self) -> SessionId {
-        self.state += 1;
-        format!( "{}", self.state )
+        self.generator.gen_ascii_chars()
+            .take( 64 )
+            .collect()
     }
 }
 
