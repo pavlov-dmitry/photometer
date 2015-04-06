@@ -28,7 +28,7 @@ define( function( require ) {
 		data: JSON.stringify( data ),
 	    });
 	    ajaxHandler.done( function( data ) {
-		handlerObj.good( reponseData );
+		handlerObj.good( data );
 	    });
 	    ajaxHandler.fail( function( resp ) {
 		if ( resp.status === 400 ) {

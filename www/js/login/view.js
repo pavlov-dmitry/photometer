@@ -16,7 +16,7 @@ define( function(require) {
 
         initialize: function() {
             this.model.on( "change:has_error", this.render, this );
-            this.model.once( "login_success", this.close, this );
+            // this.model.once( "login_success", this.close, this );
             this.model.on( "request", function() {
                 console.log( "start request" );
             });

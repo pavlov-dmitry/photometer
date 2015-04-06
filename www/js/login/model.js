@@ -4,7 +4,6 @@ define( function(require) {
 
     var UserLoginModel = Backbone.Model.extend ({
         url: '/login',
-        //paramRoot: 'user',
         defaults: {
             'user': '',
             'password': '',
@@ -22,8 +21,10 @@ define( function(require) {
 		password: psw
 	    } );
 
-	    handler.good = function( sid ) {
-		console.log( "We are logging now: " + JSON.stringify( sid ) );
+	    handler.good = function( data ) {
+                require( ['app'], function( app ) {
+                    app.makeLogin( data.name, data.sid );
+                } );
 	    }
 
 	    handler.bad = function( err ) {

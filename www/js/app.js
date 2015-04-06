@@ -5,8 +5,10 @@ define( function (require) {
     Handlebars = require( "handlebars.runtime" ),
     Request = require( "request" );
 
+
     var app = {};
 
+    // обработка ошибок сервера
     app.processInternalError = function( response, ajax ) {
         require( "template/dev_error" );
 
@@ -16,19 +18,18 @@ define( function (require) {
         }));
     };
 
+    /// выполнить вход
+    app.makeLogin = function( name, sid ) {
+        require( "lib/jquery.cookie" );
+        $.cookie( "sid", sid );
+        console.log( "cookies setted" );
+    }
+
+    /// инициализация
     $( function() {
 	Request.internalError = app.processInternalError;
 
         app.workspace = new Workspace;
-
-        //настройка обработки внутренних ошибок сервера
-        app._backbone_sync = Backbone.sync;
-        Backbone.sync = function(method, model, options) {
-            app._backbone_sync( method, model, options )
-        	.fail( function( resp ) {
-		    app.processInternalError( resp, this );
-		});
-        };
 
         Backbone.history.start();
     });

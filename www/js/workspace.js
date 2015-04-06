@@ -5,7 +5,8 @@ define( function(require) {
     var Workspace = Backbone.Router.extend({
         routes: {
             'login': 'login',
-            'register': 'register'
+            'register': 'register',
+            'activate/:key': 'activate'
         },
 
         login: function() {
@@ -22,8 +23,13 @@ define( function(require) {
             this.current = new RegisterView( { model: new RegisterModel } );
         },
 
+        activate: function( key ) {
+            var makeActivate = require( "activate" );
+            makeActivate( key );
+        }
+
     });
 
     return Workspace;
 
-});
+})
