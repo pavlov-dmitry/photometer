@@ -1,5 +1,6 @@
 define( function(require) {
     var Backbone = require( "lib/backbone" );
+    var Request = require( "request" );
 
     var UserLoginModel = Backbone.Model.extend ({
         url: '/login',
@@ -13,46 +14,46 @@ define( function(require) {
 
         login: function(usr, psw) {
             var model = this;
-            this.save(
-                { user: usr, password: psw }
-            )
-            .fail( function( resp ) {
-                var app = require( "app" );
-                app.processInternalError( resp, this );
-            })
-            .done( function( data ) {
-                console.log( "done" );
-                if ( data.errors_exists ) {
-                    model.set({
-                        has_error: true,
-                        error: JSON.stringify( data.errors[ 0 ] )
-                    });
-                }
-                if ( data.records_exists ) {
-                    console.log( "need set cookies" );
-                }
-            });
+	    //TODO: возможно это и не надо делать?
+	    model.set( { user: usr } );
+
+	    var handler = Request.post( this.url, {
+		user: usr,
+		password: psw
+	    } );
+
+	    handler.good = function( sid ) {
+		console.log( "We are logging now: " + JSON.stringify( sid ) );
+	    }
+
+	    handler.bad = function( err ) {
+		if ( err.reason === "not_found" ) {
+		    model.set( {
+			has_error: true,
+			error: "Пользователь с таким паролем не найден."
+		    } );
+		}
+	    }
         },
 
-        sync: function(method, model, options) {
-            switch (method) {
+        // sync: function(method, model, options) {
+        //     switch (method) {
 
-                case 'create':
-                    options.url = model.url;
-                    options.method = 'POST';
-                    options.contentType = "application/json";
-                    options.data = JSON.stringify({
-                            user: model.get( 'user' ),
-                            password: model.get( 'password' )
-                        });
-                    var ajaxObj = Backbone.$.ajax( options );
-                    model.trigger( "request" );
-                    return ajaxObj;
-                break;
+        //         case 'create':
+        //             options.url = model.url;
+        //             options.method = 'POST';
+        //             options.contentType = "application/json";
+        //             options.data = JSON.stringify({
+        //                     user: model.get( 'user' ),
+        //                     password: model.get( 'password' )
+        //                 });
+        //             var ajaxObj = Backbone.$.ajax( options );
+        //             model.trigger( "request" );
+        //             return ajaxObj;
+        //         break;
 
-            }
-        }
-
+        //     }
+        // }
     });
 
     return UserLoginModel;

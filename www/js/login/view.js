@@ -34,7 +34,9 @@ define( function(require) {
 
         render: function() {
             $(this.el).html( $( this.template( this.model.toJSON() ) ) );
-            $( "#login-error" ).toggleClass( "hidden", !this.model.get( 'has_error' ) );
+	    var has_error = this.model.get( 'has_error' );
+            $( "#login-error" ).toggleClass( "hidden", !has_error );
+	    $("#login-name").focus();
             return this;
         },
 
