@@ -6,7 +6,8 @@ define( function(require) {
         routes: {
             'login': 'login',
             'register': 'register',
-            'activate/:key': 'activate'
+            'activate/:key': 'activate',
+            'gallery': 'gallery'
         },
 
         nav: function( route ) {
@@ -15,14 +16,14 @@ define( function(require) {
 
         login: function() {
             var UserLoginView = require( "login/view" ),
-                UserLoginModel = require( "login/model" );
+            UserLoginModel = require( "login/model" );
 
             this.current = new UserLoginView( { model: new UserLoginModel } );
         },
 
         register: function() {
             var RegisterView = require( "register/view" ),
-                RegisterModel = require( "register/model" );
+            RegisterModel = require( "register/model" );
 
             this.current = new RegisterView( { model: new RegisterModel } );
         },
@@ -30,6 +31,17 @@ define( function(require) {
         activate: function( key ) {
             var makeActivate = require( "activate" );
             makeActivate( key );
+        },
+
+        gallery: function() {
+            var GalleryView = require( "gallery/gallery_view" ),
+            GalleryCollection = require( "gallery/gallery_collection" );
+
+            this.current = new GalleryView( { model: new GalleryCollection } );
+
+            require( ['app'], function( app ) {
+                app.userState.navToGallery();
+            })
         }
 
     });

@@ -1,3 +1,5 @@
+@import "jquery.fileupload.css";
+
 body {
   background-image: url(../i/dark_embroidery.png);
 }
@@ -43,4 +45,22 @@ body {
 
 .inverse-dropdown > .devider {
     background-color: #000;
+}
+
+
+/*Превью фотки*/
+.preview {
+    display: inline;
+    /*background-color: #19191A;*/
+    float: left;
+    padding: 5px;
+    margin-right: 30px;
+    margin-top: 15px;
+    margin-bottom: 15px;
+    position: relative;
+    text-align: left;
+}
+
+.thumb {
+    cursor: pointer;
 }

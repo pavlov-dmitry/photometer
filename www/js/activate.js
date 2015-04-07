@@ -8,17 +8,15 @@ define( function(require) {
 
         handler.good = function( data ) {
             require( ['app'], function( app ) {
-                app.makeLogin( "NAME", data.sid );
+                app.makeLogin( data.name, data.sid );
             } );
         };
 
         handler.bad = function( data ) {
-            require( "template/text_error" );
-            var template = Handlebars.templates.text_error;
-            $("#workspace").html( template( {
-                header: "Ошибка активации учётной записи",
-                text: "Учётная запись, с таким ключём активации, не найдена."
-            } ) );
+            require( ['app'], function( app ) {
+                app.oops( "Ошибка активации учётной записи",
+                          "Учётная запись, с таким ключём активации, не найдена." );
+            } );
         }
     }
 

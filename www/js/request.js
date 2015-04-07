@@ -16,10 +16,13 @@ define( function( require ) {
 	send: function( method, url, data ) {
 	    var self = this;
 	    var handlerObj = {
-		good: function( data ) { console.log( "default good" ); },
-		bad: function( data ) { console.log( "default.bad" ); },
-		//TODO: реализовать общую обработку отказа в доступе
-		access_denied: function() { console.log( "default.access_denied" ); }
+		good: function() { console.log( "default good" ); },
+		bad: function() { console.log( "default.bad" ); },
+		access_denied: function() {
+                    require( ['app'], function( app ) {
+                        app.error( "Отказано в доступе. Кажется кто-то что-то химичит, или что-то пошле не так." )
+                    });
+                }
 	    }
 	    var ajaxHandler = $.ajax({
 		url: url,

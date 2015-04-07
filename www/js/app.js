@@ -19,6 +19,22 @@ define( function (require) {
             }));
         },
 
+        oops: function( header, text ) {
+            require( "template/text_error" );
+            var template = Handlebars.templates.text_error;
+            $("#workspace").html( template( {
+                header: header,
+                text: text
+            } ) );
+        },
+
+        error: function( text ) {
+            require( "template/closeable_error" );
+            var template = Handlebars.templates.closeable_error;
+            var newError = $( template({ text: text }) );
+            $("#errors").append( newError );
+        },
+
         /// выполнить вход
         makeLogin: function( name, sid ) {
             //TODO: возможно стоит работу с куками опустить в модель

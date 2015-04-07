@@ -1,16 +1,23 @@
+{{#if isLogged}}
+<ul class="nav navbar-nav">
+  <li {{#if isNavInMessages}}class="active"{{/if}}>
+    <a href="#messages">Сообщения{{#if unreadedMessaged}} <span class="badge">{{unreadedMessaged}}</span>{{/if}}</a>
+  </li>
+  <li {{#if isNavInGallery}}class="active"{{/if}}><a href="#gallery">Галлерея</a></li>
+</ul>
 <ul class="nav navbar-nav navbar-right">
-  {{#if isLogged}}
   <li class="dropdown">
     <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
       <span class="glyphicon glyphicon-user" ></span> {{name}} <span class="caret"></span>
     </a>
     <ul class="dropdown-menu inverse-dropdown" role="menu">
       <li><a id="logout-action" href="#" onClick="return false"><span class="glyphicon glyphicon-off"></span> Выйти</a></li>
-      <!-- <li><button type="button" class="navbar-btn"><span class="glyphicon glyphicon-off"> Выйти</button></li> -->
     </ul>
   </li>
-  {{else}}
+</ul>
+{{else}}
+<ul class="nav navbar-nav navbar-right">
   <a href="#login"><button type="button" class="btn btn-success navbar-btn">Войти</button></a>
   <div class="nav navbar-nav spacer-w-sm"></div>
-  {{/if}}
 </ul>
+{{/if}}
