@@ -1,17 +1,17 @@
 /// Небольшая middleware которая парсит html параметры
-/// Написано кривовато, но из готовых никто бинарные данные не разбирает, 
+/// Написано кривовато, но из готовых никто бинарные данные не разбирает,
 /// когда появится нормальная альтернатива заменю
 /// Обновлено: Теперь парсит только бинарные параметры, остальные уходят в json
 
 use std::collections::HashMap;
 use std::str;
-use std::io::Read;
+use std::io::{ Read };
 use parse_utils;
 use iron::mime::{ self, Mime, TopLevel, SubLevel };
 use iron::prelude::*;
 use iron::headers::ContentType;
 
-const BODY_LIMIT: usize = 5 * 1024 * 1024 ;
+const BODY_LIMIT: u64 = 5 * 1024 * 1024 ;
 
 pub struct BinParam {
     pub filename: Option<String>,
@@ -21,7 +21,8 @@ pub struct BinParam {
 pub type BinParamsHash = HashMap<String, BinParam>;
 pub enum BinParamsError {
     TooBig,
-    NotMultipartFormData
+    NotMultipartFormData,
+    IoError
 }
 
 pub type BinaryHashMap = HashMap<String, (usize, usize)>;
@@ -37,7 +38,7 @@ fn get_multipart_boundary( req: &mut Request ) -> Option<String> {
                 params.iter()
                     .find( |&&(ref attr,_)| *attr == bounary_attr )
                     .and_then( |p| {
-                        let &(_, ref val) = p; 
+                        let &(_, ref val) = p;
                         match val {
                             &mime::Value::Ext( ref value_str ) => Some( value_str.clone() ),
                             _ => None
@@ -61,7 +62,7 @@ macro_rules! try_opt{
         match $expr {
             Some( val ) => val,
             None => return
-        }  
+        }
     })
 }
 
@@ -82,7 +83,7 @@ fn read_binary_part( body: &[u8], (from, to) : (usize, usize), bin_hash: &mut Bi
         data: param_data
     };
 
-    bin_hash.insert( name.to_string(), bin_param ); 
+    bin_hash.insert( name.to_string(), bin_param );
 }
 
 pub trait ParamsBody {
@@ -93,16 +94,27 @@ impl<'a> ParamsBody for Request<'a> {
     fn parse_bin_params( &mut self ) -> Result<BinParamsHash, BinParamsError> {
         match get_multipart_boundary( self ) {
             Some( boundary ) => {
-                
-                let mut body = Vec::new();
-                if self.body.read( &mut body[.. BODY_LIMIT] ).is_err() {
-                    return Err( BinParamsError::TooBig )
+                let mut bytes = Vec::new();
+                let mut limited_body = self.body.by_ref().take( BODY_LIMIT );
+                debug!( "start reading multiformat data" );
+                match limited_body.read_to_end( &mut bytes ) {
+                    Ok( readed ) => {
+                        debug!( "readed = {}", readed );
+                        if readed == BODY_LIMIT as usize {
+                            return Err( BinParamsError::TooBig );
+                        }
+                        let mut bin_hash = HashMap::new();
+                        read_all_binary_parts( &bytes, boundary.as_bytes(), &mut bin_hash );
+                        Ok( bin_hash )
+                    },
+                    Err(_) => {
+                        debug!( "error while reading" );
+                        return Err( BinParamsError::IoError )
+                    }
                 }
 
-                let mut bin_hash = HashMap::new();
-                read_all_binary_parts( &body, boundary.as_bytes(), &mut bin_hash );
-                Ok( bin_hash )
-            }  
+            },
+
             None => Err( BinParamsError::NotMultipartFormData )
         }
     }

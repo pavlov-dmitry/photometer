@@ -34,6 +34,10 @@ fn upload_photo_answer( request: &mut Request ) -> AnswerResult {
         Err( BinParamsError::NotMultipartFormData ) => {
             return Err( String::from_str( "not a multiform data" ) );
         }
+
+        Err( BinParamsError::IoError ) => {
+            return Err( String::from_str( "error while reading request body" ) );
+        }
     };
 
     // проверка правильности переданных параметров
