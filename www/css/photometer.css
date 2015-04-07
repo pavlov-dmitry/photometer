@@ -21,3 +21,7 @@ body {
 .table-first-row-bold td:first-child {
     font-weight: bold
 }
+
+.spacer-w-sm {
+    width: 10px
+}

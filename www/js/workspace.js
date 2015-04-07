@@ -9,6 +9,10 @@ define( function(require) {
             'activate/:key': 'activate'
         },
 
+        nav: function( route ) {
+            this.navigate( route, { trigger: true } );
+        },
+
         login: function() {
             var UserLoginView = require( "login/view" ),
                 UserLoginModel = require( "login/model" );
