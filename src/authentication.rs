@@ -153,9 +153,11 @@ impl<H: Handler> Handler for AuthenticationHandler<H> {
 
         match some_user {
             None => {
+                debug!( "no user" );
                 self.authentication.make_login()
             }
             Some( user ) => {
+                debug!( "user found: {}", user.name );
                 req.extensions.insert::<User>( user );
                 self.handler.handle( req )
             }
