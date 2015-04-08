@@ -1,6 +1,6 @@
 extern crate libc;
 extern crate num;
-use self::libc::{ size_t, c_int, c_char };
+use self::libc::{ size_t, c_void, c_char };
 use self::num::rational::Ratio;
 use std::collections::HashMap;
 use std::ffi::CStr;
@@ -15,16 +15,16 @@ pub fn from_memory( data: &[u8] ) -> Option<ExifEntries> {
     let exif_data = unsafe {
         exif_data_new_from_data( data.as_ptr(), data.len() as size_t )
     };
-    if exif_data != 0 { 
+    if exif_data as isize != 0isize {
         let byte_order = unsafe{ exif_data_get_byte_order( exif_data ) };
-        let mut read_body = ReadBody{ 
-            byte_order: byte_order, 
-            ifd: 0, 
-            entries: HashMap::new() 
+        let mut read_body = ReadBody{
+            byte_order: byte_order,
+            ifd: 0isize as *mut c_void,
+            entries: HashMap::new()
         };
-        unsafe{ 
+        unsafe{
             exif_data_foreach_content( exif_data, read_exif_content, &mut read_body );
-            exif_data_free( exif_data ); 
+            exif_data_free( exif_data );
         }
         Some( read_body.entries )
     }
@@ -60,26 +60,26 @@ impl ExifValues for ExifEntries {
     fn aperture(&self) -> Option<f32> {
         self.get( &"FNumber".to_string() )
             .and_then( |v| v.as_ratio() )
-            .and_then( |r| 
-                if *r.denom() != 0 { 
-                    Some( r.numer().to_f32().unwrap() / r.denom().to_f32().unwrap() )
-                }  
-                else { 
-                    None 
-                } 
-            )
+            .and_then( |r|
+                        if *r.denom() != 0 {
+                            Some( r.numer().to_f32().unwrap() / r.denom().to_f32().unwrap() )
+                        }
+                        else {
+                            None
+                        }
+                        )
     }
     fn shutter_speed(&self) -> Option<i32> {
         self.get( &"ExposureTime".to_string() )
             .and_then( |v| v.as_ratio() )
-            .map( |r| 
-                if r.is_integer() {
-                    r.to_integer() as i32
-                }
-                else {
-                    r.denom().to_i32().unwrap().neg()
-                }
-            )
+            .map( |r|
+                   if r.is_integer() {
+                       r.to_integer() as i32
+                   }
+                   else {
+                       r.denom().to_i32().unwrap().neg()
+                   }
+                   )
     }
     fn camera_model<'a>(&'a self)->Option<&'a str> {
         self.get( &"Model".to_string() )
@@ -106,15 +106,15 @@ enum ExifValue {
 }
 
 impl ExifValue {
-	#[allow(dead_code)]
-    pub fn as_u8(&self) -> Option<u8>{  
+    #[allow(dead_code)]
+    pub fn as_u8(&self) -> Option<u8>{
         match self {
             &ExifValue::Byte( v ) => Some( v ),
             _ => None
         }
     }
 
-	#[allow(dead_code)]
+    #[allow(dead_code)]
     pub fn as_text<'a>(&'a self) -> Option<&'a str> {
         match self {
             &ExifValue::Text( ref v ) => Some( &v ),
@@ -178,7 +178,7 @@ impl ExifValue {
         }
     }
 
-	#[allow(dead_code)]
+    #[allow(dead_code)]
     pub fn as_float(&self) -> Option<f32> {
         match self {
             &ExifValue::Float( v ) => Some( v ),
@@ -195,23 +195,23 @@ impl ExifValue {
     }
 }
 
-//как убрать этот варнинг в моих условиях я не понял, потому просто отключаю его
-#[allow(improper_ctypes)] 
+//TODO: как убрать этот варнинг в моих условиях я не понял, потому просто отключаю его
+#[allow(improper_ctypes)]
 #[link(name = "exif", kind = "static")]
 extern {
-    fn exif_data_new_from_data ( data: *const u8, size: size_t) -> c_int;
-    fn exif_data_free( ptr: c_int );
-    fn exif_data_foreach_content (exif_data_ptr: c_int, func : extern fn(c_int, *mut ReadBody), user_data: *mut ReadBody);
-    fn exif_content_foreach_entry( exif_content_ptr: c_int, func: extern fn( *mut ExifEntry, *mut ReadBody ), user_data: *mut ReadBody );
-    fn exif_data_get_byte_order(exif_data_ptr: c_int) -> c_int;
-    fn exif_tag_get_name_in_ifd(tag: i32, ifd: c_int) -> *const i8;
-    fn exif_content_get_ifd(content: c_int) -> c_int;
-    fn exif_get_short (b: *const u8, order: c_int) -> u16;
-    fn exif_get_sshort (b: *const u8, order: c_int) -> i16;
-    fn exif_get_long (b: *const u8, order: c_int) -> u32;
-    fn exif_get_slong (b: *const u8, order: c_int) -> i32;
-    fn exif_get_rational (b: *const u8, order: c_int) -> ExifRational;
-    fn exif_get_srational (b: *const u8, order: c_int) -> ExifSRational;
+    fn exif_data_new_from_data ( data: *const u8, size: size_t) -> *mut c_void;
+    fn exif_data_free( ptr: *mut c_void );
+    fn exif_data_foreach_content (exif_data_ptr: *mut c_void, func : extern fn(*mut c_void, *mut ReadBody), user_data: *mut ReadBody);
+    fn exif_content_foreach_entry( exif_content_ptr: *mut c_void, func: extern fn( *mut ExifEntry, *mut ReadBody ), user_data: *mut ReadBody );
+    fn exif_data_get_byte_order(exif_data_ptr: *mut c_void) -> isize;
+    fn exif_tag_get_name_in_ifd(tag: i32, ifd: *mut c_void) -> *const i8;
+    fn exif_content_get_ifd(content: *mut c_void) -> *mut c_void;
+    fn exif_get_short (b: *const u8, order: isize) -> u16;
+    fn exif_get_sshort (b: *const u8, order: isize) -> i16;
+    fn exif_get_long (b: *const u8, order: isize) -> u32;
+    fn exif_get_slong (b: *const u8, order: isize) -> i32;
+    fn exif_get_rational (b: *const u8, order: isize) -> ExifRational;
+    fn exif_get_srational (b: *const u8, order: isize) -> ExifSRational;
 }
 
 #[repr(C)]
@@ -233,29 +233,29 @@ struct ExifEntry {
     components: u32,
     data: *const u8,
     size: usize,
-    parent: c_int,
-    private: c_int
+    parent: *mut c_void,
+    private: *mut c_void
 }
 
 //тут этот варнинг отключать смысла нет, но сцуко видать пока глючит компилятор
 #[allow(dead_code)]
 #[repr(C)]
 enum ExifFormat {
-    BYTE = 1, 
-    ASCII = 2, 
+    BYTE = 1,
+    ASCII = 2,
     SHORT = 3,
-    LONG = 4, 
-    RATIONAL = 5, 
-    SBYTE = 6, 
-    UNDEFINED = 7, 
-    SSHORT = 8, 
-    SLONG = 9, 
-    SRATIONAL = 10, 
-    FLOAT = 11, 
+    LONG = 4,
+    RATIONAL = 5,
+    SBYTE = 6,
+    UNDEFINED = 7,
+    SSHORT = 8,
+    SLONG = 9,
+    SRATIONAL = 10,
+    FLOAT = 11,
     DOUBLE = 12
 }
 
-fn to_exif_value( entry: &ExifEntry, byte_order: c_int ) -> ExifValue {
+fn to_exif_value( entry: &ExifEntry, byte_order: isize ) -> ExifValue {
     if entry.data.is_null() {
         return ExifValue::Error;
     }
@@ -276,17 +276,17 @@ fn to_exif_value( entry: &ExifEntry, byte_order: c_int ) -> ExifValue {
         ExifFormat::LONG => ExifValue::Long( unsafe{ exif_get_long( entry.data, byte_order ) } ),
         ExifFormat::RATIONAL => {
             let rat = unsafe{ exif_get_rational( entry.data, byte_order ) };
-            ExifValue::Ratio( Ratio::new_raw( rat.num, rat.den ) )    
+            ExifValue::Ratio( Ratio::new_raw( rat.num, rat.den ) )
         },
         ExifFormat::SBYTE => {
             let data = unsafe{ entry.data.as_ref().unwrap() };
-            ExifValue::SByte( *data as i8 ) 
+            ExifValue::SByte( *data as i8 )
         },
         ExifFormat::SSHORT => ExifValue::SShort( unsafe{ exif_get_sshort( entry.data, byte_order ) } ),
         ExifFormat::SLONG => ExifValue::SLong( unsafe{ exif_get_slong( entry.data, byte_order ) } ),
         ExifFormat::SRATIONAL => {
             let rat = unsafe{ exif_get_srational( entry.data, byte_order ) };
-            ExifValue::SRatio( Ratio::new_raw( rat.num, rat.den ) )   
+            ExifValue::SRatio( Ratio::new_raw( rat.num, rat.den ) )
         },
         _ => ExifValue::Undefined
     }
@@ -294,9 +294,9 @@ fn to_exif_value( entry: &ExifEntry, byte_order: c_int ) -> ExifValue {
 
 #[repr(C)]
 struct ReadBody {
-    byte_order: c_int,
-    ifd: c_int,
-    entries: ExifEntries 
+    byte_order: isize,
+    ifd: *mut c_void,
+    entries: ExifEntries
 }
 
 extern fn read_exif_entry( e: *mut ExifEntry, b: *mut ReadBody ) {
@@ -310,7 +310,7 @@ extern fn read_exif_entry( e: *mut ExifEntry, b: *mut ReadBody ) {
     }
 }
 
-extern fn read_exif_content( content: c_int, b: *mut ReadBody ) {
+extern fn read_exif_content( content: *mut c_void, b: *mut ReadBody ) {
     let body = unsafe{ b.as_mut().unwrap() };
     body.ifd = unsafe{ exif_content_get_ifd( content ) };
     unsafe{ exif_content_foreach_entry( content, read_exif_entry, b ); }

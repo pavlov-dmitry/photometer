@@ -101,6 +101,7 @@ impl<'a> ParamsBody for Request<'a> {
                     Ok( readed ) => {
                         debug!( "readed = {}", readed );
                         if readed == BODY_LIMIT as usize {
+                            debug!( "too BIG!" );
                             return Err( BinParamsError::TooBig );
                         }
                         let mut bin_hash = HashMap::new();

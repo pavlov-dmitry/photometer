@@ -49,17 +49,14 @@ fn upload_photo_answer( request: &mut Request ) -> AnswerResult {
         Some( ref filename ) => filename,
         None => return Err( err_msg::invalid_type_param( IMAGE ) )
     };
-
     let answer = match check_image_type( &image_filename ) {
         Some( tp ) => {
-
             let photo_info = {
                 let photo_store = request.photo_store();
                 let upload_time = time::get_time();
                 photo_store.add_new_photo( request.user(), &upload_time, tp.clone(), &image.data )
                     .map( |(w, h)| make_photo_info( upload_time, tp.clone(), w, h, &image.data ) )
             };
-
             match photo_info {
                 Ok( photo_info ) => {
                     let user_id = request.user().id;
