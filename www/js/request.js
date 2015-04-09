@@ -24,15 +24,27 @@ define( function( require ) {
                     });
                 }
 	    }
-	    var ajaxHandler = $.ajax({
-		url: url,
-		contentType: "application/json",
-		method: method,
-		data: JSON.stringify( data ),
-	    });
+
+            var options = {
+                url: url,
+                method: method,
+            };
+            if ( method !== "GET" ) {
+                options.contentType = "application/json";
+                options.dataType = "json";
+                options.data = JSON.stringify( data );
+                options.processData = false;
+            }
+            else {
+                options.data = JSON.stringify( data );
+            }
+
+	    var ajaxHandler = $.ajax( options );
+
 	    ajaxHandler.done( function( data ) {
 		handlerObj.good( data );
 	    });
+
 	    ajaxHandler.fail( function( resp ) {
 		if ( resp.status === 400 ) {
 		    var responseData = JSON.parse( resp.responseText );

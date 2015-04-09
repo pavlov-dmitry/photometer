@@ -16,16 +16,10 @@ define( function(require) {
 
             this.listenTo( this.model, "add", this.addOne );
             this.listenTo( this.model, "reset", this.addAll );
-            this.listenTo( this.model, "all", this.render );
+            // this.listenTo( this.model, "all", this.render );
 
             this.render();
 
-            this.$progress = $( "#upload-progress" );
-            this.$progress_bar = $( "#upload-progress .progress-bar" );
-            this.$upload_file = $( "#upload-file" );
-            this.$upload_btn = $( "#upload-btn" );
-
-            this.$progress.hide();
             this.$upload_file.fileupload({
 
                 url: "/upload",
@@ -68,20 +62,31 @@ define( function(require) {
                 }
             })
 
-            // this.model.fetch();
+            this.model.fetch();
         },
 
         render: function() {
             this.$el.html( this.template({}) );
+
+            this.$progress = $( "#upload-progress" );
+            this.$progress_bar = $( "#upload-progress .progress-bar" );
+            this.$upload_file = $( "#upload-file" );
+            this.$upload_btn = $( "#upload-btn" );
+
+            this.$progress.hide();
             return this;
         },
 
         addOne: function( data ) {
-            var view = new PreviewView({ model: data });
-            this.$("#preview-list").append( view.render().el );
+            var view = new PreviewView({
+                model: data,
+                id: "preview-" + data.id
+            });
+            this.$("#preview-list").append( view.render().$el );
         },
 
         addAll: function() {
+            this.$("#preview-list").empty();
             this.model.each( this.addOne, this );
         },
 

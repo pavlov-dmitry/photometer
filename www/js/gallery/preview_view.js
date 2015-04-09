@@ -4,8 +4,12 @@ define( function(require) {
         preview_tmpl = require( "template/photo_preview" )
 
     var PreviewView = Backbone.View.extend({
-        
+
         template: Handlebars.templates.photo_preview,
+
+        events: {
+            "click .rename-btn": "rename"
+        },
 
         initialize: function() {
             this.listenTo( this.model, 'change', this.render );
@@ -13,8 +17,15 @@ define( function(require) {
         },
 
         render: function() {
-            this.el = $( this.template( this.model.toJSON() ) );
+            this.$el.html( this.template( this.model.toJSON() ) );
             return this;
+        },
+
+        rename: function() {
+            console.log( "need rename " + this.model.get( "id" ) );
+            var model = this.model.toJSON();
+            model.editing = true;
+            this.$el.html( this.template( model ) );
         }
 
     });

@@ -7,10 +7,11 @@ define( function(require) {
         model: PhotoModel,
 
         fetch: function() {
-            var handler = Request.get( "/gellery", {} );
+            var self = this;
+            var handler = Request.get( "/gallery", { page: 0 } );
             handler.good = function( data ) {
-                this.reset();
-                this.add( data );
+                self.reset();
+                self.add( data );
             };
 
             handler.bad = function( data ) {
