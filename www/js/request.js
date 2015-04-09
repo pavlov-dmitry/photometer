@@ -29,14 +29,12 @@ define( function( require ) {
                 url: url,
                 method: method,
             };
+            if ( data ) {
+                options.data = JSON.stringify( data );
+            }
             if ( method !== "GET" ) {
                 options.contentType = "application/json";
                 options.dataType = "json";
-                options.data = JSON.stringify( data );
-                options.processData = false;
-            }
-            else {
-                options.data = JSON.stringify( data );
             }
 
 	    var ajaxHandler = $.ajax( options );

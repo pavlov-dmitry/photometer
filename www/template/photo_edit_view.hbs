@@ -1,0 +1,13 @@
+<div class="container panel fly">
+  <div class="row panel-body">
+    <form id="rename-photo-form" class="form-horizontal">
+      <div class="form-group col-sm-12">
+        <div class="col-sm-10">
+          <input type="text" class="form-control" id="new-name-input" placeholder="Имя фотографии" {{#if name}}value="{{name}}"{{/if}}>
+        </div>
+        <button type="submit" class="col-sm-2 btn btn-success">Переименовать</button>
+      </div>
+    </form>
+    <img src="/photo/{{id}}.jpg" class="col-sm-12" />
+  </div>
+</div>

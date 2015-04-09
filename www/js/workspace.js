@@ -7,7 +7,8 @@ define( function(require) {
             'login': 'login',
             'register': 'register',
             'activate/:key': 'activate',
-            'gallery': 'gallery'
+            'gallery': 'gallery',
+            'edit_photo/:id': "edit_photo",
         },
 
         nav: function( route ) {
@@ -42,6 +43,13 @@ define( function(require) {
             require( ['app'], function( app ) {
                 app.userState.navToGallery();
             })
+        },
+
+        edit_photo: function( id ) {
+            var PhotoModel = require( "gallery/photo_model" );
+            var PhotoEditView = require( "edit_photo/edit_view" );
+
+            this.current = new PhotoEditView( { model: new PhotoModel( {id: id} ) } );
         }
 
     });
