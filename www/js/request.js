@@ -19,9 +19,8 @@ define( function( require ) {
 		good: function() { console.log( "default good" ); },
 		bad: function() { console.log( "default.bad" ); },
 		access_denied: function() {
-                    require( ['app'], function( app ) {
-                        app.error( "Отказано в доступе. Кажется кто-то что-то химичит, или что-то пошле не так." )
-                    });
+                    var errorsHandler = require( "errors_handler" );
+                    errorsHandler.error( "Отказано в доступе. Кажется кто-то что-то химичит, или что-то пошле не так." );
                 }
 	    }
 

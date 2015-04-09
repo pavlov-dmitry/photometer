@@ -16,17 +16,16 @@ define( function(require) {
             }
 
             handler.bad = function( data ) {
-                require( ['app'], function( app ) {
-                    var header = "Ошибка получения информации о фотографии";
-                    var text = "";
-                    if ( data.reason == "not_found" ) {
-                        text = "Фотография с идентификатором " + this.id + " не найдена.";
-                    }
-                    else {
-                        text = JSON.stringify( data );
-                    }
-                    app.error( header, text );
-                } )
+                var errorsHandler = require( "errors_handler" );
+                var header = "Ошибка получения информации о фотографии";
+                var text = "";
+                if ( data.reason == "not_found" ) {
+                    text = "Фотография с идентификатором " + this.id + " не найдена.";
+                }
+                else {
+                    text = JSON.stringify( data );
+                }
+                errorsHandler.error( header, text );
             }
         }
     })

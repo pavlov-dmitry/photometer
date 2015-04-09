@@ -13,10 +13,9 @@ define( function(require) {
         };
 
         handler.bad = function( data ) {
-            require( ['app'], function( app ) {
-                app.oops( "Ошибка активации учётной записи",
-                          "Учётная запись, с таким ключём активации, не найдена." );
-            } );
+            var errorHandler = require( "errors_handler" );
+            errorHandler.oops( "Ошибка активации учётной записи",
+                               "Учётная запись, с таким ключём активации, не найдена." );
         }
     }
 

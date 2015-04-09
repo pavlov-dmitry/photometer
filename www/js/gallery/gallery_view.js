@@ -44,9 +44,8 @@ define( function(require) {
                 },
 
                 fail: function() {
-                    require( ['app'], function( app ) {
-                        app.error( "Не получилось загрузить файл, может попробуем еще раз?" );
-                    });
+                    var errorHandler = require( "errors_handler" );
+                    errorHandler.error( "Не получилось загрузить файл, может попробуем еще раз?" );
                     console.log( "upload fail" );
                 },
 

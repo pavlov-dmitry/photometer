@@ -15,9 +15,8 @@ define( function(require) {
             };
 
             handler.bad = function( data ) {
-                require( ['app'], function( app ) {
-                    app.oops( "Не смог загрузить галлерею", JSON.stringify( data ) );
-                } );
+                var errorHandler = require( "errors_handler" );
+                errorHandler.oops( "Не смог загрузить галлерею", JSON.stringify( data ) );
             }
         }
     });
