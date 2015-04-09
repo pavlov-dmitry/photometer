@@ -95,6 +95,7 @@ fn main() {
     router.get( handlers::gallery::by_year_count_path(), handlers::gallery::by_year_count );
     router.get( handlers::gallery::current_year_path(), handlers::gallery::current_year );
     router.get( handlers::gallery::by_year_path(), handlers::gallery::by_year );
+    router.get( handlers::gallery::photo_info_path(), handlers::gallery::photo_info );
 
     router.get( "/mailbox", handlers::mailbox::get );
     router.get( "/mailbox/unreaded", handlers::mailbox::get_unreaded );

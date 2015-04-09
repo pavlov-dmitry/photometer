@@ -11,10 +11,13 @@ use iron::status;
 use router_params::RouterParams;
 use get_body::GetBody;
 use answer_types::CountInfo;
+use types::Id;
+use answer_types::PhotoErrorInfo;
 
 static YEAR: &'static str = "year";
 const IN_PAGE_COUNT: u32 = 10;
 const FROM_YEAR: i32 = 1900;
+const ID: &'static str = "id";
 
 pub fn current_year_count_path() -> &'static str {
     "/gallery/count"
@@ -31,6 +34,10 @@ pub fn current_year_path() -> &'static str {
 
 pub fn by_year_path() -> &'static str {
     "/gallery/:year"
+}
+
+pub fn photo_info_path() -> &'static str {
+    "/photo_info/:id"
 }
 
 pub fn current_year_count( request: &mut Request ) -> IronResult<Response> {
@@ -93,9 +100,6 @@ fn by_year_answer( req: &mut Request, year: i32 ) -> AnswerResult {
         page * IN_PAGE_COUNT,
         IN_PAGE_COUNT
     ) );
-    // for photo_info in photo_infos.iter() {
-    //     answer.add_to_records( photo_info );
-    // }
     let answer = Answer::good( photo_infos );
     Ok( answer )
 }
@@ -116,4 +120,23 @@ fn times_gate_for_year( year: i32 ) -> (time::Tm, time::Tm) {
             ..time::empty_tm()
         }
     )
+}
+
+pub fn photo_info( request: &mut Request ) -> IronResult<Response> {
+    let id = FromStr::from_str( request.param( ID ) );
+    let answer = match id {
+        Ok( id ) => photo_info_answer( request, id ),
+        Err( _ ) => Err( err_msg::invalid_path_param( ID ) )
+    };
+    Ok( Response::with( answer ) )
+}
+
+fn photo_info_answer( req: &mut Request, id: Id ) -> AnswerResult {
+    let db = try!( req.stuff().get_current_db_conn() );
+    let photo_info = try!( db.get_photo_info( id ) );
+    let answer = match photo_info {
+        Some( (_, photo_info) ) => Answer::good( photo_info ),
+        None => Answer::bad( PhotoErrorInfo::not_found() )
+    };
+    Ok( answer )
 }
