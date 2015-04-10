@@ -111,6 +111,8 @@ fn main() {
     router.get( handlers::events::group_create_path(), handlers::events::group_create_get );
     router.post( handlers::events::group_create_path(), handlers::events::group_create_post );
 
+    router.get( handlers::authentication::user_info_path(), handlers::authentication::user_info );
+
     let mut auth_chain = Chain::new( router );
     auth_chain.around( authentication::middleware( &Url::parse( cfg.login_page_url.as_slice() ).unwrap() ) );
 

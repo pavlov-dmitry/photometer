@@ -2,7 +2,7 @@ use answer::{ Answer, AnswerResult };
 use database::{ Databaseable };
 use stuff::Stuffable;
 use db::users::{ DbUsers };
-use authentication::{ User, SessionsStoreable };
+use authentication::{ User, SessionsStoreable, Userable };
 use photo_store::{ PhotoStoreable };
 use err_msg;
 use iron::prelude::*;
@@ -101,7 +101,6 @@ fn registration_end_answer( req: &mut Request ) -> AnswerResult {
 
 #[derive(RustcEncodable)]
 struct SidInfo {
-    name: String,
     sid: String
 }
 
@@ -111,7 +110,6 @@ fn make_login( req: &mut Request, maybe_user: Option<User> ) -> AnswerResult
         Some( user ) => {
             info!( "user detected: '{}':{}", user.name, user.id );
             Answer::good( SidInfo {
-                name: user.name.clone(),
                 sid: req.sessions_store().add_new_session( &user )
             })
         },
@@ -126,4 +124,21 @@ fn gen_reg_key() -> String {
     rng.gen_ascii_chars()
         .take( 50 )
         .collect()
+}
+
+#[derive(RustcEncodable)]
+struct UserInfo {
+    name: String
+}
+
+pub fn user_info_path() -> &'static str {
+    "/user_info"
+}
+
+pub fn user_info( req: &mut Request ) -> IronResult<Response> {
+    let user_info = UserInfo {
+        name: req.user().name.clone()
+    };
+    let answer_result = Ok( Answer::good( user_info ) );
+    Ok( Response::with( answer_result ) )
 }
