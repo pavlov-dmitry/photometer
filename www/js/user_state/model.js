@@ -10,11 +10,23 @@ define( function( require ) {
             isNavInMessages: false
         },
 
-        logged: function( name ) {
-            this.set( {
-                isLogged: true,
-                name: name
-            } );
+        fetch: function() {
+            var self = this;
+            var request = require( "request" );
+            var handler = request.get( "user_info" );
+            handler.good = function( data ) {
+                self.set({
+                    isLogged: true,
+                    name: data.name
+                });
+            }
+
+            handler.bad = function( data ) {
+                self.set({
+                    isLogged: false,
+                    name: ""
+                });
+            }
         },
 
         logout: function() {

@@ -9,16 +9,17 @@ define( function (require) {
 
     var app = {
         /// выполнить вход
-        makeLogin: function( name, sid ) {
+        makeLogin: function( sid ) {
             //TODO: возможно стоит работу с куками опустить в модель
             //состояния пользователя
             $.cookie( "sid", sid );
-            this.userState.logged( name );
+            this.userState.fetch();
         },
 
         logout: function() {
             $.removeCookie( "sid" );
-            this.userState.logout();
+            // this.userState.logout();
+            this.userState.fetch();
             this.workspace.nav( "login" );
         },
 
@@ -35,6 +36,7 @@ define( function (require) {
 
         var UserStateHeaderView = require( "user_state/header_view" );
         var userStateHeaderView = new UserStateHeaderView( { model: app.userState } );
+        app.userState.fetch();
 
         Backbone.history.start();
     });
