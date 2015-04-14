@@ -55,6 +55,9 @@ define( function( require ) {
 			self.internalError( resp, this );
 		    }
 		}
+                else if ( resp.status === 401 ) {
+                    self.unauthorized();
+                }
 		else {
 		    self.internalError( resp, this );
 		}
@@ -65,7 +68,11 @@ define( function( require ) {
 
 	internalError: function( resp, ajax ) {
 	    console.log( "internal error" );
-	}
+	},
+
+        unauthorized: function() {
+            console.log( "unauthorized" );
+        }
     };
 
     return Request;
