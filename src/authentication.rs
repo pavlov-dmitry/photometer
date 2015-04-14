@@ -5,7 +5,6 @@ use iron::middleware::{ BeforeMiddleware, AroundMiddleware };
 use iron::prelude::*;
 use iron::typemap::Key;
 use iron::{ Handler, status, Url };
-use iron::modifiers::Redirect;
 use types::Id;
 use rand::{ Rng, OsRng };
 
@@ -129,7 +128,7 @@ pub struct AuthenticationHandler<H: Handler> {
 
 impl Autentication {
     fn make_login ( &self ) -> IronResult<Response> {
-        Ok( Response::with(( status::Found, Redirect( (*self.login_url).clone() ) )) )
+        Ok( Response::with( status::Unauthorized ) )
     }
 }
 
