@@ -1,13 +1,15 @@
-<div class="container panel fly">
-  <div class="row panel-body">
-    <form id="rename-photo-form" class="form-horizontal">
-      <div class="form-group col-sm-12">
-        <div class="col-sm-10">
-          <input type="text" class="form-control" id="new-name-input" placeholder="Имя фотографии" {{#if name}}value="{{name}}"{{/if}}>
-        </div>
-        <button type="submit" class="col-sm-2 btn btn-success">Переименовать</button>
+<div class="container-fluid my-container row">
+  <form id="rename-photo-form" class="form-horizontal">
+    <div class="form-group">
+      <div class="input-group fly">
+        <input type="text" class="form-control" id="new-name-input" placeholder="Имя фотографии" {{#if name}}value="{{name}}"{{/if}}>
+        <span class="input-group-btn">
+          <button class="btn btn-success" type="submit">Переименовать</button>
+        </span>
       </div>
-    </form>
-    <img src="/photo/{{id}}.jpg" class="col-sm-12" />
-  </div>
+    </div>
+  </form>
+  <div class="fly">
+    <img src="/photo/{{id}}.jpg" class="img-responsive"/>
+  <div>
 </div>

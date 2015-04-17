@@ -21,7 +21,7 @@ define( function( require ) {
                 });
             }
 
-            handler.bad = function( data ) {
+            handler.unauthorized = function( data ) {
                 self.set({
                     isLogged: false,
                     name: ""

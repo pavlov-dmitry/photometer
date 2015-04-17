@@ -9,7 +9,7 @@ return templates['photo_preview'] = template({"1":function(depth0,helpers,partia
 },"compiler":[6,">= 2.0.0-beta.1"],"main":function(depth0,helpers,partials,data) {
     var stack1, helper, alias1=helpers.helperMissing, alias2="function", alias3=this.escapeExpression;
 
-  return "<div class=\"preview panel fly-sm\">\r\n  <img src=\"preview/"
+  return "<div class=\"preview panel fly\">\r\n  <img src=\"preview/"
     + alias3(((helper = (helper = helpers.id || (depth0 != null ? depth0.id : depth0)) != null ? helper : alias1),(typeof helper === alias2 ? helper.call(depth0,{"name":"id","hash":{},"data":data}) : helper)))
     + ".png\" alt=\"Нет картинки :(\"/>\r\n  <div class=\"caption\">\r\n    <p>\r\n      <h4 class=\"pull-left\">"
     + ((stack1 = helpers['if'].call(depth0,(depth0 != null ? depth0.name : depth0),{"name":"if","hash":{},"fn":this.program(1, data, 0),"inverse":this.program(3, data, 0),"data":data})) != null ? stack1 : "")

@@ -21,7 +21,8 @@ define( function( require ) {
 		access_denied: function() {
                     var errorsHandler = require( "errors_handler" );
                     errorsHandler.error( "Отказано в доступе. Кажется кто-то что-то химичит, или что-то пошле не так." );
-                }
+                },
+                unauthorized: function() { self.unauthorized(); }
 	    }
 
             var options = {
@@ -56,7 +57,7 @@ define( function( require ) {
 		    }
 		}
                 else if ( resp.status === 401 ) {
-                    self.unauthorized();
+                    handlerObj.unauthorized();
                 }
 		else {
 		    self.internalError( resp, this );

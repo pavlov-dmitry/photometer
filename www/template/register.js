@@ -9,6 +9,6 @@ return templates['register'] = template({"compiler":[6,">= 2.0.0-beta.1"],"main"
     + alias3(((helper = (helper = helpers.email || (depth0 != null ? depth0.email : depth0)) != null ? helper : alias1),(typeof helper === alias2 ? helper.call(depth0,{"name":"email","hash":{},"data":data}) : helper)))
     + "\" required autofocus /></p>\r\n        <div id=\"form-reg-error\" class=\"alert alert-danger hidden\"><strong>Ошибка:</strong> "
     + alias3(((helper = (helper = helpers.error || (depth0 != null ? depth0.error : depth0)) != null ? helper : alias1),(typeof helper === alias2 ? helper.call(depth0,{"name":"error","hash":{},"data":data}) : helper)))
-    + "</div>\r\n        <div id=\"form-reg-info\" class=\"alert alert-success hidden\">Регистрация прошла успешно, проверьте почту что-бы завершить регистрацию</div>\r\n        <button id=\"form-reg-btn\" class=\"btn btn-lg btn-primary btn-block\" type=\"submit\">Регистрация</button>\r\n      </form>\r\n    </p>\r\n</div>";
+    + "</div>\r\n        <div id=\"form-reg-info\" class=\"alert alert-success hidden\">Регистрация прошла успешно, проверьте почту что-бы завершить регистрацию</div>\r\n        <button id=\"form-reg-btn\" class=\"btn btn-lg btn-primary btn-block\" type=\"submit\">Регистрация</button>\r\n      </form>\r\n    </p>\r\n</div>\r\n";
 },"useData":true});
 });

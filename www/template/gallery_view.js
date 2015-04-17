@@ -1,6 +1,6 @@
 define(['handlebars.runtime'], function(Handlebars) {
   Handlebars = Handlebars["default"];  var template = Handlebars.template, templates = Handlebars.templates = Handlebars.templates || {};
 return templates['gallery_view'] = template({"compiler":[6,">= 2.0.0-beta.1"],"main":function(depth0,helpers,partials,data) {
-    return "\r\n<div class=\"container\">\r\n    <span id=\"upload-btn\" class=\"btn btn-success fileinput-button fly-sm\">\r\n        <i class=\"glyphicon glyphicon-plus\"></i>\r\n        <span>Добавить</span>\r\n        <input id=\"upload-file\" type=\"file\" name=\"file\" accept=\"image/jpeg,image/png\">\r\n    </span>\r\n    <div id=\"upload-progress\" class=\"progress\">\r\n        <div class=\"progress-bar progress-bar-success progress-bar-striped active\"></div>\r\n    </div>\r\n    <div id=\"preview-list\">\r\n    </div>\r\n<div>\r\n";
+    return "\r\n<div class=\"my-container\">\r\n    <span id=\"upload-btn\" class=\"btn btn-success fileinput-button fly\">\r\n        <i class=\"glyphicon glyphicon-plus\"></i>\r\n        <span>Добавить</span>\r\n        <input id=\"upload-file\" type=\"file\" name=\"file\" accept=\"image/jpeg,image/png\">\r\n    </span>\r\n    <div id=\"upload-progress\" class=\"progress\">\r\n        <div class=\"progress-bar progress-bar-success progress-bar-striped active\"></div>\r\n    </div>\r\n    <div id=\"preview-list\">\r\n    </div>\r\n<div>\r\n";
 },"useData":true});
 });
