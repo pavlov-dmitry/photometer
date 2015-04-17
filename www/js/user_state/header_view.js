@@ -12,7 +12,7 @@ define( function( require ) {
         },
 
         initialize: function() {
-            $el = $("#header-user-state");
+            $el = $("#navbar");
             this.model.on( "change", this.render, this );
             this.render();
         },

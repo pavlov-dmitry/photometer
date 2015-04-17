@@ -1,27 +1,33 @@
 <!DOCTYPE html>
 <html>
-    <head>
-        <meta charset="utf-8">
-        <title>Photometer</title>
-        <link href="css/photometer.css" rel="stylesheet">
-    </head>
-    <body>
-        <nav class="navbar navbar-inverse navbar-static-top fly" role="navigation">
-          <div class="container-fluid">
-            <div class="navbar-header">
-              <a href="#">
-                <img alt="Photometer" class="navbar-brand" src="i/logo.png">
-              </a>
-            </div>
-            <div id="header-user-state" class="collapse navbar-collapse">
-            </div>
-          </div>
-        </nav>
-        <div id="errors" class="container-fluid">
+  <head>
+    <meta charset="utf-8">
+    <title>Photometer</title>
+    <link href="css/photometer.css" rel="stylesheet">
+  </head>
+  <body>
+    <nav class="navbar navbar-inverse navbar-static-top fly" role="navigation">
+      <div class="container-fluid">
+        <div class="navbar-header">
+          <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+            <span class="sr-only">Toggle navigation</span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <a href="#">
+            <img alt="Photometer" class="navbar-brand" src="i/logo.png">
+          </a>
         </div>
-        <div id="workspace">
+        <div id="navbar" class="collapse navbar-collapse">
         </div>
-        <!-- Placed at the end of the document so the pages load faster -->
-        <script data-main="main" src="js/lib/require.js"></script>
-    </body>
+      </div>
+    </nav>
+    <div id="errors" class="container-fluid">
+    </div>
+    <div id="workspace">
+    </div>
+    <!-- Placed at the end of the document so the pages load faster -->
+    <script data-main="main" src="js/lib/require.js"></script>
+  </body>
 </html>
