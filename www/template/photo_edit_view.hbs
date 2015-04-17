@@ -1,8 +1,10 @@
-<div class="container-fluid my-container row">
+<div class="container-fluid my-container">
   <form id="rename-photo-form" class="form-horizontal" onsubmit="return false;">
     <div class="form-group">
       <div class="input-group fly">
-        <input type="text" class="form-control" id="new-name-input" placeholder="Имя фотографии" {{#if name}}value="{{name}}"{{/if}}>
+        <div class="input-group full-width">
+          <input type="text" class="form-control" id="new-name-input" placeholder="Имя фотографии" {{#if name}}value="{{name}}"{{/if}}>
+        </div>
         <span class="input-group-btn">
           <button class="btn btn-success" type="submit">Переименовать</button>
         </span>
@@ -10,6 +12,9 @@
     </div>
   </form>
   <div class="fly">
-    <img src="/photo/{{id}}.jpg" class="img-responsive"/>
-  <div>
+    <img id="photo" src="/photo/{{id}}.jpg" class="img-responsive"/>
+  </div>
+  <br>
+  <button id="crop-btn" class="btn btn-success fly full-width" type="button">Изменить миниатюру</button>
+  <br>
 </div>

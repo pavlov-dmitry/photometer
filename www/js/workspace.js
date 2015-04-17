@@ -14,6 +14,9 @@ define( function(require) {
         clearCurrent: function() {
             if ( this.current ) {
                 this.current.undelegateEvents();
+                if ( this.current.close ) {
+                    this.current.close();
+                }
             }
         },
 
