@@ -18,10 +18,10 @@ pub fn crop_photo( request: &mut Request ) -> IronResult<Response> {
 #[derive(Clone, RustcDecodable)]
 struct CropInfo {
     id: Id,
-    x1: u32,
-    y1: u32,
-    x2: u32,
-    y2: u32
+    x1: f32,
+    y1: f32,
+    x2: f32,
+    y2: f32
 }
 
 fn crop_photo_answer( request: &mut Request ) -> AnswerResult {
@@ -36,12 +36,16 @@ fn crop_photo_answer( request: &mut Request ) -> AnswerResult {
         Some( (user, info ) ) => {
             if user == request.user().name {
                 let photo_store = request.photo_store();
+                let x1 = crop_info.x1 as u32;
+                let x2 = crop_info.x2 as u32;
+                let y1 = crop_info.y1 as u32;
+                let y2 = crop_info.y2 as u32;
                 let crop_result = photo_store.make_crop(
                     &user,
                     info.upload_time,
                     info.image_type,
-                    (crop_info.x1, crop_info.y1),
-                    (crop_info.x2, crop_info.y2)
+                    (x1, y1),
+                    (x2, y2)
                 );
                 match crop_result {
                     Ok( _ ) => Answer::good( OkInfo::new( "cropped" ) ),
