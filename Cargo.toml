@@ -15,8 +15,6 @@ env_logger = "*"
 iron = "*"
 router = "*"
 rand = "*"
-bodyparser = "*"
-persistent = "*"
 
 [dependencies.mysql]
 version="*"

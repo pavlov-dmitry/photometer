@@ -19,8 +19,6 @@ extern crate env_logger;
 extern crate "rustc-serialize" as rustc_serialize;
 extern crate router;
 extern crate rand;
-extern crate bodyparser;
-extern crate persistent;
 
 use iron::prelude::*;
 use iron::Url;
@@ -28,7 +26,6 @@ use router::Router;
 use not_found_switcher::NotFoundSwitcher;
 use std::net::SocketAddr;
 use std::path::Path;
-use persistent::Read;
 
 mod params_body_parser;
 mod authentication;
@@ -56,8 +53,6 @@ mod get_body;
 mod answer_types;
 
 use stuff::{ StuffCollection, StuffMiddleware };
-
-const MAX_BODY_LENGTH: usize = 1024 * 1024 * 5;
 
 fn main() {
     env_logger::init().unwrap();
@@ -135,7 +130,6 @@ fn main() {
     trigger::start( cfg.events_trigger_period_sec, stuff_middleware.clone() );
 
     let mut chain = Chain::new( no_auth_router );
-    chain.link_before( Read::<bodyparser::MaxBodyLength>::one( MAX_BODY_LENGTH ) );
     chain.link_before( authentication::create_session_store() );
     chain.link_before( stuff_middleware );
     chain.link_before(
