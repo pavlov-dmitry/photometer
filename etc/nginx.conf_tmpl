@@ -1,0 +1,47 @@
+user {{user}};
+
+http {
+     server {
+            set $www_dir '{{dir}}';
+
+            listen 80;
+
+            location = / {
+                     alias $www_dir;
+            }
+
+            location = /index.html {
+                     root $www_dir;
+            }
+
+            location / {
+                     proxy_pass http://localhost:6767;
+            }
+
+            location /i/ {
+                     root $www_dir;
+            }
+
+            location ~ \.css {
+                     add_header  Content-Type    text/css;
+                     root $www_dir;
+            }
+
+            location ~ \.js {
+                     add_header  Content-Type    application/x-javascript;
+                     root $www_dir;
+            }
+
+            location /fonts/ {
+                     root $www_dir;
+            }
+
+            location /template/ {
+                     root $www_dir;
+            }
+     }
+}
+
+events {
+       worker_connections 2048;
+}

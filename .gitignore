@@ -2,3 +2,4 @@
 *.lock
 /www-release
 /data
+nginx.conf
