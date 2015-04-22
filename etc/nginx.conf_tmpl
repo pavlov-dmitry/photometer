@@ -24,6 +24,10 @@ http {
                      root $www_dir;
             }
 
+            location ~ \.gif {
+                     root $www_dir;
+            }
+
             location ~ \.css {
                      add_header  Content-Type    text/css;
                      root $www_dir;
