@@ -5,6 +5,8 @@ http {
             set $www_dir '{{dir}}';
 
             listen 80;
+            sendfile on;
+            client_max_body_size 3M;
 
             location = / {
                      alias $www_dir;

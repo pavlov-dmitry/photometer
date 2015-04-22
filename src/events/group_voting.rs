@@ -2,7 +2,7 @@
 /// за него проголосовало необходимое кол-во членов группы
 
 use super::{ Event, ScheduledEventInfo, FullEventInfo, events_collection };
-use types::{ Id, EmptyResult, CommonResult };
+use types::{ Id, EmptyResult, CommonResult, CommonError };
 use rustc_serialize::json;
 use database::{ Databaseable };
 use stuff::{ Stuffable, Stuff };
@@ -185,5 +185,6 @@ fn make_internal_body( data: &Data, body: &ScheduledEventInfo ) -> ScheduledEven
 }
 
 fn get_data( str_body: &str ) -> CommonResult<Data> {
-    json::decode( str_body ).map_err( |e| format!( "GroupVoting event data decode error: {}", e ) )
+    json::decode( str_body )
+        .map_err( |e| CommonError( format!( "GroupVoting event data decode error: {}", e ) ) )
 }

@@ -1,4 +1,4 @@
-use answer::{ Answer, AnswerResult };
+use answer::{ Answer, AnswerResult, AnswerResponse };
 use database::{ Databaseable };
 use stuff::Stuffable;
 use db::users::{ DbUsers };
@@ -6,7 +6,6 @@ use authentication::{ User, SessionsStoreable, Userable };
 use photo_store::{ PhotoStoreable };
 use err_msg;
 use iron::prelude::*;
-use iron::status;
 use rand::{ Rng, OsRng };
 use mail_writer::MailWriter;
 use mailer::Mailer;
@@ -16,7 +15,7 @@ use answer_types::{ OkInfo, FieldErrorInfo };
 
 /// авторизация пользователя
 pub fn login( request: &mut Request ) -> IronResult<Response> {
-    Ok( Response::with( (status::Ok, login_answer( request )) ) )
+    Ok( Response::with( AnswerResponse( login_answer( request )) ) )
 }
 
 #[derive(Clone, RustcDecodable)]
@@ -36,7 +35,7 @@ fn login_answer( request: &mut Request ) -> AnswerResult {
 
 // регистрация пользователя
 pub fn join_us( request: &mut Request ) -> IronResult<Response> {
-    Ok( Response::with( (status::Ok, join_us_answer( request )) ) )
+    Ok( Response::with( AnswerResponse( join_us_answer( request )) ) )
 }
 
 pub fn registration_end_path() -> &'static str {
@@ -45,7 +44,7 @@ pub fn registration_end_path() -> &'static str {
 
 //окончание регистрации
 pub fn registration_end( req: &mut Request ) -> IronResult<Response> {
-    Ok( Response::with( (status::Ok, registration_end_answer( req )) ) )
+    Ok( Response::with( AnswerResponse( registration_end_answer( req )) ) )
 }
 
 #[derive(Clone, RustcDecodable)]
@@ -140,5 +139,6 @@ pub fn user_info( req: &mut Request ) -> IronResult<Response> {
         name: req.user().name.clone()
     };
     let answer_result = Ok( Answer::good( user_info ) );
-    Ok( Response::with( answer_result ) )
+    let answer = AnswerResponse( answer_result );
+    Ok( Response::with( answer ) )
 }

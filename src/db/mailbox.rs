@@ -2,7 +2,7 @@ use mysql::conn::pool::{ MyPooledConn };
 use mysql::error::{ MyResult };
 use mysql::value::{ from_value };
 use time;
-use types::{ Id, CommonResult, EmptyResult, MailInfo };
+use types::{ Id, CommonResult, EmptyResult, MailInfo, CommonError };
 use std::fmt::Display;
 use parse_utils;
 use database::Database;
@@ -62,8 +62,8 @@ impl DbMailbox for MyPooledConn {
 }
 
 #[inline]
-fn fn_failed<E: Display>( fn_name: &str, e: E ) -> String {
-    format!( "DbMailbox {} failed: {}", fn_name, e )
+fn fn_failed<E: Display>( fn_name: &str, e: E ) -> CommonError {
+    CommonError( format!( "DbMailbox {} failed: {}", fn_name, e ) )
 }
 
 fn send_mail_impl( conn: &mut MyPooledConn, recipient_id: Id, sender_name: &str, subject: &str, body: &str ) -> MyResult<()> {

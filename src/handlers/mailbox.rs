@@ -1,10 +1,9 @@
-use answer::{ AnswerResult, Answer };
+use answer::{ AnswerResult, Answer, AnswerResponse };
 use database::{ Databaseable };
 use stuff::Stuffable;
 use db::mailbox::{ DbMailbox };
 use authentication::{ Userable };
 use iron::prelude::*;
-use iron::status;
 use get_body::GetBody;
 use types::Id;
 use answer_types::{ OkInfo, CountInfo, AccessErrorInfo };
@@ -12,11 +11,13 @@ use answer_types::{ OkInfo, CountInfo, AccessErrorInfo };
 const IN_PAGE_COUNT: u32 = 10;
 
 pub fn count(request: &mut Request ) -> IronResult<Response> {
-    Ok( Response::with( (status::Ok, count_answer( request, false )) ) )
+    let answer = AnswerResponse( count_answer( request, false ) );
+    Ok( Response::with( answer ) )
 }
 
 pub fn count_unreaded( request: &mut Request ) -> IronResult<Response> {
-    Ok( Response::with( (status::Ok, count_answer( request, true )) ) )
+    let answer = AnswerResponse( count_answer( request, true ) );
+    Ok( Response::with( answer ) )
 }
 
 fn count_answer( req: &mut Request, only_unreaded: bool ) -> AnswerResult {
@@ -28,11 +29,13 @@ fn count_answer( req: &mut Request, only_unreaded: bool ) -> AnswerResult {
 }
 
 pub fn get(request: &mut Request ) -> IronResult<Response> {
-   Ok( Response::with( (status::Ok, get_answer( request, false )) ) )
+    let answer = AnswerResponse( get_answer( request, false ) );
+    Ok( Response::with( answer ) )
 }
 
 pub fn get_unreaded(request: &mut Request) -> IronResult<Response> {
-    Ok( Response::with( (status::Ok, get_answer( request, true )) ) )
+    let answer = AnswerResponse( get_answer( request, true ) );
+    Ok( Response::with( answer ) )
 }
 
 #[derive(Clone, Copy, RustcDecodable)]
@@ -58,7 +61,8 @@ fn get_answer( req: &mut Request, only_unreaded: bool ) -> AnswerResult {
 }
 
 pub fn mark_as_readed( request: &mut Request) -> IronResult<Response> {
-    Ok( Response::with( (status::Ok, mark_as_readed_answer( request )) ) )
+    let answer = AnswerResponse( mark_as_readed_answer( request ) );
+    Ok( Response::with( answer ) )
 }
 
 #[derive(Clone, Copy, RustcDecodable)]

@@ -1,12 +1,9 @@
-#![feature(
+/*#![feature(
     core,
     collections,
-    std_misc,
     libc,
-    net,
-    old_io,
-    old_path,
-)]
+    ip_addr
+)]*/
 
 extern crate iron;
 extern crate mysql;
@@ -16,7 +13,7 @@ extern crate url;
 #[macro_use]
 extern crate log;
 extern crate env_logger;
-extern crate "rustc-serialize" as rustc_serialize;
+extern crate rustc_serialize;
 extern crate router;
 extern crate rand;
 
@@ -24,7 +21,6 @@ use iron::prelude::*;
 use iron::Url;
 use router::Router;
 use not_found_switcher::NotFoundSwitcher;
-use std::net::SocketAddr;
 use std::path::Path;
 
 mod params_body_parser;
@@ -100,7 +96,8 @@ fn main() {
     router.get( handlers::authentication::user_info_path(), handlers::authentication::user_info );
 
     let mut auth_chain = Chain::new( router );
-    auth_chain.around( authentication::middleware( &Url::parse( cfg.login_page_url.as_slice() ).unwrap() ) );
+    let url = Url::parse( &cfg.login_page_url ).unwrap();
+    auth_chain.around( authentication::middleware( &url ) );
 
     let not_found_switch_to_auth = NotFoundSwitcher::new( auth_chain );
 
@@ -118,10 +115,10 @@ fn main() {
     let mut stuff = StuffCollection::new();
     stuff.add( db );
     let postman = mailer::create( mailer::MailContext::new(
-        cfg.mail_smtp_address.as_slice(),
-        cfg.mail_from_address.as_slice(),
-        cfg.mail_from_pass.as_slice(),
-        cfg.mail_tmp_file_path.as_slice()
+        &cfg.mail_smtp_address,
+        &cfg.mail_from_address,
+        &cfg.mail_from_pass,
+        &cfg.mail_tmp_file_path
     ) );
     stuff.add( postman );
     stuff.add( mail_writer::create( &cfg.root_url ) );
@@ -141,8 +138,7 @@ fn main() {
     chain.around( not_found_switch_to_auth );
     chain.around( request_logger::middleware() );
 
-    //let addr = format!( "{}:{}", cfg.server_ip(), cfg.server_port );
-    let addr = SocketAddr::new( cfg.server_ip(), cfg.server_port );
+    let addr = cfg.server_socket();
     println!( "starting listen on {}", addr );
     Iron::new( chain ).http( addr ).unwrap();
 }

@@ -1,5 +1,5 @@
 /// Считывание запросов в json формате
-use types::CommonResult;
+use types::{ CommonResult, CommonError, common_error };
 use std::io::{ Read };
 use rustc_serialize::{ Decodable, json };
 use iron::prelude::*;
@@ -12,7 +12,7 @@ pub trait GetBody {
 
 const BODY_LIMIT: u64 = 2 * 1024 * 1024 ;
 
-impl<'a> GetBody for Request<'a> {
+impl<'a, 'b> GetBody for Request<'a, 'b> {
     fn get_body<T: Decodable + Clone + 'static>( &mut self ) -> CommonResult<T> {
         // NOTE: для GET запросов мы ожидаем наш json на месте
         // параметров в url запроса, для остальных в теле запроса
@@ -21,10 +21,10 @@ impl<'a> GetBody for Request<'a> {
                 Some( ref query ) => {
                     let query = url::lossy_utf8_percent_decode( query.as_bytes() );
                     json::decode::<T>( &query )
-                        .map_err( |e| format!( "error parsing query: {:?}", e ) )
+                        .map_err( |e| CommonError( format!( "error parsing query: {:?}", e ) ) )
                 }
 
-                None => Err( String::from_str( "no query part found" ) )
+                None => common_error( From::from( "no query part found" ) )
             }
         }
         else {
@@ -33,16 +33,16 @@ impl<'a> GetBody for Request<'a> {
             match limited_body.read_to_end( &mut bytes ) {
                 Ok( readed ) => {
                     if readed == BODY_LIMIT as usize {
-                        return Err( String::from_str( "request body too BIG!" ) );
+                        return common_error( From::from( "request body too BIG!" ) );
                     }
                     // TODO: после обновления до beta заменить
                     // let body_as_str = String::from_ut8_lossy( &bytes );
                     let body_as_str = String::from_utf8( bytes ).unwrap_or( String::new() );
                     json::decode::<T>( &body_as_str )
-                        .map_err( |e| format!( "error parsing query: {:?}", e ) )
+                        .map_err( |e| CommonError( format!( "error parsing query: {:?}", e ) ) )
                 },
                 Err(_) => {
-                    return Err( String::from_str( "error while reading request body" ) )
+                    return common_error( From::from( "error while reading request body" ) )
                 }
             }
 

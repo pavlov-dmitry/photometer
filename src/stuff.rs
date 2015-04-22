@@ -72,7 +72,7 @@ impl BeforeMiddleware for StuffMiddleware {
     }
 }
 
-impl<'a> Stuffable for Request<'a> {
+impl<'a, 'b> Stuffable for Request<'a, 'b> {
     fn stuff(&mut self) -> &mut Stuff {
         self.extensions.get_mut::<Stuff>().unwrap()
     }

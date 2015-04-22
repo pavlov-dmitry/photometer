@@ -1,18 +1,18 @@
 use photo_store::{ PhotoStoreable, PhotoStoreError };
-use answer::{ AnswerResult, Answer };
+use answer::{ AnswerResult, Answer, AnswerResponse };
 use database::{ Databaseable };
 use stuff::Stuffable;
 use err_msg;
 use authentication::{ Userable };
 use db::photos::{ DbPhotos };
 use iron::prelude::*;
-use iron::status;
 use get_body::GetBody;
-use types::Id;
+use types::{ Id };
 use answer_types::{ OkInfo, PhotoErrorInfo, AccessErrorInfo };
 
 pub fn crop_photo( request: &mut Request ) -> IronResult<Response> {
-    Ok( Response::with( (status::Ok, crop_photo_answer( request )) ) )
+    let answer = AnswerResponse( crop_photo_answer( request ) );
+    Ok( Response::with( answer ) )
 }
 
 #[derive(Clone, RustcDecodable)]
@@ -50,7 +50,7 @@ fn crop_photo_answer( request: &mut Request ) -> AnswerResult {
                 match crop_result {
                     Ok( _ ) => Answer::good( OkInfo::new( "cropped" ) ),
                     Err( e ) => match e {
-                        PhotoStoreError::Fs( e ) => return Err( err_msg::old_fs_error( e ) ),
+                        PhotoStoreError::Fs( e ) => return Err( err_msg::fs_error( e ) ),
                         PhotoStoreError::Format => Answer::bad( PhotoErrorInfo::bad_image() )
                     }
                 }

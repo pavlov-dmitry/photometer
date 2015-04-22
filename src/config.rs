@@ -2,8 +2,8 @@ use std::io;
 use std::io::{ Read, Write };
 use std::fs::File;
 use rustc_serialize::json;
-use std::net::IpAddr;
-use types::{ CommonResult };
+use std::net::{ SocketAddr, SocketAddrV4, Ipv4Addr };
+use types::{ CommonResult, CommonError, common_error };
 use std::path::Path;
 
 #[derive(RustcEncodable, RustcDecodable)]
@@ -22,22 +22,24 @@ pub struct Config {
     pub photo_store_max_photo_size_bytes : usize,
     pub photo_store_preview_size : usize,
     pub events_trigger_period_sec: u32,
-    pub mail_smtp_address: String, 
-    pub mail_from_address: String, 
-    pub mail_from_pass: String, 
+    pub mail_smtp_address: String,
+    pub mail_from_address: String,
+    pub mail_from_pass: String,
     pub mail_tmp_file_path: String
 }
 
 impl Config {
-    pub fn server_ip(&self) -> IpAddr {
+    pub fn server_socket(&self) -> SocketAddr {
         let (fst, snd, thr, fth) = self.server_ip;
-        IpAddr::new_v4( fst, snd, thr, fth )
+        let socket = SocketAddrV4::new( Ipv4Addr::new( fst, snd, thr, fth ),
+                                        self.server_port );
+        SocketAddr::V4( socket )
     }
 }
 
 impl Config {
     fn new() -> Config {
-        Config{ 
+        Config{
             server_ip : (127, 0, 0, 1),
             server_port : 6767,
             root_url: "http://localhost:6767".to_string(),
@@ -67,18 +69,18 @@ pub fn default() -> Config {
 pub fn load( path: &Path ) -> CommonResult<Config> {
     let mut file = match File::open( path ) {
         Ok( file ) => file,
-        Err( e ) => return Err( format!( "Fail to open config file, description: {}", e ) ),
+        Err( e ) => return common_error( format!( "Fail to open config file, description: {}", e ) ),
     };
     let mut content = String::new();
     match file.read_to_string(&mut content) {
         Ok ( _ ) => {
             json::decode::<Config>( &content )
-                .map_err( | e | {
-                    format!( "Config fail to decode, description: {}", e )
+                .map_err( |e| {
+                    CommonError( format!( "Config fail to decode, description: {}", e ) )
                 })
         }
 
-        Err( e ) => Err( format!( "Config fail to load, description: {}", e ) )
+        Err( e ) => common_error( format!( "Config fail to load, description: {}", e ) )
     }
 }
 

@@ -1,17 +1,17 @@
 use authentication::{ Userable };
 
-use answer::{ AnswerResult, Answer };
+use answer::{ AnswerResult, Answer, AnswerResponse };
 use database::{ Databaseable };
 use stuff::Stuffable;
 use db::photos::{ DbPhotos };
 use iron::prelude::*;
-use iron::status;
 use types::Id;
 use get_body::GetBody;
 use answer_types::{ OkInfo, PhotoErrorInfo, AccessErrorInfo };
 
 pub fn rename_photo( req: &mut Request ) -> IronResult<Response> {
-    Ok( Response::with( (status::Ok, rename_answer( req )) ) )
+    let answer = AnswerResponse( rename_answer( req ) );
+    Ok( Response::with( answer ) )
 }
 
 #[derive(Clone, RustcDecodable)]

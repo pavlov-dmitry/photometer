@@ -1,6 +1,5 @@
 use std::collections::HashSet;
 use rustc_serialize::json;
-use std::error::FromError;
 use iron::prelude::*;
 
 use super::{
@@ -9,7 +8,7 @@ use super::{
     UserEvent,
     FullEventInfo
 };
-use types::{ Id, EmptyResult, CommonResult };
+use types::{ Id, EmptyResult, CommonResult, CommonError };
 use answer::{ Answer, AnswerResult };
 use database::{ Databaseable };
 use stuff::{ Stuffable, Stuff };
@@ -19,7 +18,6 @@ use db::users::DbUsers;
 use db::groups::DbGroups;
 use authentication::{ Userable };
 use time;
-use std::time::Duration;
 use mail_writer::MailWriter;
 use get_body::GetBody;
 use answer_types::{ OkInfo, FieldErrorInfo };
@@ -87,7 +85,7 @@ impl UserEvent for GroupCreation {
         }
         //формирование
         let start_time = time::get_time();
-        let end_time = start_time + Duration::days( 1 );
+        let end_time = start_time + time::Duration::days( 1 );
         Ok( FullEventInfo {
             id: ID,
             name: group_info.name,
@@ -261,12 +259,13 @@ struct Info {
     description: String
 }
 
-impl FromError<String> for AnswerResult {
-    fn from_error( err: String ) -> AnswerResult {
+/*impl From<String> for AnswerResult {
+    fn from( err: String ) -> AnswerResult {
         Err( err )
     }
-}
+}*/
 
 fn get_info( str_body: &String ) -> CommonResult<Info> {
-    json::decode( &str_body ).map_err( |e| format!( "GroupCreation event data decode error: {}", e ) )
+    json::decode( &str_body )
+        .map_err( |e| CommonError( format!( "GroupCreation event data decode error: {}", e ) ) )
 }

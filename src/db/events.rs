@@ -1,7 +1,7 @@
 use mysql::conn::pool::{ MyPooledConn };
 use mysql::error::{ MyResult };
 use mysql::value::{ from_value, ToValue, FromValue, Value, from_value_opt };
-use types::{ Id, CommonResult, EmptyResult };
+use types::{ Id, CommonResult, EmptyResult, CommonError };
 use time::{ Timespec };
 use std::fmt::Display;
 use events::{ ScheduledEventInfo, EventState, FullEventInfo };
@@ -17,7 +17,7 @@ pub trait DbEvents {
     fn active_events( &mut self ) -> CommonResult<EventInfos>;
     /// считывает собыятия которые должны закончится за период
     fn ending_events( &mut self, moment: &Timespec ) -> CommonResult<EventInfos>;
-    /// информация о событии 
+    /// информация о событии
     fn event_info( &mut self, scheduled_id: Id ) -> CommonResult<Option<ScheduledEventInfo>>;
     /// добавляет события пачкой
     fn add_events( &mut self, events: &[FullEventInfo] ) -> EmptyResult;
@@ -39,11 +39,11 @@ pub fn create_tables( db: &Database ) -> EmptyResult {
             `start_time` int(11) NOT NULL DEFAULT '0',
             `end_time` int(11) NOT NULL DEFAULT '0',
             `data` TEXT NOT NULL DEFAULT '',
-            `state` ENUM( 
-                'not_started_yet', 
-                'active', 
-                'finished', 
-                'disabled' 
+            `state` ENUM(
+                'not_started_yet',
+                'active',
+                'finished',
+                'disabled'
             ) NOT NULL DEFAULT 'not_started_yet',
             `user_editable` BOOL NOT NULL DEFAULT false,
             PRIMARY KEY ( `id` ),
@@ -73,10 +73,10 @@ impl DbEvents for MyPooledConn {
             .map_err( |e| fn_failed( "ending_events", e ) )
     }
 
-    /// информация о событии 
+    /// информация о событии
     fn event_info( &mut self, scheduled_id: Id ) -> CommonResult<Option<ScheduledEventInfo>> {
         event_info_impl( self, scheduled_id )
-            .map_err( |e| fn_failed( "event_info", e ) )   
+            .map_err( |e| fn_failed( "event_info", e ) )
     }
 
     /// добавляет события
@@ -86,7 +86,7 @@ impl DbEvents for MyPooledConn {
     }
     fn add_disabled_event( &mut self, event: &FullEventInfo ) -> CommonResult<Id> {
         add_disabled_event_impl( self, event )
-            .map_err( |e| fn_failed( "add_events", e ) )   
+            .map_err( |e| fn_failed( "add_events", e ) )
     }
 
     /// помечает что данное событие завершено
@@ -102,8 +102,8 @@ impl DbEvents for MyPooledConn {
     }
 }
 
-fn fn_failed<E: Display>( fn_name: &str, e: E ) -> String {
-    format!( "DbEvents {} failed: {}", fn_name, e )
+fn fn_failed<E: Display>( fn_name: &str, e: E ) -> CommonError {
+    CommonError( format!( "DbEvents {} failed: {}", fn_name, e ) )
 }
 
 const NOT_STARTED_YET_STR : &'static str = "not_started_yet";
@@ -128,19 +128,22 @@ impl FromValue for EventState {
     }
     fn from_value_opt(v: &Value) -> Option<EventState> {
         from_value_opt::<String>( v )
-            .and_then( |string| match string.as_slice() {
-                NOT_STARTED_YET_STR => Some( EventState::NotStartedYet ),
-                ACTIVE_STR => Some( EventState::Active ),
-                FINISHED_STR => Some( EventState::Finished ),
-                DISABLED_STR => Some( EventState::Disabled ),
-                _ => None
+            .and_then( |string| {
+                let s: &str = &string;
+                match s {
+                    NOT_STARTED_YET_STR => Some( EventState::NotStartedYet ),
+                    ACTIVE_STR => Some( EventState::Active ),
+                    FINISHED_STR => Some( EventState::Finished ),
+                    DISABLED_STR => Some( EventState::Disabled ),
+                    _ => None
+                }
             })
     }
 }
 
 fn get_events_impl( conn: &mut MyPooledConn, where_cond: &str, values: &[&ToValue] ) -> MyResult<Vec<ScheduledEventInfo>> {
     let query = format!(
-        "SELECT 
+        "SELECT
             id,
             event_id,
             event_name,
@@ -168,8 +171,8 @@ fn get_events_impl( conn: &mut MyPooledConn, where_cond: &str, values: &[&ToValu
 }
 
 fn event_info_impl( conn: &mut MyPooledConn, scheduled_id: Id ) -> MyResult<Option<ScheduledEventInfo>> {
-    let mut stmt = try!( conn.prepare( 
-        "SELECT 
+    let mut stmt = try!( conn.prepare(
+        "SELECT
             event_id,
             event_name,
             data,
@@ -217,7 +220,7 @@ fn event_start_time_impl( conn: &mut MyPooledConn, scheduled_id: Id ) -> MyResul
 }
 
 fn add_events_impl( conn: &mut MyPooledConn, events: &[FullEventInfo] ) -> MyResult<()> {
-    let mut query = format!( 
+    let mut query = format!(
         "INSERT INTO scheduled_events (
             event_id,
             event_name,
@@ -228,13 +231,13 @@ fn add_events_impl( conn: &mut MyPooledConn, events: &[FullEventInfo] ) -> MyRes
         VALUES( ?, ?, ?, ?, ? )"
     );
 
-    for _ in range( 1, events.len() ) {
+    for _ in (1 .. events.len()) {
         query.push_str( ", ( ?, ?, ?, ?, ? )" );
     }
 
     let mut stmt = try!( conn.prepare( &query ) );
     let mut values: Vec<&ToValue> = Vec::new();
-    for i in range( 0, events.len() ) {
+    for i in (0 .. events.len()) {
         let event = &events[ i ];
         values.push( &event.id );
         values.push( &event.name );
@@ -262,9 +265,9 @@ fn add_disabled_event_impl( conn: &mut MyPooledConn, event: &FullEventInfo ) -> 
         VALUES ( ?, ?, ?, ?, ?, ?, true )
     ") );
 
-    let result = try!( stmt.execute( &[ 
-        &event.id, 
-        &event.name, 
+    let result = try!( stmt.execute( &[
+        &event.id,
+        &event.name,
         &event.start_time.sec,
         &event.end_time.sec,
         &event.data,

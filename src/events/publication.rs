@@ -1,6 +1,6 @@
 use super::{ Event, CreateFromTimetable, ScheduledEventInfo };
 use super::late_publication::LatePublication;
-use types::{ Id, EmptyResult, CommonResult };
+use types::{ Id, EmptyResult, CommonResult, CommonError };
 use answer::{ Answer, AnswerResult };
 use rustc_serialize::json;
 use mailer::Mailer;
@@ -12,7 +12,6 @@ use mail_writer::MailWriter;
 use database::{ Databaseable };
 use stuff::{ Stuffable, Stuff };
 use authentication::{ Userable };
-use std::time::duration::Duration;
 use time;
 use iron::prelude::*;
 use get_body::GetBody;
@@ -71,7 +70,7 @@ impl Event for Publication {
                 info.group_id,
                 &body.name,
                 time::get_time(),
-                Duration::days( 365 )
+                time::Duration::days( 365 )
             );
             try!( db.add_events( &[ event_info ] ) );
         }
@@ -155,7 +154,8 @@ impl CreateFromTimetable for Publication {
 }
 
 fn get_info( str_body: &String ) -> CommonResult<Info> {
-    json::decode( &str_body ).map_err( |e| format!( "Publication event decode error: {}", e ) )
+    json::decode( &str_body )
+        .map_err( |e| CommonError( format!( "Publication event decode error: {}", e ) ) )
 }
 
 #[derive(RustcEncodable, RustcDecodable)]

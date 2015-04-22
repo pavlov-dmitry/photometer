@@ -1,7 +1,7 @@
 use mysql::conn::pool::{ MyPooledConn };
 use mysql::error::{ MyResult };
 use mysql::value::{ from_value, ToValue };
-use types::{ Id, CommonResult, EmptyResult };
+use types::{ Id, CommonResult, EmptyResult, CommonError };
 use std::fmt::Display;
 use database::Database;
 
@@ -24,7 +24,7 @@ pub trait DbUsers {
 }
 
 pub fn create_tables( db: &Database ) -> EmptyResult {
-    db.execute(  
+    db.execute(
         "CREATE TABLE IF NOT EXISTS `users` (
             `id` bigint(20) NOT NULL AUTO_INCREMENT,
             `login` varchar(16) NOT NULL DEFAULT '',
@@ -46,7 +46,7 @@ impl DbUsers for MyPooledConn {
         get_user_impl( self, name, pass )
             .map_err( |e| fn_failed( "get_user", e ) )
     }
-    
+
     /// добавляет нового пользователя в БД
     fn add_user( &mut self, name: &str, pass: &str, mail: &str, regkey: &str ) -> CommonResult<User> {
         add_user_impl( self, name, pass, mail, regkey )
@@ -65,7 +65,7 @@ impl DbUsers for MyPooledConn {
     /// проверяет наличие имени в БД
     fn user_id_exists(&mut self, id: Id ) -> CommonResult<bool> {
         user_id_exists_impl( self, id )
-            .map_err( |e| fn_failed( "user_id_exists", e ) )  
+            .map_err( |e| fn_failed( "user_id_exists", e ) )
     }
     /// возвращает пользователя по Id
     fn user_by_id( &mut self, id: Id ) -> CommonResult<Option<User>> {
@@ -79,23 +79,23 @@ impl DbUsers for MyPooledConn {
     }
 }
 
-fn fn_failed<E: Display>( fn_name: &str, e: E ) -> String {
-    format!( "DbUsers func '{}' failed: {}", fn_name, e )
+fn fn_failed<E: Display>( fn_name: &str, e: E ) -> CommonError {
+    CommonError( format!( "DbUsers func '{}' failed: {}", fn_name, e ) )
 }
 
 fn get_user_impl( conn: &mut MyPooledConn, name: &str, pass: &str ) -> MyResult<Option<User>> {
     let name = name.to_string(); // помогает убрать internal compiler error
     let pass = pass.to_string();
-    let mut stmt = try!( conn.prepare( 
-        "SELECT 
-            `login`, 
-            `id`, 
+    let mut stmt = try!( conn.prepare(
+        "SELECT
+            `login`,
+            `id`,
             `mail`
-        FROM `users` 
-        WHERE 
-            `login`=? AND 
-            `password`=? AND 
-            `activated`=true" 
+        FROM `users`
+        WHERE
+            `login`=? AND
+            `password`=? AND
+            `activated`=true"
     ) );
     let mut sql_result = try!( stmt.execute( &[ &name, &pass ] ) );
     match sql_result.next() {
@@ -115,13 +115,13 @@ fn get_user_impl( conn: &mut MyPooledConn, name: &str, pass: &str ) -> MyResult<
 fn add_user_impl( conn: &mut MyPooledConn, name: &str, pass: &str, mail: &str, regkey: &str ) -> MyResult<User> {
     let name = name.to_string();
     let pass = pass.to_string();
-    let mut stmt = try!( conn.prepare( 
+    let mut stmt = try!( conn.prepare(
         "INSERT INTO users (
-            login, 
-            password, 
-            mail, 
+            login,
+            password,
+            mail,
             regkey
-        ) VALUES(?, ?, ?, ?);" 
+        ) VALUES(?, ?, ?, ?);"
     ) );
     let result = try!( stmt.execute( &[ &name, &pass, &mail, &regkey ] ) );
     Ok( User {
@@ -134,16 +134,16 @@ fn add_user_impl( conn: &mut MyPooledConn, name: &str, pass: &str, mail: &str, r
 fn activate_user_impl( conn: &mut MyPooledConn, regkey: &str ) -> MyResult<Option<User>> {
     let maybe_user = {
         let mut stmt = try!( conn.prepare(
-            "SELECT 
-                `id`, 
-                `login`, 
-                `mail` 
-            FROM `users` 
-            WHERE 
-                `regkey`=? AND 
+            "SELECT
+                `id`,
+                `login`,
+                `mail`
+            FROM `users`
+            WHERE
+                `regkey`=? AND
                 `activated`=false"
         ) );
-        let mut result = try!( stmt.execute( &[ &regkey ] ) );    
+        let mut result = try!( stmt.execute( &[ &regkey ] ) );
         match result.next()  {
             Some( row ) => {
                 let row = try!( row );
@@ -161,7 +161,7 @@ fn activate_user_impl( conn: &mut MyPooledConn, regkey: &str ) -> MyResult<Optio
             "UPDATE users SET activated=true WHERE id=?"
         ) );
         try!( stmt.execute( &[ &user.id ] ) );
-    } 
+    }
     Ok( maybe_user )
 }
 
@@ -197,11 +197,11 @@ fn user_by_id_impl( conn: &mut MyPooledConn, id: Id ) -> MyResult<Option<User>> 
 
 fn users_by_id_impl( conn: &mut MyPooledConn, ids: &[Id] ) -> MyResult<Vec<User>> {
     let mut query = format!( "select id, login, mail from users where id=? AND activated=true" );
-    for _ in range( 1, ids.len() ) {
+    for _ in (1 .. ids.len()) {
         query.push_str( ", ?" );
     }
 
-    let mut stmt = try!( conn.prepare( query.as_slice() ) );
+    let mut stmt = try!( conn.prepare( &query ) );
     let mut values: Vec<&ToValue> = Vec::new();
     for id in ids.iter() {
         values.push( id );

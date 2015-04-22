@@ -3,8 +3,25 @@ use std::fmt::{ Display, Formatter };
 use rustc_serialize::{ Encodable, Encoder };
 
 pub type Id = u64;
-pub type CommonResult<T> = Result<T, String>;
+// NOTE: Обернул строку в свой тип для реализации преобразований к
+// нему через trait From
+#[derive(Debug)]
+pub struct CommonError( pub String );
+pub type CommonResult<T> = Result<T, CommonError>;
 pub type EmptyResult = CommonResult<()>;
+
+impl Display for CommonError {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+        let &CommonError( ref e ) = self;
+        write!(f, "{}", e )
+    }
+}
+
+// NOTE: функция утилита для минимизаций обёртовавыний в коде
+#[inline]
+pub fn common_error<T>( s: String ) -> CommonResult<T> {
+    Err( CommonError( s ) )
+}
 
 #[derive(Debug, RustcEncodable)]
 pub struct PhotoInfo {

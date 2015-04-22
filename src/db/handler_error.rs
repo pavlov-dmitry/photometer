@@ -1,5 +1,5 @@
 use mysql::error::{ MyError };
-use std::error::FromError;
+use std::convert::From;
 use std::fmt;
 use std::fmt::{ Display, Formatter };
 
@@ -10,14 +10,14 @@ pub enum DbHandlerError {
     Common( String )
 }
 
-impl FromError<MyError> for DbHandlerError {
-    fn from_error( err: MyError ) -> DbHandlerError {
+impl From<MyError> for DbHandlerError {
+    fn from( err: MyError ) -> DbHandlerError {
         DbHandlerError::MySql( err )
     }
 }
 
-impl FromError<String> for DbHandlerError {
-    fn from_error( err: String ) -> DbHandlerError {
+impl From<String> for DbHandlerError {
+    fn from( err: String ) -> DbHandlerError {
         DbHandlerError::Common( err )
     }
 }
@@ -28,5 +28,5 @@ impl Display for DbHandlerError {
             &DbHandlerError::MySql( ref e ) => write!(f, "{}", e ),
             &DbHandlerError::Common( ref e ) => write!(f, "{}", e )
         }
-    }   
+    }
 }

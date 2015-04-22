@@ -1,10 +1,10 @@
 use photo_store::{ PhotoStoreable, PhotoStoreError };
-use answer::{ AnswerResult, Answer };
+use answer::{ AnswerResult, Answer, AnswerResponse };
 use authentication::{ Userable };
 use err_msg;
 use time;
 use time::{ Timespec };
-use types::{ PhotoInfo, ImageType };
+use types::{ PhotoInfo, ImageType, common_error };
 use answer_types::{ OkInfo, PhotoErrorInfo };
 use exif_reader;
 use exif_reader::{ ExifValues };
@@ -12,14 +12,15 @@ use database::{ Databaseable };
 use stuff::Stuffable;
 use db::photos::{ DbPhotos };
 use iron::prelude::*;
-use iron::status;
 use params_body_parser::{ ParamsBody, BinParamsError };
+use std::convert::From;
 
 static IMAGE : &'static str = "upload_img";
 
 
 pub fn upload_photo( request: &mut Request ) -> IronResult<Response> {
-    Ok( Response::with( (status::Ok, upload_photo_answer( request )) ) )
+    let answer = AnswerResponse( upload_photo_answer( request ) );
+    Ok( Response::with( answer ) )
 }
 
 fn upload_photo_answer( request: &mut Request ) -> AnswerResult {
@@ -32,11 +33,11 @@ fn upload_photo_answer( request: &mut Request ) -> AnswerResult {
         }
 
         Err( BinParamsError::NotMultipartFormData ) => {
-            return Err( String::from_str( "not a multiform data" ) );
+            return common_error( From::from( "not a multiform data" ) );
         }
 
         Err( BinParamsError::IoError ) => {
-            return Err( String::from_str( "error while reading request body" ) );
+            return common_error( From::from( "error while reading request body" ) );
         }
     };
 
@@ -63,11 +64,11 @@ fn upload_photo_answer( request: &mut Request ) -> AnswerResult {
                     let db = try!( request.stuff().get_current_db_conn() );
                     match db.add_photo( user_id, &photo_info ) {
                         Ok( _ ) => Answer::good( OkInfo::new( "photo_loaded" ) ),
-                        Err( e ) => return Err( format!( "{}", e ) )
+                        Err( e ) => return common_error( format!( "{}", e ) )
                     }
                 }
                 Err( e ) => match e {
-                    PhotoStoreError::Fs( e ) => return Err( err_msg::old_fs_error( e ) ),
+                    PhotoStoreError::Fs( e ) => return Err( err_msg::fs_error( e ) ),
                     PhotoStoreError::Format => Answer::bad( PhotoErrorInfo::bad_image() )
                 }
             }

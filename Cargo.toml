@@ -15,10 +15,8 @@ env_logger = "*"
 iron = "*"
 router = "*"
 rand = "*"
+image = "*"
 
 [dependencies.mysql]
 version="*"
 default-features = false
-
-[dependencies.image]
-git = "https://github.com/PistonDevelopers/image.git"

@@ -1,5 +1,5 @@
 use super::{ Event, ScheduledEventInfo, FullEventInfo };
-use types::{ Id, EmptyResult, CommonResult };
+use types::{ Id, EmptyResult, CommonResult, CommonError };
 use answer::{ Answer, AnswerResult };
 use database::{ Databaseable };
 use stuff::{ Stuffable, Stuff };
@@ -8,13 +8,13 @@ use db::groups::DbGroups;
 use db::publication::DbPublication;
 use db::photos::DbPhotos;
 use mail_writer::MailWriter;
-use std::time;
-use time::Timespec;
+use time::{ self, Timespec };
 use rustc_serialize::json;
 use authentication::Userable;
 use iron::prelude::*;
 use get_body::GetBody;
 use answer_types::{ OkInfo, AccessErrorInfo, PhotoErrorInfo, FieldErrorInfo };
+use std::convert::From;
 
 #[derive(Clone)]
 pub struct LatePublication;
@@ -30,9 +30,10 @@ impl LatePublication {
             group_id: group_id,
             parent_id: parent_id,
         };
+        let event_name: String = From::from( "Догоняем " );
         FullEventInfo {
             id: ID,
-            name: String::from_str( "Догоняем " ) + name,
+            name: event_name + name,
             start_time: start_time,
             end_time: start_time + duration,
             data: json::encode( &info ).unwrap()
@@ -166,5 +167,5 @@ struct Info {
 
 fn get_info( str_body: &String ) -> CommonResult<Info> {
     json::decode( &str_body )
-        .map_err( |e| format!( "LatePublication event decode error: {}", e ) )
+        .map_err( |e| CommonError( format!( "LatePublication event decode error: {}", e ) ) )
 }

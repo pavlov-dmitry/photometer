@@ -2,7 +2,7 @@ use mysql::conn::pool::{ MyPooledConn };
 use mysql::error::{ MyResult };
 use mysql::value::{ from_value, ToValue };
 use std::fmt::Display;
-use types::{ Id, EmptyResult, CommonResult };
+use types::{ Id, EmptyResult, CommonResult, CommonError };
 use database::Database;
 
 pub struct Votes {
@@ -16,13 +16,13 @@ pub trait DbVotes {
     fn add_rights_of_voting( &mut self, scheduled_id: Id, users: &[Id]  ) -> EmptyResult;
     /// добавляет право голоса по какому-то событию для всей группы
     fn add_rights_of_voting_for_group( &mut self, scheduled_id: Id, group_id: Id ) -> EmptyResult;
-    /// проверяет на то что все проголосовали 
+    /// проверяет на то что все проголосовали
     fn is_all_voted( &mut self, scheduled_id: Id ) -> CommonResult<bool>;
     /// проверяет голосвал ли этот пользователь уже или нет
     fn is_need_user_vote( &mut self, scheduled_id: Id, user_id: Id ) -> CommonResult<bool>;
     /// возращает голоса
     fn get_votes( &mut self, scheduled_id: Id ) -> CommonResult<Votes>;
-    /// голосуем 
+    /// голосуем
     fn set_vote( &mut self, scheduled_id: Id, user_id: Id, vote: bool ) -> EmptyResult;
 }
 
@@ -53,7 +53,7 @@ impl DbVotes for MyPooledConn {
         add_rights_of_voting_for_group_impl( self, scheduled_id, group_id )
             .map_err( |e| fn_failed( "add_rights_of_voting_for_group", e ) )
     }
-    /// проверяет на то что все проголосовали 
+    /// проверяет на то что все проголосовали
     fn is_all_voted( &mut self, scheduled_id: Id ) -> CommonResult<bool> {
         is_all_voted_impl( self, scheduled_id )
             .map_err( |e| fn_failed( "is_all_voted", e ) )
@@ -68,7 +68,7 @@ impl DbVotes for MyPooledConn {
         get_votes_impl( self, scheduled_id )
             .map_err( |e| fn_failed( "get_votes", e ) )
     }
-    /// голосуем 
+    /// голосуем
     fn set_vote( &mut self, scheduled_id: Id, user_id: Id, vote: bool ) -> EmptyResult {
         set_vote_impl( self, scheduled_id, user_id, vote )
             .map_err( |e| fn_failed( "set_vote", e ) )
@@ -76,8 +76,8 @@ impl DbVotes for MyPooledConn {
 
 }
 
-fn fn_failed<E: Display>( fn_name: &str, e: E ) -> String {
-    format!( "DbVotes `{}` failed: {}", fn_name, e )
+fn fn_failed<E: Display>( fn_name: &str, e: E ) -> CommonError {
+    CommonError( format!( "DbVotes `{}` failed: {}", fn_name, e ) )
 }
 
 fn add_rights_of_voting_impl( conn: &mut MyPooledConn, scheduled_id: Id, users: &[Id] ) -> MyResult<()> {
@@ -88,14 +88,14 @@ fn add_rights_of_voting_impl( conn: &mut MyPooledConn, scheduled_id: Id, users: 
         ) VALUES ( ?, ? )"
     );
 
-    for _ in range( 1, users.len() ) {
+    for _ in (1 .. users.len()) {
         query.push_str( ", ( ?, ? )" );
     }
 
     let mut stmt = try!( conn.prepare( &query ) );
 
     let mut values: Vec<&ToValue> = Vec::new();
-    for i in range( 0, users.len() ) {
+    for i in (0 .. users.len()) {
         values.push( &scheduled_id );
         values.push( &users[ i ] );
     }
@@ -105,8 +105,8 @@ fn add_rights_of_voting_impl( conn: &mut MyPooledConn, scheduled_id: Id, users: 
 }
 
 fn add_rights_of_voting_for_group_impl( conn: &mut MyPooledConn, scheduled_id: Id, group_id: Id ) -> MyResult<()> {
-    let mut stmt = try!( conn.prepare( 
-        "INSERT 
+    let mut stmt = try!( conn.prepare(
+        "INSERT
             INTO `votes` ( `scheduled_id`, `user_id` )
         SELECT
             ? as `scheduled_id`,
@@ -131,13 +131,13 @@ fn is_all_voted_impl( conn: &mut MyPooledConn, scheduled_id: Id ) -> MyResult<bo
 
 fn is_need_user_vote_impl( conn: &mut MyPooledConn, scheduled_id: Id, user_id: Id ) -> MyResult<bool> {
     let mut stmt = try!( conn.prepare( "
-        SELECT 
-            COUNT( `id` ) 
-        FROM 
-            `votes` 
-        WHERE 
-            `scheduled_id` = ? 
-            AND `user_id` = ? 
+        SELECT
+            COUNT( `id` )
+        FROM
+            `votes`
+        WHERE
+            `scheduled_id` = ?
+            AND `user_id` = ?
             AND `voted` = false
     "));
     let mut result = try!( stmt.execute( &[ &scheduled_id, &user_id ] ) );
@@ -161,7 +161,7 @@ fn get_votes_impl( conn: &mut MyPooledConn, scheduled_id: Id ) -> MyResult<Votes
         let voted: bool = from_value( &row[ 1 ] );
         let vote: bool = from_value( &row[ 2 ] );
         if voted {
-            if vote == true { 
+            if vote == true {
                 votes.yes.push( user_id );
             }
             else {
@@ -170,7 +170,7 @@ fn get_votes_impl( conn: &mut MyPooledConn, scheduled_id: Id ) -> MyResult<Votes
         }
         votes.all_count += 1;
     }
-    
+
     Ok( votes )
 }
 

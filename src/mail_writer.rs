@@ -7,7 +7,7 @@ use types::Id;
 /// возвращает для всех писем (тема, само_письмо)
 pub trait MailWriter {
     /// РЕГИСТРАЦИЯ
-    /// сочиняет письмо о подтверждении регистрации 
+    /// сочиняет письмо о подтверждении регистрации
     fn write_registration_accept_mail( &self, reg_key: &str ) -> (String, String);
 
     /// СОЗДАНИЕ ГРУППЫ
@@ -22,16 +22,16 @@ pub trait MailWriter {
 
     /// ПУБЛИКАЦИЯ
     /// сочиняет письмо о том что пора выкладываться
-    fn write_time_for_publication_mail( &self, 
-        event_name: &str, 
-        user_name: &str, 
-        scheduled_id: Id 
+    fn write_time_for_publication_mail( &self,
+        event_name: &str,
+        user_name: &str,
+        scheduled_id: Id
     ) -> (String, String);
     /// сочиняет письмо о том что опоздал конечно, но выложиться можешь
-    fn write_late_publication_mail( &self, 
-        event_name: &str, 
-        user_name: &str, 
-        scheduled_id: Id 
+    fn write_late_publication_mail( &self,
+        event_name: &str,
+        user_name: &str,
+        scheduled_id: Id
     ) -> (String, String);
 }
 
@@ -62,7 +62,7 @@ trait MailWriterPrivate {
 impl MailWriterPrivate for Stuff {
     fn get_body(&self) -> &MailWriterBody {
         self.extensions.get::<MailWriterBody>().unwrap()
-    }   
+    }
 }
 
 impl MailWriter for Stuff {
@@ -73,14 +73,14 @@ impl MailWriter for Stuff {
             &body.root_url,
             reg_key
         );
-        ( String::from_str( "Регистрация" ), mail )
+        ( From::from( "Регистрация" ), mail )
     }
 
     /// cочиняет письмо о создании новой группы
     fn write_group_creation_mail( &self, group_name: &str, scheduled_id: Id ) -> (String, String) {
         let body = self.get_body();
         let subject = format!( "Создание новой группы `{}`", group_name );
-        let mail = format!(  
+        let mail = format!(
 "Вас приглашают создать новую группу `{}`.
 Узнать подробности и принять решение о присоединении вы можете пройдя по этой ссылке {}{}.
 У вас есть сутки чтобы принять решение.",
@@ -93,17 +93,17 @@ impl MailWriter for Stuff {
     /// сочиняет письмо о том что никто не захотел в твою группу
     fn write_nobody_need_your_group_mail( &self, group_name: &str ) -> (String, String) {
         let subject = format!( "Группа '{}' не создана", group_name );
-        let mail = String::from_str( 
-            "К сожалению ни один из приглашенных вами пользователей не согласился создать группу." 
+        let mail = From::from(
+            "К сожалению ни один из приглашенных вами пользователей не согласился создать группу."
         );
         ( subject, mail )
     }
     /// сочинаяет письмо о том что группа с таким именем уже существует
     fn write_group_name_already_exists_mail( &self, group_name: &str ) -> (String, String) {
         let subject = format!( "Группа с именем '{}' уже существует", group_name );
-        let mail = format!( 
-"Группа с именем '{}' была уже создана за время пока вы решали создавать вашу группу или нет. 
-Создайте новую группу с другим именем или присоединитесь к существующей", 
+        let mail = format!(
+"Группа с именем '{}' была уже создана за время пока вы решали создавать вашу группу или нет.
+Создайте новую группу с другим именем или присоединитесь к существующей",
             group_name
         );
         ( subject, mail )
@@ -117,17 +117,17 @@ impl MailWriter for Stuff {
 
 
     /// сочиняет письмо о том что пора выкладываться
-    fn write_time_for_publication_mail( &self, 
-        event_name: &str, 
-        user_name: &str, 
-        scheduled_id: Id 
+    fn write_time_for_publication_mail( &self,
+        event_name: &str,
+        user_name: &str,
+        scheduled_id: Id
     ) -> (String, String) {
         let body = self.get_body();
         let subject = format!( "Пора выкладывать {}", event_name );
-        let mail = format!(  
+        let mail = format!(
 "Привет {}!
 Настало время публиковать фотографии для '{}'.
-Ты можешь сделать перейдя по вот этой ссылке: {}{}", 
+Ты можешь сделать перейдя по вот этой ссылке: {}{}",
             user_name,
             event_name,
             &body.root_url,
@@ -136,10 +136,10 @@ impl MailWriter for Stuff {
         ( subject, mail )
     }
     /// сочиняет письмо о том что опоздал конечно, но выложиться можешь
-    fn write_late_publication_mail( &self, 
-        event_name: &str, 
-        user_name: &str, 
-        scheduled_id: Id 
+    fn write_late_publication_mail( &self,
+        event_name: &str,
+        user_name: &str,
+        scheduled_id: Id
     ) -> (String, String) {
         let body = self.get_body();
         let subject = format!( "Выкладываемся с опозданием {}", event_name );

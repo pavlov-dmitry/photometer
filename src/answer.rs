@@ -5,7 +5,7 @@ use iron::prelude::*;
 use iron::mime;
 use iron::status;
 
-use types::{ CommonResult };
+use types::{ CommonResult, CommonError };
 
 pub trait AnswerSendable {
     fn send_answer( &mut self, answer: &AnswerResult );
@@ -36,6 +36,7 @@ pub enum Answer {
 }
 
 pub type AnswerResult = CommonResult<Answer>;
+pub struct AnswerResponse( pub AnswerResult );
 
 impl Answer {
     pub fn good<Body: Encodable + 'static>(body: Body) -> Answer {
@@ -47,11 +48,12 @@ impl Answer {
     }
 }
 
-impl Modifier<Response> for AnswerResult {
+impl Modifier<Response> for AnswerResponse {
     #[inline]
     fn modify(self, res: &mut Response) {
         match self {
-            Ok( ref answer ) => {
+            AnswerResponse( Ok( ref answer ) ) => {
+                //TODO: переделать на константу
                 let mime: mime::Mime = "application/json;charset=utf8".parse().unwrap();
                 mime.modify( res );
 
@@ -70,7 +72,7 @@ impl Modifier<Response> for AnswerResult {
                 }
             }
 
-            Err( err ) => {
+            AnswerResponse( Err( CommonError( err ) ) ) => {
                 let answer_status = status::InternalServerError;
                 answer_status.modify( res );
                 err.modify( res );
@@ -79,6 +81,11 @@ impl Modifier<Response> for AnswerResult {
     }
 }
 
+impl From<CommonError> for AnswerResult {
+    fn from( err: CommonError ) -> AnswerResult {
+        Err( err )
+    }
+}
 
 // impl ToJson for PhotoInfo {
 //     fn to_json(&self) -> Json {

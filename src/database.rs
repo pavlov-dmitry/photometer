@@ -3,7 +3,7 @@ use mysql::conn::{ MyOpts };
 use mysql::conn::pool::{ MyPool, MyPooledConn };
 use std::default::{ Default };
 
-use types::{ CommonResult, EmptyResult };
+use types::{ CommonResult, EmptyResult, CommonError, common_error };
 use iron::typemap::Key;
 use iron::prelude::*;
 use db;
@@ -42,24 +42,29 @@ impl Database {
     }
 
     pub fn execute( &self, query: &str , fn_name: &str ) -> EmptyResult {
-        match self.pool.query( query ) {
-            Ok(_) => Ok( () ),
+        match self.pool.prepare( query ) {
+            Ok( mut stmt ) => {
+                match stmt.execute(&[]) {
+                    Ok( _ ) => Ok( () ),
+                    Err( e ) => Err( err_msg::fn_failed( fn_name, e ) )
+                }
+            },
             Err( e ) => Err( err_msg::fn_failed( fn_name, e ) )
         }
     }
 
 }
 
-pub fn create_db_connection( 
-    db_name: String, 
-    user: String, 
+pub fn create_db_connection(
+    db_name: String,
+    user: String,
     pass: String,
     min_connections: usize,
     max_connections: usize
 ) -> CommonResult<Database> {
     let opts = MyOpts{
         db_name: Some( db_name ),
-        user: Some( user ), 
+        user: Some( user ),
         pass: Some( pass ),
         ..Default::default()
     };
@@ -73,7 +78,7 @@ pub fn create_db_connection(
                 Err( e ) => Err( e )
             }
         },
-        Err( e ) => Err( format!( "Connection to db failed: {}", e ) )
+        Err( e ) => common_error( format!( "Connection to db failed: {}", e ) )
     }
 }
 
@@ -92,7 +97,7 @@ impl Databaseable for Stuff {
     fn get_new_db_conn(&self) -> CommonResult<MyPooledConn> {
         self.extensions.get::<Database>().unwrap()
             .pool.get_conn()
-            .map_err( |e| format!( "Can't create db connection: {}", e ) )
+            .map_err( |e| CommonError( format!( "Can't create db connection: {}", e ) ) )
     }
     fn get_current_db_conn(&mut self) -> CommonResult<&mut MyPooledConn> {
         if self.extensions.contains::<ConnectionKey>() == false {

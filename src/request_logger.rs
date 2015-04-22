@@ -6,7 +6,7 @@ use iron::prelude::*;
 use simple_time_profiler::SimpleTimeProfiler;
 
 #[derive(Clone)]
-struct RequestLogger;
+pub struct RequestLogger;
 
 impl Copy for RequestLogger {}
 

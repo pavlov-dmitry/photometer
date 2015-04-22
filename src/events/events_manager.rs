@@ -61,7 +61,7 @@ impl EventsManagerStuff for Stuff {
 }
 
 
-impl<'a> EventsManagerRequest for Request<'a> {
+impl<'a, 'b> EventsManagerRequest for Request<'a, 'b> {
     /// выдаёт информацию по событию
     fn event_info( &mut self, scheduled_id: Id ) -> AnswerResult {
         self.if_has_event( scheduled_id, |event, event_info, req| {
@@ -163,7 +163,7 @@ impl EventsManagerStuffPrivate for Stuff {
     }
 }
 
-impl<'a> EventsManagerPrivate for Request<'a> {
+impl<'a, 'b> EventsManagerPrivate for Request<'a, 'b> {
     // db приходится передавать по цепочке, иначе содается вторая mut ссылка в замыкании, что естественно делать нельзя
     fn if_has_event<F: Fn(EventPtr, ScheduledEventInfo, &mut Request) -> AnswerResult>(
         &mut self,  scheduled_id: Id, do_this: F

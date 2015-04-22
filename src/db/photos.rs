@@ -1,18 +1,19 @@
 use mysql::conn::pool::{ MyPooledConn };
 use mysql::error::{ MyResult };
 use mysql::value::{ from_value, from_value_opt, ToValue, FromValue, Value };
-use types::{ Id, PhotoInfo, ImageType, CommonResult, EmptyResult };
+use types::{ Id, PhotoInfo, ImageType, CommonResult, EmptyResult, CommonError };
 use time::{ Timespec };
 use database::Database;
+use std::fmt::Display;
 
 pub trait DbPhotos {
-	/// добавление фотографии в галлерею пользователя
-	fn add_photo( &mut self, user_id: Id, info: &PhotoInfo ) -> CommonResult<()>;
-	/// получение информации о фото
-	fn get_photo_info( &mut self, photo_id: Id ) -> CommonResult<Option<(String, PhotoInfo)>>;
-	///возвращает список описаний фоточек
-	fn get_photo_infos( &mut self, owner_id: Id, start: Timespec, end: Timespec, offset: u32, count: u32 ) -> CommonResult<Vec<PhotoInfo>>;
-	///вычисляет кол-во фоток пользователя за опеределнный период
+    /// добавление фотографии в галлерею пользователя
+    fn add_photo( &mut self, user_id: Id, info: &PhotoInfo ) -> CommonResult<()>;
+    /// получение информации о фото
+    fn get_photo_info( &mut self, photo_id: Id ) -> CommonResult<Option<(String, PhotoInfo)>>;
+    ///возвращает список описаний фоточек
+    fn get_photo_infos( &mut self, owner_id: Id, start: Timespec, end: Timespec, offset: u32, count: u32 ) -> CommonResult<Vec<PhotoInfo>>;
+    ///вычисляет кол-во фоток пользователя за опеределнный период
     fn get_photo_infos_count( &mut self, owner_id: Id, start: Timespec, end: Timespec ) -> CommonResult<u32>;
     ///переименование фотографии
     fn rename_photo( &mut self, photo_id: Id, newname: &str ) -> CommonResult<()>;
@@ -54,33 +55,37 @@ impl DbPhotos for MyPooledConn {
 	/// добавление фотографии в галлерею пользователя
     fn add_photo( &mut self, user_id: Id, info: &PhotoInfo ) -> CommonResult<()> {
         add_photo_impl( self, user_id, info )
-            .map_err( |e| format!( "DbPhotos func 'add_photo' failed: {}", &e ) )
+            .map_err( |e| fn_failed( "add_photo", e ) )
     }
 
     /// получение информации о фото
     fn get_photo_info( &mut self, photo_id: Id ) -> CommonResult<Option<(String, PhotoInfo)>> {
         get_photo_info_impl( self, photo_id )
-            .map_err( |e| format!( "DbPhotos func 'get_photo_info' failed: {}", &e ) )
+            .map_err( |e| fn_failed( "get_photo_info", e ) )
     }
 
     ///возвращает список описаний фоточек
     fn get_photo_infos( &mut self, owner_id: Id, start: Timespec, end: Timespec, offset: u32, count: u32 ) -> CommonResult<Vec<PhotoInfo>> {
         get_photo_infos_impl( self, owner_id, start, end, offset, count )
-            .map_err( |e| format!( "DbPhotos func 'get_photo_infos' failed: {}", &e ) )
+            .map_err( |e| fn_failed( "get_photo_infos", e ) )
     }
 
     ///вычисляет кол-во фоток пользователя за опеределнный период
     fn get_photo_infos_count( &mut self, owner_id: Id, start: Timespec, end: Timespec ) -> CommonResult<u32> {
         get_photo_infos_count_impl( self, owner_id, start, end )
-            .map_err( |e| format!( "DbPhotos func 'get_photo_infos_count' failed: {}", &e ) )
+            .map_err( |e| fn_failed( "get_photo_infos_count", e ) )
     }
 
     ///переименование фотографии
     fn rename_photo( &mut self, photo_id: Id, newname: &str ) -> CommonResult<()> {
         rename_photo_impl( self, photo_id, newname )
-            .map_err( |e| format!( "DbPhotos func 'rename_photo' failed: {}", &e ) )
+            .map_err( |e| fn_failed( "rename_photo", e ) )
     }
 
+}
+
+fn fn_failed<E: Display>( fn_name: &str, e: E ) -> CommonError {
+    CommonError( format!( "DbPhotos func '{}' failed: {}", fn_name, e ) )
 }
 
 fn add_photo_impl( conn: &mut MyPooledConn, user_id: Id, info: &PhotoInfo ) -> MyResult<()> {
@@ -246,10 +251,13 @@ impl FromValue for ImageType {
     }
     fn from_value_opt(v: &Value) -> Option<ImageType> {
         from_value_opt::<String>( v )
-            .and_then( |string| match string.as_slice() {
-                JPEG_STR => Some( ImageType::Jpeg ),
-                PNG_STR => Some( ImageType::Png ),
-                _ => None
+            .and_then( |string| {
+                let s: &str = &string;
+                match s {
+                    JPEG_STR => Some( ImageType::Jpeg ),
+                    PNG_STR => Some( ImageType::Png ),
+                    _ => None
+                }
             })
     }
 }

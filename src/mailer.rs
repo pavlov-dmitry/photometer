@@ -5,18 +5,18 @@ use std::fs::File;
 use std::io::stderr;
 use std::io::Write;
 use std::thread;
-use std::error::FromError;
+use std::convert::From;
 use std::path::Path;
 
 use authentication::User;
 use std::sync::mpsc::{ Sender, channel, SendError };
 use std::sync::{ Arc, Mutex };
 use db::mailbox::DbMailbox;
-use types::{ EmptyResult };
+use types::{ EmptyResult, CommonError };
 use database::{ Databaseable };
 use stuff::{ Stuff, StuffInstallable };
 
-type MailSender = Sender<Mail>;
+struct MailSender( Sender<Mail> );
 
 const PHOTOMETER : &'static str = "Фотометр";
 
@@ -57,14 +57,15 @@ impl MailerPrivate for Stuff {
         if self.extensions.contains::<MailSender>() == false {
             let tx = {
                 let body = self.extensions.get::<MailerBody>().unwrap();
-                let tx = body.etalon_sender.lock().unwrap();
+                let sender: &MailSender = &body.etalon_sender.lock().unwrap();
+                let &MailSender( ref tx ) = sender;
                 tx.clone()
             };
             //кэшируем
-            self.extensions.insert::<MailSender>( tx );
+            self.extensions.insert::<MailSender>( MailSender( tx ) );
         }
         //отсылаем в поток посылки почты новое письмо
-        let tx = self.extensions.get::<MailSender>().unwrap();
+        let &MailSender( ref tx ) = self.extensions.get::<MailSender>().unwrap();
         try!( tx.send( Mail {
             to_addr: user.mail.clone(),
             to_name: user.name.clone(),
@@ -73,17 +74,17 @@ impl MailerPrivate for Stuff {
             body: body.to_string(),
         } ) );
         Ok( () )
-    }   
+    }
 }
 
-impl FromError<SendError<Mail>> for String {
-    fn from_error(err: SendError<Mail>) -> String {
-        format!( "error sending mail to mailer channel: {}", err )
+impl From<SendError<Mail>> for CommonError {
+    fn from(err: SendError<Mail>) -> CommonError {
+        CommonError( format!( "error sending mail to mailer channel: {}", err ) )
     }
 }
 
 #[derive(Clone)]
-struct MailerBody {
+pub struct MailerBody {
     etalon_sender: Arc<Mutex<MailSender>>
 }
 
@@ -117,7 +118,7 @@ impl MailContext {
         }
     }
     fn send_mail( &self, mail: Mail ) {
-        //создаём текстовый файл со скриптом
+        //создаём текстовый файл с письмом
         if let Err( e ) = self.make_mail_file( &mail ) {
             let _ = writeln!( &mut stderr(), "fail to create tmp mail file: {}", e );
             return;
@@ -145,11 +146,11 @@ impl MailContext {
         if process.status.success() == false {
             let err_string = String::from_utf8_lossy( &process.stderr );
             let _ = writeln!( &mut stderr(), "fail to send mail: {}", err_string );
-        } 
+        }
         else {
             debug!( "mail to '{}' with subject='{}' successfully sended.", mail.to_addr, mail.subject );
         }
-    } 
+    }
     fn make_mail_file( &self, mail: &Mail ) -> io::Result<()> {
         let ref mut file = try!( File::create( &Path::new( &self.tmp_mail_file ) ) );
         try!( writeln!( file, "From: \"photometer\" <{}>", self.from_addr ) );
@@ -170,7 +171,7 @@ impl StuffInstallable for MailerBody {
 fn create_mail_thread( context: MailContext ) -> MailSender {
     let (tx, rx) = channel();
 
-    thread::spawn( move || {  
+    thread::spawn( move || {
         loop {
             match rx.recv() {
                 Ok( mail ) => context.send_mail( mail ),
@@ -180,6 +181,6 @@ fn create_mail_thread( context: MailContext ) -> MailSender {
         }
         info!( "mail send loop closed" );
     });
-    
-    tx  
+
+    MailSender( tx )
 }

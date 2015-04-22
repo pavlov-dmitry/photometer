@@ -7,15 +7,15 @@ use stuff::{ Stuff, Stuffable };
 use database::{ Databaseable };
 use db::events::DbEvents;
 use answer::{ Answer, AnswerResult };
-use types::{ Id, CommonResult, EmptyResult };
+use types::{ Id, CommonResult, EmptyResult, CommonError, common_error };
 use time::{ self, Timespec };
-use std::time::duration::Duration;
 use rustc_serialize::json;
 use iron::prelude::*;
 use get_body::GetBody;
 use parse_utils;
 use err_msg;
 use answer_types::{ OkInfo, FieldErrorInfo };
+use std::convert::From;
 
 #[derive(Clone)]
 pub struct ChangeTimetable;
@@ -72,7 +72,7 @@ impl GroupEvent for ChangeTimetable {
         let diff_info = try!( parse_times( diff_info_str ) );
 
         let self_start_time = time::get_time();
-        let self_end_time = self_start_time + Duration::days( diff_info.days_for_voting as i64 );
+        let self_end_time = self_start_time + time::Duration::days( diff_info.days_for_voting as i64 );
 
         // проверка корректности добаляемых событий
         try!( check_for_add( &diff_info.add, &self_end_time ) );
@@ -105,7 +105,7 @@ impl GroupEvent for ChangeTimetable {
         };
         let self_info = FullEventInfo {
             id: ID,
-            name: String::from_str( "Изменения расписания" ),
+            name: From::from( "Изменения расписания" ),
             start_time: self_start_time,
             end_time: self_end_time,
             data: json::encode( &data ).unwrap()
@@ -147,20 +147,20 @@ fn check_for_add( for_add: &Vec<AddEventInfo>, self_end_time: &Timespec ) -> Emp
     // проверка диапазонов времен
     for add in for_add {
         if add.end_time.sec < add.start_time.sec {
-            return Err( String::from_str( "invalid time diapasons" ) );
+            return common_error( From::from( "invalid time diapasons" ) );
         }
         if add.start_time.sec < self_end_time.sec {
-            return Err( String::from_str( "start time must after end of voting" ) );
+            return common_error( From::from( "start time must after end of voting" ) );
         }
         // проверка что такие события существуют
         match events_collection::get_timetable_event( add.id ) {
             Ok( event ) => {
                 // проверка что параметры подходят под переданные события
                 if event.is_valid_params( &add.params ) == false {
-                    return Err( format!( "invalid params for event id={}", add.id ) );
+                    return common_error( format!( "invalid params for event id={}", add.id ) );
                 }
             }
-            Err( _ ) => return Err( String::from_str( "invalid event id" ) )
+            Err( _ ) => return common_error( From::from( "invalid event id" ) )
         }
     }
     Ok( () )
@@ -199,7 +199,8 @@ struct Data {
 }
 
 fn get_data( str_body: &str ) -> CommonResult<Data> {
-    json::decode( str_body ).map_err( |e| format!( "ChangeTimetable event data decode error: {}", e ) )
+    json::decode( str_body )
+        .map_err( |e| CommonError( format!( "ChangeTimetable event data decode error: {}", e ) ) )
 }
 impl ChangeByVoting for ChangeTimetable {
     /// информация о событии

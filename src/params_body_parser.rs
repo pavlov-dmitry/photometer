@@ -74,8 +74,13 @@ fn read_binary_part( body: &[u8], (from, to) : (usize, usize), bin_hash: &mut Bi
     // находим имя параметра
     let name = try_opt!( parse_utils::str_between( desc_str, "name=\"", "\"" ) );
 
-    let mut param_data = Vec::new();
-    param_data.push_all( &body[to - data.len() .. to - 4] );
+    let param_data_slice: &[u8] = &body[to - data.len() .. to - 4];
+    let mut param_data: Vec<u8> = Vec::with_capacity( param_data_slice.len() );
+    // TODO: переделать когда стабилизируют push_all
+    // param_data.push_all( param_data_slice );
+    for &x in param_data_slice {
+        param_data.push( x );
+    }
 
     let bin_param = BinParam {
         filename: parse_utils::str_between( desc_str, "filename=\"", "\"" )
@@ -90,7 +95,7 @@ pub trait ParamsBody {
     fn parse_bin_params( &mut self ) -> Result<BinParamsHash, BinParamsError>;
 }
 
-impl<'a> ParamsBody for Request<'a> {
+impl<'a, 'b> ParamsBody for Request<'a, 'b> {
     fn parse_bin_params( &mut self ) -> Result<BinParamsHash, BinParamsError> {
         match get_multipart_boundary( self ) {
             Some( boundary ) => {

@@ -1,4 +1,4 @@
-use answer::{ AnswerResult, Answer };
+use answer::{ AnswerResult, Answer, AnswerResponse };
 use err_msg;
 use time;
 use std::str::FromStr;
@@ -7,7 +7,6 @@ use stuff::Stuffable;
 use authentication::{ Userable };
 use db::photos::{ DbPhotos };
 use iron::prelude::*;
-use iron::status;
 use router_params::RouterParams;
 use get_body::GetBody;
 use answer_types::CountInfo;
@@ -41,10 +40,8 @@ pub fn photo_info_path() -> &'static str {
 }
 
 pub fn current_year_count( request: &mut Request ) -> IronResult<Response> {
-    Ok( Response::with( (
-        status::Ok,
-        by_year_count_answer( request, time::now().tm_year + FROM_YEAR )
-    ) ) )
+    let response = AnswerResponse( by_year_count_answer( request, time::now().tm_year + FROM_YEAR ) );
+    Ok( Response::with( response ) )
 }
 
 pub fn by_year_count( request: &mut Request ) -> IronResult<Response> {
@@ -53,11 +50,13 @@ pub fn by_year_count( request: &mut Request ) -> IronResult<Response> {
         Ok( year ) => by_year_count_answer( request, year ),
         Err( _ ) => Err( err_msg::invalid_path_param( YEAR ) )
     };
-    Ok( Response::with( (status::Ok, answer) ) )
+    let response = AnswerResponse( answer );
+    Ok( Response::with( response ) )
 }
 
 pub fn current_year( request: &mut Request ) -> IronResult<Response> {
-    Ok( Response::with( (status::Ok, by_year_answer( request, time::now().tm_year + FROM_YEAR )) ) )
+    let response = AnswerResponse( by_year_answer( request, time::now().tm_year + FROM_YEAR ) );
+    Ok( Response::with( response ) )
 }
 
 pub fn by_year( request: &mut Request ) -> IronResult<Response> {
@@ -66,7 +65,8 @@ pub fn by_year( request: &mut Request ) -> IronResult<Response> {
         Ok( year ) => by_year_answer( request, year ),
         Err( _ ) => Err( err_msg::invalid_path_param( YEAR ) )
     };
-    Ok( Response::with( (status::Ok, answer) ) )
+    let response = AnswerResponse( answer );
+    Ok( Response::with( response ) )
 }
 
 fn by_year_count_answer( req: &mut Request, year: i32 ) -> AnswerResult {
@@ -128,6 +128,7 @@ pub fn photo_info( request: &mut Request ) -> IronResult<Response> {
         Ok( id ) => photo_info_answer( request, id ),
         Err( _ ) => Err( err_msg::invalid_path_param( ID ) )
     };
+    let answer = AnswerResponse( answer );
     Ok( Response::with( answer ) )
 }
 

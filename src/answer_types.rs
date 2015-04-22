@@ -9,7 +9,7 @@ pub struct OkInfo {
 impl OkInfo {
     pub fn new( msg: &str ) -> OkInfo {
         OkInfo {
-            ok: String::from_str( msg )
+            ok: From::from( msg )
         }
     }
 }
@@ -24,8 +24,8 @@ pub struct FieldErrorInfo {
 impl FieldErrorInfo {
     pub fn new( field: &str, reason: &str ) -> FieldErrorInfo {
         FieldErrorInfo {
-            field: String::from_str( field ),
-            reason: String::from_str( reason )
+            field: From::from( field ),
+            reason: From::from( reason )
         }
     }
 }
@@ -39,25 +39,25 @@ pub struct PhotoErrorInfo {
 impl PhotoErrorInfo {
     pub fn bad_image() -> PhotoErrorInfo {
         PhotoErrorInfo {
-            photo: String::from_str( "bad_image" )
+            photo: From::from( "bad_image" )
         }
     }
 
     pub fn too_big() -> PhotoErrorInfo {
         PhotoErrorInfo {
-            photo: String::from_str( "too_big" )
+            photo: From::from( "too_big" )
         }
     }
 
     pub fn unknown_format() -> PhotoErrorInfo {
         PhotoErrorInfo {
-            photo: String::from_str( "unknown_format" )
+            photo: From::from( "unknown_format" )
         }
     }
 
     pub fn not_found() -> PhotoErrorInfo {
         PhotoErrorInfo {
-            photo: String::from_str( "not_found" )
+            photo: From::from( "not_found" )
         }
     }
 }
@@ -72,7 +72,7 @@ pub struct AccessErrorInfo {
 impl AccessErrorInfo {
     pub fn new() -> AccessErrorInfo {
         AccessErrorInfo {
-            access: String::from_str( "denied" )
+            access: From::from( "denied" )
         }
     }
 }

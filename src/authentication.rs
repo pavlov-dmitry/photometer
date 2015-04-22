@@ -105,7 +105,7 @@ pub trait SessionsStoreable {
     fn sessions_store( &self ) -> &SessionsStoreMiddleware;
 }
 
-impl<'a> SessionsStoreable for Request<'a> {
+impl<'a, 'b> SessionsStoreable for Request<'a, 'b> {
     fn sessions_store( &self ) -> &SessionsStoreMiddleware {
         self.extensions.get::<SessionsStoreMiddleware>().unwrap()
     }
@@ -173,7 +173,7 @@ pub trait Userable {
     fn user( &self ) -> &User;
 }
 
-impl<'a> Userable for Request<'a> {
+impl<'a, 'b> Userable for Request<'a, 'b> {
     fn user( &self ) -> &User {
         self.extensions.get::<User>().unwrap()
     }

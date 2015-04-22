@@ -1,4 +1,4 @@
-use answer::{ AnswerResult };
+use answer::{ AnswerResult, AnswerResponse };
 use events::events_manager::{ EventsManagerRequest, EventsManagerStuff };
 use stuff::Stuffable;
 use types::{ Id };
@@ -16,7 +16,11 @@ pub fn info_path() -> &'static str {
 
 pub fn info( request: &mut Request ) -> IronResult<Response> {
     let response = match get_id( ID, request ) {
-        Some( id ) => Response::with( (status::Ok, request.event_info( id )) ),
+        Some( id ) => {
+            let answer = AnswerResponse( request.event_info( id ) );
+            Response::with( answer )
+        },
+
         None => Response::with( status::NotFound )
     };
     Ok( response )
@@ -28,7 +32,11 @@ pub fn action_path() -> &'static str {
 
 pub fn action_get( request: &mut Request ) -> IronResult<Response> {
     let response = match get_id( ID, request ) {
-        Some( id ) => Response::with( (status::Ok, request.event_action_get( id )) ),
+        Some( id ) => {
+            let answer = AnswerResponse( request.event_action_get( id ) );
+            Response::with( answer )
+        },
+
         None => Response::with( status::NotFound )
     };
     Ok( response )
@@ -36,7 +44,11 @@ pub fn action_get( request: &mut Request ) -> IronResult<Response> {
 
 pub fn action_post( request: &mut Request ) -> IronResult<Response> {
     let response = match get_id( ID, request ) {
-        Some( id ) => Response::with( (status::Ok, action_post_answer( id, request )) ),
+        Some( id ) => {
+            let answer = AnswerResponse( action_post_answer( id, request ) );
+            Response::with( answer )
+        },
+
         None => Response::with( status::NotFound )
     };
     Ok( response )
@@ -48,7 +60,11 @@ pub fn create_path() -> &'static str {
 
 pub fn create_get( request: &mut Request ) -> IronResult<Response> {
     let response = match get_id( ID, request ) {
-        Some( id ) => Response::with( (status::Ok, request.event_user_creation_get( id )) ),
+        Some( id ) => {
+            let answer = AnswerResponse( request.event_user_creation_get( id ) );
+            Response::with( answer )
+        },
+
         None => Response::with( status::NotFound )
     };
     Ok( response )
@@ -56,7 +72,10 @@ pub fn create_get( request: &mut Request ) -> IronResult<Response> {
 
 pub fn create_post( request: &mut Request ) -> IronResult<Response> {
     let response = match get_id( ID, request ) {
-        Some( id ) => Response::with( (status::Ok, create_post_answer( id, request )) ),
+        Some( id ) => {
+            let answer = AnswerResponse( create_post_answer( id, request ) );
+            Response::with( answer )
+        },
         None => Response::with( status::NotFound )
     };
     Ok( response )
@@ -80,10 +99,11 @@ pub fn group_create_path() -> &'static str {
 
 pub fn group_create_get( request: &mut Request ) -> IronResult<Response> {
     let response = match get_group_and_event_id( request ) {
-        Some( (group_id, id) ) => Response::with( (
-            status::Ok, 
-            request.event_group_creation_get( group_id, id ) 
-        ) ),
+        Some( (group_id, id) ) => {
+            let answer = AnswerResponse( request.event_group_creation_get( group_id, id ) );
+            Response::with( answer )
+        },
+
         None => Response::with( status::NotFound )
     };
     Ok( response )
@@ -91,10 +111,11 @@ pub fn group_create_get( request: &mut Request ) -> IronResult<Response> {
 
 pub fn group_create_post( request: &mut Request ) -> IronResult<Response> {
     let response = match get_group_and_event_id( request ) {
-        Some( (group_id, id) ) => Response::with( (
-            status::Ok, 
-            request.event_group_creation_post( group_id, id )
-        ) ),
+        Some( (group_id, id) ) => {
+            let answer = AnswerResponse( request.event_group_creation_post( group_id, id ) );
+            Response::with( answer )
+        },
+
         None => Response::with( status::NotFound )
     };
     Ok( response )
@@ -108,7 +129,7 @@ fn get_id( prm: &str, req: &Request ) -> Option<Id> {
 
 fn get_group_and_event_id( request: &mut Request ) -> Option<(Id, Id)> {
     get_id( GROUP_ID, request )
-        .and_then( |group_id| 
+        .and_then( |group_id|
             get_id( ID, request )
                 .map( |id| ( group_id, id ) )
         )

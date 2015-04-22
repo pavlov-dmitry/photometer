@@ -1,7 +1,7 @@
 use mysql::conn::pool::{ MyPooledConn };
 use mysql::error::{ MyResult };
 use mysql::value::{ from_value };
-use types::{ Id, EmptyResult, CommonResult };
+use types::{ Id, EmptyResult, CommonResult, CommonError };
 use std::fmt::Display;
 use database::Database;
 use authentication::User;
@@ -42,7 +42,7 @@ impl DbPublication for MyPooledConn {
         public_photo_impl( self, scheduled, group, user, photo, visible )
             .map_err( |e| fn_failed( "public_photo", e ) )
     }
-    
+
     /// открывает на просмотр определнную группу фото
     fn make_publication_visible( &mut self, scheduled: Id, group: Id ) -> EmptyResult {
         make_publication_visible_impl( self, scheduled, group )
@@ -67,8 +67,8 @@ impl DbPublication for MyPooledConn {
     }
 }
 
-fn fn_failed<E: Display>( fn_name: &str, e: E ) -> String {
-    format!( "DbPublication {} failed: {}", fn_name, e )
+fn fn_failed<E: Display>( fn_name: &str, e: E ) -> CommonError {
+    CommonError( format!( "DbPublication {} failed: {}", fn_name, e ) )
 }
 
 fn public_photo_impl( conn: &mut MyPooledConn, scheduled: Id, group: Id, user: Id, photo: Id, visible: bool ) -> MyResult<()> {
@@ -82,7 +82,7 @@ fn public_photo_impl( conn: &mut MyPooledConn, scheduled: Id, group: Id, user: I
         )
         VALUES( ?, ?, ?, ?, ? )
         ON DUPLICATE KEY UPDATE photo_id=?
-    "));  
+    "));
     try!( stmt.execute( &[
         &scheduled,
         &group,
@@ -96,7 +96,7 @@ fn public_photo_impl( conn: &mut MyPooledConn, scheduled: Id, group: Id, user: I
 
 fn make_publication_visible_impl( conn: &mut MyPooledConn, scheduled: Id, group: Id ) -> MyResult<()> {
     let mut stmt = try!( conn.prepare( "
-        UPDATE publication 
+        UPDATE publication
         SET visible=true
         WHERE scheduled_id = ? AND group_id = ?
     "));
@@ -113,7 +113,7 @@ fn get_published_photo_count_impl( conn: &mut MyPooledConn, scheduled: Id, group
 }
 
 fn get_unpublished_users_impl( conn: &mut MyPooledConn, scheduled: Id, group: Id ) -> MyResult<Vec<User>> {
-    let mut stmt = try!( conn.prepare( 
+    let mut stmt = try!( conn.prepare(
         "SELECT
             `g`.`user_id`, `u`.`login`, `u`.`mail`
         FROM
@@ -141,7 +141,7 @@ fn get_unpublished_users_impl( conn: &mut MyPooledConn, scheduled: Id, group: Id
 
 fn is_unpublished_user_impl( conn: &mut MyPooledConn, scheduled: Id, group: Id, user: Id ) -> MyResult<bool> {
     let mut stmt = try!( conn.prepare(
-        "SELECT 
+        "SELECT
             COUNT( `id` )
         FROM
             `publication`

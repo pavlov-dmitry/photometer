@@ -1,19 +1,25 @@
-extern crate libc;
 extern crate num;
-use self::libc::{ size_t, c_void, c_char };
 use self::num::rational::Ratio;
 use std::collections::HashMap;
 use std::ffi::CStr;
 use std::str;
-use std::num::ToPrimitive;
 use std::ops::Neg;
+
+#[allow(non_camel_case_types)]
+type c_void = isize;
+#[allow(non_camel_case_types)]
+type c_char = i8;
+#[allow(non_camel_case_types)]
+type c_int = isize;
+#[allow(non_camel_case_types)]
+type size_t = usize;
 
 pub type ExifEntries = HashMap<String, ExifValue>;
 
 /// вычитывает exif в память в виде таблицы
 pub fn from_memory( data: &[u8] ) -> Option<ExifEntries> {
     let exif_data = unsafe {
-        exif_data_new_from_data( data.as_ptr(), data.len() as size_t )
+        exif_data_new_from_data( data.as_ptr(), data.len() )
     };
     if exif_data as isize != 0isize {
         let byte_order = unsafe{ exif_data_get_byte_order( exif_data ) };
@@ -46,7 +52,8 @@ pub trait ExifValues {
 impl ExifValues for ExifEntries {
     fn iso(&self) -> Option<u32> {
         self.get( &"ISOSpeedRatings".to_string() )
-            .and_then( |v| v.as_short().map( |v| v.to_u32().unwrap() ) )
+            .and_then( |v| v.as_short()
+                        .map( |v| v as u32 ) )
     }
     fn focal_length(&self) -> Option<u16> {
         self.get( &"FocalLength".to_string() )
@@ -62,12 +69,13 @@ impl ExifValues for ExifEntries {
             .and_then( |v| v.as_ratio() )
             .and_then( |r|
                         if *r.denom() != 0 {
-                            Some( r.numer().to_f32().unwrap() / r.denom().to_f32().unwrap() )
+                            let numer: f32 = *r.numer() as f32;
+                            let denom: f32 = *r.denom() as f32;
+                            Some( numer / denom )
                         }
                         else {
                             None
-                        }
-                        )
+                        })
     }
     fn shutter_speed(&self) -> Option<i32> {
         self.get( &"ExposureTime".to_string() )
@@ -77,7 +85,8 @@ impl ExifValues for ExifEntries {
                        r.to_integer() as i32
                    }
                    else {
-                       r.denom().to_i32().unwrap().neg()
+                       let denum: i32 = *r.denom() as i32;
+                       denum.neg()
                    }
                    )
     }
@@ -261,8 +270,8 @@ fn to_exif_value( entry: &ExifEntry, byte_order: isize ) -> ExifValue {
     }
     match entry.format {
         ExifFormat::BYTE => {
-            let data = unsafe{ entry.data.as_ref().unwrap() };
-            ExifValue::Byte( *data )
+            let data = unsafe{ *entry.data };
+            ExifValue::Byte( data )
         },
         ExifFormat::ASCII => {
             let entry_data_c_char = entry.data as *const c_char;
@@ -279,8 +288,8 @@ fn to_exif_value( entry: &ExifEntry, byte_order: isize ) -> ExifValue {
             ExifValue::Ratio( Ratio::new_raw( rat.num, rat.den ) )
         },
         ExifFormat::SBYTE => {
-            let data = unsafe{ entry.data.as_ref().unwrap() };
-            ExifValue::SByte( *data as i8 )
+            let data = unsafe{ *entry.data };
+            ExifValue::SByte( data as i8 )
         },
         ExifFormat::SSHORT => ExifValue::SShort( unsafe{ exif_get_sshort( entry.data, byte_order ) } ),
         ExifFormat::SLONG => ExifValue::SLong( unsafe{ exif_get_slong( entry.data, byte_order ) } ),
@@ -300,8 +309,8 @@ struct ReadBody {
 }
 
 extern fn read_exif_entry( e: *mut ExifEntry, b: *mut ReadBody ) {
-    let entry = unsafe{ e.as_ref().unwrap() };
-    let body = unsafe{ b.as_mut().unwrap() };
+    let entry = unsafe{ &(*e) };
+    let body = unsafe{ &mut (*b) };
     let name_c_char = unsafe { exif_tag_get_name_in_ifd( entry.tag, body.ifd ) as *const c_char };
     let name_slice = unsafe { CStr::from_ptr( name_c_char ) };
     if let Ok( name_utf8 ) = str::from_utf8( name_slice.to_bytes() ) {
@@ -311,7 +320,7 @@ extern fn read_exif_entry( e: *mut ExifEntry, b: *mut ReadBody ) {
 }
 
 extern fn read_exif_content( content: *mut c_void, b: *mut ReadBody ) {
-    let body = unsafe{ b.as_mut().unwrap() };
+    let body = unsafe{ &mut(*b) };
     body.ifd = unsafe{ exif_content_get_ifd( content ) };
     unsafe{ exif_content_foreach_entry( content, read_exif_entry, b ); }
 }

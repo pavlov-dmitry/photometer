@@ -1,11 +1,12 @@
 use mysql::conn::pool::{ MyPooledConn };
 use mysql::error::{ MyResult };
 use mysql::value::{ from_value, ToValue };
-use types::{ Id, CommonResult, EmptyResult };
+use types::{ Id, CommonResult, EmptyResult, CommonError };
 use authentication::{ User };
 use std::fmt::Display;
 use database::Database;
-  
+use std::convert::From;
+
 type Members = Vec<User>;
 
 pub trait DbGroups {
@@ -37,9 +38,9 @@ pub fn create_tables( db: &Database ) -> EmptyResult {
             PRIMARY KEY ( `id` )
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
         ",
-        "db::groups::create_tables(groups)" 
+        "db::groups::create_tables(groups)"
     ));
-    db.execute( 
+    db.execute(
         "CREATE TABLE IF NOT EXISTS `group_members` (
             `id` bigint(20) NOT NULL AUTO_INCREMENT,
             `user_id` bigint(20) NOT NULL DEFAULT '0',
@@ -48,7 +49,7 @@ pub fn create_tables( db: &Database ) -> EmptyResult {
             KEY `members_idx` ( `user_id`, `group_id` )
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
         ",
-        "db::groups::create_tables(group_members)" 
+        "db::groups::create_tables(group_members)"
     )
 }
 
@@ -92,13 +93,13 @@ impl DbGroups for MyPooledConn {
     }
 }
 
-fn fn_failed<E: Display>( fn_name: &str, e: E ) -> String {
-    format!( "DbGroups {} failed: {}", fn_name, e )
+fn fn_failed<E: Display>( fn_name: &str, e: E ) -> CommonError {
+    CommonError( format!( "DbGroups {} failed: {}", fn_name, e ) )
 }
 
 fn get_members_impl( conn: &mut MyPooledConn, group_id: Id ) -> MyResult<Members> {
-    let mut stmt = try!( conn.prepare( 
-        "SELECT 
+    let mut stmt = try!( conn.prepare(
+        "SELECT
             g.user_id,
             u.login,
             u.mail
@@ -108,8 +109,8 @@ fn get_members_impl( conn: &mut MyPooledConn, group_id: Id ) -> MyResult<Members
     let mut members = Vec::new();
     for row in try!( stmt.execute( &[ &group_id ] ) ) {
         let row = try!( row );
-        members.push( User{ 
-            id: from_value( &row[ 0 ] ), 
+        members.push( User{
+            id: from_value( &row[ 0 ] ),
             name: from_value( &row[ 1 ] ),
             mail: from_value( &row[ 2 ] )
         });
@@ -155,7 +156,7 @@ fn create_group_impl( conn: &mut MyPooledConn, name: &String, desc: &String ) ->
 }
 
 fn add_members_impl( conn: &mut MyPooledConn, group_id: Id, members: &[ Id ] ) -> MyResult<()> {
-    let mut query = String::from_str("
+    let mut query: String = From::from("
         INSERT INTO group_members (
             user_id,
             group_id
@@ -163,14 +164,14 @@ fn add_members_impl( conn: &mut MyPooledConn, group_id: Id, members: &[ Id ] ) -
         VALUES( ?, ? )
     ");
 
-    for _ in range( 1, members.len() ) {
+    for _ in (1 .. members.len()) {
         query.push_str( ", ( ?, ? )" );
     }
 
     let mut stmt = try!( conn.prepare( &query ) );
 
     let mut values: Vec<&ToValue> = Vec::new();
-    for i in range( 0, members.len() ) {
+    for i in (0 .. members.len()) {
         values.push( &members[ i ] );
         values.push( &group_id );
     }
