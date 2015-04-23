@@ -127,8 +127,10 @@ pub struct AuthenticationHandler<H: Handler> {
 }
 
 impl Autentication {
-    fn make_login ( &self ) -> IronResult<Response> {
-        Ok( Response::with( status::Unauthorized ) )
+    fn non_authorized ( &self ) -> IronResult<Response> {
+        // NOTE: Добавил пустое тело, что-бы мозилка не ругалась,
+        // вроде это её какой-то баг, но ничего, нам не сложно.
+        Ok( Response::with( (status::Unauthorized, "{}") ) )
     }
 }
 
@@ -153,7 +155,7 @@ impl<H: Handler> Handler for AuthenticationHandler<H> {
         match some_user {
             None => {
                 debug!( "no user" );
-                self.authentication.make_login()
+                self.authentication.non_authorized()
             }
             Some( user ) => {
                 debug!( "user found: {}", user.name );
