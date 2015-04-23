@@ -4,7 +4,7 @@ use std::io::{ Read };
 use rustc_serialize::{ Decodable, json };
 use iron::prelude::*;
 use iron::method::Method;
-use url;
+use url::percent_encoding;
 
 pub trait GetBody {
     fn get_body<T: Decodable + Clone + 'static>( &mut self ) -> CommonResult<T>;
@@ -19,7 +19,7 @@ impl<'a, 'b> GetBody for Request<'a, 'b> {
         if self.method == Method::Get {
             match self.url.query {
                 Some( ref query ) => {
-                    let query = url::lossy_utf8_percent_decode( query.as_bytes() );
+                    let query = percent_encoding::lossy_utf8_percent_decode( query.as_bytes() );
                     json::decode::<T>( &query )
                         .map_err( |e| CommonError( format!( "error parsing query: {:?}", e ) ) )
                 }
