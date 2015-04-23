@@ -178,7 +178,7 @@ fn get_photo_infos_impl(
        camera_model
        FROM images
        WHERE owner_id = ? AND upload_time BETWEEN ? AND ?
-       ORDER BY upload_time ASC
+       ORDER BY upload_time DESC
        LIMIT ? OFFSET ?;
     " ) );
     let result = try!( stmt.execute( &[ &owner_id, &start.sec, &end.sec, &count, &offset ] ) );
