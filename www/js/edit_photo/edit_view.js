@@ -112,7 +112,9 @@ define( function( require ) {
 
         // TODO: пообщаться с Саньком на счёт какого-то другого более нормального решения
         close: function() {
-            this.ias.cancelSelection();
+            if ( this.ias ) {
+                this.ias.cancelSelection();
+            }
         },
     });
 

@@ -32,10 +32,10 @@ define( function( require ) {
             if ( data ) {
                 options.data = JSON.stringify( data );
             }
-            if ( method !== "GET" ) {
+            // if ( method !== "GET" ) {
                 options.contentType = "application/json";
                 options.dataType = "json";
-            }
+            // }
 
 	    var ajaxHandler = $.ajax( options );
 
@@ -57,6 +57,7 @@ define( function( require ) {
 		    }
 		}
                 else if ( resp.status === 401 ) {
+                    console.log( "unauthorized" );
                     handlerObj.unauthorized();
                 }
 		else {

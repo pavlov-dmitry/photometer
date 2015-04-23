@@ -45,13 +45,15 @@ define( function (require) {
                  locationUrl === this._redirectToAfterLogin ) {
                 return;
             }
+
             // неавторизованный логин тоже не обрабатываем
             if ( locationUrl === "login" ) {
                 return;
             }
             // если есть куда вернуться, то запоминаем куда нам вернуться после авторизации
-            if ( locationUrl !== "" ) {
-                this._redirectToAfterLogin = locationUrl;
+            this._redirectToAfterLogin = locationUrl;
+            if ( this._redirectToAfterLogin === "" ) {
+                this._redirectToAfterLogin = "gallery";
             }
             // идём авторизироваться
             this.workspace.nav( "login" );
@@ -62,7 +64,7 @@ define( function (require) {
         /// переключатель рабочей среды
         workspace: new Workspace(),
         /// куда стоит перейти после логина, по умолчанию идём в галлерею
-        _redirectToAfterLogin: "gallery"
+        _redirectToAfterLogin: ""
     };
 
     /// инициализация
