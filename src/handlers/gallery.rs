@@ -10,7 +10,7 @@ use iron::prelude::*;
 use router_params::RouterParams;
 use get_body::GetBody;
 use answer_types::CountInfo;
-use types::Id;
+use types::{ Id, PhotoInfo };
 use answer_types::PhotoErrorInfo;
 
 static YEAR: &'static str = "year";
@@ -87,12 +87,26 @@ struct PageInfo {
     page: u32
 }
 
+#[derive(RustcEncodable)]
+struct GalleryInfo {
+    current_page: u32,
+    pages_count: u32,
+    photos: Vec<PhotoInfo>
+}
+
 fn by_year_answer( req: &mut Request, year: i32 ) -> AnswerResult {
     let page = try!( req.get_body::<PageInfo>() ).page;
 
     let ( from, to ) = times_gate_for_year( year );
     let user_id = req.user().id;
     let db = try!( req.stuff().get_current_db_conn() );
+
+    let photos_count = try!( db.get_photo_infos_count(
+        user_id,
+        from.to_timespec(),
+        to.to_timespec()
+    ) );
+
     let photo_infos = try!( db.get_photo_infos(
         user_id,
         from.to_timespec(),
@@ -100,7 +114,18 @@ fn by_year_answer( req: &mut Request, year: i32 ) -> AnswerResult {
         page * IN_PAGE_COUNT,
         IN_PAGE_COUNT
     ) );
-    let answer = Answer::good( photo_infos );
+
+    let mut pages_count = photos_count / IN_PAGE_COUNT;
+    if ( photos_count % IN_PAGE_COUNT ) != 0 {
+        pages_count += 1;
+    }
+
+    let gallery_info = GalleryInfo {
+        current_page: page,
+        pages_count: pages_count,
+        photos: photo_infos
+    };
+    let answer = Answer::good( gallery_info );
     Ok( answer )
 }
 

@@ -6,12 +6,18 @@ define( function(require) {
     var GalleryCollection = Backbone.Collection.extend({
         model: PhotoModel,
 
-        fetch: function() {
+        fetch: function( page ) {
             var self = this;
-            var handler = Request.get( "/gallery", { page: 0 } );
+            var handler = Request.get( "/gallery", { page: page } );
             handler.good = function( data ) {
                 self.reset();
-                self.add( data );
+
+                self.add( data.photos );
+
+                self.trigger( "pages_changed", {
+                    pages_count: data.pages_count,
+                    current_page: data.current_page
+                });
             };
 
             handler.bad = function( data ) {

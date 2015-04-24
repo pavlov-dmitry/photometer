@@ -8,6 +8,7 @@ define( function(require) {
             'register': 'register',
             'activate/:key': 'activate',
             'gallery': 'gallery',
+            'gallery/:page': 'gallery_page',
             'edit_photo/:id': "edit_photo",
         },
 
@@ -50,12 +51,18 @@ define( function(require) {
         },
 
         gallery: function() {
+            this.gallery_page( 0 );
+        },
+
+        gallery_page: function( page ) {
             this.clearCurrent();
 
             var GalleryView = require( "gallery/gallery_view" ),
             GalleryCollection = require( "gallery/gallery_collection" );
 
-            this.current = new GalleryView( { model: new GalleryCollection } );
+            var model = new GalleryCollection;
+            this.current = new GalleryView( { model: model } );
+            model.fetch( page );
 
             require( ['app'], function( app ) {
                 app.userState.navToGallery();

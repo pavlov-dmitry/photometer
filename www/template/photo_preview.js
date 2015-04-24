@@ -15,6 +15,6 @@ return templates['photo_preview'] = template({"1":function(depth0,helpers,partia
     + ((stack1 = helpers['if'].call(depth0,(depth0 != null ? depth0.name : depth0),{"name":"if","hash":{},"fn":this.program(1, data, 0),"inverse":this.program(3, data, 0),"data":data})) != null ? stack1 : "")
     + "</h4>\r\n      <a href=\"#edit_photo/"
     + alias3(((helper = (helper = helpers.id || (depth0 != null ? depth0.id : depth0)) != null ? helper : alias1),(typeof helper === alias2 ? helper.call(depth0,{"name":"id","hash":{},"data":data}) : helper)))
-    + "\">\r\n        <span class=\"btn btn-default pull-right\" aria-label=\"Переименовать\">\r\n          <span class=\"glyphicon glyphicon-pencil\" aria-hidden=\"true\"></span>\r\n        </span>\r\n      </a>\r\n    </p>\r\n  </div>\r\n</div>\r\n";
+    + "\">\r\n        <span class=\"btn btn-default mu-btn pull-right\" aria-label=\"Переименовать\">\r\n          <span class=\"glyphicon glyphicon-pencil\" aria-hidden=\"true\"></span>\r\n        </span>\r\n      </a>\r\n    </p>\r\n  </div>\r\n</div>\r\n";
 },"useData":true});
 });
