@@ -6,7 +6,7 @@ return templates['user_state_header_view'] = template({"1":function(depth0,helpe
   return "<ul class=\"nav navbar-nav\">\n  <li "
     + ((stack1 = helpers['if'].call(depth0,(depth0 != null ? depth0.isNavInMessages : depth0),{"name":"if","hash":{},"fn":this.program(2, data, 0),"inverse":this.noop,"data":data})) != null ? stack1 : "")
     + ">\n    <a href=\"#messages\">Сообщения"
-    + ((stack1 = helpers['if'].call(depth0,(depth0 != null ? depth0.unreadedMessaged : depth0),{"name":"if","hash":{},"fn":this.program(4, data, 0),"inverse":this.noop,"data":data})) != null ? stack1 : "")
+    + ((stack1 = helpers['if'].call(depth0,(depth0 != null ? depth0.unreaded_messages : depth0),{"name":"if","hash":{},"fn":this.program(4, data, 0),"inverse":this.noop,"data":data})) != null ? stack1 : "")
     + "</a>\n  </li>\n  <li "
     + ((stack1 = helpers['if'].call(depth0,(depth0 != null ? depth0.isNavInGallery : depth0),{"name":"if","hash":{},"fn":this.program(2, data, 0),"inverse":this.noop,"data":data})) != null ? stack1 : "")
     + "><a href=\"#gallery\">Галлерея</a></li>\n</ul>\n<ul class=\"nav navbar-nav navbar-right\">\n  <li class=\"dropdown\">\n    <a href=\"#\" class=\"dropdown-toggle\" data-toggle=\"dropdown\" role=\"button\" aria-expanded=\"false\">\n      <span class=\"glyphicon glyphicon-user\" ></span> "
@@ -18,7 +18,7 @@ return templates['user_state_header_view'] = template({"1":function(depth0,helpe
     var helper;
 
   return " <span class=\"badge\">"
-    + this.escapeExpression(((helper = (helper = helpers.unreadedMessaged || (depth0 != null ? depth0.unreadedMessaged : depth0)) != null ? helper : helpers.helperMissing),(typeof helper === "function" ? helper.call(depth0,{"name":"unreadedMessaged","hash":{},"data":data}) : helper)))
+    + this.escapeExpression(((helper = (helper = helpers.unreaded_messages || (depth0 != null ? depth0.unreaded_messages : depth0)) != null ? helper : helpers.helperMissing),(typeof helper === "function" ? helper.call(depth0,{"name":"unreaded_messages","hash":{},"data":data}) : helper)))
     + "</span>";
 },"6":function(depth0,helpers,partials,data) {
     return "<ul class=\"nav navbar-nav navbar-right\">\n  <a href=\"#login\"><button type=\"button\" class=\"btn btn-success navbar-btn\">Войти</button></a>\n  <div class=\"nav navbar-nav spacer-w-sm\"></div>\n</ul>\n";

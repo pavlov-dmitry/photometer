@@ -5,19 +5,21 @@ define( function( require ) {
         defaults: {
             isLogged: false,
             name: "",
-            unreadedMessaged: 0,
+            unreaded_messages: 0,
             isNavInGallery: false,
             isNavInMessages: false
         },
 
         fetch: function() {
+            console.log( "user state fetch ");
             var self = this;
             var request = require( "request" );
             var handler = request.get( "user_info" );
             handler.good = function( data ) {
                 self.set({
                     isLogged: true,
-                    name: data.name
+                    name: data.name,
+                    unreaded_messages: data.unreaded_messages_count
                 });
             }
 

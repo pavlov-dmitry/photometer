@@ -8,7 +8,7 @@ define( function(require) {
 
         handler.good = function( data ) {
             require( ['app'], function( app ) {
-                app.makeLogin( data.name, data.sid );
+                app.makeLogin( data.sid );
             } );
         };
 

@@ -135,7 +135,7 @@ define( function(require) {
                 );
             }
 
-            if ( data.current_page !== maxValidPage ) {
+            if ( data.current_page < maxValidPage ) {
                 pagination.next = this._galleryLinkPrefix + ( data.current_page + 1 );
             }
 
