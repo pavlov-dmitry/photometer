@@ -68,6 +68,7 @@ fn upload_photo_answer( request: &mut Request ) -> AnswerResult {
                     }
                 }
                 Err( e ) => match e {
+                    PhotoStoreError::Image( e ) => return Err( From::from( e ) ),
                     PhotoStoreError::Fs( e ) => return Err( err_msg::fs_error( e ) ),
                     PhotoStoreError::Format => Answer::bad( PhotoErrorInfo::bad_image() )
                 }

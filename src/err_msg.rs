@@ -2,6 +2,7 @@
 use std::io;
 use std::fmt::Display;
 use types::CommonError;
+use image::ImageError;
 
 #[inline]
 pub fn param_not_found( prm: &str ) -> CommonError {
@@ -24,6 +25,12 @@ pub fn not_a_string_param( prm: &str ) -> String {
 #[inline]
 pub fn fs_error( e: io::Error ) -> CommonError {
     CommonError( format!( "filesystem error: {}", e ) )
+}
+
+impl From<ImageError> for CommonError {
+    fn from(err: ImageError) -> CommonError {
+        CommonError( format!( "error while working with image: {}", err ) )
+    }
 }
 
 #[inline]

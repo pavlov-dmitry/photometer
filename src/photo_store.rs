@@ -4,7 +4,7 @@ use std::io::{ self, Write };
 use std::path::{ Path };
 use authentication::{ User };
 use image;
-use image::{ GenericImage, DynamicImage };
+use image::{ GenericImage, DynamicImage, ImageResult, ImageError };
 use std::cmp::{ min, max };
 use time::{ Timespec };
 use types::{ ImageType };
@@ -36,6 +36,8 @@ pub struct PhotoStore {
 }
 
 pub enum PhotoStoreError {
+    /// ошибка работы с фотографией
+    Image( ImageError ),
     /// произошла ошибка работы с файловой системой
     Fs( io::Error ),
     /// ошибка в формате данных
@@ -76,14 +78,13 @@ impl PhotoStore {
                 let photo_filename = Path::new( &photo_filename );
 
                 //TODO: переписать по красивше
-                let fs_sequience =
-                    self.save_preview(
-                        &mut img,
-                        preview_filename,
-                        ( w / 2 - crop_size / 2, h / 2 - crop_size / 2 ),
-                        ( crop_size, crop_size )
-                    )
-                    .and_then( |_| File::create( &photo_filename ) )
+                try!( self.save_preview(
+                    &mut img,
+                    preview_filename,
+                    ( w / 2 - crop_size / 2, h / 2 - crop_size / 2 ),
+                    ( crop_size, crop_size )));
+
+                let fs_sequience = File::create( &photo_filename )
                     .and_then( |mut file| file.write_all( img_data ) );
 
                 match fs_sequience {
@@ -96,7 +97,7 @@ impl PhotoStore {
     }
 
     #[allow(deprecated)]
-    pub fn save_preview( &self, img: &mut DynamicImage, filename: &Path, (tlx, tly): (u32, u32), (w, h) : (u32, u32) ) -> io::Result<()> {
+    pub fn save_preview( &self, img: &mut DynamicImage, filename: &Path, (tlx, tly): (u32, u32), (w, h) : (u32, u32) ) -> ImageResult<()> {
         let mut preview = img.crop( tlx, tly, w, h );
         preview = preview.resize( self.params.preview_size, self.params.preview_size, image::Nearest );
         let mut preview_file = try!( File::create( &filename ) );
@@ -128,7 +129,7 @@ impl PhotoStore {
                 let preview_filename = Path::new( &preview_filename );
 
                 self.save_preview( &mut img, preview_filename, top_left, dimensions )
-                    .map_err( |e| PhotoStoreError::Fs( e ) )
+                    .map_err( |e| PhotoStoreError::Image( e ) )
             },
             _ => Err( PhotoStoreError::Format )
         }
@@ -148,6 +149,12 @@ impl PhotoStore {
                 extension
             )
         //)
+    }
+}
+
+impl From<ImageError> for PhotoStoreError {
+    fn from(err: ImageError) -> PhotoStoreError {
+        PhotoStoreError::Image( err )
     }
 }
 

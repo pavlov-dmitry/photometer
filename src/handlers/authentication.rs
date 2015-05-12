@@ -2,6 +2,7 @@ use answer::{ Answer, AnswerResult, AnswerResponse };
 use database::{ Databaseable };
 use stuff::Stuffable;
 use db::users::{ DbUsers };
+use db::mailbox::{ DbMailbox };
 use authentication::{ User, SessionsStoreable, Userable };
 use photo_store::{ PhotoStoreable };
 use err_msg;
@@ -127,7 +128,8 @@ fn gen_reg_key() -> String {
 
 #[derive(RustcEncodable)]
 struct UserInfo {
-    name: String
+    name: String,
+    unreaded_messages_count: u32
 }
 
 pub fn user_info_path() -> &'static str {
@@ -135,10 +137,23 @@ pub fn user_info_path() -> &'static str {
 }
 
 pub fn user_info( req: &mut Request ) -> IronResult<Response> {
-    let user_info = UserInfo {
-        name: req.user().name.clone()
-    };
-    let answer_result = Ok( Answer::good( user_info ) );
-    let answer = AnswerResponse( answer_result );
+    let answer = AnswerResponse( user_info_answer(req) );
     Ok( Response::with( answer ) )
+}
+
+fn user_info_answer( req: &mut Request ) -> AnswerResult {
+    let user_id = req.user().id;
+    let user_name = req.user().name.clone();
+
+    let unreaded_count = {
+        let db = try!( req.stuff().get_current_db_conn() );
+        try!( db.messages_count( user_id, true ) )
+    };
+
+    let user_info = UserInfo {
+        name: user_name,
+        unreaded_messages_count: unreaded_count
+    };
+
+    Ok( Answer::good( user_info ) )
 }
