@@ -9,6 +9,8 @@ pub trait MailWriter {
     /// РЕГИСТРАЦИЯ
     /// сочиняет письмо о подтверждении регистрации
     fn write_registration_accept_mail( &self, reg_key: &str ) -> (String, String);
+    /// сочиняет приветственное письмо
+    fn write_welcome_mail( &self ) -> (String, String);
 
     /// СОЗДАНИЕ ГРУППЫ
     /// cочиняет письмо о создании новой группы
@@ -75,6 +77,16 @@ impl MailWriter for Stuff {
         );
         ( From::from( "Регистрация" ), mail )
     }
+
+    /// сочиняет приветственное письмо
+    fn write_welcome_mail( &self ) -> (String, String) {
+        let body = self.get_body();
+        let mail = format!( "Добро пожаловать на Фотометр!
+Попробуйте загрузить парочку фотографий в собственную галлерею {}/gallery",
+                             &body.root_url );
+        ( From::from( "Добро пожаловать." ), mail )
+    }
+
 
     /// cочиняет письмо о создании новой группы
     fn write_group_creation_mail( &self, group_name: &str, scheduled_id: Id ) -> (String, String) {

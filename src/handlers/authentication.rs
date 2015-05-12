@@ -94,6 +94,11 @@ fn registration_end_answer( req: &mut Request ) -> AnswerResult {
             req.photo_store().init_user_dir( &user.name )
                 .map_err( |e| err_msg::fs_error( e ) )
         );
+
+        // посылаем приветственное письмо( но только внутри фотометра )
+        let stuff = req.stuff();
+        let (subject, mail_body) = stuff.write_welcome_mail();
+        try!( stuff.send_internal_mail( &user, &subject, &mail_body ) );
     }
     make_login( req, maybe_user )
 }

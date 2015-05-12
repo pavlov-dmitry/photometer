@@ -23,6 +23,7 @@ const PHOTOMETER : &'static str = "Фотометр";
 pub trait Mailer {
     fn send_mail( &mut self, user: &User, subject: &str, body: &str  ) -> EmptyResult;
     fn send_external_mail( &mut self, user: &User, subject: &str, body: &str ) -> EmptyResult;
+    fn send_internal_mail( &mut self, user: &User, subject: &str, body: &str ) -> EmptyResult;
 }
 
 pub fn create( context: MailContext ) -> MailerBody {
@@ -33,24 +34,25 @@ pub fn create( context: MailContext ) -> MailerBody {
 
 impl Mailer for Stuff {
     fn send_mail( &mut self, user: &User, subject: &str, body: &str ) -> EmptyResult {
-        self.send_mail_impl( user, PHOTOMETER, subject, body, false )
+        try!( self.send_internal_mail( user, subject, body ) );
+        try!( self.send_external_mail( user, subject, body ) );
+        Ok( () )
     }
     fn send_external_mail( &mut self, user: &User, subject: &str, body: &str ) -> EmptyResult {
-        self.send_mail_impl( user, PHOTOMETER, subject, body, true )
+        self.send_mail_external( user, subject, body )
+    }
+    fn send_internal_mail( &mut self, user: &User, subject: &str, body: &str ) -> EmptyResult {
+        self.send_mail_internal( user, PHOTOMETER, subject, body )
     }
 }
 
 trait MailerPrivate {
-    fn send_mail_impl( &mut self, user: &User, sender: &str, subject: &str, body: &str, only_external: bool ) -> EmptyResult;
+    fn send_mail_external( &mut self, user: &User, subject: &str, body: &str ) -> EmptyResult;
+    fn send_mail_internal( &mut self, user: &User, sender: &str, subject: &str, body: &str ) -> EmptyResult;
 }
 
 impl MailerPrivate for Stuff {
-    fn send_mail_impl( &mut self, user: &User, sender: &str, subject: &str, body: &str, only_external: bool  ) -> EmptyResult {
-        // делаем запись в базе о новом оповещении
-        if only_external == false {
-            let db = try!( self.get_current_db_conn() );
-            try!( db.send_mail_to( user.id, sender, subject, body ) );
-        }
+    fn send_mail_external( &mut self, user: &User, subject: &str, body: &str ) -> EmptyResult {
         // здесь реализовано ленивое создание посыльщика писем с кешированием
         // елси в этом контексте мы его уже создавали то просто используем
         // а елси не создавали то создаём копию для текущего потока с эталона и кэшируем его
@@ -73,6 +75,13 @@ impl MailerPrivate for Stuff {
             subject: subject.to_string(),
             body: body.to_string(),
         } ) );
+        Ok( () )
+    }
+
+    fn send_mail_internal( &mut self, user: &User, sender: &str, subject: &str, body: &str ) -> EmptyResult {
+        // делаем запись в базе о новом оповещении
+        let db = try!( self.get_current_db_conn() );
+        try!( db.send_mail_to( user.id, sender, subject, body ) );
         Ok( () )
     }
 }
