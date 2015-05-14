@@ -2,16 +2,17 @@ define( function(require) {
     var Backbone = require( "lib/backbone" ),
         Handlebars = require( "handlebars.runtime" ),
         gallery_tmpl = require( "template/gallery_view" ),
-        pagination_tmpl = require( "template/gallery_pagination" ),
+        pagination_tmpl = require( "template/pagination" ),
         PreviewView = require( "gallery/preview_view" ),
-        FilesUpload = require( "lib/jquery.fileupload" );
+        FilesUpload = require( "lib/jquery.fileupload" ),
+        make_pagination = require( "make_pagination" );
 
     var GalleryPreview = Backbone.View.extend({
 
         el: $( "#workspace" ),
 
         template: Handlebars.templates.gallery_view,
-        pagination_tmpl: Handlebars.templates.gallery_pagination,
+        pagination_tmpl: Handlebars.templates.pagination,
 
         initialize: function() {
             var self = this;
@@ -93,55 +94,14 @@ define( function(require) {
             this.model.each( this.addOne, this );
         },
 
-        _galleryLinkPrefix: "#gallery/",
-
         pagesChanged: function( data ) {
-            //TODO: возможно вынести в отдельную свободную функцию
-            //формирование объекта пагинации, елси понадобится еще раз
-            var pagination = {};
+            if ( 1 < data.pages_count ) {
+                var pagination = make_pagination( data.current_page, data.pages_count, "#gallery/" );
 
-            var minPage = data.current_page - 2;
-            var maxPage = data.current_page + 2;
-            var maxValidPage = data.pages_count - 1;
-
-            if ( minPage < 0 ) {
-                minPage = 0;
+                var content = this.pagination_tmpl( pagination );
+                $("#header-pagination").html( content );
+                $("#footer-pagination").html( content );
             }
-            if ( maxValidPage < maxPage ) {
-                maxPage = maxValidPage;
-            }
-
-            if ( data.current_page !== 0 ) {
-                pagination.prev = this._galleryLinkPrefix + ( data.current_page - 1 );
-            }
-
-            pagination.pages = [];
-            for ( var i = minPage; i <= maxPage; ++i ) {
-                var current = {
-                    name: i + 1
-                };
-                if ( i == data.current_page ) {
-                    current.active = true;
-                } else {
-                    current.link = this._galleryLinkPrefix + i;
-                }
-                pagination.pages.push( current );
-            }
-
-            if ( maxPage < maxValidPage ) {
-                pagination.pages.push(
-                    { name: "..", disabled: true},
-                    { name: maxValidPage + 1, link: this._galleryLinkPrefix + maxValidPage }
-                );
-            }
-
-            if ( data.current_page < maxValidPage ) {
-                pagination.next = this._galleryLinkPrefix + ( data.current_page + 1 );
-            }
-
-            var content = this.pagination_tmpl( pagination );
-            $("#header-pagination").html( content );
-            $("#footer-pagination").html( content );
         },
 
         addNewImageToGallery: function() {

@@ -5,11 +5,11 @@ return templates['user_state_header_view'] = template({"1":function(depth0,helpe
 
   return "<ul class=\"nav navbar-nav\">\n  <li "
     + ((stack1 = helpers['if'].call(depth0,(depth0 != null ? depth0.isNavInMessages : depth0),{"name":"if","hash":{},"fn":this.program(2, data, 0),"inverse":this.noop,"data":data})) != null ? stack1 : "")
-    + ">\n    <a href=\"#messages\">Сообщения"
+    + ">\n    <a href=\"#mailbox\"><span class=\"glyphicon glyphicon-inbox\"></span> Сообщения"
     + ((stack1 = helpers['if'].call(depth0,(depth0 != null ? depth0.unreaded_messages : depth0),{"name":"if","hash":{},"fn":this.program(4, data, 0),"inverse":this.noop,"data":data})) != null ? stack1 : "")
     + "</a>\n  </li>\n  <li "
     + ((stack1 = helpers['if'].call(depth0,(depth0 != null ? depth0.isNavInGallery : depth0),{"name":"if","hash":{},"fn":this.program(2, data, 0),"inverse":this.noop,"data":data})) != null ? stack1 : "")
-    + "><a href=\"#gallery\">Галлерея</a></li>\n</ul>\n<ul class=\"nav navbar-nav navbar-right\">\n  <li class=\"dropdown\">\n    <a href=\"#\" class=\"dropdown-toggle\" data-toggle=\"dropdown\" role=\"button\" aria-expanded=\"false\">\n      <span class=\"glyphicon glyphicon-user\" ></span> "
+    + "><a href=\"#gallery\"><span class=\"glyphicon glyphicon-picture\"></span> Галлерея</a></li>\n</ul>\n<ul class=\"nav navbar-nav navbar-right\">\n  <li class=\"dropdown\">\n    <a href=\"#\" class=\"dropdown-toggle\" data-toggle=\"dropdown\" role=\"button\" aria-expanded=\"false\">\n      <span class=\"glyphicon glyphicon-user\" ></span> "
     + this.escapeExpression(((helper = (helper = helpers.name || (depth0 != null ? depth0.name : depth0)) != null ? helper : helpers.helperMissing),(typeof helper === "function" ? helper.call(depth0,{"name":"name","hash":{},"data":data}) : helper)))
     + " <span class=\"caret\"></span>\n    </a>\n    <ul class=\"dropdown-menu inverse-dropdown\" role=\"menu\">\n      <li><a id=\"logout-action\" href=\"#\" onClick=\"return false\"><span class=\"glyphicon glyphicon-off\"></span> Выйти</a></li>\n    </ul>\n  </li>\n</ul>\n";
 },"2":function(depth0,helpers,partials,data) {

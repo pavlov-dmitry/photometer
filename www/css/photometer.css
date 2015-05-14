@@ -25,6 +25,10 @@ body, div, dl, dt, dd, ul, ol, li, h1, h2, h3, h4, h5, h6, pre, form, fieldset, 
     background-color: rgba(0, 0, 0, 0.5);
 }
 
+.light-glass {
+    background-color: rgba(0, 0, 0, 0.3);
+}
+
 /* TODO: Сделать это через кастомизацию bootstrap */
 .form-control {
     background-color: rgba(99, 99, 100, 0.7);
@@ -165,4 +169,26 @@ img.has-success {
 
 img.has-error {
     border: 1px solid #a94442;
+}
+
+.mail {
+    padding: 10px;
+}
+
+.mail-header {
+    padding-left: 10px;
+    padding-right: 10px;
+    border: 1px solid #000000;
+}
+
+.mail-header h3, h4 {
+    color: #d17524;
+}
+
+.mail-body {
+    padding: 10px;
+}
+
+.mail-body p {
+    color: #dddddd;
 }

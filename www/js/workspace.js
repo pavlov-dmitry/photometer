@@ -10,6 +10,8 @@ define( function(require) {
             'gallery': 'gallery',
             'gallery/:page': 'gallery_page',
             'edit_photo/:id': "edit_photo",
+            'mailbox': 'mailbox',
+            'mailbox/:id': 'mailbox_page',
         },
 
         clearCurrent: function() {
@@ -66,6 +68,25 @@ define( function(require) {
 
             require( ['app'], function( app ) {
                 app.userState.navToGallery();
+            })
+        },
+
+        mailbox: function() {
+            this.mailbox_page( 0 );
+        },
+
+        mailbox_page: function( page ) {
+            this.clearCurrent();
+
+            var MailboxView = require( "mailbox/mailbox_view" ),
+                MailsCollection = require( "mailbox/mails_collection" );
+
+            var model = new MailsCollection;
+            this.current = new MailboxView( { model: model } );
+            model.fetch( page, false );
+
+            require( ['app'], function( app ) {
+                app.userState.navToMessages();
             })
         },
 

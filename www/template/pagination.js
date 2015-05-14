@@ -1,6 +1,6 @@
 define(['handlebars.runtime'], function(Handlebars) {
   Handlebars = Handlebars["default"];  var template = Handlebars.template, templates = Handlebars.templates = Handlebars.templates || {};
-return templates['gallery_pagination'] = template({"1":function(depth0,helpers,partials,data) {
+return templates['pagination'] = template({"1":function(depth0,helpers,partials,data) {
     return "";
 },"3":function(depth0,helpers,partials,data) {
     return "class=\"disabled\"";
