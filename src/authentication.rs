@@ -4,7 +4,7 @@ use cookies::{ Cookieable };
 use iron::middleware::{ BeforeMiddleware, AroundMiddleware };
 use iron::prelude::*;
 use iron::typemap::Key;
-use iron::{ Handler, status, Url };
+use iron::{ Handler, status };
 use types::Id;
 use rand::{ Rng, OsRng };
 
@@ -117,9 +117,7 @@ pub fn create_session_store() -> SessionsStoreMiddleware {
 
 /// аутентификация пользователя
 #[derive(Clone)]
-pub struct Autentication {
-    login_url : Arc<Url>
-}
+pub struct Autentication;
 
 pub struct AuthenticationHandler<H: Handler> {
     handler: H,
@@ -167,8 +165,8 @@ impl<H: Handler> Handler for AuthenticationHandler<H> {
 }
 
 /// простой доступ из Request-a к информации о пользователе
-pub fn middleware( c: &Url ) -> Autentication {
-    Autentication{ login_url : Arc::new( c.clone() ) }
+pub fn middleware() -> Autentication {
+    Autentication
 }
 
 pub trait Userable {

@@ -18,7 +18,6 @@ extern crate router;
 extern crate rand;
 
 use iron::prelude::*;
-use iron::Url;
 use router::Router;
 use not_found_switcher::NotFoundSwitcher;
 use std::path::Path;
@@ -96,8 +95,7 @@ fn main() {
     router.get( handlers::authentication::user_info_path(), handlers::authentication::user_info );
 
     let mut auth_chain = Chain::new( router );
-    let url = Url::parse( &cfg.login_page_url ).unwrap();
-    auth_chain.around( authentication::middleware( &url ) );
+    auth_chain.around( authentication::middleware() );
 
     let not_found_switch_to_auth = NotFoundSwitcher::new( auth_chain );
 
