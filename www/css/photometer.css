@@ -25,8 +25,8 @@ body, div, dl, dt, dd, ul, ol, li, h1, h2, h3, h4, h5, h6, pre, form, fieldset, 
     background-color: rgba(0, 0, 0, 0.5);
 }
 
-.light-glass {
-    background-color: rgba(0, 0, 0, 0.3);
+.blue-glass {
+    background-color: rgba(9, 31, 51, 0.5);
 }
 
 /* TODO: Сделать это через кастомизацию bootstrap */
@@ -181,14 +181,11 @@ img.has-error {
     border: 1px solid #000000;
 }
 
-.mail-header h3, h4 {
+.mail-header > h4 {
     color: #d17524;
 }
 
 .mail-body {
     padding: 10px;
-}
-
-.mail-body p {
-    color: #dddddd;
+    background: #292929;
 }
