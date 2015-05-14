@@ -2,6 +2,7 @@ user {{user}};
 
 http {
      server {
+            include       /etc/nginx/mime.types;
             set $www_dir '{{dir}}';
 
             listen 80;
@@ -29,12 +30,10 @@ http {
             }
 
             location ~ \.css {
-                     add_header  Content-Type    text/css;
                      root $www_dir;
             }
 
             location ~ \.js {
-                     add_header  Content-Type    application/x-javascript;
                      root $www_dir;
             }
 
