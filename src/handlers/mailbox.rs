@@ -5,7 +5,7 @@ use db::mailbox::{ DbMailbox };
 use authentication::{ Userable };
 use iron::prelude::*;
 use get_body::GetBody;
-use types::Id;
+use types::{ Id, MailInfo };
 use answer_types::{ OkInfo, CountInfo, AccessErrorInfo };
 
 const IN_PAGE_COUNT: u32 = 10;
@@ -43,6 +43,13 @@ struct PageInfo {
     page: u32
 }
 
+#[derive(RustcEncodable)]
+struct MailsInfo {
+    current_page: u32,
+    pages_count: u32,
+    mails: Vec<MailInfo>
+}
+
 fn get_answer( req: &mut Request, only_unreaded: bool ) -> AnswerResult {
     let page = try!( req.get_body::<PageInfo>() ).page;
     let user_id = req.user().id;
@@ -56,7 +63,19 @@ fn get_answer( req: &mut Request, only_unreaded: bool ) -> AnswerResult {
                                      &mut |mail_info| infos.push( mail_info ) ) );
         infos
     };
-    let answer = Answer::good( infos );
+
+    let messages_count = try!( db.messages_count( user_id, only_unreaded ) );
+    let mut pages_count = messages_count / IN_PAGE_COUNT;
+    if ( messages_count % IN_PAGE_COUNT ) != 0 {
+        pages_count += 1;
+    }
+
+    let mails = MailsInfo {
+        current_page: page,
+        pages_count: pages_count,
+        mails: infos
+    };
+    let answer = Answer::good( mails );
     Ok( answer )
 }
 
