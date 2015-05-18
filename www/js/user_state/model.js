@@ -11,7 +11,6 @@ define( function( require ) {
         },
 
         fetch: function() {
-            console.log( "user state fetch ");
             var self = this;
             var request = require( "request" );
             var handler = request.get( "user_info" );

@@ -24,7 +24,10 @@ define( function(require) {
         },
 
         render: function() {
-            this.$el.html( this.template({}) );
+            var state = {
+                is_unreaded: this.model.is_only_unreaded
+            };
+            this.$el.html( this.template( state ) );
             return this;
         },
 
@@ -43,7 +46,12 @@ define( function(require) {
 
         pagesChanged: function( data ) {
             if ( 1 < data.pages_count ) {
-                var pagination = make_pagination( data.current_page, data.pages_count, "#mailbox/");
+                var link_prefix = "#mailbox/";
+                if ( this.model.is_only_unreaded() ) {
+                    link_prefix += "unreaded/";
+                }
+
+                var pagination = make_pagination( data.current_page, data.pages_count, link_prefix );
 
                 var content = this.pagination_tmpl( pagination );
                 $("#header-pagination").html( content );

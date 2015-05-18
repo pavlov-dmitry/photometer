@@ -1,16 +1,17 @@
 define( function(require) {
     var Backbone = require( "lib/backbone" ),
-    MailModel = require( "mailbox/mail_model" ),
+        MailModel = require( "mailbox/mail_model" ),
         Request = require( "request" ),
         markdown = require( 'showdown_converter' );
 
     var MailsCollection = Backbone.Collection.extend({
         model: MailModel,
+        is_only_unreaded: false,
 
-        fetch: function( page, is_unreaded ) {
+        fetch: function( page ) {
             var self = this;
             var url = "/mailbox";
-            if ( is_unreaded ) {
+            if ( this.is_only_unreaded ) {
                 url += "/unreaded";
             }
 
@@ -32,10 +33,10 @@ define( function(require) {
             };
 
             handler.bad = function( data ) {
-                var errorHandler = require( "errors_handler" );
-                errorHandler.oops( "Не смог загрузить сообщения", JSON.stringify( data ) );
+                var error_handler = require( "errors_handler" );
+                error_handler.oops( "Не смог загрузить сообщения", JSON.stringify( data ) );
             }
-        }
+        },
     });
 
     return MailsCollection;

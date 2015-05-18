@@ -5,7 +5,7 @@ return templates['user_state_header_view'] = template({"1":function(depth0,helpe
 
   return "<ul class=\"nav navbar-nav\">\n  <li "
     + ((stack1 = helpers['if'].call(depth0,(depth0 != null ? depth0.isNavInMessages : depth0),{"name":"if","hash":{},"fn":this.program(2, data, 0),"inverse":this.noop,"data":data})) != null ? stack1 : "")
-    + ">\n    <a href=\"#mailbox\"><span class=\"glyphicon glyphicon-inbox\"></span> Сообщения"
+    + ">\n    <a href=\"#mailbox/unreaded\"><span class=\"glyphicon glyphicon-inbox\"></span> Сообщения"
     + ((stack1 = helpers['if'].call(depth0,(depth0 != null ? depth0.unreaded_messages : depth0),{"name":"if","hash":{},"fn":this.program(4, data, 0),"inverse":this.noop,"data":data})) != null ? stack1 : "")
     + "</a>\n  </li>\n  <li "
     + ((stack1 = helpers['if'].call(depth0,(depth0 != null ? depth0.isNavInGallery : depth0),{"name":"if","hash":{},"fn":this.program(2, data, 0),"inverse":this.noop,"data":data})) != null ? stack1 : "")

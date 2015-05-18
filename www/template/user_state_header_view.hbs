@@ -1,7 +1,7 @@
 {{#if isLogged}}
 <ul class="nav navbar-nav">
   <li {{#if isNavInMessages}}class="active"{{/if}}>
-    <a href="#mailbox"><span class="glyphicon glyphicon-inbox"></span> Сообщения{{#if unreaded_messages}} <span class="badge">{{unreaded_messages}}</span>{{/if}}</a>
+    <a href="#mailbox/unreaded"><span class="glyphicon glyphicon-inbox"></span> Сообщения{{#if unreaded_messages}} <span class="badge">{{unreaded_messages}}</span>{{/if}}</a>
   </li>
   <li {{#if isNavInGallery}}class="active"{{/if}}><a href="#gallery"><span class="glyphicon glyphicon-picture"></span> Галлерея</a></li>
 </ul>
