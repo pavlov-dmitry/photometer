@@ -98,10 +98,13 @@ define( function(require) {
             var model = new MailsCollection;
             model.is_only_unreaded = is_only_unreaded;
             this.current = new MailboxView( { model: model } );
+
             model.fetch( page );
 
+            var self = this;
             require( ['app'], function( app ) {
                 app.userState.navToMessages();
+                app.userState.listenTo( self.current, "some_mail_marked", app.userState.fetch );
             })
         },
 

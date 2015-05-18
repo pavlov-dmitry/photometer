@@ -32,6 +32,7 @@ define( function(require) {
         },
 
         addOne: function( data ) {
+            this.listenTo( data, "marked", this.some_mail_marked );
             var view = new MailView({
                 model: data,
                 id: "mail-" + data.id
@@ -58,6 +59,12 @@ define( function(require) {
                 $("#footer-pagination").html( content );
             }
         },
+
+        some_mail_marked: function() {
+            //TODO: надо бы переделать по человечески
+            this.model.fetch( this.model.current_page );
+            this.trigger( "some_mail_marked" );
+        }
 
     });
 

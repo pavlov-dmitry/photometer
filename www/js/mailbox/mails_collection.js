@@ -7,9 +7,12 @@ define( function(require) {
     var MailsCollection = Backbone.Collection.extend({
         model: MailModel,
         is_only_unreaded: false,
+        current_page: 0,
 
         fetch: function( page ) {
             var self = this;
+            current_page = page;
+
             var url = "/mailbox";
             if ( this.is_only_unreaded ) {
                 url += "/unreaded";

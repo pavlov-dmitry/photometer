@@ -17,6 +17,7 @@ define( function(require) {
             var handler = request.post( "/mailbox/mark_as_readed", { id: this.id } );
             handler.good = function( data ) {
                 self.set({ readed: true });
+                self.trigger( "marked" );
             }
         }
     })
