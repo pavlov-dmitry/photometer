@@ -11,16 +11,14 @@ define( function(require) {
             'readed': false
         },
 
-        // fetch: function() {
-        //     var self = this;
-        //     var Request = require( "request" );
-        //     var handler = Request.get( /photo_info/ + this.id );
-        //     handler.good = function( data ) {
-        //         self.set( data );
-        //     }
-
-        //     handler.bad = function( data ) {}
-        // }
+        mark_as_readed: function() {
+            var self = this;
+            var request = require( "request" );
+            var handler = request.post( "/mailbox/mark_as_readed", { id: this.id } );
+            handler.good = function( data ) {
+                self.set({ readed: true });
+            }
+        }
     })
 
     return MailModel;

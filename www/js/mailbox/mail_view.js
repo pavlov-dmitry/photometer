@@ -8,7 +8,7 @@ define( function(require) {
         template: Handlebars.templates.mail_view,
 
         events: {
-            // "click .rename-btn": "rename"
+            "click .readed-btn": "readed"
         },
 
         initialize: function() {
@@ -19,6 +19,10 @@ define( function(require) {
         render: function() {
             this.$el.html( this.template( this.model.toJSON() ) );
             return this;
+        },
+
+        readed: function() {
+            this.model.mark_as_readed();
         },
 
     });
