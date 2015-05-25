@@ -4,15 +4,20 @@ define( function(require) {
     var PhotoModel = Backbone.Model.extend({
         defaults: {
             'id': 0,
+            'user_id': 0,
+            // Какого-то хера эта фигня не устанваливается, видимо по
+            // умолчанию можно ставить только те поля что
+            // предусмотрены Хребтом
+            'photo_url': "gallery/photo_info",
             'name': "нет имени"
         },
 
         fetch: function() {
             var self = this;
             var Request = require( "request" );
-            var handler = Request.get( /photo_info/ + this.id );
+            var handler = Request.get( this.photo_url, { photo: this.id, user: this.user_id } );
             handler.good = function( data ) {
-                self.set( data );
+                self.set( data.photo );
             }
 
             handler.bad = function( data ) {

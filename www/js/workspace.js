@@ -14,6 +14,7 @@ define( function(require) {
             'mailbox/unreaded/:page': 'mailbox_unreaded_page',
             'mailbox': 'mailbox',
             'mailbox/:page': 'mailbox_page',
+            'gallery_photo/:user_id/:photo_id': "gallery_photo"
         },
 
         clear_current: function() {
@@ -114,7 +115,22 @@ define( function(require) {
             var PhotoModel = require( "gallery/photo_model" );
             var PhotoEditView = require( "edit_photo/edit_view" );
 
-            this.current = new PhotoEditView( { model: new PhotoModel( {id: id} ) } );
+            var model = new PhotoModel( {id: id} );
+            model.photo_url = "gallery/photo_info";
+
+            var self = this;
+            require( ['app'], function( app ) {
+                model.user_id = app.user_id();
+                self.current = new PhotoEditView( { model: model } );
+            } );
+        },
+
+        gallery_photo: function( user_id, photo_id ) {
+            this.clear_current();
+
+
+
+            // this.current = new PhotoView({model: new });
         }
 
     });

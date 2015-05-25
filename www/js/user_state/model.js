@@ -5,6 +5,7 @@ define( function( require ) {
         defaults: {
             isLogged: false,
             name: "",
+            id: 0,
             unreaded_messages: 0,
             isNavInGallery: false,
             isNavInMessages: false
@@ -18,7 +19,8 @@ define( function( require ) {
                 self.set({
                     isLogged: true,
                     name: data.name,
-                    unreaded_messages: data.unreaded_messages_count
+                    unreaded_messages: data.unreaded_messages_count,
+                    id: data.id
                 });
             }
 

@@ -59,6 +59,10 @@ define( function (require) {
             this.workspace.nav( "login" );
         },
 
+        user_id: function() {
+            return this.userState.id;
+        },
+
         /// текущее состояние пользователя
         userState: new UserStateModel(),
         /// переключатель рабочей среды
