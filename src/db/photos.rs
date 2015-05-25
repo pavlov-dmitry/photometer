@@ -15,6 +15,8 @@ pub trait DbPhotos {
     fn get_photo_infos( &mut self, owner_id: Id, start: Timespec, end: Timespec, offset: u32, count: u32 ) -> CommonResult<Vec<PhotoInfo>>;
     ///вычисляет кол-во фоток пользователя за опеределнный период
     fn get_photo_infos_count( &mut self, owner_id: Id, start: Timespec, end: Timespec ) -> CommonResult<u32>;
+    ///выдаёт соседнии фотографии относительно опеределенной в галлереи опередленного пользователя
+    fn get_photo_neighbours_in_gallery( &mut self, owner_id: Id, photo_id: Id ) -> CommonResult<(Option<Id>, Option<Id>)>;
     ///переименование фотографии
     fn rename_photo( &mut self, photo_id: Id, newname: &str ) -> CommonResult<()>;
 }
@@ -74,6 +76,12 @@ impl DbPhotos for MyPooledConn {
     fn get_photo_infos_count( &mut self, owner_id: Id, start: Timespec, end: Timespec ) -> CommonResult<u32> {
         get_photo_infos_count_impl( self, owner_id, start, end )
             .map_err( |e| fn_failed( "get_photo_infos_count", e ) )
+    }
+
+    ///выдаёт соседнии фотографии относительно опеределенной в галлереи опередленного пользователя
+    fn get_photo_neighbours_in_gallery( &mut self, owner_id: Id, photo_id: Id ) -> CommonResult<(Option<Id>, Option<Id>)> {
+        get_photo_neighbours_in_gallery_impl( self, owner_id, photo_id )
+            .map_err( |e| fn_failed( "get_photo_neighbours_in_gallery", e ) )
     }
 
     ///переименование фотографии
@@ -190,6 +198,41 @@ fn get_photo_infos_impl(
         })
     ).collect();
     Ok( photos )
+}
+
+fn get_photo_neighbours_in_gallery_impl( conn: &mut MyPooledConn, owner_id: Id, photo_id: Id ) -> MyResult<(Option<Id>, Option<Id>)> {
+    let prev = try!( get_neighbour_in_gallery( conn, owner_id, photo_id, false ) );
+    let next = try!( get_neighbour_in_gallery( conn, owner_id, photo_id, true ) );
+    Ok( ( prev, next ) )
+}
+
+fn get_neighbour_in_gallery( conn: &mut MyPooledConn, owner_id: Id, photo_id: Id, is_next: bool ) -> MyResult<Option<Id>> {
+    let comp_sign = if is_next { ">" } else { "<" };
+    let sort_direction = if is_next { "ASC" } else { "DESC" };
+    let query = format!("
+                        SELECT
+                            `id`
+                        FROM
+                            `images`
+                        WHERE
+                            `owner_id` = ? AND
+                            `upload_time` {} (SELECT `upload_time` FROM `images` WHERE `id` = ?)
+                        ORDER BY
+                            `upload_time` {}
+                        LIMIT 1;",
+                        comp_sign,
+                        sort_direction );
+
+    let mut stmt = try!( conn.prepare( query ) );
+    let mut result = try!( stmt.execute( &[ &owner_id, &photo_id ] ) );
+    let neighbour: Option<Id> = match result.next() {
+        Some( row ) => {
+            let row = try!( row );
+            Some( from_value( &row[ 0 ] ) )
+        },
+        None => None
+    };
+    Ok( neighbour )
 }
 
 fn get_photo_infos_count_impl( conn: &mut MyPooledConn, owner_id: Id, start: Timespec, end: Timespec ) -> MyResult<u32> {

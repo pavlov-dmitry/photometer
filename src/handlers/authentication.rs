@@ -13,6 +13,7 @@ use mailer::Mailer;
 use router_params::RouterParams;
 use get_body::GetBody;
 use answer_types::{ OkInfo, FieldErrorInfo };
+use types::Id;
 
 /// авторизация пользователя
 pub fn login( request: &mut Request ) -> IronResult<Response> {
@@ -134,6 +135,7 @@ fn gen_reg_key() -> String {
 #[derive(RustcEncodable)]
 struct UserInfo {
     name: String,
+    id: Id,
     unreaded_messages_count: u32
 }
 
@@ -157,6 +159,7 @@ fn user_info_answer( req: &mut Request ) -> AnswerResult {
 
     let user_info = UserInfo {
         name: user_name,
+        id: user_id,
         unreaded_messages_count: unreaded_count
     };
 

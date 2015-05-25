@@ -16,7 +16,6 @@ use answer_types::PhotoErrorInfo;
 static YEAR: &'static str = "year";
 const IN_PAGE_COUNT: u32 = 10;
 const FROM_YEAR: i32 = 1900;
-const ID: &'static str = "id";
 
 pub fn current_year_count_path() -> &'static str {
     "/gallery/count"
@@ -36,7 +35,7 @@ pub fn by_year_path() -> &'static str {
 }
 
 pub fn photo_info_path() -> &'static str {
-    "/photo_info/:id"
+    "gallery/photo_info"
 }
 
 pub fn current_year_count( request: &mut Request ) -> IronResult<Response> {
@@ -147,22 +146,41 @@ fn times_gate_for_year( year: i32 ) -> (time::Tm, time::Tm) {
     )
 }
 
+#[derive(Clone, RustcDecodable)]
+struct PhotoContextInfo {
+    user: Id,
+    photo: Id
+}
+
+#[derive(RustcEncodable)]
+struct GalleryPhotoInfo {
+    prev: Option<Id>,
+    photo: PhotoInfo,
+    next: Option<Id>
+}
+
 pub fn photo_info( request: &mut Request ) -> IronResult<Response> {
-    let id = FromStr::from_str( request.param( ID ) );
-    let answer = match id {
-        Ok( id ) => photo_info_answer( request, id ),
-        Err( _ ) => Err( err_msg::invalid_path_param( ID ) )
-    };
+    let answer = photo_info_answer( request );
     let answer = AnswerResponse( answer );
     Ok( Response::with( answer ) )
 }
 
-fn photo_info_answer( req: &mut Request, id: Id ) -> AnswerResult {
+fn photo_info_answer( req: &mut Request ) -> AnswerResult {
+    let photo_context = try!( req.get_body::<PhotoContextInfo>() );
+
     let db = try!( req.stuff().get_current_db_conn() );
-    let photo_info = try!( db.get_photo_info( id ) );
-    let answer = match photo_info {
-        Some( (_, photo_info) ) => Answer::good( photo_info ),
-        None => Answer::bad( PhotoErrorInfo::not_found() )
+    let photo_info = try!( db.get_photo_info( photo_context.photo ) );
+    let photo_info = match photo_info {
+        Some( (_, photo_info) ) => photo_info,
+        None => return Ok( Answer::bad( PhotoErrorInfo::not_found() ) )
     };
+
+    let (prev, next) = try!( db.get_photo_neighbours_in_gallery( photo_context.user, photo_context.photo ) );
+
+    let answer = Answer::good( GalleryPhotoInfo{
+        prev: prev,
+        photo: photo_info,
+        next: next
+    });
     Ok( answer )
 }
