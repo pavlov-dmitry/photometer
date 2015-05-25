@@ -1,11 +1,7 @@
 define( function (require) {
     var $ = require( "jquery" ),
-    Backbone = require( "lib/backbone" ),
-    Workspace = require( "workspace" ),
-    Request = require( "request" ),
-    UserStateModel = require( "user_state/model" );
-    require( "lib/jquery.cookie" );
-
+        Backbone = require( "lib/backbone" );
+    var JQCookie = require( "lib/jquery.cookie" );
 
     var app = {
         /// выполнить вход
@@ -64,27 +60,13 @@ define( function (require) {
         },
 
         /// текущее состояние пользователя
-        userState: new UserStateModel(),
+        userState: null, //new UserStateModel(),
         /// переключатель рабочей среды
-        workspace: new Workspace(),
+        workspace: null, //new Workspace(),
         /// куда стоит перейти после логина, по умолчанию идём в галлерею
         _redirectToAfterLogin: ""
     };
 
-    /// инициализация
-    $( function() {
-        var errorsHandler = require( "errors_handler" );
-        Request.internalError = errorsHandler.processInternalError;
-        Request.unauthorized = function() {
-            app.unauthorized();
-        };
-
-        var UserStateHeaderView = require( "user_state/header_view" );
-        var userStateHeaderView = new UserStateHeaderView( { model: app.userState } );
-        app.userState.fetch();
-
-        Backbone.history.start();
-    });
 
     return app;
 });

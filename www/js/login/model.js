@@ -1,6 +1,7 @@
 define( function(require) {
     var Backbone = require( "lib/backbone" );
     var Request = require( "request" );
+    var app = require( "app" );
 
     var UserLoginModel = Backbone.Model.extend ({
         url: '/login',
@@ -22,9 +23,7 @@ define( function(require) {
 	    } );
 
 	    handler.good = function( data ) {
-                require( ['app'], function( app ) {
-                    app.makeLogin( data.sid );
-                } );
+                app.makeLogin( data.sid );
 	    }
 
 	    handler.bad = function( err ) {

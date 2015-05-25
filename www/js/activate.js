@@ -1,15 +1,14 @@
 define( function(require) {
     var Request = require( "request" );
     var Handlebars = require( "handlebars.runtime" );
+    var app = require( "app" );
 
     var activate = function( key ) {
         var url = "/registration/" + key;
         var handler = Request.get( url, {} );
 
         handler.good = function( data ) {
-            require( ['app'], function( app ) {
-                app.makeLogin( data.sid );
-            } );
+            app.makeLogin( data.sid );
         };
 
         handler.bad = function( data ) {

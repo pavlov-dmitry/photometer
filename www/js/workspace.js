@@ -1,6 +1,7 @@
 define( function(require) {
 
     var Backbone = require( "lib/backbone" );
+    var app = require( 'app' );
 
     var Workspace = Backbone.Router.extend({
         routes: {
@@ -69,9 +70,7 @@ define( function(require) {
             this.current = new GalleryView( { model: model } );
             model.fetch( page );
 
-            require( ['app'], function( app ) {
-                app.userState.navToGallery();
-            })
+            app.userState.navToGallery();
         },
 
         mailbox: function() {
@@ -102,11 +101,8 @@ define( function(require) {
 
             model.fetch( page );
 
-            var self = this;
-            require( ['app'], function( app ) {
-                app.userState.navToMessages();
-                app.userState.listenTo( self.current, "some_mail_marked", app.userState.fetch );
-            })
+            app.userState.navToMessages();
+            app.userState.listenTo( this.current, "some_mail_marked", app.userState.fetch );
         },
 
         edit_photo: function( id ) {
@@ -118,11 +114,8 @@ define( function(require) {
             var model = new PhotoModel( {id: id} );
             model.photo_url = "gallery/photo_info";
 
-            var self = this;
-            require( ['app'], function( app ) {
-                model.user_id = app.user_id();
-                self.current = new PhotoEditView( { model: model } );
-            } );
+            model.user_id = app.user_id();
+            this.current = new PhotoEditView( { model: model } );
         },
 
         gallery_photo: function( user_id, photo_id ) {

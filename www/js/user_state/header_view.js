@@ -30,9 +30,8 @@ define( function( require ) {
         },
 
         logout: function() {
-            require( ['app'], function( app ) {
-                app.logout()
-            } )
+            var app = require( "app" );
+            app.logout();
         }
 
     } );
