@@ -2,6 +2,7 @@ define( function( require ) {
     var Backbone = require( 'lib/backbone' ),
     Handlebars = require( 'handlebars.runtime' );
     require( "template/user_state_header_view" );
+    var app = require( "app" );
 
     var UserStateHeaderView = Backbone.View.extend( {
 
@@ -30,7 +31,6 @@ define( function( require ) {
         },
 
         logout: function() {
-            var app = require( "app" );
             app.logout();
         }
 

@@ -113,17 +113,24 @@ define( function(require) {
 
             var model = new PhotoModel( {id: id} );
             model.photo_url = "gallery/photo_info";
-
             model.user_id = app.user_id();
+
             this.current = new PhotoEditView( { model: model } );
         },
 
         gallery_photo: function( user_id, photo_id ) {
             this.clear_current();
 
+            var PhotoModel = require( "gallery/photo_model" );
+            var PhotoView = require( "gallery/photo_view" );
 
+            var model = new PhotoModel({ id: photo_id });
+            model.photo_url = "gallery/photo_info";
+            model.user_id = user_id;
+            model.set({ context_url: "gallery_photo/" + user_id + "/" });
 
-            // this.current = new PhotoView({model: new });
+            this.current = new PhotoView({ model: model });
+            model.fetch();
         }
 
     });

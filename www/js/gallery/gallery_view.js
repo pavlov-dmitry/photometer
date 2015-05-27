@@ -5,7 +5,8 @@ define( function(require) {
         pagination_tmpl = require( "template/pagination" ),
         PreviewView = require( "gallery/preview_view" ),
         FilesUpload = require( "lib/jquery.fileupload" ),
-        make_pagination = require( "make_pagination" );
+        make_pagination = require( "make_pagination" ),
+        app = require( "app" );
 
     var GalleryPreview = Backbone.View.extend({
 
@@ -13,9 +14,12 @@ define( function(require) {
 
         template: Handlebars.templates.gallery_view,
         pagination_tmpl: Handlebars.templates.pagination,
+        context_url: "gallery_photo/",
 
         initialize: function() {
             var self = this;
+
+            this.context_url = "gallery_photo/" + app.user_id() + "/",
 
             this.listenTo( this.model, "add", this.addOne );
             this.listenTo( this.model, "reset", this.addAll );
@@ -82,6 +86,7 @@ define( function(require) {
         },
 
         addOne: function( data ) {
+            data.set({ url: this.context_url + data.id });
             var view = new PreviewView({
                 model: data,
                 id: "preview-" + data.id

@@ -1,0 +1,11 @@
+<div class="container">
+  <div class="fly">
+    <img id="photo" src="/photo/{{id}}.jpg" class="img-responsive"/>
+  </div>
+  <nav>
+    <ul class="pager">
+      {{#if next}}<li class="previous{{#unless next}} disabled{{/unless}}"><a href="#{{context_url}}{{next}}"><span aria-hidden="true">&larr;</span></a></li>{{/if}}
+      {{#if prev}}<li class="next{{#unless prev}} disabled{{/unless}}"><a href="#{{context_url}}{{prev}}"><span aria-hidden="true">&rarr;</span></a></li>{{/if}}
+    </ul>
+  </nav>
+</div>

@@ -8,7 +8,7 @@ define( function(require) {
         template: Handlebars.templates.photo_preview,
 
         events: {
-            "click .rename-btn": "rename"
+            // "click .rename-btn": "rename"
         },
 
         initialize: function() {
@@ -20,13 +20,6 @@ define( function(require) {
             this.$el.html( this.template( this.model.toJSON() ) );
             return this;
         },
-
-        rename: function() {
-            console.log( "need rename " + this.model.get( "id" ) );
-            var model = this.model.toJSON();
-            model.editing = true;
-            this.$el.html( this.template( model ) );
-        }
 
     });
 
