@@ -1,6 +1,6 @@
 use mysql::conn::pool::{ MyPooledConn };
 use mysql::error::{ MyResult };
-use mysql::value::{ from_value };
+use mysql::value::{ from_row, ToValue };
 use types::{ Id, EmptyResult, CommonResult, CommonError };
 use std::fmt::Display;
 use database::Database;
@@ -83,14 +83,15 @@ fn public_photo_impl( conn: &mut MyPooledConn, scheduled: Id, group: Id, user: I
         VALUES( ?, ?, ?, ?, ? )
         ON DUPLICATE KEY UPDATE photo_id=?
     "));
-    try!( stmt.execute( &[
+    let params: &[ &ToValue ] = &[
         &scheduled,
         &group,
         &user,
         &photo,
         &visible,
         &photo
-    ]));
+    ];
+    try!( stmt.execute( params ));
     Ok( () )
 }
 
@@ -101,15 +102,18 @@ fn make_publication_visible_impl( conn: &mut MyPooledConn, scheduled: Id, group:
         WHERE scheduled_id = ? AND group_id = ?
     "));
 
-    try!( stmt.execute( &[ &scheduled, &group ] ) );
+    let params: &[ &ToValue ] = &[ &scheduled, &group ];
+    try!( stmt.execute( params ) );
     Ok( () )
 }
 
 fn get_published_photo_count_impl( conn: &mut MyPooledConn, scheduled: Id, group: Id ) -> MyResult<u32> {
     let mut stmt = try!( conn.prepare( "SELECT COUNT(id) FROM publication WHERE scheduled_id=? AND group_id=?" ) );
-    let mut result = try!( stmt.execute( &[ &scheduled, &group ] ) );
+    let params: &[ &ToValue ] = &[ &scheduled, &group ];
+    let mut result = try!( stmt.execute( params ) );
     let row = try!( result.next().unwrap() );
-    Ok( from_value( &row[ 0 ] ) )
+    let (count,) = from_row( row );
+    Ok( count )
 }
 
 fn get_unpublished_users_impl( conn: &mut MyPooledConn, scheduled: Id, group: Id ) -> MyResult<Vec<User>> {
@@ -126,14 +130,16 @@ fn get_unpublished_users_impl( conn: &mut MyPooledConn, scheduled: Id, group: Id
             `g`.group_id = ?
             AND `p`.`id` IS NULL
     "));
-    let result = try!( stmt.execute( &[ &scheduled, &group ] ) );
+    let params: &[ &ToValue ] = &[ &scheduled, &group ];
+    let result = try!( stmt.execute( params ) );
     let mut users = Vec::new();
     for row in result {
         let row = try!( row );
+        let (id, name, mail) = from_row( row );
         users.push( User {
-            id: from_value( &row[ 0 ] ),
-            name: from_value( &row[ 1 ] ),
-            mail: from_value( &row[ 2 ] )
+            id: id,
+            name: name,
+            mail: mail
         });
     }
     Ok( users )
@@ -151,6 +157,7 @@ fn is_unpublished_user_impl( conn: &mut MyPooledConn, scheduled: Id, group: Id, 
             `user_id` = ?
         "
     ));
-    let result = try!( stmt.execute( &[ &scheduled, &group, &user ] ) );
+    let params: &[ &ToValue ] = &[ &scheduled, &group, &user ];
+    let result = try!( stmt.execute( params ) );
     Ok( result.count() == 0 )
 }

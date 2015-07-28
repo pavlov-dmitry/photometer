@@ -1,6 +1,6 @@
 use mysql::conn::pool::{ MyPooledConn };
 use mysql::error::{ MyResult };
-use mysql::value::{ from_value };
+use mysql::value::{ from_row, ToValue };
 use time;
 use types::{ Id, CommonResult, EmptyResult, MailInfo, CommonError };
 use std::fmt::Display;
@@ -82,14 +82,15 @@ fn send_mail_impl( conn: &mut MyPooledConn, recipient_id: Id, sender_name: &str,
 
     let readed = false;
 
-    try!( stmt.execute( &[
+    let params: &[ &ToValue ] = &[
         &now_time.sec,
         &recipient_id,
         &sender_name,
         &subject,
         &body,
         &readed
-    ]));
+    ];
+    try!( stmt.execute( params ) );
     Ok( () )
 }
 
@@ -98,10 +99,11 @@ fn messages_count_impl( conn: &mut MyPooledConn, owner_id: Id, only_unreaded: bo
     let query = format!( "SELECT COUNT(id) FROM mailbox WHERE recipient_id=? {};", where_postfix );
 
     let mut stmt = try!( conn.prepare( &query ) );
-    let mut sql_result = try!( stmt.execute( &[ &owner_id ] ) );
+    let mut sql_result = try!( stmt.execute( (owner_id,) ) );
 
     let sql_row = try!( sql_result.next().unwrap() );
-    Ok( from_value( &sql_row[ 0 ] ) )
+    let (count,) = from_row( sql_row );
+    Ok( count )
 }
 
 fn messages_from_last_impl<F: FnMut(MailInfo)>(
@@ -128,17 +130,19 @@ fn messages_from_last_impl<F: FnMut(MailInfo)>(
         LIMIT ? OFFSET ?;
     ", where_postfix );
     let mut stmt = try!( conn.prepare( &query ) );
-    let sql_result = try!( stmt.execute( &[ &owner_id, &count, &offset ] ) );
+    let params: &[ &ToValue ] = &[ &owner_id, &count, &offset ];
+    let sql_result = try!( stmt.execute( params ) );
 
     for sql_row in sql_result {
-        let values = try!( sql_row );
+        let row = try!( sql_row );
+        let (id, creation_time, sender_name, subject, body, readed) = from_row( row );
         let mail_info = MailInfo {
-            id: from_value( &values[ 0 ] ),
-            creation_time: from_value( &values[ 1 ] ),
-            sender_name: from_value( &values[ 2 ] ),
-            subject: from_value( &values[ 3 ] ),
-            body: from_value( &values[ 4 ] ),
-            readed: from_value( &values[ 5 ] )
+            id: id,
+            creation_time: creation_time,
+            sender_name: sender_name,
+            subject: subject,
+            body: body,
+            readed: readed
         };
         take_mail( mail_info );
     }
@@ -147,7 +151,8 @@ fn messages_from_last_impl<F: FnMut(MailInfo)>(
 
 fn mark_as_readed_impl( conn: &mut MyPooledConn, owner_id: Id, message_id: Id ) -> MyResult<bool> {
     let mut stmt = try!( conn.prepare( "UPDATE mailbox SET readed=true WHERE id=? AND recipient_id=?" ) );
-    let sql_result = try!( stmt.execute( &[ &message_id, &owner_id ] ) );
+    let params: &[ &ToValue ] = &[ &message_id, &owner_id ];
+    let sql_result = try!( stmt.execute( params ) );
     //узнать сколько строчек подошло под запрос можно только распарсив строку информации после запроса
     let info = String::from_utf8( sql_result.info() ).unwrap();
     let matched_count_str = parse_utils::str_between( &info, "matched: ", " " ).unwrap();

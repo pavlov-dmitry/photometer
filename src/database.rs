@@ -42,13 +42,8 @@ impl Database {
     }
 
     pub fn execute( &self, query: &str , fn_name: &str ) -> EmptyResult {
-        match self.pool.prepare( query ) {
-            Ok( mut stmt ) => {
-                match stmt.execute(&[]) {
-                    Ok( _ ) => Ok( () ),
-                    Err( e ) => Err( err_msg::fn_failed( fn_name, e ) )
-                }
-            },
+        match self.pool.prep_exec( query, () ) {
+            Ok( _ ) => Ok( () ),
             Err( e ) => Err( err_msg::fn_failed( fn_name, e ) )
         }
     }

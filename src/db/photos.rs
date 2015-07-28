@@ -1,6 +1,6 @@
 use mysql::conn::pool::{ MyPooledConn };
 use mysql::error::{ MyResult };
-use mysql::value::{ from_value, from_value_opt, ToValue, FromValue, Value };
+use mysql::value::{ from_row, from_value, from_value_opt, ToValue, FromValue, Value };
 use types::{ Id, PhotoInfo, ImageType, CommonResult, EmptyResult, CommonError };
 use time::{ Timespec };
 use database::Database;
@@ -113,7 +113,11 @@ fn add_photo_impl( conn: &mut MyPooledConn, user_id: Id, info: &PhotoInfo ) -> M
         camera_model )
         values( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? )" )
     );
-    try!( stmt.execute( &[
+    let camera_model: &str = match info.camera_model {
+        Some( ref cam ) => cam,
+        None => CAMERA_MODEL_DEFAULT
+    };
+    let params: &[ &ToValue ] =  &[
         &user_id,
         &info.upload_time,
         &info.image_type,
@@ -125,8 +129,9 @@ fn add_photo_impl( conn: &mut MyPooledConn, user_id: Id, info: &PhotoInfo ) -> M
         &info.aperture.unwrap_or( APERTURE_DEFAULT ),
         &info.focal_length.unwrap_or( FOCAL_LENGTH_DEFAULT ),
         &info.focal_length_35mm.unwrap_or( FOCAL_LENGTH_35MM_DEFAULT ),
-        info.camera_model.as_ref().unwrap_or( &CAMERA_MODEL_DEFAULT.to_string() )
-    ]));
+        &camera_model
+    ];
+    try!( stmt.execute( params ) );
     Ok( () )
 }
 
@@ -148,12 +153,12 @@ fn get_photo_info_impl( conn: &mut MyPooledConn, photo_id: Id ) -> MyResult<Opti
         FROM images AS i LEFT JOIN users AS u ON ( u.id = i.owner_id )
         WHERE u.id IS NOT NULL AND i.id = ?" )
     );
-    let mut sql_result = try!( stmt.execute( &[ &photo_id ] ) );
+    let mut sql_result = try!( stmt.execute( (photo_id,) ) );
     match sql_result.next() {
         None => Ok( None ),
         Some( sql_row ) => {
             let row_data = try!( sql_row );
-            let mut values = row_data.iter();
+            let mut values = row_data.into_iter();
             Ok ( Some ( (
                 from_value( values.next().unwrap() ),
                 read_photo_info( &mut values )
@@ -189,12 +194,13 @@ fn get_photo_infos_impl(
        ORDER BY upload_time DESC
        LIMIT ? OFFSET ?;
     " ) );
-    let result = try!( stmt.execute( &[ &owner_id, &start.sec, &end.sec, &count, &offset ] ) );
+    let params: &[ &ToValue ] = &[ &owner_id, &start.sec, &end.sec, &count, &offset ];
+    let result = try!( stmt.execute( params ) );
     //что-то с преобразованием на лету через собственный итертор я подупрел =(, пришлось тупо собирать в новый массив
     let photos : Vec<_> = result.filter_map( |sql_row|
         sql_row.ok().map( |sql_values| {
-            let mut values = sql_values.iter();
-            read_photo_info( &mut values )
+            let values = sql_values.into_iter();
+            read_photo_info( values )
         })
     ).collect();
     Ok( photos )
@@ -224,11 +230,13 @@ fn get_neighbour_in_gallery( conn: &mut MyPooledConn, owner_id: Id, photo_id: Id
                         sort_direction );
 
     let mut stmt = try!( conn.prepare( query ) );
-    let mut result = try!( stmt.execute( &[ &owner_id, &photo_id ] ) );
+    let params: &[ &ToValue ] = &[ &owner_id, &photo_id ];
+    let mut result = try!( stmt.execute( params ) );
     let neighbour: Option<Id> = match result.next() {
         Some( row ) => {
             let row = try!( row );
-            Some( from_value( &row[ 0 ] ) )
+            let (id,) = from_row( row );
+            Some( id )
         },
         None => None
     };
@@ -237,19 +245,22 @@ fn get_neighbour_in_gallery( conn: &mut MyPooledConn, owner_id: Id, photo_id: Id
 
 fn get_photo_infos_count_impl( conn: &mut MyPooledConn, owner_id: Id, start: Timespec, end: Timespec ) -> MyResult<u32> {
     let mut stmt = try!( conn.prepare( "SELECT COUNT(id) FROM images WHERE owner_id = ? AND upload_time BETWEEN ? AND ?" ) );
-    let mut result = try!( stmt.execute( &[ &owner_id, &start.sec, &end.sec ] ) );
+    let params: &[ &ToValue ] = &[ &owner_id, &start.sec, &end.sec ];
+    let mut result = try!( stmt.execute( params ) );
     let sql_row = try!( result.next().unwrap() );
-    Ok( from_value( &sql_row[ 0 ] ) )
+    let (count,) = from_row( sql_row );
+    Ok( count )
 }
 
 fn rename_photo_impl( conn: &mut MyPooledConn, photo_id: Id, newname: &str ) -> MyResult<()> {
     let newname = newname.to_string();
     let mut stmt = try!( conn.prepare( "UPDATE images SET name=? WHERE id=?" ) );
-    let _ = try!( stmt.execute( &[ &newname, &photo_id ] ) );
+    let params: &[ &ToValue ] = &[ &newname, &photo_id ];
+    let _ = try!( stmt.execute( params ) );
     Ok( () )
 }
 
-fn read_photo_info<'a, I: Iterator<Item = &'a Value>>( values: &mut I ) -> PhotoInfo
+fn read_photo_info<I: Iterator<Item = Value>>( mut values: I ) -> PhotoInfo
 {
     PhotoInfo {
         id: from_value( values.next().unwrap() ),
@@ -289,17 +300,20 @@ impl ToValue for ImageType {
 }
 
 impl FromValue for ImageType {
-    fn from_value(v: &Value) -> ImageType {
-        from_value_opt::<ImageType>( v ).expect( "fail converting ImageType from db value!" )
+    fn from_value(v: Value) -> ImageType {
+        match from_value_opt::<ImageType>( v ) {
+            Ok( x ) => x,
+            Err(_) => panic!( "fail converting ImageType from db value!" )
+        }
     }
-    fn from_value_opt(v: &Value) -> Option<ImageType> {
-        from_value_opt::<String>( v )
+    fn from_value_opt(v: Value) -> Result<ImageType, Value> {
+        from_value_opt::<String>( v.clone() )
             .and_then( |string| {
                 let s: &str = &string;
                 match s {
-                    JPEG_STR => Some( ImageType::Jpeg ),
-                    PNG_STR => Some( ImageType::Png ),
-                    _ => None
+                    JPEG_STR => Ok( ImageType::Jpeg ),
+                    PNG_STR => Ok( ImageType::Png ),
+                    _ => Err( v )
                 }
             })
     }

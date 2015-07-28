@@ -1,6 +1,6 @@
 use mysql::conn::pool::{ MyPooledConn };
 use mysql::error::{ MyResult };
-use mysql::value::{ from_value, ToValue };
+use mysql::value::{ from_row, ToValue, Value, IntoValue };
 use std::fmt::Display;
 use types::{ Id, EmptyResult, CommonResult, CommonError };
 use database::Database;
@@ -94,10 +94,10 @@ fn add_rights_of_voting_impl( conn: &mut MyPooledConn, scheduled_id: Id, users: 
 
     let mut stmt = try!( conn.prepare( &query ) );
 
-    let mut values: Vec<&ToValue> = Vec::new();
+    let mut values: Vec<Value> = Vec::new();
     for i in (0 .. users.len()) {
-        values.push( &scheduled_id );
-        values.push( &users[ i ] );
+        values.push( scheduled_id.into_value() );
+        values.push( users[ i ].into_value() );
     }
 
     try!( stmt.execute( &values ) );
@@ -118,15 +118,18 @@ fn add_rights_of_voting_for_group_impl( conn: &mut MyPooledConn, scheduled_id: I
         "
     ));
 
-    try!( stmt.execute( &[ &scheduled_id, &group_id ] ) );
+    let params: &[ &ToValue ] = &[ &scheduled_id, &group_id ];
+    try!( stmt.execute( params ) );
     Ok( () )
 }
 
 fn is_all_voted_impl( conn: &mut MyPooledConn, scheduled_id: Id ) -> MyResult<bool> {
     let mut stmt = try!( conn.prepare( "SELECT COUNT( id ) FROM votes WHERE scheduled_id = ? AND voted=false" ) );
-    let mut result = try!( stmt.execute( &[ &scheduled_id ] ) );
+    let params: &[ &ToValue ] = &[ &scheduled_id ];
+    let mut result = try!( stmt.execute( params ) );
     let row = try!( result.next().unwrap() );
-    Ok( from_value::<u32>( &row[ 0 ] ) == 0 )
+    let (count,) : (u32,) = from_row( row );
+    Ok( count == 0 )
 }
 
 fn is_need_user_vote_impl( conn: &mut MyPooledConn, scheduled_id: Id, user_id: Id ) -> MyResult<bool> {
@@ -140,14 +143,17 @@ fn is_need_user_vote_impl( conn: &mut MyPooledConn, scheduled_id: Id, user_id: I
             AND `user_id` = ?
             AND `voted` = false
     "));
-    let mut result = try!( stmt.execute( &[ &scheduled_id, &user_id ] ) );
+    let params: &[ &ToValue ] = &[ &scheduled_id, &user_id ];
+    let mut result = try!( stmt.execute( params ) );
     let row = try!( result.next().unwrap() );
-    Ok( from_value::<u32>( &row[ 0 ] ) == 1 )
+    let (count,) : (u32,) = from_row( row );
+    Ok( count == 1 )
 }
 
 fn get_votes_impl( conn: &mut MyPooledConn, scheduled_id: Id ) -> MyResult<Votes> {
     let mut stmt = try!( conn.prepare( "SELECT user_id, voted, vote FROM votes WHERE scheduled_id = ?" ) );
-    let result = try!( stmt.execute( &[ &scheduled_id ] ) );
+    let params: &[ &ToValue ] = &[ &scheduled_id ];
+    let result = try!( stmt.execute( params ) );
 
     let mut votes = Votes {
         yes: Vec::new(),
@@ -157,9 +163,7 @@ fn get_votes_impl( conn: &mut MyPooledConn, scheduled_id: Id ) -> MyResult<Votes
 
     for row in result {
         let row = try!( row );
-        let user_id : Id = from_value( &row[ 0 ] );
-        let voted: bool = from_value( &row[ 1 ] );
-        let vote: bool = from_value( &row[ 2 ] );
+        let (user_id, voted, vote): (Id, bool, bool) = from_row( row );
         if voted {
             if vote == true {
                 votes.yes.push( user_id );
@@ -176,6 +180,7 @@ fn get_votes_impl( conn: &mut MyPooledConn, scheduled_id: Id ) -> MyResult<Votes
 
 fn set_vote_impl( conn: &mut MyPooledConn, scheduled_id: Id, user_id: Id, vote: bool ) -> MyResult<()> {
     let mut stmt = try!( conn.prepare( "UPDATE votes SET vote=?, voted=true WHERE scheduled_id=? AND user_id=?" ) );
-    try!( stmt.execute( &[ &vote, &scheduled_id, &user_id ] ) );
+    let params: &[ &ToValue ] = &[ &vote, &scheduled_id, &user_id ];
+    try!( stmt.execute( params ) );
     Ok( () )
 }

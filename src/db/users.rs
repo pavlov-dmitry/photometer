@@ -1,6 +1,6 @@
 use mysql::conn::pool::{ MyPooledConn };
 use mysql::error::{ MyResult };
-use mysql::value::{ from_value, ToValue };
+use mysql::value::{ Value, IntoValue, ToValue, from_row };
 use types::{ Id, CommonResult, EmptyResult, CommonError };
 use std::fmt::Display;
 use database::Database;
@@ -97,15 +97,17 @@ fn get_user_impl( conn: &mut MyPooledConn, name: &str, pass: &str ) -> MyResult<
             `password`=? AND
             `activated`=true"
     ) );
-    let mut sql_result = try!( stmt.execute( &[ &name, &pass ] ) );
+    let params: &[&ToValue] = &[ &name, &pass ];
+    let mut sql_result = try!( stmt.execute( params ) );
     match sql_result.next() {
         None => Ok( None ),
         Some( row ) => {
             let row = try!( row );
+            let (name, id, mail) = from_row( row );
             let user = User {
-                name: from_value( &row[ 0 ] ),
-                id: from_value( &row[ 1 ] ),
-                mail: from_value( &row[ 2 ] )
+                name: name,
+                id: id,
+                mail: mail
             };
             Ok( Some( user ) )
         }
@@ -123,7 +125,8 @@ fn add_user_impl( conn: &mut MyPooledConn, name: &str, pass: &str, mail: &str, r
             regkey
         ) VALUES(?, ?, ?, ?);"
     ) );
-    let result = try!( stmt.execute( &[ &name, &pass, &mail, &regkey ] ) );
+    let params: &[ &ToValue ] = &[ &name, &pass, &mail, &regkey ];
+    let result = try!( stmt.execute( params ) );
     Ok( User {
         name: name.to_string(),
         id: result.last_insert_id(),
@@ -143,14 +146,15 @@ fn activate_user_impl( conn: &mut MyPooledConn, regkey: &str ) -> MyResult<Optio
                 `regkey`=? AND
                 `activated`=false"
         ) );
-        let mut result = try!( stmt.execute( &[ &regkey ] ) );
+        let mut result = try!( stmt.execute( (regkey,) ) );
         match result.next()  {
             Some( row ) => {
                 let row = try!( row );
+                let (id, name, mail) = from_row( row );
                 Some( User {
-                    id: from_value( &row[ 0 ] ),
-                    name: from_value( &row[ 1 ] ),
-                    mail: from_value( &row[ 2 ] )
+                    id: id,
+                    name: name,
+                    mail: mail
                 } )
             }
             None => None
@@ -160,7 +164,7 @@ fn activate_user_impl( conn: &mut MyPooledConn, regkey: &str ) -> MyResult<Optio
         let mut stmt = try!( conn.prepare(
             "UPDATE users SET activated=true WHERE id=?"
         ) );
-        try!( stmt.execute( &[ &user.id ] ) );
+        try!( stmt.execute( (user.id,) ) );
     }
     Ok( maybe_user )
 }
@@ -168,27 +172,29 @@ fn activate_user_impl( conn: &mut MyPooledConn, regkey: &str ) -> MyResult<Optio
 fn user_exists_impl( conn: &mut MyPooledConn, name: &str, mail: &str ) -> MyResult<bool> {
     let name = name.to_string();
     let mut stmt = try!( conn.prepare( "select id from users where login=? OR mail=?" ) );
-    let sql_result = try!( stmt.execute( &[ &name, &mail ] ) );
+    let params: &[ &ToValue ] = &[ &name, &mail ];
+    let sql_result = try!( stmt.execute( params ) );
     Ok( sql_result.count() == 1 )
 }
 
 fn user_id_exists_impl( conn: &mut MyPooledConn, id: Id  ) -> MyResult<bool> {
     let mut stmt = try!( conn.prepare( "select id from users where id=? AND activated=true" ) );
-    let sql_result = try!( stmt.execute( &[ &id ] ) );
+    let sql_result = try!( stmt.execute( (id,) ) );
     Ok( sql_result.count() == 1 )
 }
 
 fn user_by_id_impl( conn: &mut MyPooledConn, id: Id ) -> MyResult<Option<User>> {
     let mut stmt = try!( conn.prepare( "select login, mail from users where id=? AND activated=true" ) );
-    let mut sql_result = try!( stmt.execute( &[ &id ] ) );
+    let mut sql_result = try!( stmt.execute( (id,) ) );
     match sql_result.next() {
         None => Ok( None ),
         Some( row ) => {
             let row = try!( row );
+            let (name, mail) = from_row( row );
             let user = User {
-                name: from_value( &row[ 0 ] ),
+                name: name,
                 id: id,
-                mail: from_value( &row[ 1 ] )
+                mail: mail
             };
             Ok( Some( user ) )
         }
@@ -202,19 +208,20 @@ fn users_by_id_impl( conn: &mut MyPooledConn, ids: &[Id] ) -> MyResult<Vec<User>
     }
 
     let mut stmt = try!( conn.prepare( &query ) );
-    let mut values: Vec<&ToValue> = Vec::new();
+    let mut values: Vec<Value> = Vec::new();
     for id in ids.iter() {
-        values.push( id );
+        values.push( id.into_value() );
     }
 
     let mut users = Vec::new();
-    let sql_result = try!( stmt.execute( &values ) );
+    let sql_result = try!( stmt.execute( values ) );
     for row in sql_result {
         let row = try!( row );
+        let (id, name, mail) = from_row( row );
         let user = User {
-            id: from_value( &row[ 0 ] ),
-            name: from_value( &row[ 1 ] ),
-            mail: from_value( &row[ 2 ] )
+            id: id,
+            name: name,
+            mail: mail
         };
         users.push( user );
     }

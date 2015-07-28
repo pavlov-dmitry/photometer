@@ -1,6 +1,6 @@
 use mysql::conn::pool::{ MyPooledConn };
 use mysql::error::{ MyResult };
-use mysql::value::{ from_value, ToValue, FromValue, Value, from_value_opt };
+use mysql::value::{ IntoValue, from_row, ToValue, FromValue, Value, from_value_opt };
 use types::{ Id, CommonResult, EmptyResult, CommonError };
 use time::{ Timespec };
 use std::fmt::Display;
@@ -123,19 +123,22 @@ impl ToValue for EventState {
 }
 
 impl FromValue for EventState {
-    fn from_value(v: &Value) -> EventState {
-        from_value_opt::<EventState>( v ).expect( "fail converting EventState from db value!" )
+    fn from_value(v: Value) -> EventState {
+        match from_value_opt::<EventState>( v ) {
+            Ok( x ) => x,
+            Err(_) => panic!( "fail converting EventState from db value!" )
+        }
     }
-    fn from_value_opt(v: &Value) -> Option<EventState> {
-        from_value_opt::<String>( v )
+    fn from_value_opt(v: Value) -> Result<EventState, Value> {
+        from_value_opt::<String>( v.clone() )
             .and_then( |string| {
                 let s: &str = &string;
                 match s {
-                    NOT_STARTED_YET_STR => Some( EventState::NotStartedYet ),
-                    ACTIVE_STR => Some( EventState::Active ),
-                    FINISHED_STR => Some( EventState::Finished ),
-                    DISABLED_STR => Some( EventState::Disabled ),
-                    _ => None
+                    NOT_STARTED_YET_STR => Ok( EventState::NotStartedYet ),
+                    ACTIVE_STR => Ok( EventState::Active ),
+                    FINISHED_STR => Ok( EventState::Finished ),
+                    DISABLED_STR => Ok( EventState::Disabled ),
+                    _ => Err( v )
                 }
             })
     }
@@ -158,13 +161,13 @@ fn get_events_impl( conn: &mut MyPooledConn, where_cond: &str, values: &[&ToValu
     let mut events = Vec::new();
     for sql_row in sql_result {
         let row = try!( sql_row );
-        let mut values = row.iter();
+        let (scheduled_id, id, name, data, state) = from_row( row );
         events.push( ScheduledEventInfo {
-            scheduled_id: from_value( values.next().unwrap() ),
-            id: from_value( values.next().unwrap() ),
-            name: from_value( values.next().unwrap() ),
-            data: from_value( values.next().unwrap() ),
-            state: from_value( values.next().unwrap() ),
+            scheduled_id: scheduled_id,
+            id: id,
+            name: name,
+            data: data,
+            state: state
         })
     }
     Ok( events )
@@ -180,17 +183,18 @@ fn event_info_impl( conn: &mut MyPooledConn, scheduled_id: Id ) -> MyResult<Opti
         FROM scheduled_events
         WHERE id = ?
     " ) );
-    let mut sql_result = try!( stmt.execute( &[ &scheduled_id ] ) );
+    let params: &[ &ToValue ] = &[ &scheduled_id ];
+    let mut sql_result = try!( stmt.execute( params ) );
     let result = match sql_result.next() {
         Some( sql_row ) => {
             let row = try!( sql_row );
-            let mut values = row.iter();
+            let (id, name, data, state) = from_row( row );
             Some( ScheduledEventInfo {
-                id: from_value( values.next().unwrap() ),
+                id: id,
                 scheduled_id: scheduled_id,
-                name: from_value( values.next().unwrap() ),
-                data: from_value( values.next().unwrap() ),
-                state: from_value( values.next().unwrap() )
+                name: name,
+                data: data,
+                state: state
             })
         },
         None => None
@@ -208,11 +212,16 @@ fn event_start_time_impl( conn: &mut MyPooledConn, scheduled_id: Id ) -> MyResul
             `id` = ?
     ") );
 
-    let mut sql_result = try!( stmt.execute( &[ &scheduled_id ] ) );
+    let params: &[ &ToValue ] = &[ &scheduled_id ];
+    let mut sql_result = try!( stmt.execute( params ) );
     let result = match sql_result.next() {
         Some( row ) => {
             let row = try!( row );
-            Some( Timespec{ sec: from_value( &row[ 0 ] ), nsec: 0 } )
+            let (sec,) = from_row( row );
+            Some( Timespec{
+                sec: sec,
+                nsec: 0
+            } )
         }
         None => None
     };
@@ -236,17 +245,17 @@ fn add_events_impl( conn: &mut MyPooledConn, events: &[FullEventInfo] ) -> MyRes
     }
 
     let mut stmt = try!( conn.prepare( &query ) );
-    let mut values: Vec<&ToValue> = Vec::new();
+    let mut values: Vec<Value> = Vec::new();
     for i in (0 .. events.len()) {
         let event = &events[ i ];
-        values.push( &event.id );
-        values.push( &event.name );
-        values.push( &event.start_time.sec );
-        values.push( &event.end_time.sec );
-        values.push( &event.data );
+        values.push( event.id.into_value() );
+        values.push( event.name.clone().into_value() );
+        values.push( event.start_time.sec.into_value() );
+        values.push( event.end_time.sec.into_value() );
+        values.push( event.data.clone().into_value() );
     }
 
-    try!( stmt.execute( &values ) );
+    try!( stmt.execute( values ) );
     Ok( () )
 }
 
@@ -265,20 +274,22 @@ fn add_disabled_event_impl( conn: &mut MyPooledConn, event: &FullEventInfo ) -> 
         VALUES ( ?, ?, ?, ?, ?, ?, true )
     ") );
 
-    let result = try!( stmt.execute( &[
+    let params: &[ &ToValue ] = &[
         &event.id,
         &event.name,
         &event.start_time.sec,
         &event.end_time.sec,
         &event.data,
         &EventState::Disabled
-    ] ) );
+    ];
+    let result = try!( stmt.execute( params ) );
 
     Ok( result.last_insert_id() )
 }
 
 fn set_event_state_impl( conn: &mut MyPooledConn, scheduled_id: Id, state: EventState ) -> MyResult<()> {
     let mut stmt = try!( conn.prepare( "UPDATE scheduled_events SET state=? WHERE id=?" ) );
-    try!( stmt.execute( &[ &state, &scheduled_id ] ) );
+    let params: &[ &ToValue ] = &[ &state, &scheduled_id ];
+    try!( stmt.execute( params ) );
     Ok( () )
 }

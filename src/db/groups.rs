@@ -1,6 +1,6 @@
 use mysql::conn::pool::{ MyPooledConn };
 use mysql::error::{ MyResult };
-use mysql::value::{ from_value, ToValue };
+use mysql::value::{ from_row, ToValue, Value, IntoValue };
 use types::{ Id, CommonResult, EmptyResult, CommonError };
 use authentication::{ User };
 use std::fmt::Display;
@@ -107,12 +107,14 @@ fn get_members_impl( conn: &mut MyPooledConn, group_id: Id ) -> MyResult<Members
         WHERE u.id IS NOT NULL AND g.group_id = ?
     "));
     let mut members = Vec::new();
-    for row in try!( stmt.execute( &[ &group_id ] ) ) {
+    let params: &[ &ToValue ] = &[ &group_id ];
+    for row in try!( stmt.execute( params ) ) {
         let row = try!( row );
+        let (id, name, mail) = from_row( row );
         members.push( User{
-            id: from_value( &row[ 0 ] ),
-            name: from_value( &row[ 1 ] ),
-            mail: from_value( &row[ 2 ] )
+            id: id,
+            name: name,
+            mail: mail
         });
     }
     Ok( members )
@@ -120,26 +122,31 @@ fn get_members_impl( conn: &mut MyPooledConn, group_id: Id ) -> MyResult<Members
 
 fn get_members_count_impl( conn: &mut MyPooledConn, group_id: Id ) -> MyResult<u32> {
     let mut stmt = try!( conn.prepare( "SELECT COUNT(id) FROM group_members WHERE group_id=?" ));
-    let mut result = try!( stmt.execute( &[ &group_id ] ) );
+    let params: &[ &ToValue ] = &[ &group_id ];
+    let mut result = try!( stmt.execute( params ) );
     let row = try!( result.next().unwrap() );
-    Ok( from_value( &row[ 0 ] ) )
+    let (count,) = from_row( row );
+    Ok( count )
 }
 
 fn is_member_impl( conn: &mut MyPooledConn, user_id: Id, group_id: Id ) -> MyResult<bool> {
     let mut stmt = try!( conn.prepare( "SELECT id FROM group_members WHERE user_id=? AND group_id=?" ) );
-    let result = try!( stmt.execute( &[ &user_id, &group_id ] ) );
+    let params: &[ &ToValue ] = &[ &user_id, &group_id ];
+    let result = try!( stmt.execute( params ) );
     Ok( result.count() == 1 )
 }
 
 fn is_group_id_exists_impl( conn: &mut MyPooledConn, group_id: Id ) -> MyResult<bool> {
     let mut stmt = try!( conn.prepare( "SELECT id FROM groups WHERE id=?" ) );
-    let result = try!( stmt.execute( &[ &group_id ] ) );
+    let params: &[ &ToValue ] = &[ &group_id ];
+    let result = try!( stmt.execute( params ) );
     Ok( result.count() == 1 )
 }
 
 fn is_group_exists_impl( conn: &mut MyPooledConn, name: &str ) -> MyResult<bool> {
     let mut stmt = try!( conn.prepare( "SELECT id FROM groups WHERE name=?" ) );
-    let result = try!( stmt.execute( &[ &name ] ) );
+    let params: &[ &ToValue ] = &[ &name ];
+    let result = try!( stmt.execute( params ) );
     Ok( result.count() == 1 )
 }
 
@@ -151,7 +158,8 @@ fn create_group_impl( conn: &mut MyPooledConn, name: &String, desc: &String ) ->
         )
         VALUES ( ?, ? )
     "));
-    let result = try!( stmt.execute( &[ name, desc ] ) );
+    let params: &[ &ToValue ] = &[ name, desc ];
+    let result = try!( stmt.execute( params ) );
     Ok( result.last_insert_id() )
 }
 
@@ -170,18 +178,19 @@ fn add_members_impl( conn: &mut MyPooledConn, group_id: Id, members: &[ Id ] ) -
 
     let mut stmt = try!( conn.prepare( &query ) );
 
-    let mut values: Vec<&ToValue> = Vec::new();
+    let mut values: Vec<Value> = Vec::new();
     for i in (0 .. members.len()) {
-        values.push( &members[ i ] );
-        values.push( &group_id );
+        values.push( members[ i ].into_value() );
+        values.push( group_id.into_value() );
     }
 
-    try!( stmt.execute( &values ) );
+    try!( stmt.execute( values ) );
     Ok( () )
 }
 
 fn set_timetable_version_impl( conn: &mut MyPooledConn, group_id: Id, version: u32 ) -> MyResult<()> {
     let mut stmt = try!( conn.prepare( "UPDATE groups SET timetable_version=? WHERE id=?" ) );
-    try!( stmt.execute( &[ &version, &group_id ] ) );
+    let params: &[ &ToValue ] = &[ &version, &group_id ];
+    try!( stmt.execute( params ) );
     Ok( () )
 }
