@@ -75,7 +75,7 @@ impl MailWriter for Stuff {
             &body.root_url,
             reg_key
         );
-        ( From::from( "Регистрация" ), mail )
+        ( String::from( "Регистрация" ), mail )
     }
 
     /// сочиняет приветственное письмо
@@ -84,7 +84,7 @@ impl MailWriter for Stuff {
         let mail = format!( "#### Добро пожаловать на Фотометр!\n
 Попробуйте загрузить парочку фотографий в собственную [галлерею]({}/#gallery \"Пошли посмотрим?\")",
                              &body.root_url );
-        ( From::from( "Добро пожаловать." ), mail )
+        ( String::from( "Добро пожаловать." ), mail )
     }
 
 
@@ -105,7 +105,7 @@ impl MailWriter for Stuff {
     /// сочиняет письмо о том что никто не захотел в твою группу
     fn write_nobody_need_your_group_mail( &self, group_name: &str ) -> (String, String) {
         let subject = format!( "Группа '{}' не создана", group_name );
-        let mail = From::from(
+        let mail = String::from(
             "К сожалению ни один из приглашенных вами пользователей не согласился создать группу."
         );
         ( subject, mail )

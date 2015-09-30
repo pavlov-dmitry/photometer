@@ -105,7 +105,7 @@ impl GroupEvent for ChangeTimetable {
         };
         let self_info = FullEventInfo {
             id: ID,
-            name: From::from( "Изменения расписания" ),
+            name: String::from( "Изменения расписания" ),
             start_time: self_start_time,
             end_time: self_end_time,
             data: json::encode( &data ).unwrap()
@@ -147,10 +147,10 @@ fn check_for_add( for_add: &Vec<AddEventInfo>, self_end_time: &Timespec ) -> Emp
     // проверка диапазонов времен
     for add in for_add {
         if add.end_time.sec < add.start_time.sec {
-            return common_error( From::from( "invalid time diapasons" ) );
+            return common_error( String::from( "invalid time diapasons" ) );
         }
         if add.start_time.sec < self_end_time.sec {
-            return common_error( From::from( "start time must after end of voting" ) );
+            return common_error( String::from( "start time must after end of voting" ) );
         }
         // проверка что такие события существуют
         match events_collection::get_timetable_event( add.id ) {
@@ -160,7 +160,7 @@ fn check_for_add( for_add: &Vec<AddEventInfo>, self_end_time: &Timespec ) -> Emp
                     return common_error( format!( "invalid params for event id={}", add.id ) );
                 }
             }
-            Err( _ ) => return common_error( From::from( "invalid event id" ) )
+            Err( _ ) => return common_error( String::from( "invalid event id" ) )
         }
     }
     Ok( () )

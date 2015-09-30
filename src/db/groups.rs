@@ -164,7 +164,7 @@ fn create_group_impl( conn: &mut MyPooledConn, name: &String, desc: &String ) ->
 }
 
 fn add_members_impl( conn: &mut MyPooledConn, group_id: Id, members: &[ Id ] ) -> MyResult<()> {
-    let mut query: String = From::from("
+    let mut query: String = String::from("
         INSERT INTO group_members (
             user_id,
             group_id

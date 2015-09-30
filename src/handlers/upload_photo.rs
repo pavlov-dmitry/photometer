@@ -33,11 +33,11 @@ fn upload_photo_answer( request: &mut Request ) -> AnswerResult {
         }
 
         Err( BinParamsError::NotMultipartFormData ) => {
-            return common_error( From::from( "not a multiform data" ) );
+            return common_error( String::from( "not a multiform data" ) );
         }
 
         Err( BinParamsError::IoError ) => {
-            return common_error( From::from( "error while reading request body" ) );
+            return common_error( String::from( "error while reading request body" ) );
         }
     };
 

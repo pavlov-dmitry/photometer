@@ -24,7 +24,7 @@ impl<'a, 'b> GetBody for Request<'a, 'b> {
                         .map_err( |e| CommonError( format!( "error parsing query: {:?}", e ) ) )
                 }
 
-                None => common_error( From::from( "no query part found" ) )
+                None => common_error( String::from( "no query part found" ) )
             }
         }
         else {
@@ -33,7 +33,7 @@ impl<'a, 'b> GetBody for Request<'a, 'b> {
             match limited_body.read_to_end( &mut bytes ) {
                 Ok( readed ) => {
                     if readed == BODY_LIMIT as usize {
-                        return common_error( From::from( "request body too BIG!" ) );
+                        return common_error( String::from( "request body too BIG!" ) );
                     }
                     // TODO: после обновления до beta заменить
                     // let body_as_str = String::from_ut8_lossy( &bytes );
@@ -42,7 +42,7 @@ impl<'a, 'b> GetBody for Request<'a, 'b> {
                         .map_err( |e| CommonError( format!( "error parsing query: {:?}", e ) ) )
                 },
                 Err(_) => {
-                    return common_error( From::from( "error while reading request body" ) )
+                    return common_error( String::from( "error while reading request body" ) )
                 }
             }
 

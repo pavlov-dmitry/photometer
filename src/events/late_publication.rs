@@ -30,7 +30,7 @@ impl LatePublication {
             group_id: group_id,
             parent_id: parent_id,
         };
-        let event_name: String = From::from( "Догоняем " );
+        let event_name: String = String::from( "Догоняем " );
         FullEventInfo {
             id: ID,
             name: event_name + name,
