@@ -12,7 +12,7 @@ require.config({
 	'bootstrap': 'lib/bootstrap',
         'underscore': 'lib/underscore',
         'template': '../template',
-        'handlebars.runtime': 'lib/handlebars-runtime',
+        'handlebars.runtime': 'lib/handlebars.runtime',
         'showdown': 'lib/showdown'
     }
 });
