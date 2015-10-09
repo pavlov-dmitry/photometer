@@ -59,7 +59,6 @@ impl PhotoStore {
         fs::create_dir_all( &format!( "{}/{}/{}", self.params.photos_dir, user, GALLERY_DIR ) )
     }
     /// добавляет фотографию привязанную к опеределнному событию
-    #[allow(deprecated)]
     pub fn add_new_photo( &self, user: &User, upload_time: &Timespec, img_type: ImageType, img_data: &[u8] ) -> PhotoStoreResult<(u32, u32)> {
         match image::load_from_memory_with_format( img_data, to_image_format( &img_type ) ) {
             Ok( mut img ) => {
@@ -92,11 +91,13 @@ impl PhotoStore {
                     Err( e ) => Err( PhotoStoreError::Fs( e ) )
                 }
             }
-            _ => Err( PhotoStoreError::Format )
+            Err( e ) => {
+                info!( "can`t load image: {}", e );
+                Err( PhotoStoreError::Format )
+            }
         }
     }
 
-    #[allow(deprecated)]
     pub fn save_preview( &self, img: &mut DynamicImage, filename: &Path, (tlx, tly): (u32, u32), (w, h) : (u32, u32) ) -> ImageResult<()> {
         let mut preview = img.crop( tlx, tly, w, h );
         preview = preview.resize( self.params.preview_size, self.params.preview_size, image::Nearest );
@@ -105,7 +106,6 @@ impl PhotoStore {
         Ok( () )
     }
 
-    #[allow(deprecated)]
     pub fn make_crop(
         &self, user: &String,
         upload_time: i64,
