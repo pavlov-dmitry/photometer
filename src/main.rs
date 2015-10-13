@@ -60,7 +60,7 @@ fn main() {
         cfg.db_password.clone(),
         cfg.db_min_connections,
         cfg.db_max_connections
-    ).unwrap_or_else( |e| { panic!( e ) } );
+    ).unwrap_or_else( |e| { panic!( "can not create db connection: {}", e ) } );
 
     let mut router = Router::new();
 
