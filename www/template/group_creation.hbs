@@ -1,29 +1,31 @@
 <div class="container">
-  <h3>Создание новой группы</h3>
-  <div class="row">
-    <div class="col-sm-9">
-      <p>
-        <input type="text" class="form-control" id="name-input" placeholder="Имя группы" value="{{name}}">
-      </p>
-      <p>
-        <textarea type="text" class="form-control" id="description-input" placeholder="Подробное описание, с поддержкой формата markdown." rows="10" value="{{description}}"/>
-        <h4>Предпросмотр описания:</h4>
-        <div class="text-preview full-width">
-          <p>
-            <div id="info-preview" >
-            </div>
-          </p>
+  <form id="form-group-creation" onsubmit="return false;" role="group-creation">
+    <h3>Создание новой группы</h3>
+    <div class="row">
+      <div class="col-sm-9">
+        <p>
+          <input type="text" class="form-control" id="name-input" placeholder="Имя группы" value="{{name}}" required autofocus>
+        </p>
+        <p>
+          <textarea type="text" class="form-control" id="description-input" placeholder="Подробное описание, с поддержкой формата markdown." rows="10" value="{{description}}" required/>
+          <h4>Предпросмотр описания:</h4>
+          <div class="text-preview full-width">
+            <p>
+              <div id="info-preview" >
+              </div>
+            </p>
+          </div>
+        </p>
+      </div>
+      <div class="col-sm-3">
+        <button id="add-member-btn" class="btn btn-primary" type="button">Добавить пользователя</button>
+        <h4>Пригласить:</h4>
+        <div id="users-list">
         </div>
-      </p>
-    </div>
-    <div class="col-sm-3">
-      <button id="add-member-btn" class="btn btn-primary">Добавить пользователя</button>
-      <h4>Пригласить:</h4>
-      <div id="users-list">
       </div>
     </div>
-  </div>
-  <p>
-    <button id="create-btn" class="btn btn-success fly" type="button">Создать</button>
-  </p>
+    <p>
+      <button id="create-btn" class="btn btn-success fly" type="submit">Создать</button>
+    </p>
+  </form>
 </div>

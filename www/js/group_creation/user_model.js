@@ -4,6 +4,10 @@ define ( function( require ) {
     var UserModel = Backbone.Model.extend({
         defaults: {
             name: ""
+        },
+
+        set_removeable: function( is ) {
+            this.trigger( "removable_changed", is );
         }
     });
 

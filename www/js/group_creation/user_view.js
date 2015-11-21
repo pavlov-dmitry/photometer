@@ -15,6 +15,7 @@ define( function( require ) {
         initialize: function() {
             this.listenTo( this.model, 'change', this.render );
             this.listenTo( this.model, 'destroy', this.remove );
+            this.listenTo( this.model, 'removable_changed', this.removeable_changed );
         },
 
         render: function() {
@@ -29,6 +30,14 @@ define( function( require ) {
 
         remove_clicked: function() {
             this.model.destroy();
+        },
+
+        removeable_changed: function( is ) {
+            if ( is ) {
+                this.$( ".remove-btn" ).removeClass( "disabled" );
+            } else {
+                this.$( ".remove-btn" ).addClass( "disabled" );
+            }
         }
     });
 
