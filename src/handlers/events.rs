@@ -88,7 +88,7 @@ fn action_post_answer( id: Id, req: &mut Request ) -> AnswerResult {
 }
 
 fn create_post_answer( event_id: Id, req: &mut Request ) -> AnswerResult {
-    let result = req.event_user_creation_get( event_id );
+    let result = req.event_user_creation_post( event_id );
     try!( req.stuff().maybe_start_some_events() );
     result
 }
