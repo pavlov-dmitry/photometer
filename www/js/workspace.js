@@ -15,7 +15,8 @@ define( function(require) {
             'mailbox/unreaded/:page': 'mailbox_unreaded_page',
             'mailbox': 'mailbox',
             'mailbox/:page': 'mailbox_page',
-            'gallery_photo/:user_id/:photo_id': "gallery_photo"
+            'gallery_photo/:user_id/:photo_id': "gallery_photo",
+            'group-creation': "group_creation"
         },
 
         clear_current: function() {
@@ -25,6 +26,7 @@ define( function(require) {
                     this.current.close();
                 }
             }
+            app.userState.resetNav();
         },
 
         nav: function( route ) {
@@ -131,6 +133,16 @@ define( function(require) {
 
             this.current = new PhotoView({ model: model });
             model.fetch();
+        },
+
+        group_creation: function() {
+            this.clear_current();
+
+            var GroupCreationModel = require( "group_creation/group_creation_model" );
+            var GroupCreationView = require( "group_creation/group_creation_view" );
+
+            var model = new GroupCreationModel();
+            this.current = new GroupCreationView({ model: model });
         }
 
     });

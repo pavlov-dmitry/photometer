@@ -1,7 +1,7 @@
 define( function(require) {
     var Backbone = require( "lib/backbone" ),
         MailModel = require( "mailbox/mail_model" ),
-        Request = require( "request" ),
+        request = require( "request" ),
         markdown = require( 'showdown_converter' );
 
     var MailsCollection = Backbone.Collection.extend({
@@ -18,7 +18,7 @@ define( function(require) {
                 url += "/unreaded";
             }
 
-            var handler = Request.get( url, { page: page } );
+            var handler = request.get( url, { page: page } );
             handler.good = function( data ) {
                 self.reset();
 

@@ -53,6 +53,11 @@ define( function( require ) {
             this.set( navState );
         },
 
+        resetNav: function() {
+            var navState = this.getResetedNav();
+            this.set( navState );
+        },
+
         getResetedNav: function() {
             return {
                 isNavInMessages: false,
