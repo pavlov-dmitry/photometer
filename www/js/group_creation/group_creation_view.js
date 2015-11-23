@@ -2,7 +2,8 @@ define( function( require ) {
     var Backbone = require( "lib/backbone" ),
         Handlebars = require( "handlebars.runtime" ),
         UserView = require( "group_creation/user_view" ),
-        group_creation_template = require( "template/group_creation" )
+        group_creation_template = require( "template/group_creation" ),
+        closable_error_templ = require( "template/closeable_error");
 
     var GroupCreationView = Backbone.View.extend({
 
@@ -15,7 +16,8 @@ define( function( require ) {
             "keyup #description-input": "description_changed",
             "keyup #name-input": "description_changed",
             "click #add-member-btn": "add_user_clicked",
-            "change #name-input": "name_changed"
+            "change #name-input": "name_changed",
+            "submit #form-group-creation": "submit"
         },
 
         initialize: function() {
@@ -77,7 +79,54 @@ define( function( require ) {
             members.forEach( function( m ) {
                 m.set_removeable( is_removeable );
             });
-        }
+        },
+
+        submit: function() {
+            var self = this;
+            var handler = this.model.save();
+            handler.good = function() {
+                console.log( "group_created" );
+            };
+            handler.bad = function( data ) {
+                console.log( "group creation failed: " + JSON.stringify( data ) );
+                self.show_errors( data );
+            }
+        },
+
+        show_errors: function( data ) {
+            var NAME = "name";
+            var DESCRIPTION = "description";
+            var EMPTY = "empty";
+            var TOO_LONG = "too_long";
+            var NOT_FOUND = "not_found";
+
+            _.forEach( data, function( desc ) {
+                var text_error = "Unknown error.";
+
+                if ( desc.field === "members" && desc.reason === NOT_FOUND ) {
+                    text_error = "Может быть пригласим кого-нибудь в эту группу ?";
+                }
+                else if ( desc.field === NAME && desc.reason === EMPTY ) {
+                    text_error = "Имя группы не может быть пустым.";
+                }
+                else if ( desc.field === DESCRIPTION && desc.reason === EMPTY ) {
+                    text_error = "Описание группы не может быть пустым.";
+                }
+                else if ( desc.field === NAME && desc.reason === TOO_LONG ) {
+                    text_error = "Имя группы не может превышать 64-х символов.";
+                }
+                else if ( desc.field === DESCRIPTION && desc.reason === TOO_LONG ) {
+                    text_error = "Описание группы не может превышать 2048-х символов.";
+                }
+                else if ( desc.reason === NOT_FOUND ) {
+                    text_error = "Пользователь с именем " + desc.field + " не найден";
+                }
+
+                var templ = Handlebars.templates.closeable_error;
+                var newError = $( templ({ text: text_error }) );
+                $("#errors-list").append( newError );
+            });
+        },
     });
 
     return GroupCreationView;

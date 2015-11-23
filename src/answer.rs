@@ -73,9 +73,11 @@ impl Modifier<Response> for AnswerResponse {
             }
 
             AnswerResponse( Err( CommonError( err ) ) ) => {
+                error!( "{}", err );
                 let answer_status = status::InternalServerError;
                 answer_status.modify( res );
-                err.modify( res );
+                //TODO: в релизе отключить посылку описания ошибок интерфейсу
+                // err.modify( res );
             }
         }
     }

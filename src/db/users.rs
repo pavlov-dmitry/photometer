@@ -21,6 +21,8 @@ pub trait DbUsers {
     fn user_by_id( &mut self, id: Id ) -> CommonResult<Option<User>>;
     /// возвращает пользователей по Id
     fn users_by_id( &mut self, ids: &[Id] ) -> CommonResult<Vec<User>>;
+    /// возвращает пользователя по имени
+    fn user_by_name( &mut self, name: &str ) -> CommonResult<Option<User>>;
 }
 
 pub fn create_tables( db: &Database ) -> EmptyResult {
@@ -76,6 +78,11 @@ impl DbUsers for MyPooledConn {
     fn users_by_id( &mut self, ids: &[Id] ) -> CommonResult<Vec<User>> {
         users_by_id_impl( self, ids )
             .map_err( |e| fn_failed( "users_by_id", e ) )
+    }
+    /// возвращает пользователя по имени
+    fn user_by_name( &mut self, name: &str ) -> CommonResult<Option<User>> {
+        user_by_name_impl( self, name )
+            .map_err( |e| fn_failed( "user_by_name", e ) )
     }
 }
 
@@ -226,4 +233,22 @@ fn users_by_id_impl( conn: &mut MyPooledConn, ids: &[Id] ) -> MyResult<Vec<User>
         users.push( user );
     }
     Ok( users )
+}
+
+fn user_by_name_impl( conn: &mut MyPooledConn, name: &str ) -> MyResult<Option<User>> {
+    let mut stmt = try!( conn.prepare( "select id, mail from users where login=? AND activated=true" ) );
+    let mut sql_result = try!( stmt.execute( (name,) ) );
+    match sql_result.next() {
+        None => Ok( None ),
+        Some( row ) => {
+            let row = try!( row );
+            let (id, mail) = from_row( row );
+            let user = User {
+                name: String::from( name ),
+                id: id,
+                mail: mail
+            };
+            Ok( Some( user ) )
+        }
+    }
 }

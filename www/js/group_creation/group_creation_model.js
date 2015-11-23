@@ -13,7 +13,7 @@ define( function( require ) {
 
         save: function() {
             var request = require( "request" );
-            return request.post( urlRoot, this.toJSON() );
+            return request.post( this.urlRoot, this.toJSON() );
         },
 
         add_new_member: function() {

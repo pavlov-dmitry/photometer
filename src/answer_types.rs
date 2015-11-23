@@ -28,6 +28,15 @@ impl FieldErrorInfo {
             reason: String::from( reason )
         }
     }
+    pub fn empty( field: &str ) -> FieldErrorInfo {
+        FieldErrorInfo::new( field, "empty" )
+    }
+    pub fn too_long( field: &str ) -> FieldErrorInfo {
+        FieldErrorInfo::new( field, "too_long" )
+    }
+    pub fn not_found( field: &str ) -> FieldErrorInfo {
+        FieldErrorInfo::new( field, "not_found" )
+    }
 }
 
 /// Ошибка в загружаемом файле

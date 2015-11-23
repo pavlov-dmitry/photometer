@@ -35,10 +35,15 @@ impl GroupCreation {
 type Members = HashSet<Id>;
 
 #[derive(Clone, RustcDecodable)]
+struct Member {
+    name: String
+}
+
+#[derive(Clone, RustcDecodable)]
 struct GroupInfo {
     name: String,
     description: String,
-    members: Vec<Id>
+    members: Vec<Member>
 }
 
 #[derive(Clone, RustcDecodable)]
@@ -51,6 +56,9 @@ struct EditEventInfo {
     edit_event: Id
 }
 
+static NAME : &'static str = "name";
+static DESCRIPTION : &'static str = "description";
+
 impl UserEvent for GroupCreation {
     /// описание создания
     fn user_creating_get( &self, _req: &mut Request ) -> AnswerResult {
@@ -62,27 +70,54 @@ impl UserEvent for GroupCreation {
     /// применение создания
     fn user_creating_post( &self, req: &mut Request ) -> Result<FullEventInfo, AnswerResult> {
         let group_info = try!( req.get_body::<GroupInfo>() );
+        let user_id = req.user().id;
 
-        let info = Info {
-            initiator: req.user().id,
+        let mut info = Info {
+            initiator: user_id,
             members: HashSet::new(),
             name: group_info.name.clone(),
-            description: group_info.description
+            description: group_info.description.clone()
         };
 
-        if group_info.members.is_empty() {
-            let answer = Answer::bad( FieldErrorInfo::new( "members", "not_found" ) );
-            return Err( Ok( answer ) );
+        let mut errors = Vec::new();
+        if group_info.name.is_empty() {
+            errors.push( FieldErrorInfo::empty( NAME ) );
+        }
+        if group_info.description.is_empty() {
+            errors.push( FieldErrorInfo::empty( DESCRIPTION ) );
+        }
+        if 64 < group_info.name.len() {
+            errors.push( FieldErrorInfo::too_long( NAME ) );
+        }
+        if 2048 < group_info.description.len() {
+            errors.push( FieldErrorInfo::too_long( DESCRIPTION ) );
         }
 
         // проверка наличия пользователей
         let db = try!( req.stuff().get_current_db_conn() );
-        for member in info.members.iter() {
-            if try!( db.user_id_exists( *member ) ) == false {
-                let answer = Answer::bad( FieldErrorInfo::new( "user", "not_found" ) );
-                return Err( Ok( answer ) );
+        for member in group_info.members.iter() {
+            let user = try!( db.user_by_name( &member.name ) );
+            match user {
+                Some( user ) => {
+                    info.members.insert( user.id );
+                },
+                None => errors.push( FieldErrorInfo::not_found( &member.name ) )
             }
         }
+
+        // если вдруг решили приглясить себя, то просто удаляем и списка приглашенных
+        info.members.remove( &user_id );
+
+        if info.members.is_empty() {
+            errors.push( FieldErrorInfo::not_found( "members" ) );
+        }
+
+        // если ошибок в запросе не найдено, то запрос валиден
+        if errors.is_empty() == false {
+            let answer = Answer::bad( errors );
+            return Err( Ok( answer ) );
+        }
+
         //формирование
         let start_time = time::get_time();
         let end_time = start_time + time::Duration::days( 1 );
