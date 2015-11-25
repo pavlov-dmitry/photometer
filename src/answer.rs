@@ -88,35 +88,3 @@ impl From<CommonError> for AnswerResult {
         Err( err )
     }
 }
-
-// impl ToJson for PhotoInfo {
-//     fn to_json(&self) -> Json {
-//         let mut d = BTreeMap::new();
-//         d.add( "id", &self.id );
-//         d.add( "type", &self.image_type );
-//         d.add( "width", &self.width );
-//         d.add( "height", &self.height );
-//         d.add( "name", &self.name );
-//         d.add( "iso", &self.iso );
-//         d.add( "shutter", &self.shutter_speed );
-//         d.add( "aperture", &self.aperture );
-//         d.add( "focal_length", &self.focal_length );
-//         d.add( "focal_length_35mm", &self.focal_length_35mm );
-//         d.add( "camera_model", &self.camera_model );
-//         Json::Object( d )
-//     }
-// }
-
-
-// impl ToJson for MailInfo {
-//     fn to_json( &self ) -> Json {
-//         let mut d = BTreeMap::new();
-//         d.add( "id", &self.id );
-//         d.add( "time", &self.creation_time.sec );
-//         d.add( "sender", &self.sender_name );
-//         d.add( "subject", &self.subject );
-//         d.add( "body", &self.body );
-//         d.add( "readed", &self.readed );
-//         Json::Object( d )
-//     }
-// }

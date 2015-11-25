@@ -1,6 +1,12 @@
 /// изменение расписания группы
 
-use super::{ GroupEvent, FullEventInfo, ScheduledEventInfo, EventState };
+use super::{
+    GroupCreatedEvent,
+    FullEventInfo,
+    ScheduledEventInfo,
+    EventState,
+    Description
+};
 use super::group_voting::{ self, ChangeByVoting };
 use super::events_collection;
 use stuff::{ Stuff, Stuffable };
@@ -58,7 +64,7 @@ struct AddEventInfo {
     params: String
 }
 
-impl GroupEvent for ChangeTimetable {
+impl GroupCreatedEvent for ChangeTimetable {
     /// описание создания
     fn user_creating_get( &self, _req: &mut Request, _group_id: Id ) -> AnswerResult {
         let answer = Answer::good( OkInfo::new( "lets_add_some_events" ) );
@@ -92,7 +98,8 @@ impl GroupEvent for ChangeTimetable {
                 name: add.name.clone(),
                 start_time: add.start_time,
                 end_time: add.end_time,
-                data: event_data
+                data: event_data,
+                group: Some( group_id )
             };
             let new_event_id = try!( db.add_disabled_event( &new_event_info ) );
             added_ids.push( new_event_id );
@@ -108,7 +115,8 @@ impl GroupEvent for ChangeTimetable {
             name: String::from( "Изменения расписания" ),
             start_time: self_start_time,
             end_time: self_end_time,
-            data: json::encode( &data ).unwrap()
+            data: json::encode( &data ).unwrap(),
+            group: Some( group_id )
         };
         // создаём голосование и хотим что бы за изменение расписания проголосовала хотя бы половина
         Ok( group_voting::new( group_id, 0.5, &self_info ) )
@@ -198,21 +206,22 @@ struct Data {
     enable: Vec<Id>
 }
 
-fn get_data( str_body: &str ) -> CommonResult<Data> {
-    json::decode( str_body )
+fn get_data( body: &ScheduledEventInfo ) -> CommonResult<Data> {
+    json::decode( &body.data )
         .map_err( |e| CommonError( format!( "ChangeTimetable event data decode error: {}", e ) ) )
 }
 impl ChangeByVoting for ChangeTimetable {
     /// информация о событии
-    fn get_info( &self, _req: &mut Request, body: &ScheduledEventInfo ) -> CommonResult<String> {
-        let data = try!( get_data( &body.data ) );
-        let info_as_string = json::encode( &data ).unwrap();
-        Ok( info_as_string )
+    fn info( &self, _stuff: &mut Stuff, _body: &ScheduledEventInfo ) -> CommonResult<Description> {
+        // let data = try!( get_data( body ) );
+        // let info_as_string = json::encode( &data ).unwrap();
+        // Ok( info_as_string )
+        unimplemented!();
     }
 
     /// применить елси согласны
     fn apply( &self, stuff: &mut Stuff, _group_id: Id, body: &ScheduledEventInfo ) -> EmptyResult {
-        let data = try!( get_data( &body.data ) );
+        let data = try!( get_data( body ) );
         let db = try!( stuff.get_current_db_conn() );
         for id in data.disable {
             try!( db.set_event_state( id, EventState::Disabled ) );

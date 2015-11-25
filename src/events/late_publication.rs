@@ -1,4 +1,11 @@
-use super::{ Event, ScheduledEventInfo, FullEventInfo };
+use super::{
+    Event,
+    ScheduledEventInfo,
+    FullEventInfo,
+    Description,
+    UserAction,
+    get_group_id
+};
 use types::{ Id, EmptyResult, CommonResult, CommonError };
 use answer::{ Answer, AnswerResult };
 use database::{ Databaseable };
@@ -27,7 +34,6 @@ impl LatePublication {
 
     pub fn create_info( parent_id: Id, group_id: Id, name: &str, start_time: Timespec, duration: time::Duration ) -> FullEventInfo {
         let info = Info {
-            group_id: group_id,
             parent_id: parent_id,
         };
         let event_name: String = String::from( "Догоняем " );
@@ -36,7 +42,8 @@ impl LatePublication {
             name: event_name + name,
             start_time: start_time,
             end_time: start_time + duration,
-            data: json::encode( &info ).unwrap()
+            data: json::encode( &info ).unwrap(),
+            group: Some( group_id )
         }
     }
 }
@@ -53,10 +60,11 @@ impl Event for LatePublication {
     }
     /// действие на начало события
     fn start( &self, stuff: &mut Stuff, body: &ScheduledEventInfo ) -> EmptyResult {
-        let info = try!( get_info( &body.data ) );
+        let group_id = try!( get_group_id( body ) );
+        let info = try!( get_info( body ) );
         let users = {
             let db = try!( stuff.get_current_db_conn() );
-            try!( db.get_unpublished_users( info.parent_id, info.group_id ) )
+            try!( db.get_unpublished_users( info.parent_id, group_id ) )
         };
         for user in users {
             let (subject, mail) = stuff.write_late_publication_mail(
@@ -73,40 +81,66 @@ impl Event for LatePublication {
         // нечего тут делать
         Ok( () )
     }
-    /// описание действиz пользователя на это событие
-    fn user_action_get( &self, req: &mut Request, body: &ScheduledEventInfo ) -> AnswerResult {
-        let info = try!( get_info( &body.data ) );
-        let user_id = req.user().id;
-        // если такой пользователь должен выложиться
-        let db = try!( req.stuff().get_current_db_conn() );
-        let need_publish = try!( db.is_unpublished_user( info.parent_id, info.group_id, user_id ) );
-        let answer = if need_publish {
-            // TODO: переделать на нормальное отдачу, поговорить с
-            // Саньком, что ему нужно в этот момент
-            Answer::good( OkInfo::new( "choose_from_gallery" ) )
-        }
-        else {
-            // TODO: возможно необходимо вывести общий тип для таких ответов
-            Answer::good( OkInfo::new( "nothing_to_do" ) )
-        };
-        Ok( answer )
+    /// информация о состоянии события
+    fn info( &self, stuff: &mut Stuff, body: &ScheduledEventInfo ) -> CommonResult<Description> {
+        let group_id = try!( get_group_id( body ) );
+        let info = try!( get_info( body ) );
+        let db = try!( stuff.get_current_db_conn() );
+        let group_members_count = try!( db.get_members_count( group_id ) );
+        let published_photo_count = try!( db.get_published_photo_count( info.parent_id,
+                                                                        group_id ) );
+        // let need_publish = try!( db.is_unpublished_user( info.parent_id, info.group_id, user_id ) );
+        // let answer = if need_publish {
+        //     // TODO: переделать на нормальное отдачу, поговорить с
+        //     // Саньком, что ему нужно в этот момент
+        //     Answer::good( OkInfo::new( "choose_from_gallery" ) )
+        // }
+        // else {
+        //     // TODO: возможно необходимо вывести общий тип для таких ответов
+        //     Answer::good( OkInfo::new( "nothing_to_do" ) )
+        // };
+
+        let desc = Description::new( LatePublicationInfo {
+            id: ID,
+            name: body.name.clone(),
+            all_count: group_members_count,
+            published: published_photo_count
+        } );
+        Ok( desc )
     }
+    /// проверка на возможное досрочное завершение
+    fn is_complete( &self, stuff: &mut Stuff, body: &ScheduledEventInfo ) -> CommonResult<bool> {
+        let group_id = try!( get_group_id( body ) );
+        let info = try!( get_info( body ) );
+        let db = try!( stuff.get_current_db_conn() );
+        let group_members_count = try!( db.get_members_count( group_id ) );
+        let published_photo_count = try!( db.get_published_photo_count( info.parent_id,
+                                                                        group_id ) );
+        Ok( group_members_count == published_photo_count )
+    }
+
+    /// действие которое должен осуществить пользователь
+    fn user_action( &self, _stuff: &mut Stuff, _body: &ScheduledEventInfo, _user_id: Id ) -> CommonResult<UserAction> {
+        unimplemented!();
+    }
+
     /// применение действия пользователя на это событие
     fn user_action_post( &self, req: &mut Request, body: &ScheduledEventInfo ) -> AnswerResult {
-        let info = try!( get_info( &body.data ) );
+        let group_id = try!( get_group_id( body ) );
+        let info = try!( get_info( body ) );
         let photo_id = try!( req.get_body::<PhotoInfo>() ).id;
         let current_user_name = req.user().name.clone();
         let user_id = req.user().id;
         let db = try!( req.stuff().get_current_db_conn() );
 
         // если такой пользователь есть должен выложиться
-        let need_publish = try!( db.is_unpublished_user( info.parent_id, info.group_id, user_id ) );
+        let need_publish = try!( db.is_unpublished_user( info.parent_id, group_id, user_id ) );
         let answer = if need_publish {
             let photo_info = try!( db.get_photo_info( photo_id ) );
             if let Some( (user_name, _) ) = photo_info {
                 if user_name == current_user_name {
                     try!( db.public_photo( info.parent_id,
-                                           info.group_id,
+                                           group_id,
                                            user_id,
                                            photo_id,
                                            true ) );
@@ -125,33 +159,9 @@ impl Event for LatePublication {
         };
         Ok( answer )
     }
-    /// информация о состоянии события
-    fn info_get( &self, req: &mut Request, body: &ScheduledEventInfo ) -> AnswerResult {
-        let info = try!( get_info( &body.data ) );
-        let db = try!( req.stuff().get_current_db_conn() );
-        let group_members_count = try!( db.get_members_count( info.group_id ) );
-        let published_photo_count = try!( db.get_published_photo_count( body.scheduled_id,
-                                                                        info.group_id ) );
-
-        let answer = Answer::good( LatePublicationInfo {
-            id: ID,
-            name: body.name.clone(),
-            all_count: group_members_count,
-            published: published_photo_count
-        } );
-        Ok( answer )
-    }
-    /// проверка на возможное досрочное завершение
-    fn is_complete( &self, stuff: &mut Stuff, body: &ScheduledEventInfo ) -> CommonResult<bool> {
-        let info = try!( get_info( &body.data ) );
-        let db = try!( stuff.get_current_db_conn() );
-        let group_members_count = try!( db.get_members_count( info.group_id ) );
-        let published_photo_count = try!( db.get_published_photo_count( body.scheduled_id, info.group_id ) );
-        Ok( group_members_count == published_photo_count )
-    }
 }
 
-#[derive(RustcEncodable)]
+#[derive(RustcEncodable, Debug)]
 struct LatePublicationInfo {
     id: Id,
     name: String,
@@ -161,11 +171,10 @@ struct LatePublicationInfo {
 
 #[derive(RustcEncodable, RustcDecodable)]
 struct Info {
-    group_id: Id,
     parent_id: Id
 }
 
-fn get_info( str_body: &String ) -> CommonResult<Info> {
-    json::decode( &str_body )
+fn get_info( body: &ScheduledEventInfo ) -> CommonResult<Info> {
+    json::decode( &body.data )
         .map_err( |e| CommonError( format!( "LatePublication event decode error: {}", e ) ) )
 }

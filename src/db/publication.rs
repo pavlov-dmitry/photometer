@@ -13,7 +13,7 @@ pub trait DbPublication {
     fn make_publication_visible( &mut self, scheduled: Id, group: Id ) -> EmptyResult;
     /// кол-во уже опубликованных фото
     fn get_published_photo_count( &mut self, scheduled: Id, group: Id ) -> CommonResult<u32>;
-    /// возвращает идентификаторы пользователей которые не проголосовали
+    /// возвращает идентификаторы пользователей которые не опубликовались
     fn get_unpublished_users( &mut self, scheduled: Id, group: Id ) -> CommonResult<Vec<User>>;
     /// проверяет на неопубликованность пользователя
     fn is_unpublished_user( &mut self, scheduled: Id, group: Id, user: Id ) -> CommonResult<bool>;

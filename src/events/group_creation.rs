@@ -5,8 +5,10 @@ use iron::prelude::*;
 use super::{
     Event,
     ScheduledEventInfo,
-    UserEvent,
-    FullEventInfo
+    UserCreatedEvent,
+    FullEventInfo,
+    Description,
+    UserAction
 };
 use types::{ Id, EmptyResult, CommonResult, CommonError };
 use answer::{ Answer, AnswerResult };
@@ -59,7 +61,7 @@ struct EditEventInfo {
 static NAME : &'static str = "name";
 static DESCRIPTION : &'static str = "description";
 
-impl UserEvent for GroupCreation {
+impl UserCreatedEvent for GroupCreation {
     /// описание создания
     fn user_creating_get( &self, _req: &mut Request ) -> AnswerResult {
         let answer = Answer::good( EditEventInfo {
@@ -126,7 +128,8 @@ impl UserEvent for GroupCreation {
             name: group_info.name,
             start_time: start_time,
             end_time: end_time,
-            data: json::encode( &info ).unwrap()
+            data: json::encode( &info ).unwrap(),
+            group: None
         })
     }
 }
@@ -220,19 +223,35 @@ impl Event for GroupCreation {
         }
         Ok( () )
     }
-    /// описание действия пользователя на это событие
-    fn user_action_get( &self, req: &mut Request, body: &ScheduledEventInfo ) -> AnswerResult {
-        //TODO: Согласовать с Саньком, что именно ему здесь надо отсылать
-        let user_id = req.user().id;
-        let db = try!( req.stuff().get_current_db_conn() );
-        let is_need_vote = try!( db.is_need_user_vote( body.scheduled_id, user_id ) );
+    /// информация о состоянии события
+    fn info( &self, stuff: &mut Stuff, body: &ScheduledEventInfo ) -> CommonResult<Description> {
+        let info = try!( get_info( &body.data ) );
+        let db = try!( stuff.get_current_db_conn() );
+        let votes = try!( db.get_votes( body.scheduled_id ) );
 
-        let answer = if is_need_vote {
-            Answer::good( OkInfo::new( "need_some_voting" ) )
-        } else {
-            Answer::good( OkInfo::new( "no_need_vote" ) )
+        let desc = Description::new( GroupCreationInfo {
+            description: info.description.clone(),
+            all_count: votes.all_count,
+            yes: votes.yes.len(),
+            no: votes.no.len()
+        } );
+        Ok( desc )
+    }
+    /// проверка на возможное досрочное завершение
+    fn is_complete( &self, stuff: &mut Stuff, body: &ScheduledEventInfo ) -> CommonResult<bool> {
+        //досрочно завершается когда все проголосвали
+        let db = try!( stuff.get_current_db_conn() );
+        db.is_all_voted( body.scheduled_id )
+    }
+    /// действие которое должен осуществить пользователь
+    fn user_action( &self, stuff: &mut Stuff, body: &ScheduledEventInfo, user_id: Id ) -> CommonResult<UserAction> {
+        let db = try!( stuff.get_current_db_conn() );
+        let is_need_vote = try!( db.is_need_user_vote( body.scheduled_id, user_id ) );
+        let action = match is_need_vote {
+            true => UserAction::Vote,
+            false => UserAction::None
         };
-        Ok( answer )
+        Ok( action )
     }
     /// применение действия пользователя на это событие
     fn user_action_post( &self, req: &mut Request, body: &ScheduledEventInfo ) -> AnswerResult {
@@ -254,32 +273,10 @@ impl Event for GroupCreation {
         };
         Ok( answer )
     }
-    /// информация о состоянии события
-    fn info_get( &self, req: &mut Request, body: &ScheduledEventInfo ) -> AnswerResult {
-        let info = try!( get_info( &body.data ) );
-        let db = try!( req.stuff().get_current_db_conn() );
-        let votes = try!( db.get_votes( body.scheduled_id ) );
-
-        let answer = Answer::good( GroupCreationInfo {
-            name: info.name.clone(),
-            description: info.description.clone(),
-            all_count: votes.all_count,
-            yes: votes.yes.len(),
-            no: votes.no.len()
-        } );
-        Ok( answer )
-    }
-    /// проверка на возможное досрочное завершение
-    fn is_complete( &self, stuff: &mut Stuff, body: &ScheduledEventInfo ) -> CommonResult<bool> {
-        //досрочно завершается когда все проголосвали
-        let db = try!( stuff.get_current_db_conn() );
-        db.is_all_voted( body.scheduled_id )
-    }
 }
 
-#[derive(RustcEncodable)]
+#[derive(RustcEncodable, Debug)]
 struct GroupCreationInfo {
-    name: String,
     description: String,
     all_count: usize,
     yes: usize,
@@ -293,12 +290,6 @@ struct Info {
     name: String,
     description: String
 }
-
-/*impl From<String> for AnswerResult {
-    fn from( err: String ) -> AnswerResult {
-        Err( err )
-    }
-}*/
 
 fn get_info( str_body: &String ) -> CommonResult<Info> {
     json::decode( &str_body )

@@ -122,3 +122,10 @@ pub fn parse_timespec( s: &str ) -> Result<time::Timespec, time::ParseError> {
     time::strptime( s, TIME_FORMAT )
           .map( |t| t.to_timespec() )
 }
+
+pub fn timespec_string( timespec: time::Timespec ) -> String {
+    let tm = time::at( timespec );
+    time::strftime( TIME_FORMAT, &tm )
+        .expect( &format!( "Invalid convertion from timespec to string with format: {}",
+                            TIME_FORMAT ) )
+}

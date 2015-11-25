@@ -1,10 +1,17 @@
 use database::{ Databaseable };
 use stuff::{ Stuff, Stuffable };
-use super::{ Event, ScheduledEventInfo, EventState, FullEventInfo };
+use super::{
+    Event,
+    ScheduledEventInfo,
+    EventState,
+    FullEventInfo,
+    UserAction,
+    Description
+};
 use super::events_collection;
 use super::events_collection::{ EventPtr };
 use db::events::{ DbEvents };
-use types::{ EmptyResult };
+use types::{ EmptyResult, CommonResult };
 use time;
 use answer::{ Answer, AnswerResult };
 use types::{ Id };
@@ -12,6 +19,7 @@ use iron::prelude::*;
 use authentication::Userable;
 use db::groups::DbGroups;
 use answer_types::{ OkInfo, FieldErrorInfo };
+use parse_utils::{ timespec_string };
 
 pub trait EventsManagerStuff {
     fn maybe_start_some_events(&mut self) -> EmptyResult;
@@ -20,12 +28,22 @@ pub trait EventsManagerStuff {
 
 pub trait EventsManagerRequest {
     fn event_info( &mut self, scheduled_id: Id ) -> AnswerResult;
-    fn event_action_get( &mut self, scheduled_id: Id ) -> AnswerResult;
     fn event_action_post( &mut self, scheduled_id: Id ) -> AnswerResult;
     fn event_user_creation_get(&mut self, event_id: Id ) -> AnswerResult;
     fn event_user_creation_post(&mut self, event_id: Id ) -> AnswerResult;
     fn event_group_creation_get(&mut self, group_id: Id, event_id: Id ) -> AnswerResult;
     fn event_group_creation_post(&mut self, group_id: Id, event_id: Id ) -> AnswerResult;
+}
+
+#[derive(Clone, RustcEncodable)]
+struct EventInfoAnswer {
+    id: Id,
+    name: String,
+    starting_time: String,
+    ending_time: String,
+    state: EventState,
+    action: UserAction,
+    description: Description
 }
 
 impl EventsManagerStuff for Stuff {
@@ -60,21 +78,61 @@ impl EventsManagerStuff for Stuff {
     }
 }
 
+fn is_valid_user_for_action( event_info: &ScheduledEventInfo,
+                             stuff: &mut Stuff,
+                             user_id: Id ) -> CommonResult<bool> {
+
+    // NOTE: если событие не активно, то никаких действий от пользователей не нужно
+    let result = match event_info.state {
+        EventState::Active => {
+            // при необходимости проверяем на вхождение в группу
+            match event_info.group {
+                Some( group_id ) => {
+                    let db = try!( stuff.get_current_db_conn() );
+                    try!( db.is_member( user_id, group_id ) )
+                },
+                None => false
+            }
+        },
+        _ => false
+    };
+    Ok( result )
+}
 
 impl<'a, 'b> EventsManagerRequest for Request<'a, 'b> {
     /// выдаёт информацию по событию
     fn event_info( &mut self, scheduled_id: Id ) -> AnswerResult {
         self.if_has_event( scheduled_id, |event, event_info, req| {
-            event.info_get( req, &event_info )
+            let user_id = req.user().id;
+            let stuff = req.stuff();
+
+            let user_action = match try!( is_valid_user_for_action( &event_info, stuff, user_id ) ) {
+                true => try!( event.user_action( stuff, &event_info, user_id ) ),
+                false => UserAction::None
+            };
+            let event_description = {
+                try!( event.info( stuff, &event_info ) )
+            };
+            let answer = EventInfoAnswer {
+                id: event_info.id,
+                state: event_info.state,
+                starting_time: timespec_string( event_info.start_time ),
+                ending_time: timespec_string( event_info.end_time ),
+                name: event_info.name.clone(),
+                action: user_action,
+                description: event_description
+            };
+            Ok( Answer::good( answer ) )
         })
     }
 
+    // TODO: Удалить если реально не нужно
     /// инфа о действии
-    fn event_action_get( &mut self, scheduled_id: Id ) -> AnswerResult {
-        self.if_has_event( scheduled_id, |event, event_info, req| {
-            event.user_action_get( req, &event_info )
-        })
-    }
+    // fn event_action_get( &mut self, scheduled_id: Id ) -> AnswerResult {
+    //     self.if_has_event( scheduled_id, |event, event_info, req| {
+    //         event.user_action_get( req, &event_info )
+    //     })
+    // }
 
     /// применяем действие
     fn event_action_post( &mut self, scheduled_id: Id ) -> AnswerResult {
@@ -91,12 +149,12 @@ impl<'a, 'b> EventsManagerRequest for Request<'a, 'b> {
 
     /// создание пользовательского события
     fn event_user_creation_get( &mut self, event_id: Id ) -> AnswerResult {
-        let event = try!( events_collection::get_user_event( event_id ) );
+        let event = try!( events_collection::get_user_created_event( event_id ) );
         event.user_creating_get( self )
     }
 
     fn event_user_creation_post( &mut self, event_id: Id ) -> AnswerResult {
-        let event = try!( events_collection::get_user_event( event_id ) );
+        let event = try!( events_collection::get_user_created_event( event_id ) );
         match event.user_creating_post( self ) {
             Ok( event ) => apply_event( event, self ),
             Err( answer_result ) => answer_result
@@ -104,12 +162,12 @@ impl<'a, 'b> EventsManagerRequest for Request<'a, 'b> {
     }
 
     fn event_group_creation_get(&mut self, group_id: Id, event_id: Id ) -> AnswerResult {
-        let event = try!( events_collection::get_group_event( event_id ) );
+        let event = try!( events_collection::get_group_created_event( event_id ) );
         event.user_creating_get( self, group_id )
     }
 
     fn event_group_creation_post(&mut self, group_id: Id, event_id: Id ) -> AnswerResult {
-        let event = try!( events_collection::get_group_event( event_id ) );
+        let event = try!( events_collection::get_group_created_event( event_id ) );
 
         let user_id = self.user().id;
         let member_of_group = {

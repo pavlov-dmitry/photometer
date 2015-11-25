@@ -7,7 +7,6 @@ use std::fmt::Display;
 use events::{ ScheduledEventInfo, EventState, FullEventInfo };
 use database::Database;
 
-//type EventHandler<'a> = |EventInfo|:'a -> EmptyResult;
 type EventInfos = Vec<ScheduledEventInfo>;
 
 pub trait DbEvents {
@@ -28,8 +27,6 @@ pub trait DbEvents {
     fn event_start_time( &mut self, scheduled_id: Id ) -> CommonResult<Option<Timespec>>;
 }
 
-/// scheduled_events.state { NOT_STARTED_YET = 0, ACTIVE = 1, FINISHED = 2 }
-
 pub fn create_tables( db: &Database ) -> EmptyResult {
     db.execute(
         "CREATE TABLE IF NOT EXISTS `scheduled_events` (
@@ -46,6 +43,8 @@ pub fn create_tables( db: &Database ) -> EmptyResult {
                 'disabled'
             ) NOT NULL DEFAULT 'not_started_yet',
             `user_editable` BOOL NOT NULL DEFAULT false,
+            `group_attached` BOOL NOT NULL DEFAULT false,
+            `group_id` bigint(20) NOT NULL DEFAULT '0',
             PRIMARY KEY ( `id` ),
             KEY `time_idx` ( `start_time`, `end_time`, `state` )
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
@@ -149,9 +148,13 @@ fn get_events_impl( conn: &mut MyPooledConn, where_cond: &str, values: &[&ToValu
         "SELECT
             id,
             event_id,
+            start_time,
+            end_time,
             event_name,
             data,
-            state
+            state,
+            group_attached,
+            group_id
         FROM scheduled_events
         WHERE {}",
         where_cond
@@ -161,13 +164,25 @@ fn get_events_impl( conn: &mut MyPooledConn, where_cond: &str, values: &[&ToValu
     let mut events = Vec::new();
     for sql_row in sql_result {
         let row = try!( sql_row );
-        let (scheduled_id, id, name, data, state) = from_row( row );
+        let ( scheduled_id,
+              id,
+              start_time,
+              end_time,
+              name,
+              data,
+              state,
+              group_attached,
+              group_id ) = from_row( row );
+
         events.push( ScheduledEventInfo {
             scheduled_id: scheduled_id,
             id: id,
+            start_time: Timespec::new( start_time, 0 ),
+            end_time: Timespec::new( end_time, 0 ),
             name: name,
             data: data,
-            state: state
+            state: state,
+            group: if group_attached { Some( group_id ) } else { None }
         })
     }
     Ok( events )
@@ -177,9 +192,13 @@ fn event_info_impl( conn: &mut MyPooledConn, scheduled_id: Id ) -> MyResult<Opti
     let mut stmt = try!( conn.prepare(
         "SELECT
             event_id,
+            start_time,
+            end_time,
             event_name,
             data,
-            state
+            state,
+            group_attached,
+            group_id
         FROM scheduled_events
         WHERE id = ?
     " ) );
@@ -188,13 +207,24 @@ fn event_info_impl( conn: &mut MyPooledConn, scheduled_id: Id ) -> MyResult<Opti
     let result = match sql_result.next() {
         Some( sql_row ) => {
             let row = try!( sql_row );
-            let (id, name, data, state) = from_row( row );
+            let ( id,
+                  start_time,
+                  end_time,
+                  name,
+                  data,
+                  state,
+                  group_attached,
+                  group_id ) = from_row( row );
+
             Some( ScheduledEventInfo {
                 id: id,
+                start_time: Timespec::new( start_time, 0 ),
+                end_time: Timespec::new( end_time, 0 ),
                 scheduled_id: scheduled_id,
                 name: name,
                 data: data,
-                state: state
+                state: state,
+                group: if group_attached { Some( group_id ) } else { None }
             })
         },
         None => None
@@ -235,13 +265,15 @@ fn add_events_impl( conn: &mut MyPooledConn, events: &[FullEventInfo] ) -> MyRes
             event_name,
             start_time,
             end_time,
-            data
+            data,
+            group_attached,
+            group_id
         )
-        VALUES( ?, ?, ?, ?, ? )"
+        VALUES( ?, ?, ?, ?, ?, ?, ? )"
     );
 
     for _ in (1 .. events.len()) {
-        query.push_str( ", ( ?, ?, ?, ?, ? )" );
+        query.push_str( ", ( ?, ?, ?, ?, ?, ?, ? )" );
     }
 
     let mut stmt = try!( conn.prepare( &query ) );
@@ -253,6 +285,9 @@ fn add_events_impl( conn: &mut MyPooledConn, events: &[FullEventInfo] ) -> MyRes
         values.push( event.start_time.sec.into_value() );
         values.push( event.end_time.sec.into_value() );
         values.push( event.data.clone().into_value() );
+        let (group_attached, group_id) = to_group_info( event.group );
+        values.push( group_attached.into_value() );
+        values.push( group_id.into_value() );
     }
 
     try!( stmt.execute( values ) );
@@ -269,18 +304,23 @@ fn add_disabled_event_impl( conn: &mut MyPooledConn, event: &FullEventInfo ) -> 
                 `end_time`,
                 `data`,
                 `state`,
-                `user_editable`
+                `user_editable`,
+                `group_attached`,
+                `group_id`
             )
-        VALUES ( ?, ?, ?, ?, ?, ?, true )
+        VALUES ( ?, ?, ?, ?, ?, ?, true, ?, ? )
     ") );
 
+    let (group_attached, group_id) = to_group_info( event.group );
     let params: &[ &ToValue ] = &[
         &event.id,
         &event.name,
         &event.start_time.sec,
         &event.end_time.sec,
         &event.data,
-        &EventState::Disabled
+        &EventState::Disabled,
+        &group_attached,
+        &group_id
     ];
     let result = try!( stmt.execute( params ) );
 
@@ -292,4 +332,11 @@ fn set_event_state_impl( conn: &mut MyPooledConn, scheduled_id: Id, state: Event
     let params: &[ &ToValue ] = &[ &state, &scheduled_id ];
     try!( stmt.execute( params ) );
     Ok( () )
+}
+
+fn to_group_info( group: Option<Id> ) -> (bool, Id) {
+    match group {
+        Some( id ) => (true, id),
+        None => (false, 0)
+    }
 }

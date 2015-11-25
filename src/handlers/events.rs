@@ -30,17 +30,18 @@ pub fn action_path() -> &'static str {
     "/events/action/:id"
 }
 
-pub fn action_get( request: &mut Request ) -> IronResult<Response> {
-    let response = match get_id( ID, request ) {
-        Some( id ) => {
-            let answer = AnswerResponse( request.event_action_get( id ) );
-            Response::with( answer )
-        },
+// TODO: Убрать совсем, если не нужно
+// pub fn action_get( request: &mut Request ) -> IronResult<Response> {
+//     let response = match get_id( ID, request ) {
+//         Some( id ) => {
+//             let answer = AnswerResponse( request.event_action_get( id ) );
+//             Response::with( answer )
+//         },
 
-        None => Response::with( status::NotFound )
-    };
-    Ok( response )
-}
+//         None => Response::with( status::NotFound )
+//     };
+//     Ok( response )
+// }
 
 pub fn action_post( request: &mut Request ) -> IronResult<Response> {
     let response = match get_id( ID, request ) {
