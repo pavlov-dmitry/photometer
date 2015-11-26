@@ -1,11 +1,13 @@
-<div class="fly">
-  <div class="blue-glass mail-header">
-    <div>
-      {{#unless readed}}<button type="button" class="readed-btn tr-btn pull-right"><span class="glyphicon glyphicon-ok" aria-hidden="true"></span> прочитал</button>{{/unless}}
-      <h4><strong>{{sender_name}}</strong>: {{subject}}</h4>
+<p>
+  <div class="fly">
+    <div class="blue-glass mail-header">
+      <div>
+        {{#unless readed}}<button type="button" class="readed-btn tr-btn pull-right"><span class="glyphicon glyphicon-ok" aria-hidden="true"></span> прочитал</button>{{/unless}}
+        <h4><strong>{{sender_name}}</strong>: {{subject}}</h4>
+      </div>
+    </div>
+    <div class="mail-body">
+      <p>{{{body}}}</p>
     </div>
   </div>
-  <div class="mail-body">
-    <p>{{{body}}}</p>
-  </div>
-</div>
+</p>

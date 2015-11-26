@@ -117,8 +117,8 @@ impl Encodable for Description {
     }
 }
 
-pub fn make_event_action_link( id: Id ) -> String {
-    format!( "/event/action/{}", id )
+pub fn make_event_link( id: Id ) -> String {
+    format!( "/#event/{}", id )
 }
 
 pub fn get_group_id( body: &ScheduledEventInfo ) -> CommonResult<Id> {

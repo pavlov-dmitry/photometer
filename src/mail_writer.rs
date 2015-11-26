@@ -3,6 +3,7 @@ use std::sync::Arc;
 use iron::typemap::Key;
 use events;
 use types::Id;
+//TODO: Возможно стоит шаблоны писем вынести из кода в отдельные файлы.
 
 /// возвращает для всех писем (тема, само_письмо)
 pub trait MailWriter {
@@ -14,7 +15,9 @@ pub trait MailWriter {
 
     /// СОЗДАНИЕ ГРУППЫ
     /// cочиняет письмо о создании новой группы
-    fn write_group_creation_mail( &self, group_name: &str, scheduled_id: Id ) -> (String, String);
+    fn write_group_creation_started_mail( &self, group_name: &str, scheduled_id: Id) -> (String, String);
+    /// сочиняет письмо с приглашением создать новую группу
+    fn write_group_invite_mail( &self, group_name: &str, scheduled_id: Id ) -> (String, String);
     /// сочиняет письмо о том что никто не захотел в твою группу
     fn write_nobody_need_your_group_mail( &self, group_name: &str ) -> (String, String);
     /// сочинаяет письмо о том что группа с таким именем уже существует
@@ -87,18 +90,32 @@ impl MailWriter for Stuff {
         ( String::from( "Добро пожаловать." ), mail )
     }
 
+    /// cочиняет письмо о создании новой группы
+    fn write_group_creation_started_mail( &self, group_name: &str, scheduled_id: Id) -> (String, String) {
+        let body = self.get_body();
+        let subject = format!( "Создание новой группы \"{}\"", group_name );
+        let mail = format!(
+"Приглашения о создании группы **{}** разосланы.
+Узнать подробности и следить за процессом присоединения вы можете пройдя по этой [ссылке]({}{}).
+Если группа будет организована, вы получите новое сообщение, то же самое будет если она не будет организована по какой-то причине.",
+            group_name,
+            &body.root_url,
+            events::make_event_link( scheduled_id )
+        );
+        (subject, mail)
+    }
 
     /// cочиняет письмо о создании новой группы
-    fn write_group_creation_mail( &self, group_name: &str, scheduled_id: Id ) -> (String, String) {
+    fn write_group_invite_mail( &self, group_name: &str, scheduled_id: Id ) -> (String, String) {
         let body = self.get_body();
-        let subject = format!( "Создание новой группы `{}`", group_name );
+        let subject = format!( "Создание новой группы \"{}\"", group_name );
         let mail = format!(
-"Вас приглашают создать новую группу `{}`.
-Узнать подробности и принять решение о присоединении вы можете пройдя по этой ссылке {}{}.
+"Вас приглашают создать новую группу **{}**.
+Узнать подробности и принять решение о присоединении вы можете пройдя по этой [ссылке]({}{}).
 У вас есть сутки чтобы принять решение.",
             group_name,
             &body.root_url,
-            events::make_event_action_link( scheduled_id )
+            events::make_event_link( scheduled_id )
         );
         (subject, mail)
     }
@@ -143,7 +160,7 @@ impl MailWriter for Stuff {
             user_name,
             event_name,
             &body.root_url,
-            events::make_event_action_link( scheduled_id )
+            events::make_event_link( scheduled_id )
         );
         ( subject, mail )
     }
@@ -161,7 +178,7 @@ impl MailWriter for Stuff {
 но хотя бы не будет этого слюнявого Гомера.",
             user_name,
             &body.root_url,
-            events::make_event_action_link( scheduled_id )
+            events::make_event_link( scheduled_id )
         );
         ( subject, mail )
     }

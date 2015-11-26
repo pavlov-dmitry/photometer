@@ -3,7 +3,8 @@ define( function( require ) {
         Handlebars = require( "handlebars.runtime" ),
         UserView = require( "group_creation/user_view" ),
         group_creation_template = require( "template/group_creation" ),
-        closable_error_templ = require( "template/closeable_error");
+        closable_error_templ = require( "template/closeable_error"),
+        success_tmpl = require( "template/success_info" );
 
     var GroupCreationView = Backbone.View.extend({
 
@@ -84,9 +85,21 @@ define( function( require ) {
         submit: function() {
             var self = this;
             var handler = this.model.save();
+
             handler.good = function() {
                 console.log( "group_created" );
+                var success_template = Handlebars.templates.success_info;
+                var success_html = success_template({
+                    caption: "Группа создана.",
+                    text: "Проверьте свои сообщения за дальнейшими инструкциями."
+                });
+                self.$el.html( success_html );
+
+                // обновляем состояние, чтоб увидеть что пришло новое письмо
+                var app = require( "app" );
+                app.userState.fetch();
             };
+
             handler.bad = function( data ) {
                 console.log( "group creation failed: " + JSON.stringify( data ) );
                 self.show_errors( data );

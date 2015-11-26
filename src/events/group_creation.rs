@@ -160,9 +160,18 @@ impl Event for GroupCreation {
             try!( db.add_rights_of_voting( body.scheduled_id, &exists_ids ) );
         }
         // рассылаем письма что можно голосовать
-        let (subject, mail) = stuff.write_group_creation_mail( &info.name, body.scheduled_id );
+        let (subject, mail) = stuff.write_group_invite_mail( &info.name, body.scheduled_id );
         for member in exists_members.iter() {
             try!( stuff.send_mail( member, &subject, &mail ) );
+        }
+        let (subject, mail) = stuff.write_group_creation_started_mail( &info.name, body.scheduled_id );
+        // посылаем письмо тому кто создавал группу, с сообщением что всех пригласили.
+        let maybe_user = {
+            let db = try!( stuff.get_current_db_conn() );
+            try!( db.user_by_id( info.initiator ) )
+        };
+        if let Some( initiator_user ) = maybe_user {
+            try!( stuff.send_mail( &initiator_user, &subject, &mail ) );
         }
         Ok( () )
     }

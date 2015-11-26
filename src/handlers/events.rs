@@ -10,8 +10,8 @@ use router_params::RouterParams;
 static ID: &'static str = "id";
 static GROUP_ID: &'static str = "group_id";
 
-pub fn info_path() -> &'static str {
-    "/events/info/:id"
+pub fn path() -> &'static str {
+    "/event/:id"
 }
 
 pub fn info( request: &mut Request ) -> IronResult<Response> {
@@ -24,10 +24,6 @@ pub fn info( request: &mut Request ) -> IronResult<Response> {
         None => Response::with( status::NotFound )
     };
     Ok( response )
-}
-
-pub fn action_path() -> &'static str {
-    "/events/action/:id"
 }
 
 // TODO: Убрать совсем, если не нужно

@@ -209,10 +209,11 @@ fn user_by_id_impl( conn: &mut MyPooledConn, id: Id ) -> MyResult<Option<User>> 
 }
 
 fn users_by_id_impl( conn: &mut MyPooledConn, ids: &[Id] ) -> MyResult<Vec<User>> {
-    let mut query = format!( "select id, login, mail from users where id=? AND activated=true" );
+    let mut query = format!( "select id, login, mail from users where id in ( ? " );
     for _ in (1 .. ids.len()) {
         query.push_str( ", ?" );
     }
+    query.push_str( " ) AND activated=true" );
 
     let mut stmt = try!( conn.prepare( &query ) );
     let mut values: Vec<Value> = Vec::new();

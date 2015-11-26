@@ -84,8 +84,8 @@ fn main() {
     router.get( "/mailbox/unreaded/count", handlers::mailbox::count_unreaded );
     router.post( "/mailbox/mark_as_readed", handlers::mailbox::mark_as_readed );
 
-    router.get( handlers::events::info_path(), handlers::events::info );
-    router.post( handlers::events::action_path(), handlers::events::action_post );
+    router.get( handlers::events::path(), handlers::events::info );
+    router.post( handlers::events::path(), handlers::events::action_post );
     router.get( handlers::events::create_path(), handlers::events::create_get );
     router.post( handlers::events::create_path(), handlers::events::create_post );
     router.get( handlers::events::group_create_path(), handlers::events::group_create_get );

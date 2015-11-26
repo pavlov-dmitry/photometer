@@ -116,6 +116,7 @@ fn messages_from_last_impl<F: FnMut(MailInfo)>(
 ) -> MyResult<()>
 {
     let where_postfix = if only_unreaded { "AND readed='false'" } else { "" };
+    let order = if only_unreaded { "ASC" } else { "DESC" };
     let query = format!( "
         SELECT
             id,
@@ -126,9 +127,9 @@ fn messages_from_last_impl<F: FnMut(MailInfo)>(
             readed
         FROM mailbox
         WHERE recipient_id = ? {}
-        ORDER BY creation_time DESC
+        ORDER BY creation_time {}
         LIMIT ? OFFSET ?;
-    ", where_postfix );
+    ", where_postfix, order );
     let mut stmt = try!( conn.prepare( &query ) );
     let params: &[ &ToValue ] = &[ &owner_id, &count, &offset ];
     let sql_result = try!( stmt.execute( params ) );

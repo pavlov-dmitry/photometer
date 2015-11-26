@@ -35,11 +35,14 @@ pub fn create( context: MailContext ) -> MailerBody {
 impl Mailer for Stuff {
     fn send_mail( &mut self, user: &User, subject: &str, body: &str ) -> EmptyResult {
         try!( self.send_internal_mail( user, subject, body ) );
-        try!( self.send_external_mail( user, subject, body ) );
+        //FIXME: Временно на время тестов отключаем посылку писем во вне
+        // try!( self.send_external_mail( user, subject, body ) );
         Ok( () )
     }
     fn send_external_mail( &mut self, user: &User, subject: &str, body: &str ) -> EmptyResult {
-        self.send_mail_external( user, subject, body )
+        //FIXME: Временно на время тестов отключаем посылку писем во вне
+        // self.send_mail_external( user, subject, body )
+        Ok( () )
     }
     fn send_internal_mail( &mut self, user: &User, subject: &str, body: &str ) -> EmptyResult {
         self.send_mail_internal( user, PHOTOMETER, subject, body )
