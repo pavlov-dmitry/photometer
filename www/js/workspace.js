@@ -134,6 +134,8 @@ define( function(require) {
 
             this.current = new PhotoView({ model: model });
             model.fetch();
+
+            app.userState.navToGallery();
         },
 
         group_creation: function() {

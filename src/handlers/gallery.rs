@@ -88,6 +88,7 @@ struct PageInfo {
 
 #[derive(RustcEncodable)]
 struct GalleryInfo {
+    owner_id: Id,
     current_page: u32,
     pages_count: u32,
     photos: Vec<PhotoInfo>
@@ -120,6 +121,7 @@ fn by_year_answer( req: &mut Request, year: i32 ) -> AnswerResult {
     }
 
     let gallery_info = GalleryInfo {
+        owner_id: user_id,
         current_page: page,
         pages_count: pages_count,
         photos: photo_infos

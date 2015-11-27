@@ -131,7 +131,7 @@ impl MailWriter for Stuff {
     fn write_group_name_already_exists_mail( &self, group_name: &str ) -> (String, String) {
         let subject = format!( "Группа с именем '{}' уже существует", group_name );
         let mail = format!(
-"Группа с именем '{}' была уже создана за время пока вы решали создавать вашу группу или нет.
+"Группа с именем **{}** была уже создана за время пока вы решали создавать вашу группу или нет.
 Создайте новую группу с другим именем или присоединитесь к существующей",
             group_name
         );
@@ -140,7 +140,7 @@ impl MailWriter for Stuff {
     /// сочиняет письмо что группа создана, и всё хорошо
     fn write_welcome_to_group_mail( &self, group_name: &str ) -> (String, String) {
         let subject = format!( "Добро пожаловать в группу \"{}\"", group_name );
-        let mail = format!( "Группа с именем ***{}*** создана. Развлекайтесь!", group_name );
+        let mail = format!( "Группа с именем **{}** создана. Развлекайтесь!", group_name );
         ( subject, mail )
     }
 
@@ -155,7 +155,7 @@ impl MailWriter for Stuff {
         let subject = format!( "Пора выкладывать {}", event_name );
         let mail = format!(
 "Привет {}!
-Настало время публиковать фотографии для '{}'.
+Настало время публиковать фотографии для **{}**.
 Ты можешь сделать перейдя по вот этой ссылке: {}{}",
             user_name,
             event_name,

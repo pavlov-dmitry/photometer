@@ -19,7 +19,7 @@ define( function(require) {
         initialize: function() {
             var self = this;
 
-            this.context_url = "gallery_photo/" + app.user_id() + "/",
+            this.context_url = "gallery_photo/";// + app.user_id() + "/",
 
             this.listenTo( this.model, "add", this.addOne );
             this.listenTo( this.model, "reset", this.addAll );
@@ -86,7 +86,9 @@ define( function(require) {
         },
 
         addOne: function( data ) {
-            data.set({ url: this.context_url + data.id });
+            console.log( JSON.stringify( data ) );
+            var owner_id = data.get("owner_id");
+            data.set({ url: this.context_url + owner_id + "/" + data.id });
             var view = new PreviewView({
                 model: data,
                 id: "preview-" + data.id
