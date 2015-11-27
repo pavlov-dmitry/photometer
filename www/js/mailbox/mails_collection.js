@@ -22,13 +22,9 @@ define( function(require) {
             handler.good = function( data ) {
                 self.reset();
 
-                // преобзовываем письма из формата markdown в формат html
-                _.each( data.mails, function(mail) {
-                    mail.body = markdown.makeHtml( mail.body );
-                });
-
                 self.add( data.mails );
 
+                self.trigger( "update" );
                 self.trigger( "pages_changed", {
                     pages_count: data.pages_count,
                     current_page: data.current_page

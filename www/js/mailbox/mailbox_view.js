@@ -17,7 +17,8 @@ define( function(require) {
             var self = this;
 
             this.listenTo( this.model, "add", this.addOne );
-            this.listenTo( this.model, "reset", this.addAll );
+            this.listenTo( this.model, "reset", this.onReset );
+            this.listenTo( this.model, "update", this.onUpdate );
             this.listenTo( this.model, "pages_changed", this.pagesChanged );
 
             this.render();
@@ -40,15 +41,21 @@ define( function(require) {
             this.$("#mail-list").append( view.render().$el );
         },
 
-        addAll: function() {
+        onReset: function() {
             this.$("#mail-list").empty();
-            this.model.each( this.addOne, this );
         },
+
+        onUpdate: function() {
+            if ( this.model.length == 0 ) {
+                $("#mail-list").html( "<h3 class=\"bulged text-center\"><strong>Здесь пусто</strong><h3>")
+            }
+        },
+
 
         pagesChanged: function( data ) {
             if ( 1 < data.pages_count ) {
                 var link_prefix = "#mailbox/";
-                if ( this.model.is_only_unreaded() ) {
+                if ( this.model.is_only_unreaded ) {
                     link_prefix += "unreaded/";
                 }
 
