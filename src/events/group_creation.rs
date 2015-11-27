@@ -95,6 +95,15 @@ impl UserCreatedEvent for GroupCreation {
             errors.push( FieldErrorInfo::too_long( DESCRIPTION ) );
         }
 
+        // проверяем что такой группы нет
+        let group_exist = {
+            let db = try!( req.stuff().get_current_db_conn() );
+            try!( db.is_group_exists( &group_info.name ) )
+        };
+        if group_exist {
+            errors.push( FieldErrorInfo::new( "group", "exists" ) );
+        }
+
         // проверка наличия пользователей
         let db = try!( req.stuff().get_current_db_conn() );
         for member in group_info.members.iter() {
@@ -177,6 +186,7 @@ impl Event for GroupCreation {
     }
     /// действие на окончание события
     fn finish( &self, stuff: &mut Stuff, body: &ScheduledEventInfo ) -> EmptyResult {
+        //FIXME: что-то великовата функция, надо бы разбить и упростить
         let info = try!( get_info( &body.data ) );
         // собиарем голоса
         let mut votes = {

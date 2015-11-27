@@ -91,7 +91,7 @@ fn is_valid_user_for_action( event_info: &ScheduledEventInfo,
                     let db = try!( stuff.get_current_db_conn() );
                     try!( db.is_member( user_id, group_id ) )
                 },
-                None => false
+                None => true
             }
         },
         _ => false
@@ -137,12 +137,29 @@ impl<'a, 'b> EventsManagerRequest for Request<'a, 'b> {
     /// применяем действие
     fn event_action_post( &mut self, scheduled_id: Id ) -> AnswerResult {
         self.if_has_event( scheduled_id, |event, event_info, req| {
-            let result = try!( event.user_action_post( req, &event_info ) );
-            let stuff = req.stuff();
-            if try!( event.is_complete( stuff, &event_info ) ) {
-                info!( "early finishing '{}':{}", event_info.name, event_info.id );
-                try!( stuff.finish_him( event, &event_info ) );
-            }
+
+            let can_be_action = {
+                let user_id = req.user().id;
+                let stuff = req.stuff();
+                try!( is_valid_user_for_action( &event_info, stuff, user_id ) )
+            };
+
+            let result = match can_be_action {
+                true => {
+                    let result = try!( event.user_action_post( req, &event_info ) );
+                    let stuff = req.stuff();
+                    if try!( event.is_complete( stuff, &event_info ) ) {
+                        info!( "early finishing '{}':{}", event_info.name, event_info.id );
+                        try!( stuff.finish_him( event, &event_info ) );
+                    }
+                    result
+                },
+
+                false => {
+                    Answer::bad( FieldErrorInfo::new( "action", "access error" ) )
+                }
+            };
+
             Ok( result )
         })
     }

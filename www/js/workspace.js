@@ -16,7 +16,8 @@ define( function(require) {
             'mailbox': 'mailbox',
             'mailbox/:page': 'mailbox_page',
             'gallery_photo/:user_id/:photo_id': "gallery_photo",
-            'group-creation': "group_creation"
+            'group-creation': "group_creation",
+            'event/:id': "event_info"
         },
 
         clear_current: function() {
@@ -144,6 +145,16 @@ define( function(require) {
             var model = new GroupCreationModel();
             model.add_new_member();
             this.current = new GroupCreationView({ model: model });
+        },
+
+        event_info: function( id ) {
+            this.clear_current();
+
+            var EventInfoModel = require( "event/event_info_model" );
+            var EventInfoView = require( "event/event_info_view" );
+
+            var model = new EventInfoModel({ scheduled_id: id });
+            this.current = new EventInfoView({ model: model });
         }
 
     });

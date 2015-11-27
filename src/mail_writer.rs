@@ -139,8 +139,8 @@ impl MailWriter for Stuff {
     }
     /// сочиняет письмо что группа создана, и всё хорошо
     fn write_welcome_to_group_mail( &self, group_name: &str ) -> (String, String) {
-        let subject = format!( "Добро пожаловать в группу {}", group_name );
-        let mail = format!( "Группа с именем '{}' создана. Развлекайтесь!", group_name );
+        let subject = format!( "Добро пожаловать в группу \"{}\"", group_name );
+        let mail = format!( "Группа с именем ***{}*** создана. Развлекайтесь!", group_name );
         ( subject, mail )
     }
 

@@ -3,12 +3,12 @@ define( function(require) {
     var Handlebars = require( "handlebars.runtime" ),
         Backbone = require( "lib/backbone" ),
         Config = require( "config" ),
-        login_tmpl = require( "template/login" );//require( "text!template/login.handlebars" );
+        login_tmpl = require( "template/login" );
 
     var UserLoginView = Backbone.View.extend({
         el: '#workspace',
 
-        template:  Handlebars.templates.login,//Handlebars.compile( login_tmpl ),
+        template:  Handlebars.templates.login,
 
         events: {
             "submit #form-login": "submit",

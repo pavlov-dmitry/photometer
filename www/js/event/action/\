@@ -1,0 +1,20 @@
+define( function(require) {
+    var Backbone = require( "lib/backbone" ),
+        Handlebars = require( "handlebars.runtime" ),
+        tmpl = require( "template/vote_action" );
+
+    var VoteView = Backbone.View.extend({
+        el: "#action",
+        template: Handlebars.templates.vote_action,
+
+        initialize: function() {
+            this.render();
+        },
+
+        render: function() {
+
+        }
+    });
+
+    return VoteView;
+})

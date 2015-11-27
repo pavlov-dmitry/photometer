@@ -131,6 +131,9 @@ define( function( require ) {
                 else if ( desc.field === DESCRIPTION && desc.reason === TOO_LONG ) {
                     text_error = "Описание группы не может превышать 2048-х символов.";
                 }
+                else if ( desc.field === "group" && desc.reason === "exists" ) {
+                    text_error = "Группа с таким именем уже существует";
+                }
                 else if ( desc.reason === NOT_FOUND ) {
                     text_error = "Пользователь с именем " + desc.field + " не найден";
                 }
