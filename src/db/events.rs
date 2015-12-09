@@ -8,6 +8,7 @@ use events::{ ScheduledEventInfo, EventState, FullEventInfo };
 use database::Database;
 
 type EventInfos = Vec<ScheduledEventInfo>;
+type UnwatchedInfos = Vec<(Id, u32)>;
 
 pub trait DbEvents {
     /// считывает события которые должны стратануть за период
@@ -25,6 +26,8 @@ pub trait DbEvents {
     fn set_event_state( &mut self, scheduled_id: Id, state: EventState ) -> EmptyResult;
     /// информация о вермени начала определeнного события
     fn event_start_time( &mut self, scheduled_id: Id ) -> CommonResult<Option<Timespec>>;
+    /// кол-во непросмотренных событий в группах для пользователя
+    fn get_unwatched_events_by_group( &mut self, user_id: Id ) -> CommonResult<UnwatchedInfos>;
 }
 
 pub fn create_tables( db: &Database ) -> EmptyResult {
@@ -98,6 +101,12 @@ impl DbEvents for MyPooledConn {
     fn event_start_time( &mut self, scheduled_id: Id ) -> CommonResult<Option<Timespec>> {
         event_start_time_impl( self, scheduled_id )
             .map_err( |e| fn_failed( "event_start_time", e ) )
+    }
+
+    /// кол-во непросмотренных событий в группах для пользователя
+    fn get_unwatched_events_by_group( &mut self, user_id: Id ) -> CommonResult<UnwatchedInfos> {
+        get_unwatched_events_by_group_impl( self, user_id )
+            .map_err( |e| fn_failed( "get_unwatched_events_by_group", e ) )
     }
 }
 
@@ -332,6 +341,29 @@ fn set_event_state_impl( conn: &mut MyPooledConn, scheduled_id: Id, state: Event
     let params: &[ &ToValue ] = &[ &state, &scheduled_id ];
     try!( stmt.execute( params ) );
     Ok( () )
+}
+
+/// кол-во непросмотренных событий в группах для пользователя
+fn get_unwatched_events_by_group_impl( conn: &mut MyPooledConn, user_id: Id ) -> MyResult<UnwatchedInfos> {
+    let query = "SELECT
+                     se.group_id, COUNT( se.id )
+                 FROM
+                     scheduled_events AS se
+                 LEFT JOIN
+                     group_members AS gm ON ( gm.group_id = se.group_id )
+                 WHERE
+                     gm.user_id = ? AND se.end_time > gm.last_visited_time
+                 GROUP BY
+                     se.group_id";
+    let mut stmt = try!( conn.prepare( query ) );
+    let sql_result = try!( stmt.execute( (user_id,) ) );
+
+    let mut result = Vec::new();
+    for row in sql_result {
+        let row = try!( row );
+        result.push( from_row( row ) );
+    }
+    Ok( result )
 }
 
 fn to_group_info( group: Option<Id> ) -> (bool, Id) {

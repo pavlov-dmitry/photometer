@@ -3,6 +3,8 @@ use database::{ Databaseable };
 use stuff::Stuffable;
 use db::users::{ DbUsers };
 use db::mailbox::{ DbMailbox };
+use db::groups::{ DbGroups };
+use db::events::{ DbEvents };
 use authentication::{ User, SessionsStoreable, Userable };
 use photo_store::{ PhotoStoreable };
 use err_msg;
@@ -136,7 +138,15 @@ fn gen_reg_key() -> String {
 struct UserInfo {
     name: String,
     id: Id,
-    unreaded_messages_count: u32
+    unreaded_messages_count: u32,
+    groups: Vec<GroupInfo>
+}
+
+#[derive(RustcEncodable)]
+struct GroupInfo {
+    id: Id,
+    name: String,
+    unwatched_events: u32
 }
 
 pub fn user_info_path() -> &'static str {
@@ -151,16 +161,35 @@ pub fn user_info( req: &mut Request ) -> IronResult<Response> {
 fn user_info_answer( req: &mut Request ) -> AnswerResult {
     let user_id = req.user().id;
     let user_name = req.user().name.clone();
+    let stuff = req.stuff();
+    let db = try!( stuff.get_current_db_conn() );
 
-    let unreaded_count = {
-        let db = try!( req.stuff().get_current_db_conn() );
-        try!( db.messages_count( user_id, true ) )
-    };
+    let unreaded_count = try!( db.messages_count( user_id, true ) );
+    let groups = try!( db.member_in_groups( user_id ) );
+    let unwatched_by_groups = try!( db.get_unwatched_events_by_group( user_id ) );
+
+    let groups = groups.into_iter().map( |(id, name)| {
+        let unwatched_group = unwatched_by_groups
+            .iter()
+            // .find(|&&(unwatched_id,_)| id == unwatched_id );
+            .find(|x| id == x.0 );
+
+        let count = match unwatched_group {
+            Some( &(_, count) ) => count,
+            None => 0
+        };
+        GroupInfo {
+            id: id,
+            name: name,
+            unwatched_events: count
+        }
+    }).collect();
 
     let user_info = UserInfo {
         name: user_name,
         id: user_id,
-        unreaded_messages_count: unreaded_count
+        unreaded_messages_count: unreaded_count,
+        groups: groups
     };
 
     Ok( Answer::good( user_info ) )
