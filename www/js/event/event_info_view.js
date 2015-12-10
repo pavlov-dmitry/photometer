@@ -47,7 +47,9 @@ define( function(require) {
         },
 
         close: function() {
-            this.action_view.undelegateEvents();
+            if ( this.action_view ) {
+                this.action_view.undelegateEvents();
+            }
         }
     });
 

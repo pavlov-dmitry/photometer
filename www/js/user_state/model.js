@@ -8,7 +8,12 @@ define( function( require ) {
             id: 0,
             unreaded_messages: 0,
             isNavInGallery: false,
-            isNavInMessages: false
+            isNavInMessages: false,
+            isNavInGroup: false,
+            is_groups: false,
+            is_many_groups: false,
+            has_unreaded_in_groups: false,
+            current_group: {}
         },
 
         fetch: function() {
@@ -16,12 +21,28 @@ define( function( require ) {
             var request = require( "request" );
             var handler = request.get( "user_info" );
             handler.good = function( data ) {
-                self.set({
+                var model_data = {
                     isLogged: true,
                     name: data.name,
                     unreaded_messages: data.unreaded_messages_count,
-                    id: data.id
+                    id: data.id,
+                    groups: data.groups
+                };
+                if ( 0 < model_data.groups.length ) {
+                    model_data.is_groups = true;
+                    model_data.current_group = model_data.groups[ 0 ];
+                }
+                if ( 1 < model_data.groups.length ) {
+                    model_data.is_many_groups = true;
+                    model_data.current_group = _.max(
+                        model_data.groups,
+                        function( x ) {return x.unwatched_events;}
+                    );
+                }
+                model_data.has_unreaded_in_groups = _.some( model_data.groups, function( x ) {
+                    return x.unwatched_events != 0;
                 });
+                self.set( model_data );
             }
 
             handler.unauthorized = function( data ) {
@@ -53,6 +74,12 @@ define( function( require ) {
             this.set( navState );
         },
 
+        navToGroup: function() {
+            var navState = this.getResetedNav();
+            navState.isNavInGroup = true;
+            this.set( navState );
+        },
+
         resetNav: function() {
             var navState = this.getResetedNav();
             this.set( navState );
@@ -61,8 +88,15 @@ define( function( require ) {
         getResetedNav: function() {
             return {
                 isNavInMessages: false,
-                isNavInGallery: false
+                isNavInGallery: false,
+                isNavInGroup: false
             };
+        },
+
+        set_current_group: function( id ) {
+            var data = this.toJSON();
+            data.current_group = _.find( data.groups, function( x ) { return x.id == id; } );
+            this.set( data );
         }
     });
 
