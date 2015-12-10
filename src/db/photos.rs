@@ -1,10 +1,11 @@
 use mysql::conn::pool::{ MyPooledConn };
-use mysql::error::{ MyResult };
-use mysql::value::{ from_row, from_value, from_value_opt, ToValue, FromValue, Value };
+use mysql::error::{ MyResult, MyError };
+use mysql::value::{ from_row, from_value, ToValue, FromValue, Value, ConvIr };
 use types::{ Id, PhotoInfo, ImageType, CommonResult, EmptyResult, CommonError };
 use time::{ Timespec };
 use database::Database;
 use std::fmt::Display;
+use std::str;
 
 pub trait DbPhotos {
     /// добавление фотографии в галлерею пользователя
@@ -293,28 +294,47 @@ const PNG_STR : &'static str = "png";
 impl ToValue for ImageType {
     fn to_value(&self) -> Value {
         match self {
-            &ImageType::Jpeg => JPEG_STR.to_value(),
-            &ImageType::Png => PNG_STR.to_value()
+            &ImageType::Jpeg => Value::Bytes( JPEG_STR.bytes().collect() ),
+            &ImageType::Png => Value::Bytes( PNG_STR.bytes().collect() )
         }
     }
 }
 
-impl FromValue for ImageType {
-    fn from_value(v: Value) -> ImageType {
-        match from_value_opt::<ImageType>( v ) {
-            Ok( x ) => x,
-            Err(_) => panic!( "fail converting ImageType from db value!" )
+pub struct ImageTypeIr
+{
+    val: ImageType,
+    bytes: Vec<u8>
+}
+
+impl ConvIr<ImageType> for ImageTypeIr
+{
+    fn new(v: Value) -> MyResult<ImageTypeIr> {
+        match v {
+            Value::Bytes( bytes ) => {
+                let value = match str::from_utf8( &bytes ) {
+                    Ok( s ) => match s {
+                        JPEG_STR => Some( ImageType::Jpeg ),
+                        PNG_STR => Some( ImageType::Png ),
+                        _ => None
+                    },
+                    _ => None
+                };
+                match value {
+                    Some( t ) => Ok( ImageTypeIr{ val: t, bytes: bytes } ),
+                    None => Err( MyError::FromValueError( Value::Bytes( bytes ) ) )
+                }
+            },
+            _ => Err(MyError::FromValueError(v))
         }
     }
-    fn from_value_opt(v: Value) -> Result<ImageType, Value> {
-        from_value_opt::<String>( v.clone() )
-            .and_then( |string| {
-                let s: &str = &string;
-                match s {
-                    JPEG_STR => Ok( ImageType::Jpeg ),
-                    PNG_STR => Ok( ImageType::Png ),
-                    _ => Err( v )
-                }
-            })
+    fn commit(self) -> ImageType {
+        self.val
     }
+    fn rollback(self) -> Value {
+        Value::Bytes( self.bytes )
+    }
+}
+
+impl FromValue for ImageType {
+    type Intermediate = ImageTypeIr;
 }

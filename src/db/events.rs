@@ -1,6 +1,14 @@
+use std::str;
 use mysql::conn::pool::{ MyPooledConn };
-use mysql::error::{ MyResult };
-use mysql::value::{ IntoValue, from_row, ToValue, FromValue, Value, from_value_opt };
+use mysql::error::{ MyResult, MyError };
+use mysql::value::{
+    IntoValue,
+    from_row,
+    ToValue,
+    FromValue,
+    Value,
+    ConvIr
+};
 use types::{ Id, CommonResult, EmptyResult, CommonError };
 use time::{ Timespec };
 use std::fmt::Display;
@@ -121,35 +129,54 @@ const DISABLED_STR : &'static str = "disabled";
 
 impl ToValue for EventState {
     fn to_value(&self) -> Value {
-        match self {
-            &EventState::NotStartedYet => NOT_STARTED_YET_STR.to_value(),
-            &EventState::Active => ACTIVE_STR.to_value(),
-            &EventState::Finished => FINISHED_STR.to_value(),
-            &EventState::Disabled => DISABLED_STR.to_value()
+        let bytes = match self {
+            &EventState::NotStartedYet => NOT_STARTED_YET_STR.bytes().collect(),
+            &EventState::Active => ACTIVE_STR.bytes().collect(),
+            &EventState::Finished => FINISHED_STR.bytes().collect(),
+            &EventState::Disabled => DISABLED_STR.bytes().collect(),
+        };
+        Value::Bytes( bytes )
+    }
+}
+
+pub struct EventStateIr {
+    val: EventState,
+    bytes: Vec<u8>
+}
+
+impl ConvIr<EventState> for EventStateIr
+{
+    fn new(v: Value) -> MyResult<EventStateIr> {
+        match v {
+            Value::Bytes( bytes ) => {
+                let val = match str::from_utf8( &bytes ) {
+                    Ok( s ) => match s {
+                        NOT_STARTED_YET_STR => Some( EventState::NotStartedYet ),
+                        ACTIVE_STR => Some( EventState::Active ),
+                        FINISHED_STR => Some( EventState::Finished ),
+                        DISABLED_STR => Some( EventState::Disabled ),
+                        _ => None
+                    },
+                    _ => None
+                };
+                match val {
+                    Some( val ) => Ok( EventStateIr{ val: val, bytes: bytes } ),
+                    None => Err( MyError::FromValueError( Value::Bytes( bytes ) ) )
+                }
+            },
+            _ => Err( MyError::FromValueError( v ) )
         }
+    }
+    fn commit(self) -> EventState {
+        self.val
+    }
+    fn rollback(self) -> Value {
+        Value::Bytes( self.bytes )
     }
 }
 
 impl FromValue for EventState {
-    fn from_value(v: Value) -> EventState {
-        match from_value_opt::<EventState>( v ) {
-            Ok( x ) => x,
-            Err(_) => panic!( "fail converting EventState from db value!" )
-        }
-    }
-    fn from_value_opt(v: Value) -> Result<EventState, Value> {
-        from_value_opt::<String>( v.clone() )
-            .and_then( |string| {
-                let s: &str = &string;
-                match s {
-                    NOT_STARTED_YET_STR => Ok( EventState::NotStartedYet ),
-                    ACTIVE_STR => Ok( EventState::Active ),
-                    FINISHED_STR => Ok( EventState::Finished ),
-                    DISABLED_STR => Ok( EventState::Disabled ),
-                    _ => Err( v )
-                }
-            })
-    }
+    type Intermediate = EventStateIr;
 }
 
 fn get_events_impl( conn: &mut MyPooledConn, where_cond: &str, values: &[&ToValue] ) -> MyResult<Vec<ScheduledEventInfo>> {
