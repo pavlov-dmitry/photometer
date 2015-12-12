@@ -17,14 +17,16 @@ define( function(require) {
             'mailbox/:page': 'mailbox_page',
             'gallery_photo/:user_id/:photo_id': "gallery_photo",
             'group-creation': "group_creation",
-            'event/:id': "event_info"
+            'event/:id': "event_info",
+            'group/:id': "group_show"
         },
 
         clear_current: function() {
-            if ( this.current ) {
-                this.current.undelegateEvents();
-                if ( this.current.close ) {
-                    this.current.close();
+            var view = this.current;
+            if ( view ) {
+                view.undelegateEvents();
+                if ( view.close ) {
+                    view.close();
                 }
             }
             app.userState.resetNav();
@@ -157,6 +159,20 @@ define( function(require) {
 
             var model = new EventInfoModel({ scheduled_id: id });
             this.current = new EventInfoView({ model: model });
+        },
+
+        group_show: function( id ) {
+            this.clear_current();
+
+            // var GroupModel = require( "group/model" );
+            // var GroupView = require( "group/view" );
+
+            // var model = new GroupModel({ id: id });
+            // this.current = new GroupView({ model: model });
+            // model.fetch();
+
+            app.userState.set_current_group( id );
+            app.userState.navToGroup();
         }
 
     });

@@ -33,6 +33,7 @@ define( function( require ) {
             var members = this.model.get( "members" );
             members.off( null, this.user_added );
             members.off( null, this.check_users_for_remove );
+            members.reset();
         },
 
         render: function() {

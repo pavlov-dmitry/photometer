@@ -5,13 +5,13 @@
   </li>
   <li class="{{#if isNavInGallery}}active {{/if}}caret-left"><a href="#gallery"><span class="glyphicon glyphicon-picture"></span> Галлерея</a></li>
   {{#if is_groups}}
-  <li class="caret-left{{#unless is_many_groups}} caret-right{{/unless}}">
+  <li class="caret-left{{#unless is_many_groups}} caret-right{{/unless}}{{#if isNavInGroup}} active{{/if}}">
     <a href="#group/{{current_group.id}}">
       <span class="glyphicon glyphicon-certificate"></span> {{current_group.name}}{{#if current_group.unwatched_events}}<span class="badge">{{current_group.unwatched_events}}</span>{{/if}}
     </a>
   </li>
   {{#if is_many_groups}}
-  <li class="dropdown pull-left">
+  <li class="dropdown pull-left{{#if isNavInGroup}} active{{/if}}">
     <a class="dropdown-toggle low-caret-left caret-right" data-toggle="dropdown">
       {{#if has_unreaded_in_groups}}
       <span class="glyphicon glyphicon-collapse-down"></span>
@@ -22,7 +22,7 @@
     <ul class="dropdown-menu inverse-dropdown pull-right">
       {{#each groups}}
       <li>
-        <a href="#group/{{id}}">{{name}}{{#if unwatched_events}}<span class="badge">{{unwatched_events}}</span>{{/if}}</a>
+        <a href="#group/{{id}}"><span class="glyphicon glyphicon-certificate"></span> {{name}} {{#if unwatched_events}}<span class="badge">{{unwatched_events}}</span>{{/if}}</a>
       </li>
       {{/each}}
     </ul>
