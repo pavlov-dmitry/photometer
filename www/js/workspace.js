@@ -18,7 +18,8 @@ define( function(require) {
             'gallery_photo/:user_id/:photo_id': "gallery_photo",
             'group-creation': "group_creation",
             'event/:id': "event_info",
-            'group/:id': "group_show"
+            'group/:id': "group_show",
+            'group/:id/:page': "group_show_page"
         },
 
         clear_current: function() {
@@ -162,17 +163,17 @@ define( function(require) {
         },
 
         group_show: function( id ) {
+            this.group_show_page( id, 0 );
+        },
+
+        group_show_page: function( id, page ) {
             this.clear_current();
 
-            // var GroupModel = require( "group/model" );
-            // var GroupView = require( "group/view" );
+            var GroupModel = require( "group/model" );
+            var GroupView = require( "group/view" );
 
-            // var model = new GroupModel({ id: id });
-            // this.current = new GroupView({ model: model });
-            // model.fetch();
-
-            app.userState.set_current_group( id );
-            app.userState.navToGroup();
+            var model = new GroupModel({ id: id, page: page });
+            this.current = new GroupView({ model: model });
         }
 
     });

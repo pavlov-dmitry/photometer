@@ -86,6 +86,16 @@ body, div, dl, dt, dd, ul, ol, li, h1, h2, h3, h4, h5, h6, pre, form, fieldset, 
     color: #0a0;
 }
 
+.gray-btn {
+    color: rgb( 170, 170, 170 );
+}
+.gray-btn:hover {
+    color: rgb( 200, 200, 200 );
+}
+.gray-btn:focus {
+    color: rgb( 230, 230, 230 );
+}
+
 .pagination > li > a {
     background-color: rgba( 0, 0, 0, 0.3 );
     color: #b8b8b8;

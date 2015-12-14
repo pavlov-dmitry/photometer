@@ -91,6 +91,8 @@ fn main() {
     router.get( handlers::events::group_create_path(), handlers::events::group_create_get );
     router.post( handlers::events::group_create_path(), handlers::events::group_create_post );
 
+    router.get( "/group_info", handlers::group::get_group_info );
+
     router.get( handlers::authentication::user_info_path(), handlers::authentication::user_info );
 
     let mut auth_chain = Chain::new( router );

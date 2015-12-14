@@ -15,8 +15,9 @@ pub mod gallery;
 pub mod images;
 pub mod mailbox;
 pub mod events;
+pub mod group;
 
-pub fn hello ( request: &mut Request ) -> IronResult<Response> { 
+pub fn hello ( request: &mut Request ) -> IronResult<Response> {
     let answer = format!( "Hello {}!!! Glad to see you!", request.user().name );
     Ok( Response::with( (status::Ok, answer) ) )
 }

@@ -11,6 +11,12 @@ use time::Timespec;
 type Members = Vec<User>;
 type Groups = Vec<(Id, String)>;
 
+pub struct GroupInfo {
+    pub id: Id,
+    pub name: String,
+    pub description: String
+}
+
 pub trait DbGroups {
     /// возращает членов группы
     fn get_members( &mut self, group_id: Id ) -> CommonResult<Members>;
@@ -32,6 +38,8 @@ pub trait DbGroups {
     fn get_last_visited_time( &mut self, user_id: Id, group_id: Id ) -> CommonResult<Timespec>;
     /// список групп в которых пользователь является членом
     fn member_in_groups( &mut self, user_id: Id ) -> CommonResult<Groups>;
+    /// информация о группе
+    fn group_info( &mut self, group_id: Id ) -> CommonResult<Option<GroupInfo>>;
 }
 
 pub fn create_tables( db: &Database ) -> EmptyResult {
@@ -107,6 +115,11 @@ impl DbGroups for MyPooledConn {
     fn member_in_groups( &mut self, user_id: Id ) -> CommonResult<Groups> {
         member_in_groups_impl( self, user_id )
             .map_err( |e| fn_failed( "member_in_groups", e ) )
+    }
+    /// информация о группе
+    fn group_info( &mut self, group_id: Id ) -> CommonResult<Option<GroupInfo>> {
+        group_info_impl( self, group_id )
+            .map_err( |e| fn_failed( "group_info", e ) )
     }
 }
 
@@ -247,4 +260,29 @@ fn member_in_groups_impl( conn: &mut MyPooledConn, user_id: Id ) -> MyResult<Gro
         groups.push( from_row( row ) );
     }
     Ok( groups )
+}
+
+
+fn group_info_impl( conn: &mut MyPooledConn, group_id: Id ) -> MyResult<Option<GroupInfo>> {
+    let query = "SELECT
+                     name, description
+                 FROM
+                     groups
+                 WHERE
+                     id = ?";
+    let mut stmt = try!( conn.prepare( query ) );
+    let mut sql_result = try!( stmt.execute( (group_id,) ) );
+    let info = match sql_result.next() {
+        Some( row ) => {
+            let row = try!( row );
+            let (name, desc) = from_row( row );
+            Some( GroupInfo {
+                id: group_id,
+                name: name,
+                description: desc
+            })
+        },
+        None => None
+    };
+    Ok( info )
 }
