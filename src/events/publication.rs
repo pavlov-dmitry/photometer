@@ -66,12 +66,12 @@ impl Event for Publication {
     fn finish( &self, stuff: &mut Stuff, body: &ScheduledEventInfo ) -> EmptyResult {
         let group_id = try!( get_group_id( body ) );
         let db = try!( stuff.get_current_db_conn() );
-        try!( db.make_publication_visible( body.scheduled_id, group_id ) );
+        try!( db.make_publication_visible( body.scheduled_id ) );
         //TODO: старт голосования
 
         //старт события загрузки опоздавших
         //FIXME: использовать более "дешевую" функцию для определения что есть отставшие
-        let unpublished_users = try!( db.get_unpublished_users( body.scheduled_id, group_id ) );
+        let unpublished_users = try!( db.get_unpublished_users( body.scheduled_id ) );
         if unpublished_users.is_empty() == false {
             let event_info = LatePublication::create_info(
                 body.scheduled_id,
@@ -91,7 +91,7 @@ impl Event for Publication {
         let group_id = try!( get_group_id( body ) );
         let db = try!( stuff.get_current_db_conn() );
         let group_members_count = try!( db.get_members_count( group_id ) );
-        let published_photo_count = try!( db.get_published_photo_count( body.scheduled_id, group_id ) );
+        let published_photo_count = try!( db.get_published_photo_count( body.scheduled_id ) );
 
         let desc = Description::new( PublicationInfo {
             id: ID,
@@ -110,10 +110,8 @@ impl Event for Publication {
 
     /// действие которое должен осуществить пользователь
     fn user_action( &self, stuff: &mut Stuff, body: &ScheduledEventInfo, user_id: Id ) -> CommonResult<UserAction> {
-        let group_id = try!( get_group_id( body ) );
         let db = try!( stuff.get_current_db_conn() );
         let is_unpublished = try!( db.is_unpublished_user( body.scheduled_id,
-                                                           group_id,
                                                            user_id ) );
         let action = if is_unpublished { UserAction::Publication } else { UserAction::None };
         Ok( action )
@@ -121,7 +119,6 @@ impl Event for Publication {
 
     /// применение действия пользователя на это событие
     fn user_action_post( &self, req: &mut Request, body: &ScheduledEventInfo ) -> AnswerResult {
-        let group_id = try!( get_group_id( body ) );
         let photo_id = try!( req.get_body::<PhotoInfo>() ).id;
         let user = req.user().clone();
         let db = try!( req.stuff().get_current_db_conn() );
@@ -131,7 +128,6 @@ impl Event for Publication {
             if let Some( (user_name, _) ) = photo_info {
                 if user_name == user.name {
                     try!( db.public_photo( body.scheduled_id,
-                                           group_id,
                                            user.id,
                                            photo_id,
                                            false ) );

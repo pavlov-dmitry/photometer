@@ -20,7 +20,7 @@ use rustc_serialize::json;
 use authentication::Userable;
 use iron::prelude::*;
 use get_body::GetBody;
-use answer_types::{ OkInfo, AccessErrorInfo, PhotoErrorInfo, FieldErrorInfo };
+use answer_types::{ OkInfo, AccessErrorInfo, PhotoErrorInfo };
 use std::convert::From;
 
 #[derive(Clone)]
@@ -60,11 +60,10 @@ impl Event for LatePublication {
     }
     /// действие на начало события
     fn start( &self, stuff: &mut Stuff, body: &ScheduledEventInfo ) -> EmptyResult {
-        let group_id = try!( get_group_id( body ) );
         let info = try!( get_info( body ) );
         let users = {
             let db = try!( stuff.get_current_db_conn() );
-            try!( db.get_unpublished_users( info.parent_id, group_id ) )
+            try!( db.get_unpublished_users( info.parent_id ) )
         };
         for user in users {
             let (subject, mail) = stuff.write_late_publication_mail(
@@ -87,8 +86,7 @@ impl Event for LatePublication {
         let info = try!( get_info( body ) );
         let db = try!( stuff.get_current_db_conn() );
         let group_members_count = try!( db.get_members_count( group_id ) );
-        let published_photo_count = try!( db.get_published_photo_count( info.parent_id,
-                                                                        group_id ) );
+        let published_photo_count = try!( db.get_published_photo_count( info.parent_id ) );
         // let need_publish = try!( db.is_unpublished_user( info.parent_id, info.group_id, user_id ) );
         // let answer = if need_publish {
         //     // TODO: переделать на нормальное отдачу, поговорить с
@@ -114,8 +112,7 @@ impl Event for LatePublication {
         let info = try!( get_info( body ) );
         let db = try!( stuff.get_current_db_conn() );
         let group_members_count = try!( db.get_members_count( group_id ) );
-        let published_photo_count = try!( db.get_published_photo_count( info.parent_id,
-                                                                        group_id ) );
+        let published_photo_count = try!( db.get_published_photo_count( info.parent_id ) );
         Ok( group_members_count == published_photo_count )
     }
 
@@ -126,7 +123,6 @@ impl Event for LatePublication {
 
     /// применение действия пользователя на это событие
     fn user_action_post( &self, req: &mut Request, body: &ScheduledEventInfo ) -> AnswerResult {
-        let group_id = try!( get_group_id( body ) );
         let info = try!( get_info( body ) );
         let photo_id = try!( req.get_body::<PhotoInfo>() ).id;
         let current_user_name = req.user().name.clone();
@@ -134,13 +130,12 @@ impl Event for LatePublication {
         let db = try!( req.stuff().get_current_db_conn() );
 
         // если такой пользователь есть должен выложиться
-        let need_publish = try!( db.is_unpublished_user( info.parent_id, group_id, user_id ) );
+        let need_publish = try!( db.is_unpublished_user( info.parent_id, user_id ) );
         let answer = if need_publish {
             let photo_info = try!( db.get_photo_info( photo_id ) );
             if let Some( (user_name, _) ) = photo_info {
                 if user_name == current_user_name {
                     try!( db.public_photo( info.parent_id,
-                                           group_id,
                                            user_id,
                                            photo_id,
                                            true ) );
@@ -155,7 +150,7 @@ impl Event for LatePublication {
             }
         }
         else {
-            Answer::good( FieldErrorInfo::new( "user", "nothing_to_do" ) )
+            Answer::bad( AccessErrorInfo::new() )
         };
         Ok( answer )
     }
