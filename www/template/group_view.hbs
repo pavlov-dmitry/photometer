@@ -1,25 +1,31 @@
 <div class="container">
-  <h1 class="full-width pull-left">{{name}}
-    {{#if editable}}
-    <div class="btn-group pull-right" role="group">
-      <button type="button" class="btn tr-btn gray-btn dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-        <span class="glyphicon glyphicon-cog"></span>
-      </button>
-      <ul class="dropdown-menu inverse-dropdown">
-        <li><a href="#">Изменить расписание</a></li>
-        <li><a href="#">Пригласить пользователя</a></li>
+  <div class="panel panel-default">
+    <div class="panel-heading clearfix">
+      <h1 class="full-width pull-left">{{name}}
+        {{#if editable}}
+        <div class="btn-group pull-right" role="group">
+          <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+            <span class="glyphicon glyphicon-cog"></span>
+          </button>
+          <ul class="dropdown-menu inverse-dropdown">
+            <li><a href="#">Изменить расписание</a></li>
+            <li><a href="#">Пригласить пользователя</a></li>
+          </ul>
+        </div>
+      </h1>
+      <div/>
+      {{/if}}
+    </div>
+    <div class="panel-body">
+      <div>
+        {{{markdown description}}}
+      </div>
+      <h4>Участники:</h4>
+      <ul>
+        {{#each members}}
+        <li>{{name}}</li>
+        {{/each}}
       </ul>
     </div>
-  </h1>
-  <div style="clear:both"/>
-  {{/if}}
-  <div class="text-preview">
-    {{{markdown description}}}
   </div>
-  <h4>Участники:</h4>
-  <ul>
-    {{#each members}}
-    <li>{{name}}</li>
-    {{/each}}
-  </ul>
 </div>

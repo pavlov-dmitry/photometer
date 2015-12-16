@@ -1,13 +1,23 @@
-<div class="container panel small fly">
-  <p>
-    <form id="form-register" onsubmit="return false;" role="register">
-      <h3 class="form-heading">Регистрация</h3>
-      <p><input id="form-reg-name" type="text" class="form-control" placeholder="Имя" value="{{name}}" required autofocus /></p>
-      <p><input id="form-reg-pasw" type="password" class="form-control" placeholder="Пароль" required /></p>
-      <p><input id="form-reg-mail" type="email" class="form-control" placeholder="Почта" value="{{email}}" required autofocus /></p>
-      <div id="form-reg-error" class="alert alert-danger hidden"><strong>Ошибка:</strong> {{ error }}</div>
-      <div id="form-reg-info" class="alert alert-success hidden">Регистрация прошла успешно, проверьте почту что-бы завершить регистрацию</div>
-      <button id="form-reg-btn" class="btn btn-lg btn-primary btn-block" type="submit">Регистрация</button>
-    </form>
-  </p>
+<div class="container">
+  <div class="panel panel-default small center-block">
+    <div class="panel-body">
+      <form id="form-register" onsubmit="return false;" role="register">
+        <h3 class="form-heading">Регистрация</h3>
+        <div class="form-group">
+          <input id="form-reg-name" type="text" class="form-control" placeholder="Имя" value="{{name}}" required autofocus />
+        </div>
+        <div class="form-group">
+          <input id="form-reg-pasw" type="password" class="form-control" placeholder="Пароль" required />
+        </div>
+        <div class="form-group">
+          <input id="form-reg-mail" type="email" class="form-control" placeholder="Почта" value="{{email}}" required autofocus />
+        </div>
+        <div id="form-reg-error" class="alert alert-danger hidden"><strong>Ошибка:</strong> {{ error }}</div>
+        <div id="form-reg-info" class="alert alert-success hidden">Регистрация прошла успешно, проверьте почту что-бы завершить регистрацию</div>
+        <div class="form-group">
+          <button id="form-reg-btn" class="btn btn-lg btn-primary btn-block" type="submit">Регистрация</button>
+        </div>
+      </form>
+    </div>
+  </div>
 </div>

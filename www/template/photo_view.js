@@ -23,9 +23,9 @@ return templates['photo_view'] = template({"1":function(container,depth0,helpers
 },"compiler":[7,">= 4.0.0"],"main":function(container,depth0,helpers,partials,data) {
     var stack1, helper, alias1=depth0 != null ? depth0 : {};
 
-  return "<div class=\"container\">\n  <div class=\"fly\">\n    <img id=\"photo\" src=\"/photo/"
+  return "<div class=\"container\">\n  <div class=\"\">\n    <img id=\"photo\" src=\"/photo/"
     + container.escapeExpression(((helper = (helper = helpers.id || (depth0 != null ? depth0.id : depth0)) != null ? helper : helpers.helperMissing),(typeof helper === "function" ? helper.call(alias1,{"name":"id","hash":{},"data":data}) : helper)))
-    + ".jpg\" class=\"img-responsive\"/>\n  </div>\n  <nav>\n    <ul class=\"pager\">\n      "
+    + ".jpg\" class=\"center-block img-responsive\"/>\n  </div>\n  <nav>\n    <ul class=\"pager\">\n      "
     + ((stack1 = helpers["if"].call(alias1,(depth0 != null ? depth0.next : depth0),{"name":"if","hash":{},"fn":container.program(1, data, 0),"inverse":container.noop,"data":data})) != null ? stack1 : "")
     + "\n      "
     + ((stack1 = helpers["if"].call(alias1,(depth0 != null ? depth0.prev : depth0),{"name":"if","hash":{},"fn":container.program(4, data, 0),"inverse":container.noop,"data":data})) != null ? stack1 : "")

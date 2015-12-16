@@ -1,16 +1,22 @@
 <div class="container">
-  <div class="">
-    <h1 class="text-center text-fly">{{{name}}}  <small>{{{state}}}</small></h1>
-    <p class="text-right">
-      <i>
-        <strong>Начало:</strong> {{starting_time}}  <strong>Окончание:</strong> {{ending_time}}
-      </i>
-    </p>
-    <div id="description" class="text-preview">
-      {{{description}}}
+  <div class="panel panel-default">
+    <div class="panel-heading">
+      <h1 class="">{{{name}}} <span class="label label-xs label-{{state.label}}">{{state.text}}</span></h1>
     </div>
-  </div>
-  <div id="action">
-    {{{action}}}
+    <div class="panel-body">
+      <p class="text-right">
+        <i>
+          <strong>Начало:</strong> {{starting_time}}  <strong>Окончание:</strong> {{ending_time}}
+        </i>
+      </p>
+      <div id="description" class="text-preview">
+        {{{description}}}
+      </div>
+    </div>
+    <div class="panel-footer">
+      <div id="action">
+        {{{action}}}
+      </div>
+    </div>
   </div>
 </div>

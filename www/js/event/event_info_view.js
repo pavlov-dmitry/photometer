@@ -20,7 +20,7 @@ define( function(require) {
             var info = events_info_collection( data.id );
 
             data.name = info.caption( data.name );
-            data.state = this.state_text( data.state );
+            data.state = this.to_state( data.state );
             var html_content = this.template( data );
             this.$el.html( html_content );
 
@@ -36,12 +36,12 @@ define( function(require) {
             this.action_view.init( action_data );
         },
 
-        state_text: function( state ) {
+        to_state: function( state ) {
             switch ( state ) {
-            case "Disabled": return "<font color=\"gray\">Отключено</font>";
-            case "NotStartedYet": return "<font color=\"yellow\">Пока не активно</font>";
-            case "Active": return "<font color=\"green\">Активно</font>";
-            case "Finished": return "<font color=\"red\">Завершено</font>";
+            case "Disabled": return {label:"danger", text:"Отключено"};
+            case "NotStartedYet": return {label:"info", text:"Пока не активно"};
+            case "Active": return {label:"success", text:"Активно"};
+            case "Finished": return {label:"default", text:"Завершено"};
             default: return state
             }
         },

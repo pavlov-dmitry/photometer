@@ -1,17 +1,20 @@
-<div id="login-container" class="container panel small fly">
-    <p>
+<div class="container">
+  <div class="panel panel-default small center-block">
+    <div class="panel-body">
       <form id="form-login" onsubmit="return false;" role="login">
-            <h3 class="form-heading">Вход</h3>
-            <p><input id="login-name" type="text" class="form-control" placeholder="Имя" value="{{ user }}"required autofocus /></p>
-            <p><input id="login-pasw" type="password" class="form-control" placeholder="Пароль" required /></p>
-        <!-- div class="checkbox">
-            <label class="checkbox">
-              <input type="checkbox" value="remember-me">Запомнить меня
-            </label>
-        </div -->
+        <h3 class="form-heading">Вход</h3>
+        <div class="form-group">
+          <input id="login-name" type="text" class="form-control" placeholder="Имя" value="{{ user }}"required autofocus />
+        </div>
+        <div class="form-group">
+          <input id="login-pasw" type="password" class="form-control" placeholder="Пароль" required />
+        </div>
         <div id="login-error" class="alert alert-danger hidden"><strong>Ошибка:</strong> {{ error }}</div>
-        <button id="login-btn" class="btn btn-lg btn-success btn-block" type="submit">ВХОД</button>
-        <p><br>Еще не с нами? <a href="#register">Пройди регистрацию</a>, чтобы присоединиться.</p>
+        <div class="form-group">
+          <button id="login-btn" class="btn btn-lg btn-success btn-block" type="submit">ВХОД</button>
+        </div>
+        <p>Еще не с нами? <a href="#register">Пройди регистрацию</a>, чтобы присоединиться.</p>
       </form>
-    </p>
+    </div>
+  </div>
 </div>

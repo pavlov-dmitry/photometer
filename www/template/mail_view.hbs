@@ -1,13 +1,13 @@
-j<p>
-  <div class="fly">
-    <div class="blue-glass mail-header">
-      <div>
-        {{#unless readed}}<button type="button" class="readed-btn tr-btn pull-right"><span class="glyphicon glyphicon-ok" aria-hidden="true"></span> прочитал</button>{{/unless}}
-        <h4><strong>{{sender_name}}</strong>: {{subject}}</h4>
-      </div>
-    </div>
-    <div class="mail-body">
-      <p>{{{markdown body}}}</p>
-    </div>
+<div class="panel panel-default">
+  <div class="panel-heading clearfix">
+      {{#unless readed}}
+      <button type="button" class="btn btn-success pull-right">Прочитал</button>
+      {{/unless}}
+      <h4>
+        <strong>{{sender_name}}</strong>: {{subject}}
+      </h4>
   </div>
-</p>
+  <div class="panel-body">
+    <p>{{{markdown body}}}</p>
+  </div>
+</div>

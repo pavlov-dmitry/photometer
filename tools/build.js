@@ -4,7 +4,8 @@
     dir: "../www-release",
     shim : {
         "bootstrap" : { deps :['jquery'] },
-        'jquery.imgareaselect': { deps: ['jquery'] }
+        'jquery.imgareaselect': { deps: ['jquery'] },
+        'showdown' : {},
     },
     paths: {
         jquery: "lib/jquery",
@@ -13,7 +14,8 @@
         bootstrap: "lib/bootstrap",
         underscore: "lib/underscore",
         template: "../template",
-        'handlebars.runtime': 'lib/handlebars-runtime'
+        'handlebars.runtime': 'lib/handlebars.runtime',
+        'showdown': 'lib/showdown'
     },
     modules: [
         {
