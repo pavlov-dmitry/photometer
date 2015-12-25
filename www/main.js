@@ -1,7 +1,7 @@
 require.config({
     baseUrl: 'js',
     shim : {
-        'bootstrap' : { deps :['jquery'] },
+        'semantic' : { deps :['jquery'] },
         'jquery.imgareaselect': { deps: ['jquery'] },
         'showdown' : {},
     },
@@ -9,7 +9,7 @@ require.config({
 	'jquery': 'lib/jquery',
         'jquery.ui.widget': 'lib/jquery.ui.widget',
         'jquery.imgareaselect': 'lib/jquery.imgareaselect',
-	'bootstrap': 'lib/bootstrap',
+	'semantic': 'lib/semantic',
         'underscore': 'lib/underscore',
         'template': '../template',
         'handlebars.runtime': 'lib/handlebars.runtime',
@@ -17,14 +17,14 @@ require.config({
     }
 });
 
-require( [ 'bootstrap',
+require( [ 'semantic',
            'app',
            'workspace',
            'request',
            'user_state/model',
            'errors_handler',
            'user_state/header_view'],
-         function ( bootstrap,
+         function ( semantic,
                     app,
                     Workspace,
                     request,

@@ -37,6 +37,18 @@ http {
                      root $www_dir;
             }
 
+            location ~ \.woff {
+                     root $www_dir;
+            }
+
+            location ~ \.woff2 {
+                     root $www_dir;
+            }
+
+            location ~ \.ttf {
+                     root $www_dir;
+            }
+
             location /fonts/ {
                      root $www_dir;
             }

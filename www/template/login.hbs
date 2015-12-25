@@ -1,20 +1,37 @@
-<div class="container">
-  <div class="panel panel-default small center-block">
-    <div class="panel-body">
-      <form id="form-login" onsubmit="return false;" role="login">
-        <h3 class="form-heading">Вход</h3>
-        <div class="form-group">
-          <input id="login-name" type="text" class="form-control" placeholder="Имя" value="{{ user }}"required autofocus />
+<div class="ui middle aligned four column doubling stackable center aligned grid">
+  <div class="column mw400">
+    <form id="form-login" class="ui middle form" onsubmit="return false;" role="login">
+      <div class="ui segment">
+        <h3 class="ui green header">
+          <div class="content">
+            Вход
+          </div>
+        </h3>
+        <div class="field">
+          <div class="ui left icon input">
+            <i class="user icon"></i>
+            <input id="login-name" type="text" placeholder="Имя" value="{{ user }}"required autofocus />
+          </div>
         </div>
-        <div class="form-group">
-          <input id="login-pasw" type="password" class="form-control" placeholder="Пароль" required />
+        <div class="field">
+          <div class="ui left icon input">
+            <i class="lock icon"></i>
+            <input id="login-pasw" type="password" placeholder="Пароль" required />
+          </div>
         </div>
-        <div id="login-error" class="alert alert-danger hidden"><strong>Ошибка:</strong> {{ error }}</div>
-        <div class="form-group">
-          <button id="login-btn" class="btn btn-lg btn-success btn-block" type="submit">ВХОД</button>
+        <div id="login-error" class="ui negative message">
+          <i class="close icon"></i>
+          <div class="header">Ошибка:</div>
+          <p>{{ error }}</p>
         </div>
-        <p>Еще не с нами? <a href="#register">Пройди регистрацию</a>, чтобы присоединиться.</p>
-      </form>
-    </div>
+        <div class="ui error message"></div>
+        <div class="ui fluid green submit button">ВХОД</div>
+        <p>
+          <small>
+            Еще не с нами? <a href="#register">Пройди регистрацию</a>, чтобы присоединиться.
+          </small>
+        </p>
+      </div>
+    </form>
   </div>
 </div>
