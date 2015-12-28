@@ -1,21 +1,49 @@
-<nav>
-  <ul class="pagination">
-    <li {{#if prev}}{{else}}class="disabled"{{/if}}>
-      <a {{#if prev}}href="{{prev}}"{{/if}} aria-label="Предыдущая">
-        <span aria-hidden="true">&laquo;</span>
-      </a>
-    </li>
-    {{#each pages}}
-    <li {{#if active}}class="active"{{/if}}{{#if disabled}}class="disabled"{{/if}}>
-      <a {{#if link}}href="{{link}}"{{/if}} {{#if next}}aria-label=""{{/if}} {{#if next}}aria-label="Слудующая"{{/if}}>
-        {{name}}
-      </a>
-    </li>
-    {{/each}}
-    <li {{#if next}}{{else}}class="disabled"{{/if}}>
-      <a {{#if next}}href="{{next}}"{{/if}} aria-label="Слудующая">
-        <span aria-hidden="true">&raquo;</span>
-      </a>
-    </li>
-  </ul>
-</nav>
+<div class="ui pagination icon menu">
+  {{#if prev}}
+  <a class="item" href="{{prev}}" aria-label="Предыдущая">
+    <i class="angle double left icon"></i>
+  </a>
+  {{else}}
+  <div class="item disabled">
+    <i class="angle double left icon"></i>
+  </div>
+  {{/if}}
+
+  {{#each pages}}
+  <a class="item{{#if active}} active{{/if}}{{#if disabled}} disabled{{/if}}" {{#if link}}href="{{link}}"{{/if}}>
+    {{name}}
+  </a>
+  {{/each}}
+
+  {{#if next}}
+  <a class="item" href="{{next}}" aria-label="Слудующая">
+    <i class="angle double right icon"></i>
+  </a>
+  {{else}}
+  <div class="item disabled">
+    <i class="angle double right icon"></i>
+  </div>
+  {{/if}}
+</div>
+
+<!-- <nav> -->
+<!--   <ul class="pagination"> -->
+<!--     <li {{#if prev}}{{else}}class="disabled"{{/if}}> -->
+<!--       <a {{#if prev}}href="{{prev}}"{{/if}} aria-label="Предыдущая"> -->
+<!--         <span aria-hidden="true">&laquo;</span> -->
+<!--       </a> -->
+<!--     </li> -->
+<!--     {{#each pages}} -->
+<!--     <li {{#if active}}class="active"{{/if}}{{#if disabled}}class="disabled"{{/if}}> -->
+<!--       <a {{#if link}}href="{{link}}"{{/if}} {{#if next}}aria-label=""{{/if}} {{#if next}}aria-label="Слудующая"{{/if}}> -->
+<!--         {{name}} -->
+<!--       </a> -->
+<!--     </li> -->
+<!--     {{/each}} -->
+<!--     <li {{#if next}}{{else}}class="disabled"{{/if}}> -->
+<!--       <a {{#if next}}href="{{next}}"{{/if}} aria-label="Слудующая"> -->
+<!--         <span aria-hidden="true">&raquo;</span> -->
+<!--       </a> -->
+<!--     </li> -->
+<!--   </ul> -->
+<!-- </nav> -->

@@ -37,8 +37,8 @@ define( function(require) {
                 limitMultiFileUploadSize: 3 * 1024 * 1024,
 
                 start: function() {
+                    self.$progress.progress({ percent: 0 });
                     self.$progress.show();
-                    self.$progress_bar.css( 'width', '0%' );
                     self.$upload_btn.hide();
                 },
 
@@ -63,10 +63,7 @@ define( function(require) {
                     console.log( "progress total - " + data.total );
                     var progress = parseInt(data.loaded / data.total * 100, 10);
                     console.log( "progress - " + progress );
-                    self.$progress_bar.css(
-                        'width',
-                        progress + '%'
-                    );
+                    self.$progress.progress({ percent: progress });
                 }
             })
 
@@ -77,7 +74,7 @@ define( function(require) {
             this.$el.html( this.template({}) );
 
             this.$progress = $( "#upload-progress" );
-            this.$progress_bar = $( "#upload-progress .progress-bar" );
+            this.$progress.progress();
             this.$upload_file = $( "#upload-file" );
             this.$upload_btn = $( "#upload-btn" );
 

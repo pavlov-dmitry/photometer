@@ -1,19 +1,24 @@
-<div class="container">
-  <p>
-  <span id="upload-btn" class="btn btn-success fileinput-button">
-    <i class="glyphicon glyphicon-plus"></i>
+<div class="ui basic segment container">
+  <span id="upload-btn" class="ui green button fileinput-button">
+    <i class="add icon"></i>
     <span>Добавить</span>
     <input id="upload-file" type="file" name="file" accept="image/jpeg,image/png">
   </span>
+
+  <div id="upload-progress" class="ui indicating progress">
+    <div class="bar"></div>
+    <div class="label">Загружено</div>
+  </div>
+
+  <p>
+    <div id="header-pagination">
+    </div>
   </p>
-  <div id="upload-progress" class="progress">
-    <div class="progress-bar progress-bar-success progress-bar-striped active"></div>
-  </div>
-  <div id="header-pagination">
-  </div>
-  <div id="preview-list" class="clearfix">
+  <div id="preview-list" class="ui stackable cards">
   </div>
   <br>
-  <div id="footer-pagination">
-  </div>
+  <p>
+    <div id="footer-pagination">
+    </div>
+  </p>
 </div>

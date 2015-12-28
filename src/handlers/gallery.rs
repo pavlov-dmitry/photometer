@@ -14,7 +14,7 @@ use types::{ Id, PhotoInfo };
 use answer_types::PhotoErrorInfo;
 
 static YEAR: &'static str = "year";
-const IN_PAGE_COUNT: u32 = 10;
+const IN_PAGE_COUNT: u32 = 12;
 const FROM_YEAR: i32 = 1900;
 
 pub fn current_year_count_path() -> &'static str {

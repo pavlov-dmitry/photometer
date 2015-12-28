@@ -7,17 +7,13 @@ define( function(require) {
 
         template: Handlebars.templates.photo_preview,
 
-        events: {
-            // "click .rename-btn": "rename"
-        },
-
         initialize: function() {
             this.listenTo( this.model, 'change', this.render );
             this.listenTo( this.model, 'destroy', this.remove );
         },
 
         render: function() {
-            this.$el.html( this.template( this.model.toJSON() ) );
+            this.$el = $( this.template( this.model.toJSON() ) );
             return this;
         },
 
