@@ -1,26 +1,26 @@
-<div class="ui pagination icon menu">
+<div class="ui small basic icon buttons">
   {{#if prev}}
-  <a class="item" href="{{prev}}" aria-label="Предыдущая">
+  <a class="ui button" href="{{prev}}" aria-label="Предыдущая">
     <i class="angle double left icon"></i>
   </a>
   {{else}}
-  <div class="item disabled">
+  <div class="ui button disabled">
     <i class="angle double left icon"></i>
   </div>
   {{/if}}
 
   {{#each pages}}
-  <a class="item{{#if active}} active{{/if}}{{#if disabled}} disabled{{/if}}" {{#if link}}href="{{link}}"{{/if}}>
+  <a class="ui button {{#if active}} active{{/if}}{{#if disabled}} disabled{{/if}}" {{#if link}}href="{{link}}"{{/if}}>
     {{name}}
   </a>
   {{/each}}
 
   {{#if next}}
-  <a class="item" href="{{next}}" aria-label="Слудующая">
+  <a class="ui button" href="{{next}}" aria-label="Слудующая">
     <i class="angle double right icon"></i>
   </a>
   {{else}}
-  <div class="item disabled">
+  <div class="ui button disabled">
     <i class="angle double right icon"></i>
   </div>
   {{/if}}
