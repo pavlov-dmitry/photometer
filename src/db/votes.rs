@@ -88,14 +88,14 @@ fn add_rights_of_voting_impl( conn: &mut MyPooledConn, scheduled_id: Id, users: 
         ) VALUES ( ?, ? )"
     );
 
-    for _ in (1 .. users.len()) {
+    for _ in 1 .. users.len() {
         query.push_str( ", ( ?, ? )" );
     }
 
     let mut stmt = try!( conn.prepare( &query ) );
 
     let mut values: Vec<Value> = Vec::new();
-    for i in (0 .. users.len()) {
+    for i in 0 .. users.len() {
         values.push( scheduled_id.into_value() );
         values.push( users[ i ].into_value() );
     }

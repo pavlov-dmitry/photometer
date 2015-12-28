@@ -4,7 +4,7 @@ use time;
 // возвращает итератор "указателей" на последовательности которые ограничены с двух сторон другой последовательностью
 pub fn boundary<'a, 'b, T:'a + 'b + PartialEq>( data: &'a [T], sequence: &'b [T] ) -> BoundaryIter<'a, 'b, T> {
     //ищем начало
-    for start in ( 0 .. data.len() ) {
+    for start in 0 .. data.len() {
         if data[start ..].starts_with( sequence ) {
             return BoundaryIter {
                 data : &data[start + sequence.len() ..],
@@ -27,7 +27,7 @@ impl<'a, 'b, T:'a + 'b + PartialEq> Iterator for BoundaryIter<'a, 'b, T> {
 
     fn next(&mut self) -> Option<&'a [T]> {
         let mut result = None;
-        for pos in (0 .. self.data.len() + 1) {
+        for pos in 0 .. self.data.len() + 1 {
             if self.data[.. pos].ends_with( self.sequence ) {
                 result = Some( &self.data[.. pos - self.sequence.len()] );
                 self.data = &self.data[pos ..];
@@ -42,7 +42,7 @@ impl<'a, 'b, T:'a + 'b + PartialEq> Iterator for BoundaryIter<'a, 'b, T> {
 // возвращает итератор индесков (от, до) на последовательности которые ограничены с двух сторон другой последовательностью
 pub fn boundary_idx<'a, T:'a + PartialEq>( data: &'a [T], sequence: &'a [T] ) -> BoundaryIdxIter<'a, T> {
     //ищем начало
-    for start in (0 .. data.len()) {
+    for start in 0 .. data.len() {
         if data[start ..].starts_with( sequence ) {
             return BoundaryIdxIter {
                 data : data,
@@ -68,7 +68,7 @@ impl<'a, T:'a + PartialEq> Iterator for BoundaryIdxIter<'a, T> {
 
     fn next(&mut self) -> Option<(usize, usize)> {
         let mut result = None;
-        for pos in (self.idx .. self.data.len() + 1) {
+        for pos in self.idx .. self.data.len() + 1 {
             if self.data[self.idx .. pos].ends_with( self.sequence ) {
                 result = Some( ( self.idx, pos - self.sequence.len() ) );
                 self.idx = pos;
@@ -82,7 +82,7 @@ impl<'a, T:'a + PartialEq> Iterator for BoundaryIdxIter<'a, T> {
 #[allow(dead_code)]
 // делит последовательность на (до, после) опеределённой последовательности
 pub fn split_seq<'a, T:'a + PartialEq>( data: &'a [T], sequence: &'a [T] ) -> Option<(&'a [T], &'a [T])> {
-    for pos in (0 .. data.len()) {
+    for pos in 0 .. data.len() {
         if data[pos ..].starts_with( sequence ) {
             return Some( (&data[.. pos], &data[pos + sequence.len() ..]) )
         }
@@ -92,7 +92,7 @@ pub fn split_seq<'a, T:'a + PartialEq>( data: &'a [T], sequence: &'a [T] ) -> Op
 
 // делит последовательность на (до, после) опеределённой последовательности или её альтернативой
 pub fn split_seq_alt<'a, T:'a + PartialEq>( data: &'a [T], seq: &'a [T], alt: &'a [T] ) -> Option<(&'a [T], &'a [T])> {
-    for pos in (0 .. data.len()) {
+    for pos in 0 .. data.len() {
         let current_slice = &data[pos ..];
         if current_slice.starts_with( seq ) {
             return Some( (&data[.. pos], &data[pos + seq.len() ..] ) )

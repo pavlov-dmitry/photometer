@@ -308,13 +308,13 @@ fn add_events_impl( conn: &mut MyPooledConn, events: &[FullEventInfo] ) -> MyRes
         VALUES( ?, ?, ?, ?, ?, ?, ? )"
     );
 
-    for _ in (1 .. events.len()) {
+    for _ in 1 .. events.len() {
         query.push_str( ", ( ?, ?, ?, ?, ?, ?, ? )" );
     }
 
     let mut stmt = try!( conn.prepare( &query ) );
     let mut values: Vec<Value> = Vec::new();
-    for i in (0 .. events.len()) {
+    for i in 0 .. events.len() {
         let event = &events[ i ];
         values.push( event.id.into_value() );
         values.push( event.name.clone().into_value() );

@@ -202,14 +202,14 @@ fn add_members_impl( conn: &mut MyPooledConn, group_id: Id, members: &[ Id ] ) -
         VALUES( ?, ? )
     ");
 
-    for _ in (1 .. members.len()) {
+    for _ in 1 .. members.len() {
         query.push_str( ", ( ?, ? )" );
     }
 
     let mut stmt = try!( conn.prepare( &query ) );
 
     let mut values: Vec<Value> = Vec::new();
-    for i in (0 .. members.len()) {
+    for i in 0 .. members.len() {
         values.push( members[ i ].into_value() );
         values.push( group_id.into_value() );
     }
