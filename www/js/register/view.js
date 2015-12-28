@@ -12,7 +12,7 @@ define( function(require){
         template: Handlebars.templates.register,
 
         events: {
-            "submit #form-register": "on_submit"
+            "submit #form-register": "submit"
         },
 
         initialize: function() {
@@ -36,14 +36,13 @@ define( function(require){
             return this;
         },
 
-        on_submit: function() {
-            $("#form-register").form( "validate form" );
-        },
-
         submit: function() {
-            this.model.register( $("#name").val(),
-                                 $("#pasw").val(),
-                                 $("#mail").val() );
+            var is_valid = $("#form-register").form( "is valid" )
+            if ( is_valid ) {
+                this.model.register( $("#name").val(),
+                                     $("#pasw").val(),
+                                     $("#mail").val() );
+            }
         },
 
         registered: function() {
@@ -106,10 +105,6 @@ define( function(require){
                 },
                 inline: true,
                 on: 'blur'
-            };
-            var self = this;
-            rules.onSuccess = function() {
-                self.submit();
             };
             $("#form-register").form( rules );
         }
