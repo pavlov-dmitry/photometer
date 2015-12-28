@@ -47,8 +47,12 @@ define( function(require) {
 
         onUpdate: function() {
             if ( this.model.length == 0 ) {
-                $("#mail-list").html( "<h3 class=\"bulged text-center\"><strong>Здесь пусто</strong><h3>")
+                $("#mail-list").html( "<h1 class=\"ui center aligned disabled header\">Здесь пусто<h1>")
             }
+            else {
+                $("#mail-list").addClass( "segment" );
+            }
+            $('.button').popup({inline: true});
         },
 
 

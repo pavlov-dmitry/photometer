@@ -104,7 +104,7 @@ define( function(require){
                     }
                 },
                 inline: true,
-                on: 'blur'
+                on: 'submit'
             };
             $("#form-register").form( rules );
         }

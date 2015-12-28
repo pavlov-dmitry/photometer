@@ -84,7 +84,7 @@ impl MailWriter for Stuff {
     /// сочиняет приветственное письмо
     fn write_welcome_mail( &self ) -> (String, String) {
         let body = self.get_body();
-        let mail = format!( "#### Добро пожаловать на Фотометр!\n
+        let mail = format!( "Добро пожаловать на Фотометр!\n
 Попробуйте загрузить парочку фотографий в собственную [галлерею]({}/#gallery \"Пошли посмотрим?\")",
                              &body.root_url );
         ( String::from( "Добро пожаловать." ), mail )

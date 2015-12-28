@@ -7,17 +7,19 @@ define( function(require) {
 
         template: Handlebars.templates.mail_view,
 
-        events: {
-            "click .readed-btn": "readed"
-        },
-
         initialize: function() {
             this.listenTo( this.model, 'change', this.render );
             this.listenTo( this.model, 'destroy', this.remove );
         },
 
         render: function() {
-            this.$el.html( this.template( this.model.toJSON() ) );
+            this.$el = $( this.template( this.model.toJSON() ) );
+
+            var self = this;
+            this.$el.find( ".readed-btn" ).click( function() {
+                self.readed();
+            });
+
             return this;
         },
 

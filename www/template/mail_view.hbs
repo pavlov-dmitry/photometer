@@ -1,13 +1,15 @@
-<div class="panel panel-default">
-  <div class="panel-heading clearfix">
+<div id="{{id}}" class="item">
+  <div class="content">
+    <div class="header">
+      <strong>{{sender_name}}:</strong> {{subject}}
       {{#unless readed}}
-      <button type="button" class="btn btn-success pull-right">Прочитал</button>
+      <button class="ui topright icon basic tiny button readed-btn" data-content="Пометить как прочитанное." data-position="left center" data-variation="inverted">
+        <i class="close icon"></i>
+      </button>
       {{/unless}}
-      <h4>
-        <strong>{{sender_name}}</strong>: {{subject}}
-      </h4>
-  </div>
-  <div class="panel-body">
-    <p>{{{markdown body}}}</p>
+    </div>
+    <div class="description">
+      {{{markdown body}}}
+    </div>
   </div>
 </div>

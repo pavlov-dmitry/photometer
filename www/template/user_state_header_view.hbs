@@ -1,13 +1,13 @@
 {{#if isLogged}}
-<div class="ui pointing secondary main menu">
+<div class="ui pointing secondary stackable main menu">
   <div class="ui container">
     <div class="header item" href="#">
       <img class="ui logo" src="i/logo.png">
     </div>
     <a class="item{{#if isNavInMessages}} active{{/if}}" href="#mailbox/unreaded">
-      <i class="icon alarm">
+      <i class="icon inbox">
       </i>
-      Оповещения
+      Сообщения
       {{#if unreaded_messages}}
       <div class="ui teal label">
         {{unreaded_messages}}

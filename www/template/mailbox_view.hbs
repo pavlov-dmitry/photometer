@@ -1,13 +1,21 @@
-<div class="container page-btns-place">
-  <div class="btn-group btn-group-justified" role="group">
-    <a href="#mailbox/unreaded" role="button" class="btn btn-default {{#if is_unreaded}}active{{/if}}">Непрочитанные</a>
-    <a href="#mailbox" role="button" class="btn btn-default {{#unless is_unreaded}}active{{/unless}}">Все</a>
+<div class="ui container">
+  <div class="ui centered doubling stackable grid basic segment">
+    <div class="three column row">
+      <div class="column">
+        <div class="ui two item menu">
+          <a class="item{{#if is_unreaded}} active{{/if}}" href="#mailbox/unreaded">Непрочитанные</a>
+          <a class="item{{#unless is_unreaded}} active{{/unless}}" href="#mailbox">Все</a>
+        </div>
+      </div>
+    </div>
   </div>
-</div>
-<div class="container">
   <div id="header-pagination">
   </div>
-  <div id="mail-list">
+  <div class="ui centered doubling stackable grid">
+    <div class="twelve wide column">
+      <div id="mail-list" class="ui divided items">
+      </div>
+    </div>
   </div>
   <div id="footer-pagination" style="clear:both">
   </div>
