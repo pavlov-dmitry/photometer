@@ -20,18 +20,7 @@ define( function( require ) {
 
         render: function() {
             $el.html( this.template( this.model.toJSON() ) );
-
-            // NOTE: отчего-то через таблицу событий Backbone events
-            // не вышло привзяться к событию на нажатие, потому
-            // привязываюсь после рендера вручную
-            var self = this;
-            $("#logout-action").click( function() {
-                self.logout();
-            } );
-        },
-
-        logout: function() {
-            app.logout();
+            $(".ui.dropdown").dropdown();
         }
 
     } );

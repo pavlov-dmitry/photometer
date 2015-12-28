@@ -1,23 +1,49 @@
-<div class="container">
-  <div class="panel panel-default small center-block">
-    <div class="panel-body">
-      <form id="form-register" onsubmit="return false;" role="register">
-        <h3 class="form-heading">Регистрация</h3>
-        <div class="form-group">
-          <input id="form-reg-name" type="text" class="form-control" placeholder="Имя" value="{{name}}" required autofocus />
+<div class="ui middle aligned four column doubling stackable center aligned grid">
+  <div class="column mw400">
+    <form id="form-register" class="ui middle form" onsubmit="return false;" role="register">
+      <div class="ui segment">
+        <h3 class="ui blue header">
+          <div class="content">
+            Регистрация
+          </div>
+        </h3>
+        <div class="field">
+          <div class="ui left icon input">
+            <i class="user icon"></i>
+            <input id="name" type="text" class="form-control" placeholder="Имя" value="{{name}}" required autofocus />
+          </div>
         </div>
-        <div class="form-group">
-          <input id="form-reg-pasw" type="password" class="form-control" placeholder="Пароль" required />
+        <div class="field">
+          <div class="ui left icon input">
+            <i class="lock icon"></i>
+            <input id="pasw" type="password" class="form-control" placeholder="Пароль" required />
+          </div>
         </div>
-        <div class="form-group">
-          <input id="form-reg-mail" type="email" class="form-control" placeholder="Почта" value="{{email}}" required autofocus />
+        <div class="field">
+          <div class="ui left icon input">
+            <i class="lock icon"></i>
+            <input id="pasw2" type="password" class="form-control" placeholder="Пароль еще разок" required />
+          </div>
         </div>
-        <div id="form-reg-error" class="alert alert-danger hidden"><strong>Ошибка:</strong> {{ error }}</div>
-        <div id="form-reg-info" class="alert alert-success hidden">Регистрация прошла успешно, проверьте почту что-бы завершить регистрацию</div>
-        <div class="form-group">
-          <button id="form-reg-btn" class="btn btn-lg btn-primary btn-block" type="submit">Регистрация</button>
+        <div class="field">
+          <div class="ui left icon input">
+            <i class="mail icon"></i>
+            <input id="mail" type="email" class="form-control" placeholder="Почта" value="{{email}}" required autofocus />
+          </div>
         </div>
-      </form>
-    </div>
+        <div id="form-reg-error" class="ui negative message">
+          <i class="close icon"></i>
+          <div class="header">Ошибка:</div>
+          <p>{{ error }}</p>
+        </div>
+        <div class="ui error message"></div>
+        <button class="ui fluid blue submit button" type="submit">Регистрация</button>
+        <p>
+          <small>
+            Уже зарегистрированы? Тогда, будьте любезны, <a href="#login">входите.</a>
+          </small>
+        </p>
+      </div>
+    </form>
   </div>
 </div>

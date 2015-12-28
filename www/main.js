@@ -33,6 +33,7 @@ require( [ 'semantic',
                     UserStateHeaderView ) {
     /// инициализация
     $( function() {
+
         app.workspace = new Workspace;
         app.userState = new UserStateModel;
 

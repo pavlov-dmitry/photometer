@@ -6,6 +6,7 @@ define( function(require) {
     var Workspace = Backbone.Router.extend({
         routes: {
             'login': 'login',
+            'logout': 'logout',
             'register': 'register',
             'activate/:key': 'activate',
             'gallery': 'gallery',
@@ -44,6 +45,10 @@ define( function(require) {
             UserLoginModel = require( "login/model" );
 
             this.current = new UserLoginView( { model: new UserLoginModel } );
+        },
+
+        logout: function() {
+            app.logout();
         },
 
         register: function() {

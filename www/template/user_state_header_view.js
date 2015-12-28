@@ -3,83 +3,78 @@ define(['handlebars.runtime'], function(Handlebars) {
 return templates['user_state_header_view'] = template({"1":function(container,depth0,helpers,partials,data) {
     var stack1, helper, alias1=depth0 != null ? depth0 : {};
 
-  return "<ul class=\"nav navbar-nav\">\n  <li class=\""
+  return "<div class=\"ui pointing secondary main menu\">\n  <div class=\"ui container\">\n    <div class=\"header item\" href=\"#\">\n      <img class=\"ui logo\" src=\"i/logo.png\">\n    </div>\n    <a class=\"item"
     + ((stack1 = helpers["if"].call(alias1,(depth0 != null ? depth0.isNavInMessages : depth0),{"name":"if","hash":{},"fn":container.program(2, data, 0),"inverse":container.noop,"data":data})) != null ? stack1 : "")
-    + "caret-left\">\n    <a href=\"#mailbox/unreaded\"><span class=\"glyphicon glyphicon-inbox\"></span> Сообщения"
+    + "\" href=\"#mailbox/unreaded\">\n      <i class=\"icon alarm\">\n      </i>\n      Оповещения\n"
     + ((stack1 = helpers["if"].call(alias1,(depth0 != null ? depth0.unreaded_messages : depth0),{"name":"if","hash":{},"fn":container.program(4, data, 0),"inverse":container.noop,"data":data})) != null ? stack1 : "")
-    + "</a>\n  </li>\n  <li class=\""
+    + "    </a>\n    <a class=\"item"
     + ((stack1 = helpers["if"].call(alias1,(depth0 != null ? depth0.isNavInGallery : depth0),{"name":"if","hash":{},"fn":container.program(2, data, 0),"inverse":container.noop,"data":data})) != null ? stack1 : "")
-    + "caret-left\"><a href=\"#gallery\"><span class=\"glyphicon glyphicon-picture\"></span> Галлерея</a></li>\n"
+    + "\" href=\"#gallery\">\n      <i class=\"icon film\"></i>\n      Галлерея\n    </a>\n"
     + ((stack1 = helpers["if"].call(alias1,(depth0 != null ? depth0.is_groups : depth0),{"name":"if","hash":{},"fn":container.program(6, data, 0),"inverse":container.noop,"data":data})) != null ? stack1 : "")
-    + "</ul>\n\n<ul class=\"nav navbar-nav navbar-right\">\n  <li class=\"dropdown caret-left\">\n    <a href=\"#\" class=\"dropdown-toggle\" data-toggle=\"dropdown\" role=\"button\" aria-expanded=\"false\">\n      <span class=\"glyphicon glyphicon-user\" ></span> "
+    + "    <div class=\"right menu\">\n      <div class=\"ui dropdown item\">\n        "
     + container.escapeExpression(((helper = (helper = helpers.name || (depth0 != null ? depth0.name : depth0)) != null ? helper : helpers.helperMissing),(typeof helper === "function" ? helper.call(alias1,{"name":"name","hash":{},"data":data}) : helper)))
-    + " <span class=\"caret\"></span>\n    </a>\n    <ul class=\"dropdown-menu inverse-dropdown\" role=\"menu\">\n      <li><a id=\"group-create-action\" href=\"#group-creation\"><span class=\"glyphicon glyphicon-folder-open\"></span> Создать новую группу</li>\n      <li><a id=\"logout-action\" href=\"#\" onClick=\"return false\"><span class=\"glyphicon glyphicon-off\"></span> Выйти</a></li>\n    </ul>\n  </li>\n</ul>\n";
+    + "\n        <i class=\"dropdown icon\"></i>\n        <div class=\"menu\">\n          <a class=\"item\" href=\"#group_creation\">\n            <i class=\"child icon\"></i>\n            Создать новую группу\n          </a>\n          <a class=\"item\" href=\"#logout\">\n            <i class=\"sign out icon\"></i>\n            Выход\n          </a>\n        </div>\n      </div>\n    </div>\n  </div>\n</div>\n";
 },"2":function(container,depth0,helpers,partials,data) {
-    return "active ";
+    return " active";
 },"4":function(container,depth0,helpers,partials,data) {
     var helper;
 
-  return " <span class=\"badge\">"
+  return "      <div class=\"ui teal label\">\n        "
     + container.escapeExpression(((helper = (helper = helpers.unreaded_messages || (depth0 != null ? depth0.unreaded_messages : depth0)) != null ? helper : helpers.helperMissing),(typeof helper === "function" ? helper.call(depth0 != null ? depth0 : {},{"name":"unreaded_messages","hash":{},"data":data}) : helper)))
-    + "</span>";
+    + "\n      </div>\n";
 },"6":function(container,depth0,helpers,partials,data) {
     var stack1, alias1=depth0 != null ? depth0 : {}, alias2=container.lambda, alias3=container.escapeExpression;
 
-  return "  <li class=\"caret-left"
-    + ((stack1 = helpers.unless.call(alias1,(depth0 != null ? depth0.is_many_groups : depth0),{"name":"unless","hash":{},"fn":container.program(7, data, 0),"inverse":container.noop,"data":data})) != null ? stack1 : "")
-    + ((stack1 = helpers["if"].call(alias1,(depth0 != null ? depth0.isNavInGroup : depth0),{"name":"if","hash":{},"fn":container.program(9, data, 0),"inverse":container.noop,"data":data})) != null ? stack1 : "")
-    + "\">\n    <a href=\"#group/"
+  return "    <a class\""
+    + ((stack1 = helpers["if"].call(alias1,(depth0 != null ? depth0.is_many_groups : depth0),{"name":"if","hash":{},"fn":container.program(7, data, 0),"inverse":container.noop,"data":data})) != null ? stack1 : "")
+    + "item"
+    + ((stack1 = helpers["if"].call(alias1,(depth0 != null ? depth0.isNavInGroup : depth0),{"name":"if","hash":{},"fn":container.program(2, data, 0),"inverse":container.noop,"data":data})) != null ? stack1 : "")
+    + "\" href=\"#group/"
     + alias3(alias2(((stack1 = (depth0 != null ? depth0.current_group : depth0)) != null ? stack1.id : stack1), depth0))
-    + "\">\n      <span class=\"glyphicon glyphicon-certificate\"></span> "
+    + "\">\n      <i class=\"icon users\"></i>\n      "
     + alias3(alias2(((stack1 = (depth0 != null ? depth0.current_group : depth0)) != null ? stack1.name : stack1), depth0))
-    + ((stack1 = helpers["if"].call(alias1,((stack1 = (depth0 != null ? depth0.current_group : depth0)) != null ? stack1.unwatched_events : stack1),{"name":"if","hash":{},"fn":container.program(11, data, 0),"inverse":container.noop,"data":data})) != null ? stack1 : "")
-    + "\n    </a>\n  </li>\n"
-    + ((stack1 = helpers["if"].call(alias1,(depth0 != null ? depth0.is_many_groups : depth0),{"name":"if","hash":{},"fn":container.program(13, data, 0),"inverse":container.noop,"data":data})) != null ? stack1 : "");
+    + "\n"
+    + ((stack1 = helpers["if"].call(alias1,((stack1 = (depth0 != null ? depth0.current_group : depth0)) != null ? stack1.unwatched_events : stack1),{"name":"if","hash":{},"fn":container.program(9, data, 0),"inverse":container.noop,"data":data})) != null ? stack1 : "")
+    + "    </a>\n";
 },"7":function(container,depth0,helpers,partials,data) {
-    return " caret-right";
+    return "ui dropdown ";
 },"9":function(container,depth0,helpers,partials,data) {
-    return " active";
-},"11":function(container,depth0,helpers,partials,data) {
     var stack1;
 
-  return "<span class=\"badge\">"
+  return "      <div class=\"ui label\">\n        "
     + container.escapeExpression(container.lambda(((stack1 = (depth0 != null ? depth0.current_group : depth0)) != null ? stack1.unwatched_events : stack1), depth0))
-    + "</span>";
-},"13":function(container,depth0,helpers,partials,data) {
+    + "\n      </div>\n"
+    + ((stack1 = helpers["if"].call(depth0 != null ? depth0 : {},(depth0 != null ? depth0.is_many_groups : depth0),{"name":"if","hash":{},"fn":container.program(10, data, 0),"inverse":container.noop,"data":data})) != null ? stack1 : "");
+},"10":function(container,depth0,helpers,partials,data) {
     var stack1, alias1=depth0 != null ? depth0 : {};
 
-  return "  <li class=\"dropdown pull-left"
-    + ((stack1 = helpers["if"].call(alias1,(depth0 != null ? depth0.isNavInGroup : depth0),{"name":"if","hash":{},"fn":container.program(9, data, 0),"inverse":container.noop,"data":data})) != null ? stack1 : "")
-    + "\">\n    <a class=\"dropdown-toggle low-caret-left caret-right\" data-toggle=\"dropdown\">\n"
-    + ((stack1 = helpers["if"].call(alias1,(depth0 != null ? depth0.has_unreaded_in_groups : depth0),{"name":"if","hash":{},"fn":container.program(14, data, 0),"inverse":container.program(16, data, 0),"data":data})) != null ? stack1 : "")
-    + "    </a>\n    <ul class=\"dropdown-menu inverse-dropdown pull-right\">\n"
-    + ((stack1 = helpers.each.call(alias1,(depth0 != null ? depth0.groups : depth0),{"name":"each","hash":{},"fn":container.program(18, data, 0),"inverse":container.noop,"data":data})) != null ? stack1 : "")
-    + "    </ul>\n";
-},"14":function(container,depth0,helpers,partials,data) {
-    return "      <span class=\"glyphicon glyphicon-collapse-down\"></span>\n";
-},"16":function(container,depth0,helpers,partials,data) {
-    return "      <b class=\"caret\"></b>\n";
-},"18":function(container,depth0,helpers,partials,data) {
+  return ((stack1 = helpers["if"].call(alias1,(depth0 != null ? depth0.has_unreaded_in_groups : depth0),{"name":"if","hash":{},"fn":container.program(11, data, 0),"inverse":container.program(13, data, 0),"data":data})) != null ? stack1 : "")
+    + "      <div class=\"menu\">\n"
+    + ((stack1 = helpers.each.call(alias1,(depth0 != null ? depth0.groups : depth0),{"name":"each","hash":{},"fn":container.program(15, data, 0),"inverse":container.noop,"data":data})) != null ? stack1 : "")
+    + "      </div>\n";
+},"11":function(container,depth0,helpers,partials,data) {
+    return "      <i class=\"chevron circle down icon\"></i>\n";
+},"13":function(container,depth0,helpers,partials,data) {
+    return "      <i class=\"dropdown icon\"></i>\n";
+},"15":function(container,depth0,helpers,partials,data) {
     var stack1, helper, alias1=depth0 != null ? depth0 : {}, alias2=helpers.helperMissing, alias3="function", alias4=container.escapeExpression;
 
-  return "      <li>\n        <a href=\"#group/"
+  return "        <a class=\"item\" href=\"#group/"
     + alias4(((helper = (helper = helpers.id || (depth0 != null ? depth0.id : depth0)) != null ? helper : alias2),(typeof helper === alias3 ? helper.call(alias1,{"name":"id","hash":{},"data":data}) : helper)))
-    + "\"><span class=\"glyphicon glyphicon-certificate\"></span> "
+    + "\">\n          "
     + alias4(((helper = (helper = helpers.name || (depth0 != null ? depth0.name : depth0)) != null ? helper : alias2),(typeof helper === alias3 ? helper.call(alias1,{"name":"name","hash":{},"data":data}) : helper)))
-    + " "
-    + ((stack1 = helpers["if"].call(alias1,(depth0 != null ? depth0.unwatched_events : depth0),{"name":"if","hash":{},"fn":container.program(19, data, 0),"inverse":container.noop,"data":data})) != null ? stack1 : "")
-    + "</a>\n      </li>\n";
-},"19":function(container,depth0,helpers,partials,data) {
+    + "\n"
+    + ((stack1 = helpers["if"].call(alias1,(depth0 != null ? depth0.unwatched_events : depth0),{"name":"if","hash":{},"fn":container.program(16, data, 0),"inverse":container.noop,"data":data})) != null ? stack1 : "")
+    + "        </a>\n";
+},"16":function(container,depth0,helpers,partials,data) {
     var helper;
 
-  return "<span class=\"badge\">"
+  return "          <div class=\"ui label\">\n            "
     + container.escapeExpression(((helper = (helper = helpers.unwatched_events || (depth0 != null ? depth0.unwatched_events : depth0)) != null ? helper : helpers.helperMissing),(typeof helper === "function" ? helper.call(depth0 != null ? depth0 : {},{"name":"unwatched_events","hash":{},"data":data}) : helper)))
-    + "</span>";
-},"21":function(container,depth0,helpers,partials,data) {
-    return "<ul class=\"nav navbar-nav navbar-right\">\n  <a href=\"#login\"><button type=\"button\" class=\"btn btn-success navbar-btn\">Войти</button></a>\n  <div class=\"nav navbar-nav spacer-w-sm\"></div>\n</ul>\n";
+    + "\n          </div>\n";
 },"compiler":[7,">= 4.0.0"],"main":function(container,depth0,helpers,partials,data) {
     var stack1;
 
-  return ((stack1 = helpers["if"].call(depth0 != null ? depth0 : {},(depth0 != null ? depth0.isLogged : depth0),{"name":"if","hash":{},"fn":container.program(1, data, 0),"inverse":container.program(21, data, 0),"data":data})) != null ? stack1 : "");
+  return ((stack1 = helpers["if"].call(depth0 != null ? depth0 : {},(depth0 != null ? depth0.isLogged : depth0),{"name":"if","hash":{},"fn":container.program(1, data, 0),"inverse":container.noop,"data":data})) != null ? stack1 : "");
 },"useData":true});
 });

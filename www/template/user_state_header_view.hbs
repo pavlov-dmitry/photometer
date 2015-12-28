@@ -1,49 +1,69 @@
 {{#if isLogged}}
-<ul class="nav navbar-nav">
-  <li class="{{#if isNavInMessages}}active {{/if}}caret-left">
-    <a href="#mailbox/unreaded"><span class="glyphicon glyphicon-inbox"></span> Сообщения{{#if unreaded_messages}} <span class="badge">{{unreaded_messages}}</span>{{/if}}</a>
-  </li>
-  <li class="{{#if isNavInGallery}}active {{/if}}caret-left"><a href="#gallery"><span class="glyphicon glyphicon-picture"></span> Галлерея</a></li>
-  {{#if is_groups}}
-  <li class="caret-left{{#unless is_many_groups}} caret-right{{/unless}}{{#if isNavInGroup}} active{{/if}}">
-    <a href="#group/{{current_group.id}}">
-      <span class="glyphicon glyphicon-certificate"></span> {{current_group.name}}{{#if current_group.unwatched_events}}<span class="badge">{{current_group.unwatched_events}}</span>{{/if}}
-    </a>
-  </li>
-  {{#if is_many_groups}}
-  <li class="dropdown pull-left{{#if isNavInGroup}} active{{/if}}">
-    <a class="dropdown-toggle low-caret-left caret-right" data-toggle="dropdown">
-      {{#if has_unreaded_in_groups}}
-      <span class="glyphicon glyphicon-collapse-down"></span>
-      {{else}}
-      <b class="caret"></b>
+<div class="ui pointing secondary main menu">
+  <div class="ui container">
+    <div class="header item" href="#">
+      <img class="ui logo" src="i/logo.png">
+    </div>
+    <a class="item{{#if isNavInMessages}} active{{/if}}" href="#mailbox/unreaded">
+      <i class="icon alarm">
+      </i>
+      Оповещения
+      {{#if unreaded_messages}}
+      <div class="ui teal label">
+        {{unreaded_messages}}
+      </div>
       {{/if}}
     </a>
-    <ul class="dropdown-menu inverse-dropdown pull-right">
-      {{#each groups}}
-      <li>
-        <a href="#group/{{id}}"><span class="glyphicon glyphicon-certificate"></span> {{name}} {{#if unwatched_events}}<span class="badge">{{unwatched_events}}</span>{{/if}}</a>
-      </li>
-      {{/each}}
-    </ul>
-    {{/if}}
-    {{/if}}
-</ul>
-
-<ul class="nav navbar-nav navbar-right">
-  <li class="dropdown caret-left">
-    <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
-      <span class="glyphicon glyphicon-user" ></span> {{name}} <span class="caret"></span>
+    <a class="item{{#if isNavInGallery}} active{{/if}}" href="#gallery">
+      <i class="icon film"></i>
+      Галлерея
     </a>
-    <ul class="dropdown-menu inverse-dropdown" role="menu">
-      <li><a id="group-create-action" href="#group-creation"><span class="glyphicon glyphicon-folder-open"></span> Создать новую группу</li>
-      <li><a id="logout-action" href="#" onClick="return false"><span class="glyphicon glyphicon-off"></span> Выйти</a></li>
-    </ul>
-  </li>
-</ul>
-{{else}}
-<ul class="nav navbar-nav navbar-right">
-  <a href="#login"><button type="button" class="btn btn-success navbar-btn">Войти</button></a>
-  <div class="nav navbar-nav spacer-w-sm"></div>
-</ul>
+    {{#if is_groups}}
+    <a class"{{#if is_many_groups}}ui dropdown {{/if}}item{{#if isNavInGroup}} active{{/if}}" href="#group/{{current_group.id}}">
+      <i class="icon users"></i>
+      {{current_group.name}}
+      {{#if current_group.unwatched_events}}
+      <div class="ui label">
+        {{current_group.unwatched_events}}
+      </div>
+      {{#if is_many_groups}}
+      {{#if has_unreaded_in_groups}}
+      <i class="chevron circle down icon"></i>
+      {{else}}
+      <i class="dropdown icon"></i>
+      {{/if}}
+      <div class="menu">
+        {{#each groups}}
+        <a class="item" href="#group/{{id}}">
+          {{name}}
+          {{#if unwatched_events}}
+          <div class="ui label">
+            {{unwatched_events}}
+          </div>
+          {{/if}}
+        </a>
+        {{/each}}
+      </div>
+      {{/if}}
+      {{/if}}
+    </a>
+    {{/if}}
+    <div class="right menu">
+      <div class="ui dropdown item">
+        {{name}}
+        <i class="dropdown icon"></i>
+        <div class="menu">
+          <a class="item" href="#group_creation">
+            <i class="child icon"></i>
+            Создать новую группу
+          </a>
+          <a class="item" href="#logout">
+            <i class="sign out icon"></i>
+            Выход
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
 {{/if}}
