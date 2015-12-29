@@ -1,11 +1,24 @@
-<div class="container">
-  <div class="">
-    <img id="photo" src="/photo/{{id}}.jpg" class="center-block img-responsive"/>
+<div id="photo-container">
+  <div id="loader" class="ui active dimmer">
+    <div class="ui text loader">Загрузка</div>
   </div>
-  <nav>
-    <ul class="pager">
-      {{#if next}}<li class="previous{{#unless next}} disabled{{/unless}}"><a href="#{{context_url}}{{next}}"><span aria-hidden="true">&larr;</span></a></li>{{/if}}
-      {{#if prev}}<li class="next{{#unless prev}} disabled{{/unless}}"><a href="#{{context_url}}{{prev}}"><span aria-hidden="true">&rarr;</span></a></li>{{/if}}
-    </ul>
-  </nav>
+    <img id="photo" src="/photo/{{id}}.jpg" class="incenter"/>
+    {{#if next}}
+    <a href="#{{context_url}}{{next}}">
+      <div class="next pager">
+        <div class="inside">
+          <i style="right: 20%" class="massive angle right next icon"></i>
+        </div>
+      </div>
+    </a>
+    {{/if}}
+    {{#if prev}}
+    <a href="#{{context_url}}{{prev}}">
+      <div class="prev pager">
+        <div class="inside">
+          <i style="left: 20%" class="massive angle left prev icon"></i>
+        </div>
+      </div>
+    </a>
+    {{/if}}
 </div>

@@ -52,3 +52,37 @@ img.logo {
 .invisible {
     display: none;
 }
+
+#photo-container {
+    background-color: black;
+    position: relative;
+}
+
+.pager {
+    top: 0rem;
+    position: absolute;
+    width: 20rem;
+    height: 100%;
+    background-color: rgba( 0, 0, 0, 0 );
+    color: rgba( 0, 0, 0, 0 );
+    transition: color 0.5s;
+}
+.pager:hover {
+    color: rgba( 255, 255, 255, 0.8 );
+    transition: color 0.5s;
+}
+
+.next {
+    position: absolute;
+    right: 0px;
+}
+.prev {
+    position: absolute;
+    left: 0px;
+}
+
+.inside {
+    position: absolute;
+    top: 40%;
+    width: 100%;
+}

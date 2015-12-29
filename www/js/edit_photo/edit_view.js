@@ -54,6 +54,7 @@ define( function( require ) {
                 };
 
                 this.fit_image_options.height_coeff = imgHeight / imgWidth;
+                this.fit_image_options.top_offset = $("#photo").offset().top;
                 this.fit_image_options.bottom_offset = $("#crop-btn").outerHeight() + 2;
             }
 
