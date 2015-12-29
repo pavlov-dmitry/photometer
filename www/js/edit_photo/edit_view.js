@@ -6,6 +6,7 @@ define( function( require ) {
     var request = require( "request" );
     var errorsHandler = require( "errors_handler" );
     var fit_image = require( "helpers/fit_image" );
+    var growl = require( "growl" );
 
     var EditView = Backbone.View.extend({
 
@@ -32,6 +33,8 @@ define( function( require ) {
             this.resize_handler = function() {
                 self.fit_image();
             };
+            this.cropping_now = false;
+            this.renaming_now = false;
         },
 
         render: function() {
@@ -62,17 +65,31 @@ define( function( require ) {
         },
 
         rename: function() {
+            if ( this.renaming_now )
+                return;
+
+            this.renaming_now = true;
+            var self = this;
+            $("#rename-photo-form").addClass( "loading");
             var handler = request.post( "/rename", {
                 id: this.model.get( "id" ),
                 name: $("#new-name-input").val()
             } );
 
             handler.good = function() {
-                $( "#rename-photo-form" ).addClass( "has-success" );
+                self.renaming_now = false;
+                $("#rename-photo-form").removeClass( "loading");
+                growl({
+                    header: "Переименовано",
+                    msg: "Новое имя задано для вашей фотографии",
+                    positive: true
+                }, 4000 );
             };
 
             handler.bad = function( data ) {
-                $( "#rename-photo-form" ).addClass( "has-error" );
+                self.renaming_now = false;
+                var $form = $("#rename-photo-form");
+                $form.removeClass( "loading" );
                 var msg = "";
                 if ( data.photo === "not_found" ) {
                     msg = "Опа, а такое фото не найдено! Что-то здесь не так.";
@@ -83,8 +100,26 @@ define( function( require ) {
             };
         },
 
+        enable_crop_btn: function() {
+            var $btn = $("#crop-btn");
+            $btn.removeClass( "loading" );
+            $btn.removeClass( "disabled" );
+            this.cropping_now = false;
+        },
+        disable_crop_btn: function() {
+            var $btn = $("#crop-btn");
+            $btn.addClass( "loading" );
+            $btn.addClass( "disabled" );
+            this.cropping_now = true;
+        },
+
         crop: function() {
-            console.log( "need crop selection: " + JSON.stringify( this.selection ) );
+            if ( this.cropping_now )
+                return;
+
+            this.disable_crop_btn();
+            var self = this;
+            // console.log( "need crop selection: " + JSON.stringify( this.selection ) );
             var handle = request.post( "/crop", {
                 id: this.model.get( "id" ),
                 x1: this.selection.x1,
@@ -94,11 +129,16 @@ define( function( require ) {
             } );
 
             handle.good = function() {
-                $( "#photo" ).addClass( "has-success" );
+                self.enable_crop_btn();
+                growl({
+                    header: "Миниатюра готова",
+                    msg: "Новая миниатюра для вашей фотографии подготовлена.",
+                    positive: true
+                }, 4000 );
             }
 
             handle.bad = function( data ) {
-                $( "#photo" ).addClass( "has-error" );
+                self.enable_crop_btn();
 
                 var msg = "";
                 if ( data.photo === "not_found" ) {

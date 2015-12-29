@@ -7,8 +7,10 @@
   </h2>
   <form id="rename-photo-form" class="ui form" onsubmit="return false;">
     <div class="fields">
-      <div class="twelve wide field">
-        <input type="text" id="new-name-input" placeholder="Имя фотографии" {{#if name}}value="{{name}}"{{/if}}>
+      <div class="twelve wide icon field">
+        <div class="ui input">
+          <input type="text" class="has-success" id="new-name-input" placeholder="Имя фотографии" {{#if name}}value="{{name}}"{{/if}}>
+        </div>
       </div>
       <div class="four wide field">
         <button class="ui green basic button" type="submit">

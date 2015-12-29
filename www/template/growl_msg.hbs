@@ -1,0 +1,16 @@
+<div id="{{id}}" class="invisible row" >
+  <div class="ui{{#if info}} info{{/if}}{{#if positive}} positive{{/if}}{{#if negative}} negative{{/if}} message ontop">
+    <i class="close icon"></i>
+    {{#if header}}
+    <div class="header">
+      {{header}}
+    </div>
+    {{/if}}
+    {{#if msg}}
+    <p>
+      {{msg}}
+    </p>
+    {{/if}}
+  </div>
+  <div class="ui hidden fitted divider"></div>
+</div>

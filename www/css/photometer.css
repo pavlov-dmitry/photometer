@@ -37,3 +37,18 @@ img.logo {
     top: 0.75rem;
     right: 0.75rem;
 }
+
+#growl {
+    position: fixed;
+    top: 2rem;
+    right: 2rem;
+    max-width: 23rem;
+}
+
+.ontop {
+    z-index: 999;
+}
+
+.invisible {
+    display: none;
+}
