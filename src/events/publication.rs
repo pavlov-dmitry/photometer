@@ -125,8 +125,8 @@ impl Event for Publication {
 
         let answer = {
             let photo_info = try!( db.get_photo_info( photo_id ) );
-            if let Some( (user_name, _) ) = photo_info {
-                if user_name == user.name {
+            if let Some( info ) = photo_info {
+                if info.id == user.id {
                     try!( db.public_photo( body.scheduled_id,
                                            user.id,
                                            photo_id,

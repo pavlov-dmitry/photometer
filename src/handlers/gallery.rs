@@ -173,7 +173,7 @@ fn photo_info_answer( req: &mut Request ) -> AnswerResult {
     let db = try!( req.stuff().get_current_db_conn() );
     let photo_info = try!( db.get_photo_info( photo_context.photo ) );
     let photo_info = match photo_info {
-        Some( (_, photo_info) ) => photo_info,
+        Some( photo_info ) => photo_info,
         None => return Ok( Answer::bad( PhotoErrorInfo::not_found() ) )
     };
 

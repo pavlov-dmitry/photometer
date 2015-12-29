@@ -11,7 +11,7 @@ pub trait DbPhotos {
     /// добавление фотографии в галлерею пользователя
     fn add_photo( &mut self, user_id: Id, info: &PhotoInfo ) -> CommonResult<()>;
     /// получение информации о фото
-    fn get_photo_info( &mut self, photo_id: Id ) -> CommonResult<Option<(String, PhotoInfo)>>;
+    fn get_photo_info( &mut self, photo_id: Id ) -> CommonResult<Option<PhotoInfo>>;
     ///возвращает список описаний фоточек
     fn get_photo_infos( &mut self, owner_id: Id, start: Timespec, end: Timespec, offset: u32, count: u32 ) -> CommonResult<Vec<PhotoInfo>>;
     ///вычисляет кол-во фоток пользователя за опеределнный период
@@ -62,7 +62,7 @@ impl DbPhotos for MyPooledConn {
     }
 
     /// получение информации о фото
-    fn get_photo_info( &mut self, photo_id: Id ) -> CommonResult<Option<(String, PhotoInfo)>> {
+    fn get_photo_info( &mut self, photo_id: Id ) -> CommonResult<Option<PhotoInfo>> {
         get_photo_info_impl( self, photo_id )
             .map_err( |e| fn_failed( "get_photo_info", e ) )
     }
@@ -136,8 +136,9 @@ fn add_photo_impl( conn: &mut MyPooledConn, user_id: Id, info: &PhotoInfo ) -> M
     Ok( () )
 }
 
-fn get_photo_info_impl( conn: &mut MyPooledConn, photo_id: Id ) -> MyResult<Option<(String, PhotoInfo)>> {
+fn get_photo_info_impl( conn: &mut MyPooledConn, photo_id: Id ) -> MyResult<Option< PhotoInfo>> {
     let mut stmt = try!( conn.prepare( "SELECT
+        i.owner_id,
         u.login,
         i.id,
         i.upload_time,
@@ -160,10 +161,7 @@ fn get_photo_info_impl( conn: &mut MyPooledConn, photo_id: Id ) -> MyResult<Opti
         Some( sql_row ) => {
             let row_data = try!( sql_row );
             let mut values = row_data.into_iter();
-            Ok ( Some ( (
-                from_value( values.next().unwrap() ),
-                read_photo_info( &mut values )
-            ) ) )
+            Ok( Some( read_photo_info( &mut values ) ) )
         }
     }
 }
@@ -178,22 +176,24 @@ fn get_photo_infos_impl(
 ) -> MyResult<Vec<PhotoInfo>>
 {
     let mut stmt = try!( conn.prepare( "SELECT
-       id,
-       upload_time,
-       type,
-       width,
-       height,
-       name,
-       iso,
-       shutter_speed,
-       aperture,
-       focal_length,
-       focal_length_35mm,
-       camera_model
-       FROM images
-       WHERE owner_id = ? AND upload_time BETWEEN ? AND ?
-       ORDER BY upload_time DESC
-       LIMIT ? OFFSET ?;
+        i.owner_id,
+        u.login,
+        i.id,
+        i.upload_time,
+        i.type,
+        i.width,
+        i.height,
+        i.name,
+        i.iso,
+        i.shutter_speed,
+        i.aperture,
+        i.focal_length,
+        i.focal_length_35mm,
+        i.camera_model
+        FROM images AS i LEFT JOIN users AS u ON ( u.id = i.owner_id )
+        WHERE i.owner_id = ? AND i.upload_time BETWEEN ? AND ?
+        ORDER BY i.upload_time DESC
+        LIMIT ? OFFSET ?;
     " ) );
     let params: &[ &ToValue ] = &[ &owner_id, &start.sec, &end.sec, &count, &offset ];
     let result = try!( stmt.execute( params ) );
@@ -264,6 +264,8 @@ fn rename_photo_impl( conn: &mut MyPooledConn, photo_id: Id, newname: &str ) -> 
 fn read_photo_info<I: Iterator<Item = Value>>( mut values: I ) -> PhotoInfo
 {
     PhotoInfo {
+        owner_id: from_value( values.next().unwrap() ),
+        owner_name: from_value( values.next().unwrap() ),
         id: from_value( values.next().unwrap() ),
         upload_time: from_value( values.next().unwrap() ),
         image_type: from_value( values.next().unwrap() ),

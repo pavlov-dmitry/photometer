@@ -36,7 +36,9 @@ pub struct PhotoInfo {
     pub aperture: Option<f32>,
     pub focal_length: Option<u16>,
     pub focal_length_35mm: Option<u16>,
-    pub camera_model: Option<String>
+    pub camera_model: Option<String>,
+    pub owner_id: Id,
+    pub owner_name: String
 }
 
 #[derive(PartialEq, Clone, Debug)]

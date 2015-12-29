@@ -33,15 +33,15 @@ fn crop_photo_answer( request: &mut Request ) -> AnswerResult {
     };
 
     let answer = match maybe_photo_info {
-        Some( (user, info ) ) => {
-            if user == request.user().name {
+        Some( info ) => {
+            if info.owner_id == request.user().id {
                 let photo_store = request.photo_store();
                 let x1 = crop_info.x1 as u32;
                 let x2 = crop_info.x2 as u32;
                 let y1 = crop_info.y1 as u32;
                 let y2 = crop_info.y2 as u32;
                 let crop_result = photo_store.make_crop(
-                    &user,
+                    &info.owner_name,
                     info.upload_time,
                     info.image_type,
                     (x1, y1),

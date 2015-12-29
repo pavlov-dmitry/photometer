@@ -125,7 +125,6 @@ impl Event for LatePublication {
     fn user_action_post( &self, req: &mut Request, body: &ScheduledEventInfo ) -> AnswerResult {
         let info = try!( get_info( body ) );
         let photo_id = try!( req.get_body::<PhotoInfo>() ).id;
-        let current_user_name = req.user().name.clone();
         let user_id = req.user().id;
         let db = try!( req.stuff().get_current_db_conn() );
 
@@ -133,8 +132,8 @@ impl Event for LatePublication {
         let need_publish = try!( db.is_unpublished_user( info.parent_id, user_id ) );
         let answer = if need_publish {
             let photo_info = try!( db.get_photo_info( photo_id ) );
-            if let Some( (user_name, _) ) = photo_info {
-                if user_name == current_user_name {
+            if let Some( photo_info ) = photo_info {
+                if photo_info.owner_id == user_id {
                     try!( db.public_photo( info.parent_id,
                                            user_id,
                                            photo_id,

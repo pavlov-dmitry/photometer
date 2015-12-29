@@ -53,12 +53,12 @@ pub fn get_image( req: &mut Request, is_preview: bool ) -> IronResult<Response> 
         try_notfound!( db.get_photo_info( image_id ) )
     };
     match maybe_info {
-        Some( (user, info) ) => {
+        Some( info ) => {
             Ok( Response::with( (
                 status::Ok,
                 //временно используем Path, пока image не перейдёт на новое io
                 Path::new( &req.photo_store().make_filename(
-                    &user,
+                    &info.owner_name,
                     info.upload_time,
                     &info.image_type,
                     is_preview

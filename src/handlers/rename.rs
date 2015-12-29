@@ -27,8 +27,8 @@ fn rename_answer( request: &mut Request ) -> AnswerResult {
         try!( db.get_photo_info( rename_info.id ) )
     };
     let answer = match maybe_photo_info {
-        Some( (user, _ ) ) => {
-            if user == request.user().name {
+        Some( info ) => {
+            if info.owner_id == request.user().id {
                 let db = try!( request.stuff().get_current_db_conn() );
                 let _ = try!( db.rename_photo( rename_info.id, &rename_info.name ) );
                 Answer::good( OkInfo::new( "rename" ) )

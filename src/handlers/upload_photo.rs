@@ -1,6 +1,6 @@
 use photo_store::{ PhotoStoreable, PhotoStoreError };
 use answer::{ AnswerResult, Answer, AnswerResponse };
-use authentication::{ Userable };
+use authentication::{ Userable, User };
 use err_msg;
 use time;
 use time::{ Timespec };
@@ -55,8 +55,14 @@ fn upload_photo_answer( request: &mut Request ) -> AnswerResult {
             let photo_info = {
                 let photo_store = request.photo_store();
                 let upload_time = time::get_time();
-                photo_store.add_new_photo( request.user(), &upload_time, tp.clone(), &image.data )
-                    .map( |(w, h)| make_photo_info( upload_time, tp.clone(), w, h, &image.data ) )
+                photo_store
+                    .add_new_photo( request.user(), &upload_time, tp.clone(), &image.data )
+                    .map( |(w, h)| make_photo_info( request.user(),
+                                                    upload_time,
+                                                    tp.clone(),
+                                                    w,
+                                                    h,
+                                                    &image.data ) )
             };
             match photo_info {
                 Ok( photo_info ) => {
@@ -80,7 +86,8 @@ fn upload_photo_answer( request: &mut Request ) -> AnswerResult {
     Ok( answer )
 }
 
-fn make_photo_info( upload_time: Timespec,
+fn make_photo_info( owner: &User,
+                    upload_time: Timespec,
                     img_type: ImageType,
                     w: u32,
                     h: u32,
@@ -101,6 +108,8 @@ fn make_photo_info( upload_time: Timespec,
         focal_length: exif_ref.and_then( |e| e.focal_length() ),
         focal_length_35mm: exif_ref.and_then( |e| e.focal_length_35mm() ),
         camera_model: exif_ref.and_then( |e| e.camera_model().map( |cm| cm.to_string() ) ),
+        owner_id: owner.id,
+        owner_name: owner.name.clone()
     }
 }
 
