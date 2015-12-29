@@ -86,3 +86,24 @@ img.logo {
     top: 40%;
     width: 100%;
 }
+
+.exifview {
+    bottom: 0rem;
+    position: absolute;
+    width: 100%;
+    background-color: rgba( 0, 0, 0, 0 );
+    transition: 0.5s;
+}
+.exifview .header {
+    color: rgba(0, 0, 0, 0);
+    transition: 0.5s;
+    font-family: serif;
+}
+.exifview:hover {
+    background-color: rgba( 0, 0, 0, 0.8 );
+    transition: 0.5s;
+}
+.exifview:hover .header {
+    color: rgba(255, 255, 255, 1);
+    transition: 0.5s;
+}

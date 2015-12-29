@@ -21,4 +21,29 @@
       </div>
     </a>
     {{/if}}
+    <div class="exifview">
+      <div class="ui basic segment">
+        <h2 class="ui center aligned header">
+          {{#if shutter_speed}}
+            {{#if camera_model}}
+            {{camera_model}}
+            {{/if}}
+            {{#if focal_length}}
+            {{focal_length}}mm
+            {{/if}}
+            {{#if iso}}
+            ISO:{{iso}}
+            {{/if}}
+            {{#if shutter_speed}}
+            {{shutter shutter_speed}}с
+            {{/if}}
+            {{#if aperture}}
+            f{{aperture aperture}}
+            {{/if}}
+          {{else}}
+            Данные о параметрах съёмки отсутствуют.
+          {{/if}}
+        </h2>
+      </div>
+    </div>
 </div>

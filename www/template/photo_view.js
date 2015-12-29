@@ -14,6 +14,42 @@ return templates['photo_view'] = template({"1":function(container,depth0,helpers
     + alias4(((helper = (helper = helpers.context_url || (depth0 != null ? depth0.context_url : depth0)) != null ? helper : alias2),(typeof helper === alias3 ? helper.call(alias1,{"name":"context_url","hash":{},"data":data}) : helper)))
     + alias4(((helper = (helper = helpers.prev || (depth0 != null ? depth0.prev : depth0)) != null ? helper : alias2),(typeof helper === alias3 ? helper.call(alias1,{"name":"prev","hash":{},"data":data}) : helper)))
     + "\">\n      <div class=\"prev pager\">\n        <div class=\"inside\">\n          <i style=\"left: 20%\" class=\"massive angle left prev icon\"></i>\n        </div>\n      </div>\n    </a>\n";
+},"5":function(container,depth0,helpers,partials,data) {
+    var stack1, alias1=depth0 != null ? depth0 : {};
+
+  return ((stack1 = helpers["if"].call(alias1,(depth0 != null ? depth0.camera_model : depth0),{"name":"if","hash":{},"fn":container.program(6, data, 0),"inverse":container.noop,"data":data})) != null ? stack1 : "")
+    + ((stack1 = helpers["if"].call(alias1,(depth0 != null ? depth0.focal_length : depth0),{"name":"if","hash":{},"fn":container.program(8, data, 0),"inverse":container.noop,"data":data})) != null ? stack1 : "")
+    + ((stack1 = helpers["if"].call(alias1,(depth0 != null ? depth0.iso : depth0),{"name":"if","hash":{},"fn":container.program(10, data, 0),"inverse":container.noop,"data":data})) != null ? stack1 : "")
+    + ((stack1 = helpers["if"].call(alias1,(depth0 != null ? depth0.shutter_speed : depth0),{"name":"if","hash":{},"fn":container.program(12, data, 0),"inverse":container.noop,"data":data})) != null ? stack1 : "")
+    + ((stack1 = helpers["if"].call(alias1,(depth0 != null ? depth0.aperture : depth0),{"name":"if","hash":{},"fn":container.program(14, data, 0),"inverse":container.noop,"data":data})) != null ? stack1 : "");
+},"6":function(container,depth0,helpers,partials,data) {
+    var helper;
+
+  return "            "
+    + container.escapeExpression(((helper = (helper = helpers.camera_model || (depth0 != null ? depth0.camera_model : depth0)) != null ? helper : helpers.helperMissing),(typeof helper === "function" ? helper.call(depth0 != null ? depth0 : {},{"name":"camera_model","hash":{},"data":data}) : helper)))
+    + "\n";
+},"8":function(container,depth0,helpers,partials,data) {
+    var helper;
+
+  return "            "
+    + container.escapeExpression(((helper = (helper = helpers.focal_length || (depth0 != null ? depth0.focal_length : depth0)) != null ? helper : helpers.helperMissing),(typeof helper === "function" ? helper.call(depth0 != null ? depth0 : {},{"name":"focal_length","hash":{},"data":data}) : helper)))
+    + "mm\n";
+},"10":function(container,depth0,helpers,partials,data) {
+    var helper;
+
+  return "            ISO:"
+    + container.escapeExpression(((helper = (helper = helpers.iso || (depth0 != null ? depth0.iso : depth0)) != null ? helper : helpers.helperMissing),(typeof helper === "function" ? helper.call(depth0 != null ? depth0 : {},{"name":"iso","hash":{},"data":data}) : helper)))
+    + "\n";
+},"12":function(container,depth0,helpers,partials,data) {
+    return "            "
+    + container.escapeExpression((helpers.shutter || (depth0 && depth0.shutter) || helpers.helperMissing).call(depth0 != null ? depth0 : {},(depth0 != null ? depth0.shutter_speed : depth0),{"name":"shutter","hash":{},"data":data}))
+    + "с\n";
+},"14":function(container,depth0,helpers,partials,data) {
+    return "            f"
+    + container.escapeExpression((helpers.aperture || (depth0 && depth0.aperture) || helpers.helperMissing).call(depth0 != null ? depth0 : {},(depth0 != null ? depth0.aperture : depth0),{"name":"aperture","hash":{},"data":data}))
+    + "\n";
+},"16":function(container,depth0,helpers,partials,data) {
+    return "            Данные о параметрах съёмки отсутствуют.\n";
 },"compiler":[7,">= 4.0.0"],"main":function(container,depth0,helpers,partials,data) {
     var stack1, helper, alias1=depth0 != null ? depth0 : {};
 
@@ -22,6 +58,8 @@ return templates['photo_view'] = template({"1":function(container,depth0,helpers
     + ".jpg\" class=\"incenter\"/>\n"
     + ((stack1 = helpers["if"].call(alias1,(depth0 != null ? depth0.next : depth0),{"name":"if","hash":{},"fn":container.program(1, data, 0),"inverse":container.noop,"data":data})) != null ? stack1 : "")
     + ((stack1 = helpers["if"].call(alias1,(depth0 != null ? depth0.prev : depth0),{"name":"if","hash":{},"fn":container.program(3, data, 0),"inverse":container.noop,"data":data})) != null ? stack1 : "")
-    + "</div>\n";
+    + "    <div class=\"exifview\">\n      <div class=\"ui basic segment\">\n        <h2 class=\"ui center aligned header\">\n"
+    + ((stack1 = helpers["if"].call(alias1,(depth0 != null ? depth0.shutter_speed : depth0),{"name":"if","hash":{},"fn":container.program(5, data, 0),"inverse":container.program(16, data, 0),"data":data})) != null ? stack1 : "")
+    + "        </h2>\n      </div>\n    </div>\n</div>\n";
 },"useData":true});
 });

@@ -4,6 +4,18 @@ define( function( require ) {
     require( 'template/photo_view' );
     var fit_image = require( "helpers/fit_image" );
 
+    Handlebars.registerHelper( "shutter", function( data ) {
+        if ( data < 0 ) {
+            return "1/" + Math.abs( data );
+        }
+        return data;
+    });
+    Handlebars.registerHelper( "aperture", function( data ) {
+        data = data * 10;
+        data = Math.floor( data ) / 10;
+        return data;
+    });
+
     var PhotoView = Backbone.View.extend({
 
         el: $( "#workspace" ),
