@@ -58,7 +58,7 @@ return templates['photo_view'] = template({"1":function(container,depth0,helpers
     + ".jpg\" class=\"incenter\"/>\n"
     + ((stack1 = helpers["if"].call(alias1,(depth0 != null ? depth0.next : depth0),{"name":"if","hash":{},"fn":container.program(1, data, 0),"inverse":container.noop,"data":data})) != null ? stack1 : "")
     + ((stack1 = helpers["if"].call(alias1,(depth0 != null ? depth0.prev : depth0),{"name":"if","hash":{},"fn":container.program(3, data, 0),"inverse":container.noop,"data":data})) != null ? stack1 : "")
-    + "    <div class=\"exifview\">\n      <div class=\"ui basic segment\">\n        <h2 class=\"ui center aligned header\">\n"
+    + "    <div class=\"exifview\">\n      <div class=\"ui very padded basic segment\">\n        <h2 class=\"ui center aligned header\">\n"
     + ((stack1 = helpers["if"].call(alias1,(depth0 != null ? depth0.shutter_speed : depth0),{"name":"if","hash":{},"fn":container.program(5, data, 0),"inverse":container.program(16, data, 0),"data":data})) != null ? stack1 : "")
     + "        </h2>\n      </div>\n    </div>\n</div>\n";
 },"useData":true});
