@@ -214,8 +214,8 @@ fn get_photo_neighbours_in_gallery_impl( conn: &mut MyPooledConn, owner_id: Id, 
 }
 
 fn get_neighbour_in_gallery( conn: &mut MyPooledConn, owner_id: Id, photo_id: Id, is_next: bool ) -> MyResult<Option<Id>> {
-    let comp_sign = if is_next { ">" } else { "<" };
-    let sort_direction = if is_next { "ASC" } else { "DESC" };
+    let comp_sign = if is_next { "<" } else { ">" };
+    let sort_direction = if is_next { "DESC" } else { "ASC" };
     let query = format!("
                         SELECT
                             `id`
