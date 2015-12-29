@@ -22,7 +22,9 @@ define( function( require ) {
                     var errorsHandler = require( "errors_handler" );
                     errorsHandler.error( "Отказано в доступе. Кажется кто-то что-то химичит, или что-то пошле не так." );
                 },
-                unauthorized: function() { self.unauthorized(); }
+                unauthorized: function() {
+                    self.unauthorized();
+                }
 	    }
 
             var options = {

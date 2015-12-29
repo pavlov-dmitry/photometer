@@ -5,6 +5,7 @@ define( function(require) {
 
     var Workspace = Backbone.Router.extend({
         routes: {
+            "": 'root',
             'login': 'login',
             'logout': 'logout',
             'register': 'register',
@@ -36,6 +37,10 @@ define( function(require) {
 
         nav: function( route ) {
             this.navigate( route, { trigger: true } );
+        },
+
+        root: function() {
+            this.nav( "mailbox/unreaded" );
         },
 
         login: function() {

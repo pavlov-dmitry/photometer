@@ -20,8 +20,6 @@ define( function(require) {
             this.listenTo( this.model, "reset", this.onReset );
             this.listenTo( this.model, "update", this.onUpdate );
             this.listenTo( this.model, "pages_changed", this.pagesChanged );
-
-            this.render();
         },
 
         render: function() {
@@ -43,6 +41,7 @@ define( function(require) {
 
         onReset: function() {
             this.$("#mail-list").empty();
+            this.render();
         },
 
         onUpdate: function() {

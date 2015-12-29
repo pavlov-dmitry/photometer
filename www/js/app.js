@@ -64,7 +64,7 @@ define( function (require) {
         /// переключатель рабочей среды
         workspace: null, //new Workspace(),
         /// куда стоит перейти после логина, по умолчанию идём в галлерею
-        _redirectToAfterLogin: "mailbox/unreaded"
+        _redirectToAfterLogin: ""
     };
 
 
