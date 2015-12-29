@@ -1,23 +1,29 @@
-<div class="container">
-  <div class="well">
-    <form id="rename-photo-form" class="form-horizontal" onsubmit="return false;">
-      <h3 class="form-heading">Редактирование</h3>
-      <p>
-        <div class="input-group">
-          <div class="input-group full-width">
-            <input type="text" class="form-control" id="new-name-input" placeholder="Имя фотографии" {{#if name}}value="{{name}}"{{/if}}>
-          </div>
-          <span class="input-group-btn">
-            <button class="btn btn-success" type="submit">Переименовать</button>
-          </span>
-        </div>
-      </p>
-    </form>
-    <div class="">
-      <img id="photo" src="/photo/{{id}}.jpg" class="center-block img-responsive"/>
+<div class="ui container basic segment">
+  <h2 class="ui header">
+    <div class="content">
+      <i class="edit icon"></i>
+      Редактирование
     </div>
-    <br>
-    <button id="crop-btn" class="btn btn-success center-block" type="button">Изменить миниатюру</button>
-    <br>
+  </h2>
+  <form id="rename-photo-form" class="ui form" onsubmit="return false;">
+    <div class="fields">
+      <div class="twelve wide field">
+        <input type="text" id="new-name-input" placeholder="Имя фотографии" {{#if name}}value="{{name}}"{{/if}}>
+      </div>
+      <div class="four wide field">
+        <button class="ui green basic button" type="submit">
+          <i class="edit icon"></i>
+          Переименовать
+        </button>
+      </div>
+    </div>
+  </form>
+  <div class="ui divider"></div>
+  <div id="img-container">
+    <img class="fit incenter" id="photo" src="/photo/{{id}}.jpg"/>
   </div>
+  <button id="crop-btn" style="width: 100%" class="ui bottom attached green basic button" type="button">
+    <i class="crop icon"></i>
+    Изменить миниатюру
+  </button>
 </div>

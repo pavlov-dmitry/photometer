@@ -5,6 +5,7 @@ define( function( require ) {
     require( 'jquery.imgareaselect' );
     var request = require( "request" );
     var errorsHandler = require( "errors_handler" );
+    var fit_image = require( "helpers/fit_image" );
 
     var EditView = Backbone.View.extend({
 
@@ -20,6 +21,17 @@ define( function( require ) {
         initialize: function() {
             this.model.on( "change", this.render, this );
             this.model.fetch();
+
+            var self = this;
+            this.fit_image_options = {
+                img: "#photo",
+                container: "#img-container",
+                height_coeff: 1,
+                bottom_offset: 10
+            };
+            this.resize_handler = function() {
+                self.fit_image();
+            };
         },
 
         render: function() {
@@ -37,23 +49,14 @@ define( function( require ) {
                     x2: halfImgWidth + halfSideSize,
                     y2: halfImgHeight + halfSideSize
                 };
+
+                this.fit_image_options.height_coeff = imgHeight / imgWidth;
+                this.fit_image_options.bottom_offset = $("#crop-btn").outerHeight() + 2;
             }
 
-            var self = this;
-            this.ias = $("img#photo").imgAreaSelect({
-                instance: true,
-                aspectRatio: "1:1",
-                handles: true,
-                imageWidth: this.model.get( "width" ),
-                imageHeight: this.model.get( "height" ),
-                x1: this.selection.x1,
-                x2: this.selection.x2,
-                y1: this.selection.y1,
-                y2: this.selection.y2,
-                onSelectEnd: function(img, selection) {
-                    self.selection = selection;
-                }
-            });
+
+            $(window).on( "resize", this.resize_handler );
+            $("#photo").on( "load", this.resize_handler );
 
             return this;
         },
@@ -110,11 +113,32 @@ define( function( require ) {
             }
         },
 
+        fit_image: function() {
+            fit_image( this.fit_image_options );
+
+            var self = this;
+            this.ias = $("img#photo").imgAreaSelect({
+                instance: true,
+                aspectRatio: "1:1",
+                handles: true,
+                imageWidth: this.model.get( "width" ),
+                imageHeight: this.model.get( "height" ),
+                x1: this.selection.x1,
+                x2: this.selection.x2,
+                y1: this.selection.y1,
+                y2: this.selection.y2,
+                onSelectEnd: function(img, selection) {
+                    self.selection = selection;
+                }
+            });
+        },
+
         // TODO: пообщаться с Саньком на счёт какого-то другого более нормального решения
         close: function() {
             if ( this.ias ) {
                 this.ias.cancelSelection();
             }
+            $(window).off( "resize", this.resize_handler );
         },
     });
 

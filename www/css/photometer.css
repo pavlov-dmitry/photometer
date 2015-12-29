@@ -3,7 +3,17 @@
 @import "imgareaselect-animated.css";
 
 #workspace {
-    height: 100%
+    height: 100%;
+}
+
+.fit {
+    width: 100%;
+    height: 100%;
+}
+
+.incenter {
+    display: block;
+    margin: auto;
 }
 
 .full-height {
