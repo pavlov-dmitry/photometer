@@ -107,3 +107,35 @@ img.logo {
     color: rgba(255, 255, 255, 1);
     transition: 0.5s;
 }
+
+.nameviewer {
+    top: 0rem;
+    position: absolute;
+    width: 100%;
+    background-color: rgba( 0, 0, 0, 0 );
+    transition: 0.5s;
+}
+.nameviewer .header {
+    color: rgba(0, 0, 0, 0);
+    transition: 0.5s;
+    font-family: serif;
+}
+.nameviewer a {
+    color: rgba(0, 0, 0, 0);
+    transition: 0.5s;
+}
+.nameviewer:hover a {
+    color: rgba(255, 255, 255, 1);
+    transition: 0.5s;
+}
+.nameviewer:hover a:hover {
+    color: #1e70bf;
+}
+.nameviewer:hover {
+    background-color: rgba( 0, 0, 0, 0.8 );
+    transition: 0.5s;
+}
+.nameviewer:hover .header {
+    color: rgba(255, 255, 255, 1);
+    transition: 0.5s;
+}
