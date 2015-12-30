@@ -18,7 +18,7 @@ define( function(require) {
             'mailbox': 'mailbox',
             'mailbox/:page': 'mailbox_page',
             'gallery_photo/:user_id/:photo_id': "gallery_photo",
-            'group-creation': "group_creation",
+            'group_creation': "group_creation",
             'event/:id': "event_info",
             'group/:id': "group_show",
             'group/:id/:page': "group_show_page"

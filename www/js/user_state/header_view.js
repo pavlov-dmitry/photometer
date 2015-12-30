@@ -20,7 +20,7 @@ define( function( require ) {
 
         render: function() {
             $el.html( this.template( this.model.toJSON() ) );
-            $(".ui.dropdown").dropdown();
+            $("#user_menu").dropdown();
         }
 
     } );

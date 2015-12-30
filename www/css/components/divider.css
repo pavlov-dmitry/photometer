@@ -1,5 +1,5 @@
 /*!
- * # Semantic UI 2.0.0 - Divider
+ * # Semantic UI 2.1.7 - Divider
  * http://github.com/semantic-org/semantic-ui/
  *
  *
@@ -42,8 +42,11 @@
     Coupling
 ---------------*/
 
-.ui.grid > .ui.divider {
-  font-size: 1rem;
+
+/* Allow divider between each column row */
+.ui.grid > .column + .divider,
+.ui.grid > .row > .column + .divider {
+  left: auto;
 }
 
 /*--------------
@@ -138,6 +141,7 @@
     position: static;
     left: 0;
     border-left: none;
+    border-right: none;
     content: '';
     display: table-cell;
     position: relative;
@@ -191,7 +195,7 @@
 .ui.divider.inverted,
 .ui.vertical.inverted.divider,
 .ui.horizontal.inverted.divider {
-  color: #ffffff;
+  color: #FFFFFF;
 }
 .ui.divider.inverted,
 .ui.divider.inverted:after,

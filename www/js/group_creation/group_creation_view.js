@@ -22,9 +22,9 @@ define( function( require ) {
         },
 
         initialize: function() {
-            var members = this.model.get( "members" );
-            this.listenTo( members, "add", this.user_added );
-            this.listenTo( members, "remove", this.check_users_for_remove );
+            // var members = this.model.get( "members" );
+            // this.listenTo( members, "add", this.user_added );
+            // this.listenTo( members, "remove", this.check_users_for_remove );
 
             this.render();
         },
@@ -38,8 +38,36 @@ define( function( require ) {
 
         render: function() {
             this.$el.html( this.template( this.model.toJSON() ) );
-            var members = this.model.get( "members" );
-            members.each( this.user_added, this );
+            $("#users").dropdown({
+                apiSettings: {
+                    // debug: true,
+                    // url: "/search",
+                    // cache: false,
+                    mockResponseAsync: function( settings, callback ) {
+                        console.log( "mock async: " + JSON.stringify( settings ) );
+                        var response = {
+                            success: true,
+                            results: {
+
+                            }
+                        };
+                        window.setTimeout( function() {
+                            callback( response );
+                        }, 3000);
+                    },
+                    successTest: function( response ) {
+                        console.log( "successTest" );
+                        return true;
+                    },
+                    onFailure: function( response ) {
+                        console.log( "onFailure" );
+                    },
+                    onResponse: function( response ) {
+                        console.log( "onResponse" );
+                        return response;
+                    }
+                }
+            });
         },
 
         add_user_clicked: function() {

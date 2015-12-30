@@ -1,5 +1,5 @@
 /*!
- * # Semantic UI 2.0.0 - Sidebar
+ * # Semantic UI 2.1.7 - Sidebar
  * http://github.com/semantic-org/semantic-ui/
  *
  *
@@ -120,7 +120,6 @@ $.fn.sidebar = function(parameters) {
 
         destroy: function() {
           module.verbose('Destroying previous module for', $module);
-          module.remove.direction();
           $module
             .off(eventNamespace)
             .removeData(moduleNamespace)
@@ -1020,4 +1019,4 @@ $.fn.sidebar.settings = {
 };
 
 
-})( jQuery, window , document );
+})( jQuery, window, document );

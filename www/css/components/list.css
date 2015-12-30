@@ -1,5 +1,5 @@
 /*!
- * # Semantic UI 2.0.0 - List
+ * # Semantic UI 2.1.7 - List
  * http://github.com/semantic-org/semantic-ui/
  *
  *
@@ -101,7 +101,7 @@ ol.ui.list ol li,
   padding-right: 0.28571429em;
   vertical-align: top;
   -webkit-transition: color 0.1s ease;
-          transition: color 0.1s ease;
+  transition: color 0.1s ease;
 }
 .ui.list .list > .item > i.icon:only-child,
 .ui.list > .item > i.icon:only-child {
@@ -115,8 +115,11 @@ ol.ui.list ol li,
   display: table-cell;
   background-color: transparent;
   margin: 0em;
-  padding-right: 0.5em;
   vertical-align: top;
+}
+.ui.list .list > .item > .image:not(:only-child):not(img),
+.ui.list > .item > .image:not(:only-child):not(img) {
+  padding-right: 0.5em;
 }
 .ui.list .list > .item > .image img,
 .ui.list > .item > .image img {
@@ -127,7 +130,6 @@ ol.ui.list ol li,
 .ui.list > .item > img.image,
 .ui.list > .item > .image:only-child {
   display: inline-block;
-  padding-right: 0em;
 }
 
 /* Content */
@@ -180,7 +182,7 @@ ol.ui.list ol li,
 .ui.list .list > a.item,
 .ui.list > a.item {
   cursor: pointer;
-  color: #4183c4;
+  color: #4183C4;
 }
 .ui.list .list > a.item:hover,
 .ui.list > a.item:hover {
@@ -197,7 +199,7 @@ ol.ui.list ol li,
 .ui.list .list > .item a.header,
 .ui.list > .item a.header {
   cursor: pointer;
-  color: #4183c4 !important;
+  color: #4183C4 !important;
 }
 .ui.list .list > .item a.header:hover,
 .ui.list > .item a.header:hover {
@@ -205,6 +207,12 @@ ol.ui.list ol li,
 }
 
 /* Floated Content */
+.ui[class*="left floated"].list {
+  float: left;
+}
+.ui[class*="right floated"].list {
+  float: right;
+}
 .ui.list .list > .item [class*="left floated"],
 .ui.list > .item [class*="left floated"] {
   float: left;
@@ -399,7 +407,7 @@ ol.ui.list ol li,
 .ui.link.list .item a:not(.ui) {
   color: rgba(0, 0, 0, 0.4);
   -webkit-transition: 0.1s color ease;
-          transition: 0.1s color ease;
+  transition: 0.1s color ease;
 }
 .ui.link.list a.item:hover,
 .ui.link.list .item a:not(.ui):hover {
@@ -446,7 +454,7 @@ ol.ui.list ol li,
   color: rgba(0, 0, 0, 0.4);
   border-radius: 0.5em;
   -webkit-transition: 0.1s color ease, 0.1s padding-left ease, 0.1s background-color ease;
-          transition: 0.1s color ease, 0.1s padding-left ease, 0.1s background-color ease;
+  transition: 0.1s color ease, 0.1s padding-left ease, 0.1s background-color ease;
 }
 .ui.selection.list .list > .item:last-child,
 .ui.selection.list > .item:last-child {
@@ -504,7 +512,7 @@ ol.ui.list ol li,
 
 .ui.animated.list > .item {
   -webkit-transition: 0.25s color ease 0.1s, 0.25s padding-left ease 0.1s, 0.25s background-color ease 0.1s;
-          transition: 0.25s color ease 0.1s, 0.25s padding-left ease 0.1s, 0.25s background-color ease 0.1s;
+  transition: 0.25s color ease 0.1s, 0.25s padding-left ease 0.1s, 0.25s background-color ease 0.1s;
 }
 .ui.animated.list:not(.horizontal) > .item:hover {
   padding-left: 1em;
@@ -623,6 +631,15 @@ ol.ui.inverted.list li:before,
 .ui.ordered.inverted.list .list > .item:before,
 .ui.ordered.inverted.list > .item:before {
   color: rgba(255, 255, 255, 0.7);
+}
+
+/* Value */
+.ui.ordered.list > .list > .item[data-value],
+.ui.ordered.list > .item[data-value] {
+  content: attr(data-value);
+}
+ol.ui.list li[value]:before {
+  content: attr(value);
 }
 
 /* Child Lists */

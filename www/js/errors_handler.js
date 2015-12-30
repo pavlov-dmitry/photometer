@@ -1,6 +1,7 @@
 define( function( require ) {
     var $ = require( "jquery" );
     var Handlebars = require( "handlebars.runtime" );
+    var growl = require( "growl" );
 
     var errorsHandler = {
         /// обработка ошибок сервера
@@ -24,11 +25,17 @@ define( function( require ) {
         },
 
         error: function( text ) {
-            require( "template/closeable_error" );
+            growl({ header: "Ошибка",
+                    msg: text,
+                    negative: true
+                  },
+                  5000);
 
-            var template = Handlebars.templates.closeable_error;
-            var newError = $( template({ text: text }) );
-            $("#errors").append( newError );
+            // require( "template/closeable_error" );
+
+            // var template = Handlebars.templates.closeable_error;
+            // var newError = $( template({ text: text }) );
+            // $("#errors").append( newError );
         },
 
     };

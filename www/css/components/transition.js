@@ -1,5 +1,5 @@
 /*!
- * # Semantic UI 2.0.0 - Transition
+ * # Semantic UI 2.1.7 - Transition
  * http://github.com/semantic-org/semantic-ui/
  *
  *
@@ -228,7 +228,9 @@ $.fn.transition = function() {
               module.show();
             }
             else {
+              module.verbose('Static animation completed');
               module.restore.conditions();
+              settings.onComplete.call(element);
             }
           }
         },
@@ -392,7 +394,7 @@ $.fn.transition = function() {
               module.add.failSafe();
             }
             module.set.duration(settings.duration);
-            settings.onStart.call(this);
+            settings.onStart.call(element);
           }
         },
 
@@ -553,7 +555,10 @@ $.fn.transition = function() {
             ;
           },
           currentAnimation: function() {
-            return module.cache.animation || false;
+            return (module.cache && module.cache.animation !== undefined)
+              ? module.cache.animation
+              : false
+            ;
           },
           currentDirection: function() {
             return module.is.inward()
@@ -614,7 +619,7 @@ $.fn.transition = function() {
           },
           userStyle: function(style) {
             style = style || $module.attr('style') || '';
-            return style.replace(/display.*?;/, '');;
+            return style.replace(/display.*?;/, '');
           },
           transitionExists: function(animation) {
             return $.fn.transition.exists[animation];
@@ -764,9 +769,9 @@ $.fn.transition = function() {
           module.remove.display();
           module.remove.visible();
           module.set.hidden();
-          settings.onHide.call(this);
-          settings.onComplete.call(this);
           module.force.hidden();
+          settings.onHide.call(element);
+          settings.onComplete.call(element);
           // module.repaint();
         },
 
@@ -774,9 +779,9 @@ $.fn.transition = function() {
           module.verbose('Showing element', display);
           module.remove.hidden();
           module.set.visible();
-          settings.onShow.call(this);
-          settings.onComplete.call(this);
           module.force.visible();
+          settings.onShow.call(element);
+          settings.onComplete.call(element);
           // module.repaint();
         },
 
@@ -1057,7 +1062,7 @@ $.fn.transition.settings = {
 
   // possible errors
   error: {
-    noAnimation : 'There is no css animation matching the one you specified. Please make sure your css is vendor prefixed, and you have included transition css.',
+    noAnimation : 'Element is no longer attached to DOM. Unable to animate.',
     repeated    : 'That animation is already occurring, cancelling repeated animation',
     method      : 'The method you called is not defined',
     support     : 'This browser does not support CSS animations'
@@ -1066,4 +1071,4 @@ $.fn.transition.settings = {
 };
 
 
-})( jQuery, window , document );
+})( jQuery, window, document );
