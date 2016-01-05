@@ -38,10 +38,10 @@ define( function(require) {
 
         to_state: function( state ) {
             switch ( state ) {
-            case "Disabled": return {label:"danger", text:"Отключено"};
-            case "NotStartedYet": return {label:"info", text:"Пока не активно"};
-            case "Active": return {label:"success", text:"Активно"};
-            case "Finished": return {label:"default", text:"Завершено"};
+            case "Disabled": return {color:"black", text:"Отключено"};
+            case "NotStartedYet": return {color:"yellow", text:"Пока не активно"};
+            case "Active": return {color:"green", text:"Активно"};
+            case "Finished": return {color:"grey", text:"Завершено"};
             default: return state
             }
         },

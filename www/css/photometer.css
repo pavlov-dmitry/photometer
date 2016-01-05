@@ -39,9 +39,7 @@ img.logo {
 }
 
 .item:first-child .topright {
-    position: absolute;
     top: 0rem;
-    right: 0.75rem;
 }
 
 #growl {
@@ -148,4 +146,11 @@ img.logo {
 .nameviewer:hover .header {
     color: rgba(255, 255, 255, 1);
     transition: 0.5s;
+}
+.zeromargin {
+    margin: 0rem !important;
+}
+
+#yes-btn, #no-btn {
+    width: 9rem
 }

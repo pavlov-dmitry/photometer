@@ -22,10 +22,10 @@ define( function(require) {
         case 2:// Group creation
             var tmpl = require( "template/group_creation_info" );
             result.caption = function( name ) {
-                return "Создание группы <b>" + name + "</b>";
+                return "Создание группы \"" + name + "\"";
             };
             result.template = Handlebars.templates.group_creation_info;
-            result.answer = "Вы согласны присоедениться к этой группе?";
+            result.answer = "Вы согласны присоединиться к этой группе?";
             break;
 
         }

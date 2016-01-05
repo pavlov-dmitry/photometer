@@ -1,22 +1,21 @@
-<div class="container">
-  <div class="panel panel-default">
-    <div class="panel-heading">
-      <h1 class="">{{{name}}} <span class="label label-xs label-{{state.label}}">{{state.text}}</span></h1>
-    </div>
-    <div class="panel-body">
-      <p class="text-right">
-        <i>
-          <strong>Начало:</strong> {{starting_time}}  <strong>Окончание:</strong> {{ending_time}}
-        </i>
-      </p>
-      <div id="description" class="text-preview">
-        {{{description}}}
+<div class="ui basic padded segment container">
+  <h2 class="ui dividing header">
+    <div class="content">
+      {{{name}}}
+      <div class="ui small {{state.color}} label">
+        {{state.text}}
       </div>
     </div>
-    <div class="panel-footer">
-      <div id="action">
-        {{{action}}}
-      </div>
-    </div>
+  </h2>
+  <div class="ui right aligned basic segment zeromargin">
+    <i>
+      <strong>Начало:</strong> {{starting_time}}  <strong>Окончание:</strong> {{ending_time}}
+    </i>
+  </div>
+  <div id="description">
+    {{{description}}}
+  </div>
+  <div id="action">
+    {{{action}}}
   </div>
 </div>

@@ -38,13 +38,13 @@ define( function(require) {
 
             var self = this;
             handler.good = function() {
-                self.$el.html( "<h3 class=\"text-fly text-center\"><font color=\"green\">Ваше мнение учтено.</font></h3>")
+                self.$el.html( "<h2 class=\"ui center aligned basic segment\"><div class=\"content\"><font color=\"green\">Ваше мнение учтено.</font></div></h2>")
 
                 app.userState.fetch();
             };
             handler.bad = function( data ) {
                 console.log( "vote failed: " + JSON.stringify( data ) );
-                self.$el.html( "<h3 class=\"text-fly text-center\"><font color=\"red\">Похоже нельзя нам голосвать, уже.</font></h3>")
+                self.$el.html( "<h2 class=\"ui center aligned basic segment\"><div class=\"content\"><font color=\"red\">Похоже нельзя нам голосвать, уже.</font></div></h2>")
             };
         }
     });
