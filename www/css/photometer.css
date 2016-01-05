@@ -38,6 +38,12 @@ img.logo {
     right: 0.75rem;
 }
 
+.item:first-child .topright {
+    position: absolute;
+    top: 0rem;
+    right: 0.75rem;
+}
+
 #growl {
     position: fixed;
     top: 2rem;
@@ -55,6 +61,10 @@ img.logo {
 
 #photo-container {
     background-color: black;
+    position: relative;
+}
+
+.relative {
     position: relative;
 }
 

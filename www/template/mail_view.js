@@ -7,7 +7,7 @@ return templates['mail_view'] = template({"1":function(container,depth0,helpers,
 
   return "<div id=\""
     + alias4(((helper = (helper = helpers.id || (depth0 != null ? depth0.id : depth0)) != null ? helper : alias2),(typeof helper === alias3 ? helper.call(alias1,{"name":"id","hash":{},"data":data}) : helper)))
-    + "\" class=\"item\">\n  <div class=\"content\">\n    <div class=\"header\">\n      <strong>"
+    + "\" class=\"relative item\">\n  <div class=\"content\">\n    <div class=\"header\">\n      <strong>"
     + alias4(((helper = (helper = helpers.sender_name || (depth0 != null ? depth0.sender_name : depth0)) != null ? helper : alias2),(typeof helper === alias3 ? helper.call(alias1,{"name":"sender_name","hash":{},"data":data}) : helper)))
     + ":</strong> "
     + alias4(((helper = (helper = helpers.subject || (depth0 != null ? depth0.subject : depth0)) != null ? helper : alias2),(typeof helper === alias3 ? helper.call(alias1,{"name":"subject","hash":{},"data":data}) : helper)))
