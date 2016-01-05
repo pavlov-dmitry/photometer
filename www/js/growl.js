@@ -13,7 +13,7 @@ define( function(require) {
 
         var close = function( $el ) {
             $el.transition({
-                animation: 'fly left',
+                animation: 'horizontal flip',
                 onComplete: function() {
                     $el.remove();
                 }
