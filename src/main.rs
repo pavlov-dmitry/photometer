@@ -93,7 +93,7 @@ fn main() {
 
     router.get( handlers::authentication::user_info_path(), handlers::authentication::user_info );
 
-    // router.get( handlers::search::users_path(), handlers::search::users );
+    router.get( handlers::search::users_path(), handlers::search::users );
 
     let mut auth_chain = Chain::new( router );
     auth_chain.around( authentication::middleware() );

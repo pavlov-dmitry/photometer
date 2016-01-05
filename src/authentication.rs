@@ -11,7 +11,7 @@ use rand::{ Rng, OsRng };
 static SESSION_ID : &'static str = "sid";
 
 /// информация о пользователе
-#[derive(Clone)]
+#[derive(Clone, RustcEncodable)]
 pub struct User {
     pub name : String,
     pub id : Id,

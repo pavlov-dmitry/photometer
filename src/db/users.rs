@@ -23,6 +23,8 @@ pub trait DbUsers {
     fn users_by_id( &mut self, ids: &[Id] ) -> CommonResult<Vec<User>>;
     /// возвращает пользователя по имени
     fn user_by_name( &mut self, name: &str ) -> CommonResult<Option<User>>;
+    /// возвращает имена полльзователей имена которых похожи на шаблон
+    fn get_users_like( &mut self, pattern: &str, offset: u32, count: u32 ) -> CommonResult<Vec<User>>;
 }
 
 pub fn create_tables( db: &Database ) -> EmptyResult {
@@ -83,6 +85,11 @@ impl DbUsers for MyPooledConn {
     fn user_by_name( &mut self, name: &str ) -> CommonResult<Option<User>> {
         user_by_name_impl( self, name )
             .map_err( |e| fn_failed( "user_by_name", e ) )
+    }
+    /// возвращает имена полльзователей имена которых похожи на шаблон
+    fn get_users_like( &mut self, pattern: &str, offset: u32, count: u32 ) -> CommonResult<Vec<User>> {
+        get_users_like_impl( self, pattern, offset, count )
+            .map_err( |e| fn_failed( "get_users_like", e ) )
     }
 }
 
@@ -252,4 +259,35 @@ fn user_by_name_impl( conn: &mut MyPooledConn, name: &str ) -> MyResult<Option<U
             Ok( Some( user ) )
         }
     }
+}
+
+fn get_users_like_impl( conn: &mut MyPooledConn, pattern: &str, offset: u32, count: u32 ) -> MyResult<Vec<User>> {
+    let mut stmt = try!( conn.prepare( "
+        SELECT
+            `id`,
+            `login`,
+            `mail`
+        FROM
+            `users`
+        WHERE
+            `login` LIKE ? AND
+            `activated`=true
+        ORDER BY
+            `login` ASC
+        LIMIT ?
+        OFFSET ?
+    "));
+    let sql_result = try!( stmt.execute( (pattern, count, offset) ) );
+    let mut results = Vec::new();
+    for row in sql_result {
+        let row = try!( row );
+        let (id, name, mail) = from_row( row );
+        let user = User {
+            id: id,
+            name: name,
+            mail: mail
+        };
+        results.push( user );
+    }
+    Ok( results )
 }
