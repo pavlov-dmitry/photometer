@@ -9,6 +9,7 @@ define( function(require) {
 
         handler.good = function( data ) {
             app.makeLogin( data.sid );
+            app.workspace.nav( "mailbox/unreaded" );
         };
 
         handler.bad = function( data ) {
