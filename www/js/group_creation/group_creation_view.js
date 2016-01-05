@@ -88,6 +88,7 @@ define( function( require ) {
         },
 
         submit: function() {
+            $("#form-group-creation").addClass( "loading" );
             var self = this;
             var members = this.model.get( "members" );
             members.reset();
@@ -114,6 +115,10 @@ define( function( require ) {
             handler.bad = function( data ) {
                 console.log( "group creation failed: " + JSON.stringify( data ) );
                 self.show_errors( data );
+            }
+
+            handler.finish = function() {
+                $("#form-group-creation").removeClass( "loading" );
             }
         },
 

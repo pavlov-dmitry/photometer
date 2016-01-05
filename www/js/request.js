@@ -24,7 +24,8 @@ define( function( require ) {
                 },
                 unauthorized: function() {
                     self.unauthorized();
-                }
+                },
+                finish: function() {}
 	    }
 
             var options = {
@@ -66,6 +67,9 @@ define( function( require ) {
 		    self.internalError( resp, this );
 		}
 	    });
+            ajaxHandler.always( function( data ) {
+                handlerObj.finish( data );
+            })
 
 	    return handlerObj;
 	},
