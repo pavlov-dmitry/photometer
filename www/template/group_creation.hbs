@@ -12,7 +12,13 @@
     </div>
     <div class="field">
       <label>Пригласить:</label>
-      <select id="users" class="ui fluid search dropdown" multiple="">
+      <!-- <div id="users" class="ui fluid multiple search selection dropdown"> -->
+      <!--   <input name="country" type="hidden"> -->
+      <!--   <i class="dropdown icon"></i> -->
+      <!--   <div class="default text">Выберите пользователей...</div> -->
+      <!-- </div> -->
+      <select id="users" multiple="" class="ui fluid search dropdown">
+        <option value="">Выберите пользователей...</option>
       </select>
     </div>
     <div class="field">
@@ -27,6 +33,11 @@
         <div id="info-preview">
         </div>
       </div>
+    </div>
+    <div id="form-errors" class="ui negative hidden message">
+      <div class="header">Ну пока не вышло:</div>
+      <ul id="errors-list" class="list">
+      </ul>
     </div>
     <button class="ui green button" type="submit">
       Создать

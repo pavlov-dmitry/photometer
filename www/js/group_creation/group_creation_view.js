@@ -3,7 +3,6 @@ define( function( require ) {
         Handlebars = require( "handlebars.runtime" ),
         UserView = require( "group_creation/user_view" ),
         group_creation_template = require( "template/group_creation" ),
-        closable_error_templ = require( "template/closeable_error"),
         success_tmpl = require( "template/success_info" );
 
     var GroupCreationView = Backbone.View.extend({
@@ -16,7 +15,6 @@ define( function( require ) {
             "change #description-input": "description_changed",
             "keyup #description-input": "description_changed",
             "keyup #name-input": "description_changed",
-            "click #add-member-btn": "add_user_clicked",
             "change #name-input": "name_changed",
             "submit #form-group-creation": "submit"
         },
@@ -31,58 +29,44 @@ define( function( require ) {
 
         close: function() {
             var members = this.model.get( "members" );
-            members.off( null, this.user_added );
-            members.off( null, this.check_users_for_remove );
+            // members.off( null, this.user_added );
+            // members.off( null, this.check_users_for_remove );
             members.reset();
         },
 
         render: function() {
             this.$el.html( this.template( this.model.toJSON() ) );
             $("#users").dropdown({
+                fields: {
+                    value: "name"
+                },
                 apiSettings: {
-                    // debug: true,
-                    // url: "/search",
                     // cache: false,
                     mockResponseAsync: function( settings, callback ) {
-                        console.log( "mock async: " + JSON.stringify( settings ) );
+                        // console.log( "mock async: " + JSON.stringify( settings ) );
                         var response = {
                             success: true,
-                            results: {
-
-                            }
+                            message: "",
+                            results: {}
                         };
-                        window.setTimeout( function() {
+                        var request = require( "request" );
+                        var handler = request.get(
+                            "search/users",
+                            { like: settings.urlData.query }
+                        );
+                        handler.good = function( data ) {
+                            response.results = data.users;
+                            // console.log( "search result: " + JSON.stringify( response ) );
                             callback( response );
-                        }, 3000);
-                    },
-                    successTest: function( response ) {
-                        console.log( "successTest" );
-                        return true;
-                    },
-                    onFailure: function( response ) {
-                        console.log( "onFailure" );
-                    },
-                    onResponse: function( response ) {
-                        console.log( "onResponse" );
-                        return response;
+                        }
+                        handler.bad = function( data ) {
+                            response.success = false;
+                            response.message = "ERROR:" + JSON.stringify( data );
+                            callback( response );
+                        }
                     }
                 }
             });
-        },
-
-        add_user_clicked: function() {
-            this.model.add_new_member();
-        },
-
-        user_added: function( data ) {
-            var members = this.model.get( "members" );
-            var view = new UserView({
-                model: data,
-                id: "user-" + members.size()
-            });
-            var user_el = view.render().$el;
-            this.$("#users-list").append( user_el );
-            this.check_users_for_remove();
         },
 
         description_changed: function() {
@@ -103,16 +87,14 @@ define( function( require ) {
             this.model.set({ name: $("#name-input").val() });
         },
 
-        check_users_for_remove: function() {
-            var members = this.model.get( "members" );
-            var is_removeable = members.size() !== 1;
-            members.forEach( function( m ) {
-                m.set_removeable( is_removeable );
-            });
-        },
-
         submit: function() {
             var self = this;
+            var members = this.model.get( "members" );
+            members.reset();
+            var users_value =  $("#users").val();
+            _.forEach( users_value, function( data ) {
+                members.add_user( { name: data } );
+            })
             var handler = this.model.save();
 
             handler.good = function() {
@@ -141,6 +123,7 @@ define( function( require ) {
             var EMPTY = "empty";
             var TOO_LONG = "too_long";
             var NOT_FOUND = "not_found";
+            $("#errors-list").empty();
 
             _.forEach( data, function( desc ) {
                 var text_error = "Unknown error.";
@@ -167,10 +150,10 @@ define( function( require ) {
                     text_error = "Пользователь с именем " + desc.field + " не найден";
                 }
 
-                var templ = Handlebars.templates.closeable_error;
-                var newError = $( templ({ text: text_error }) );
-                $("#errors-list").append( newError );
+                var newError = "<li>" + text_error + "</li>";
+                $("#errors-list").append( $(newError) );
             });
+            $("#form-errors").removeClass( "hidden" );
         },
     });
 

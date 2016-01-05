@@ -158,7 +158,6 @@ define( function(require) {
             var GroupCreationView = require( "group_creation/group_creation_view" );
 
             var model = new GroupCreationModel();
-            model.add_new_member();
             this.current = new GroupCreationView({ model: model });
         },
 

@@ -8,6 +8,10 @@ define ( function( require ) {
 
         add_one_more: function() {
             this.add( UserModel.empty_model() );
+        },
+
+        add_user: function( data ) {
+            this.add( new UserModel( data ) );
         }
 
     });
