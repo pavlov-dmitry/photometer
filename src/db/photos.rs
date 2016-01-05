@@ -2,7 +2,6 @@ use mysql::conn::pool::{ MyPooledConn };
 use mysql::error::{ MyResult, MyError };
 use mysql::value::{ from_row, from_value, ToValue, FromValue, Value, ConvIr };
 use types::{ Id, PhotoInfo, ImageType, CommonResult, EmptyResult, CommonError };
-use time::{ Timespec };
 use database::Database;
 use std::fmt::Display;
 use std::str;
@@ -13,9 +12,9 @@ pub trait DbPhotos {
     /// получение информации о фото
     fn get_photo_info( &mut self, photo_id: Id ) -> CommonResult<Option<PhotoInfo>>;
     ///возвращает список описаний фоточек
-    fn get_photo_infos( &mut self, owner_id: Id, start: Timespec, end: Timespec, offset: u32, count: u32 ) -> CommonResult<Vec<PhotoInfo>>;
+    fn get_photo_infos( &mut self, owner_id: Id, offset: u32, count: u32 ) -> CommonResult<Vec<PhotoInfo>>;
     ///вычисляет кол-во фоток пользователя за опеределнный период
-    fn get_photo_infos_count( &mut self, owner_id: Id, start: Timespec, end: Timespec ) -> CommonResult<u32>;
+    fn get_photo_infos_count( &mut self, owner_id: Id ) -> CommonResult<u32>;
     ///выдаёт соседнии фотографии относительно опеределенной в галлереи опередленного пользователя
     fn get_photo_neighbours_in_gallery( &mut self, owner_id: Id, photo_id: Id ) -> CommonResult<(Option<Id>, Option<Id>)>;
     ///переименование фотографии
@@ -68,14 +67,14 @@ impl DbPhotos for MyPooledConn {
     }
 
     ///возвращает список описаний фоточек
-    fn get_photo_infos( &mut self, owner_id: Id, start: Timespec, end: Timespec, offset: u32, count: u32 ) -> CommonResult<Vec<PhotoInfo>> {
-        get_photo_infos_impl( self, owner_id, start, end, offset, count )
+    fn get_photo_infos( &mut self, owner_id: Id, offset: u32, count: u32 ) -> CommonResult<Vec<PhotoInfo>> {
+        get_photo_infos_impl( self, owner_id, offset, count )
             .map_err( |e| fn_failed( "get_photo_infos", e ) )
     }
 
     ///вычисляет кол-во фоток пользователя за опеределнный период
-    fn get_photo_infos_count( &mut self, owner_id: Id, start: Timespec, end: Timespec ) -> CommonResult<u32> {
-        get_photo_infos_count_impl( self, owner_id, start, end )
+    fn get_photo_infos_count( &mut self, owner_id: Id ) -> CommonResult<u32> {
+        get_photo_infos_count_impl( self, owner_id )
             .map_err( |e| fn_failed( "get_photo_infos_count", e ) )
     }
 
@@ -169,8 +168,6 @@ fn get_photo_info_impl( conn: &mut MyPooledConn, photo_id: Id ) -> MyResult<Opti
 fn get_photo_infos_impl(
     conn: &mut MyPooledConn,
     owner_id: Id,
-    start: Timespec,
-    end: Timespec,
     offset: u32,
     count: u32
 ) -> MyResult<Vec<PhotoInfo>>
@@ -191,11 +188,11 @@ fn get_photo_infos_impl(
         i.focal_length_35mm,
         i.camera_model
         FROM images AS i LEFT JOIN users AS u ON ( u.id = i.owner_id )
-        WHERE i.owner_id = ? AND i.upload_time BETWEEN ? AND ?
+        WHERE i.owner_id = ?
         ORDER BY i.upload_time DESC
         LIMIT ? OFFSET ?;
     " ) );
-    let params: &[ &ToValue ] = &[ &owner_id, &start.sec, &end.sec, &count, &offset ];
+    let params: &[ &ToValue ] = &[ &owner_id, &count, &offset ];
     let result = try!( stmt.execute( params ) );
     //что-то с преобразованием на лету через собственный итертор я подупрел =(, пришлось тупо собирать в новый массив
     let photos : Vec<_> = result.filter_map( |sql_row|
@@ -244,9 +241,15 @@ fn get_neighbour_in_gallery( conn: &mut MyPooledConn, owner_id: Id, photo_id: Id
     Ok( neighbour )
 }
 
-fn get_photo_infos_count_impl( conn: &mut MyPooledConn, owner_id: Id, start: Timespec, end: Timespec ) -> MyResult<u32> {
-    let mut stmt = try!( conn.prepare( "SELECT COUNT(id) FROM images WHERE owner_id = ? AND upload_time BETWEEN ? AND ?" ) );
-    let params: &[ &ToValue ] = &[ &owner_id, &start.sec, &end.sec ];
+fn get_photo_infos_count_impl( conn: &mut MyPooledConn, owner_id: Id ) -> MyResult<u32> {
+    let mut stmt = try!( conn.prepare( "
+        SELECT COUNT(id)
+        FROM
+            images
+        WHERE
+            owner_id = ?
+    " ) );
+    let params: &[ &ToValue ] = &[ &owner_id ];
     let mut result = try!( stmt.execute( params ) );
     let sql_row = try!( result.next().unwrap() );
     let (count,) = from_row( sql_row );

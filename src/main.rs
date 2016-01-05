@@ -72,10 +72,8 @@ fn main() {
     router.get( handlers::images::photos_path(), handlers::images::get_photo );
     router.get( handlers::images::preview_path(), handlers::images::get_preview );
 
-    router.get( handlers::gallery::current_year_count_path(), handlers::gallery::current_year_count );
-    router.get( handlers::gallery::by_year_count_path(), handlers::gallery::by_year_count );
-    router.get( handlers::gallery::current_year_path(), handlers::gallery::current_year );
-    router.get( handlers::gallery::by_year_path(), handlers::gallery::by_year );
+    router.get( handlers::gallery::gallery_count_path(), handlers::gallery::gallery_count );
+    router.get( handlers::gallery::gallery_path(), handlers::gallery::gallery );
     router.get( handlers::gallery::photo_info_path(), handlers::gallery::photo_info );
 
     router.get( "/mailbox", handlers::mailbox::get );
@@ -94,6 +92,8 @@ fn main() {
     router.get( "/group_info", handlers::group::get_group_info );
 
     router.get( handlers::authentication::user_info_path(), handlers::authentication::user_info );
+
+    // router.get( handlers::search::users_path(), handlers::search::users );
 
     let mut auth_chain = Chain::new( router );
     auth_chain.around( authentication::middleware() );

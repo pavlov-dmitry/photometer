@@ -11,13 +11,7 @@ define( function(require) {
             var handler = Request.get( "/gallery", { page: page } );
             handler.good = function( data ) {
                 self.reset();
-
-                data.photos = _.map( data.photos, function( p ) {
-                    p.owner_id = data.owner_id;
-                    return p;
-                });
                 self.add( data.photos );
-
                 self.trigger( "pages_changed", {
                     pages_count: data.pages_count,
                     current_page: data.current_page
