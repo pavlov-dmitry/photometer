@@ -33,9 +33,13 @@ img.logo {
 }
 
 .topright {
-    position: absolute;
+    position: absolute !important;
     top: 0.75rem;
-    right: 0.75rem;
+    right: 1rem;
+}
+
+.item .topright {
+    right: 0rem;
 }
 
 .item:first-child .topright {

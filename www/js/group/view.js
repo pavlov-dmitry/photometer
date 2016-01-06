@@ -19,6 +19,7 @@ define ( function( require ) {
 
         render: function() {
             this.$el.html( this.template( this.model.toJSON() ) );
+            $("#edit-btn").dropdown();
             var app = require( "app" );
             app.userState.set_current_group( this.model.get( "id" ) );
             app.userState.navToGroup();

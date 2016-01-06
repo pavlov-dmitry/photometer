@@ -1,31 +1,38 @@
-<div class="container">
-  <div class="panel panel-default">
-    <div class="panel-heading clearfix">
-      <h1 class="full-width pull-left">{{name}}
-        {{#if editable}}
-        <div class="btn-group pull-right" role="group">
-          <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-            <span class="glyphicon glyphicon-cog"></span>
-          </button>
-          <ul class="dropdown-menu inverse-dropdown">
-            <li><a href="#">Изменить расписание</a></li>
-            <li><a href="#">Пригласить пользователя</a></li>
-          </ul>
-        </div>
-      </h1>
-      <div/>
-      {{/if}}
+<div class="ui container basic padded segment">
+  <h2 class="ui dividing header">
+    <div class="content">
+      <i class="users icon"></i>
+      {{name}}
     </div>
-    <div class="panel-body">
-      <div>
-        {{{markdown description}}}
-      </div>
-      <h4>Участники:</h4>
-      <ul>
-        {{#each members}}
-        <li>{{name}}</li>
-        {{/each}}
-      </ul>
+  </h2>
+  {{#if editable}}
+  <div id="edit-btn" class="ui top right pointing dropdown basic icon button topright">
+    <i class="setting icon"></i>
+    <div class="menu">
+      <a class="item" href="#">
+        <i class="calendar icon"></i>
+        Изменить расписание
+      </a>
+      <a class="item" href="#">
+        <i class="add user icon"></i>
+        Пригласить пользователя
+      </a>
     </div>
+  </div>
+  {{/if}}
+  <p>
+    {{{markdown description}}}
+  </p>
+  <h4 class="ui header">
+    <div class="content">
+      Участники:
+    </div>
+  </h4>
+  <div class="ui basic blue labels">
+    {{#each members}}
+    <div class="ui label">
+      {{name}}
+    </div>
+    {{/each}}
   </div>
 </div>

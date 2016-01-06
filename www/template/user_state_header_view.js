@@ -11,7 +11,7 @@ return templates['user_state_header_view'] = template({"1":function(container,de
     + ((stack1 = helpers["if"].call(alias1,(depth0 != null ? depth0.isNavInGallery : depth0),{"name":"if","hash":{},"fn":container.program(2, data, 0),"inverse":container.noop,"data":data})) != null ? stack1 : "")
     + "\" href=\"#gallery\">\n      <i class=\"icon film\"></i>\n      Галлерея\n    </a>\n"
     + ((stack1 = helpers["if"].call(alias1,(depth0 != null ? depth0.is_groups : depth0),{"name":"if","hash":{},"fn":container.program(6, data, 0),"inverse":container.noop,"data":data})) != null ? stack1 : "")
-    + "    <div class=\"right menu\">\n      <div id=\"user_menu\" class=\"ui dropdown item\">\n        "
+    + "    <div class=\"right menu\">\n      <div id=\"user_menu\" class=\"ui top right pointing dropdown item\">\n        "
     + container.escapeExpression(((helper = (helper = helpers.name || (depth0 != null ? depth0.name : depth0)) != null ? helper : helpers.helperMissing),(typeof helper === "function" ? helper.call(alias1,{"name":"name","hash":{},"data":data}) : helper)))
     + "\n        <i class=\"dropdown icon\"></i>\n        <div class=\"menu\">\n          <a class=\"item\" href=\"#group_creation\">\n            <i class=\"child icon\"></i>\n            Создать новую группу\n          </a>\n          <a class=\"item\" href=\"#logout\">\n            <i class=\"sign out icon\"></i>\n            Выход\n          </a>\n        </div>\n      </div>\n    </div>\n  </div>\n</div>\n";
 },"2":function(container,depth0,helpers,partials,data) {
