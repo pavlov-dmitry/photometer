@@ -23,7 +23,7 @@ define( function(require) {
 
             this.listenTo( this.model, "add", this.addOne );
             this.listenTo( this.model, "reset", this.addAll );
-            // this.listenTo( this.model, "all", this.render );
+            this.listenTo( this.model, "update", this.check_on_empty );
             this.listenTo( this.model, "pages_changed", this.pagesChanged );
 
 
@@ -96,6 +96,15 @@ define( function(require) {
         addAll: function() {
             this.$("#preview-list").empty();
             this.model.each( this.addOne, this );
+        },
+
+        check_on_empty: function() {
+            if ( this.model.length == 0 ) {
+                $("#preview-list").removeClass( "cards" );
+                $("#preview-list").html(
+                    "<div class=\"ui center aligned very padded basic segment\"><h1 class=\"ui disabled icon header\"><i class=\"film icon\"></i>Галлерея пуста.</h1><h3 class=\"ui disabled header\">Начните её заполнять, нажав на кнопку \"Добавить\", в левом верхнем углу.</h3></div>"
+                );
+            }
         },
 
         pagesChanged: function( data ) {

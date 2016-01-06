@@ -46,7 +46,9 @@ define( function(require) {
 
         onUpdate: function() {
             if ( this.model.length == 0 ) {
-                $("#mail-list").html( "<h1 class=\"ui center aligned disabled header\">Здесь пусто<h1>")
+                $("#mail-list").html(
+                    "<h1 class=\"ui center aligned disabled icon header\"><i class=\"inbox icon\"></i>Нет новых сообщений<h1>"
+                );
             }
             else {
                 $("#mail-list").addClass( "segment" );
