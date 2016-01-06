@@ -9,7 +9,7 @@
       </i>
       Сообщения
       {{#if unreaded_messages}}
-      <div class="ui teal label">
+      <div class="ui black label">
         {{unreaded_messages}}
       </div>
       {{/if}}
@@ -19,34 +19,39 @@
       Галлерея
     </a>
     {{#if is_groups}}
-    <a class"{{#if is_many_groups}}ui dropdown {{/if}}item{{#if isNavInGroup}} active{{/if}}" href="#group/{{current_group.id}}">
-      <i class="icon users"></i>
-      {{current_group.name}}
-      {{#if current_group.unwatched_events}}
-      <div class="ui label">
-        {{current_group.unwatched_events}}
-      </div>
+    <div class="ui buttons">
+      <a class="{{#if isNavInGroup}}active {{/if}}button item" href="#group/{{current_group.id}}">
+        <i class="icon users"></i>
+        {{current_group.name}}
+        {{#if current_group.unwatched_events}}
+        <div class="ui black label">
+          {{current_group.unwatched_events}}
+        </div>
+        {{/if}}
+      </a>
       {{#if is_many_groups}}
-      {{#if has_unreaded_in_groups}}
-      <i class="chevron circle down icon"></i>
-      {{else}}
-      <i class="dropdown icon"></i>
-      {{/if}}
-      <div class="menu">
-        {{#each groups}}
-        <a class="item" href="#group/{{id}}">
-          {{name}}
-          {{#if unwatched_events}}
-          <div class="ui label">
-            {{unwatched_events}}
-          </div>
-          {{/if}}
-        </a>
-        {{/each}}
+      <div id="groups_menu" class="ui top right pointing floating dropdown icon button item">
+        {{#if has_unreaded_in_groups}}
+        <i class="chevron circle down icon"></i>
+        {{else}}
+        <i class="dropdown icon"></i>
+        {{/if}}
+        <div class="menu">
+          {{#each groups}}
+          <a class="item" href="#group/{{id}}">
+            <i class="icon users"></i>
+            {{name}}
+            {{#if unwatched_events}}
+            <div class="ui black label">
+              {{unwatched_events}}
+            </div>
+            {{/if}}
+          </a>
+          {{/each}}
+        </div>
       </div>
       {{/if}}
-      {{/if}}
-    </a>
+    </div>
     {{/if}}
     <div class="right menu">
       <div id="user_menu" class="ui dropdown item">

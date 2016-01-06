@@ -19,8 +19,12 @@ define( function( require ) {
         },
 
         render: function() {
+            // console.log( "user state: " + JSON.stringify(this.model.toJSON()) );
             $el.html( this.template( this.model.toJSON() ) );
             $("#user_menu").dropdown();
+            if ( this.model.get( "is_many_groups") ) {
+                $("#groups_menu").dropdown();
+            }
         }
 
     } );
