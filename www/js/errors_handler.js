@@ -30,12 +30,6 @@ define( function( require ) {
                     negative: true
                   },
                   5000);
-
-            // require( "template/closeable_error" );
-
-            // var template = Handlebars.templates.closeable_error;
-            // var newError = $( template({ text: text }) );
-            // $("#errors").append( newError );
         },
 
     };

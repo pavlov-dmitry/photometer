@@ -12,6 +12,7 @@ use super::events_collection;
 use stuff::{ Stuff, Stuffable };
 use database::{ Databaseable };
 use db::events::DbEvents;
+use db::groups::DbGroups;
 use answer::{ Answer, AnswerResult };
 use types::{ Id, CommonResult, EmptyResult, CommonError, common_error };
 use time::{ self, Timespec };
@@ -20,12 +21,14 @@ use iron::prelude::*;
 use get_body::GetBody;
 use parse_utils;
 use err_msg;
-use answer_types::{ OkInfo, FieldErrorInfo };
+use answer_types::{ FieldErrorInfo };
 use std::convert::From;
 
 #[derive(Clone)]
 pub struct ChangeTimetable;
 pub const ID : Id = 5;
+
+const DAYS_FOR_VOTE : i64 = 5;
 
 impl ChangeTimetable {
     pub fn new() -> ChangeTimetable {
@@ -36,7 +39,6 @@ impl ChangeTimetable {
 
 #[derive(Clone, RustcDecodable)]
 struct TimetableDiffInfoStr {
-    days_for_voting: u32,
     remove: Vec<Id>,
     add: Vec<AddEventInfoStr>
 }
@@ -45,13 +47,11 @@ struct TimetableDiffInfoStr {
 struct AddEventInfoStr {
     id: Id,
     name: String,
-    start_time: String,
-    end_time: String,
+    time: String,
     params: String
 }
 
 struct TimetableDiffInfo {
-    days_for_voting: u32,
     remove: Vec<Id>,
     add: Vec<AddEventInfo>
 }
@@ -59,15 +59,25 @@ struct TimetableDiffInfo {
 struct AddEventInfo {
     id: Id,
     name: String,
-    start_time: Timespec,
-    end_time: Timespec,
+    time: Timespec,
     params: String
+}
+
+#[derive(RustcEncodable)]
+struct ChangeTimetableInfo {
+    group_name: String
 }
 
 impl GroupCreatedEvent for ChangeTimetable {
     /// описание создания
-    fn user_creating_get( &self, _req: &mut Request, _group_id: Id ) -> AnswerResult {
-        let answer = Answer::good( OkInfo::new( "lets_add_some_events" ) );
+    fn user_creating_get( &self, req: &mut Request, group_id: Id ) -> AnswerResult {
+        let db = try!( req.stuff().get_current_db_conn() );
+        let answer = match try!( db.group_info( group_id ) ) {
+            Some( group_info ) => Answer::good( ChangeTimetableInfo{
+                group_name: group_info.name
+            } ),
+            None => Answer::bad( "group_not_found" )
+        };
         Ok( answer )
     }
     /// применение создания
@@ -78,7 +88,7 @@ impl GroupCreatedEvent for ChangeTimetable {
         let diff_info = try!( parse_times( diff_info_str ) );
 
         let self_start_time = time::get_time();
-        let self_end_time = self_start_time + time::Duration::days( diff_info.days_for_voting as i64 );
+        let self_end_time = self_start_time + time::Duration::days( DAYS_FOR_VOTE );
 
         // проверка корректности добаляемых событий
         try!( check_for_add( &diff_info.add, &self_end_time ) );
@@ -93,11 +103,12 @@ impl GroupCreatedEvent for ChangeTimetable {
             // так как check_for_add пройдено то событие точно существует, потому исползуем unwrap
             let event = events_collection::get_timetable_event( add.id ).unwrap();
             let event_data = event.from_timetable( group_id, &add.params ).unwrap();
+            let (start_time, end_time) = event.time_gate( &add.time );
             let new_event_info = FullEventInfo {
                 id: add.id,
                 name: add.name.clone(),
-                start_time: add.start_time,
-                end_time: add.end_time,
+                start_time: start_time,
+                end_time: end_time,
                 data: event_data,
                 group: Some( group_id )
             };
@@ -127,25 +138,19 @@ fn parse_times( diff_str: TimetableDiffInfoStr ) -> Result<TimetableDiffInfo, An
     let mut parsed_time = Vec::new();
     parsed_time.reserve( diff_str.add.len() );
     for add in diff_str.add {
-        let parsed_start = match parse_utils::parse_timespec( &add.start_time ) {
+        let time = match parse_utils::parse_timespec( &add.time ) {
             Ok( tm ) => tm,
-            Err( _ ) => return Err( Err( err_msg::parsing_error_param( "start_time" ) ) )
-        };
-        let parsed_end = match parse_utils::parse_timespec( &add.end_time ) {
-            Ok( tm ) => tm,
-            Err( _ ) => return Err( Err( err_msg::parsing_error_param( "end_time" ) ) )
+            Err( _ ) => return Err( Err( err_msg::parsing_error_param( "time" ) ) )
         };
         parsed_time.push( AddEventInfo {
             id: add.id,
             name: add.name,
-            start_time: parsed_start,
-            end_time: parsed_end,
+            time: time,
             params: add.params
         });
     }
 
     Ok( TimetableDiffInfo {
-        days_for_voting: diff_str.days_for_voting,
         remove: diff_str.remove,
         add: parsed_time
     })
@@ -154,10 +159,7 @@ fn parse_times( diff_str: TimetableDiffInfoStr ) -> Result<TimetableDiffInfo, An
 fn check_for_add( for_add: &Vec<AddEventInfo>, self_end_time: &Timespec ) -> EmptyResult {
     // проверка диапазонов времен
     for add in for_add {
-        if add.end_time.sec < add.start_time.sec {
-            return common_error( String::from( "invalid time diapasons" ) );
-        }
-        if add.start_time.sec < self_end_time.sec {
+        if add.time.sec < self_end_time.sec {
             return common_error( String::from( "start time must after end of voting" ) );
         }
         // проверка что такие события существуют

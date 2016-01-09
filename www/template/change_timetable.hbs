@@ -1,0 +1,45 @@
+<div class="ui basic segment container">
+  <h1 class="ui dividing header">
+    <div class="content">
+      <i class="calendar icon"></i>
+      Изменить расписание группы "{{group_name}}".
+    </div>
+  </h1>
+  <form id="change-timetable-form" class="ui form">
+    <div class="ui two column stackable grid">
+      <div class="column">
+        <h4 class="ui header">Описание:</h4>
+        <textarea type="text" class="full-width" id="description-input" placeholder="Описание, с поддержкой формата markdown." maxlentgh="2048" rows="3" value="" required/>
+      </div>
+      <div class="column">
+        <h4 class="ui header">Предпросмотр описания:</h4>
+        <div id="desc-preview" class="ui secandary segment">
+        </div>
+      </div>
+    </div>
+    <div class="ui two column stackable grid">
+      <div class="column">
+        <div class="ui horizontal divider green header">
+          <i class="plus icon"></i>
+          Добавить события
+        </div>
+        <div id="new-add-btn" class="ui green button">
+          <i class="plus icon"></i>
+          Добавить новое событие
+        </div>
+        <div class="ui tiny hidden divider"></div>
+        <div id="add-list">
+        </div>
+      </div>
+      <div class="column">
+        <div class="ui horizontal divider red header">
+          <i class="minus icon"></i>
+          Удалить события
+        </div>
+        <div id="remove-list">
+        </div>
+      </div>
+    </div>
+    <button class="ui primary submit fluid button" type="submit">Отправить на согласование с группой</button>
+  </form>
+</div>

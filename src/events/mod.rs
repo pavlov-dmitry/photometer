@@ -82,6 +82,8 @@ pub trait CreateFromTimetable {
     fn is_valid_params( &self, params: &String ) -> bool;
     /// создаёт данные для события, возвращет None если параметры не соответствуют этому событию
     fn from_timetable( &self, group_id: Id, params: &String ) -> Option<String>;
+    /// выдаёт пару начала и окончания по времени в зависимости от времени события
+    fn time_gate( &self, time: &Timespec ) -> (Timespec, Timespec);
 }
 
 /// абстракция событий которые могут быть созданы пользователями

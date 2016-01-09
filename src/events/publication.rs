@@ -18,7 +18,7 @@ use mail_writer::MailWriter;
 use database::{ Databaseable };
 use stuff::{ Stuffable, Stuff };
 use authentication::{ Userable };
-use time;
+use time::{ self, Timespec };
 use iron::prelude::*;
 use get_body::GetBody;
 use answer_types::{ OkInfo, PhotoErrorInfo, AccessErrorInfo };
@@ -161,5 +161,9 @@ impl CreateFromTimetable for Publication {
     /// создаёт данные для события, возвращет None если параметры не соответствуют этому событию
     fn from_timetable( &self, _group_id: Id, _params: &String ) -> Option<String> {
         Some( String::new() )
+    }
+    /// выдаёт пару начала и окончания по времени в зависимости от времени события
+    fn time_gate( &self, time: &Timespec ) -> (Timespec, Timespec) {
+        (*time - time::Duration::days( 1 ), *time)
     }
 }

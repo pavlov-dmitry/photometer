@@ -1,8 +1,7 @@
 define( function(require) {
     var Backbone = require( "lib/backbone" ),
         MailModel = require( "mailbox/mail_model" ),
-        request = require( "request" ),
-        markdown = require( 'showdown_converter' );
+        request = require( "request" );
 
     var MailsCollection = Backbone.Collection.extend({
         model: MailModel,

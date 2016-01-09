@@ -21,7 +21,8 @@ define( function(require) {
             'group_creation': "group_creation",
             'event/:id': "event_info",
             'group/:id': "group_show",
-            'group/:id/:page': "group_show_page"
+            'group/:id/:page': "group_show_page",
+            "change_timetable/:id": "change_timetable"
         },
 
         clear_current: function() {
@@ -183,6 +184,17 @@ define( function(require) {
 
             var model = new GroupModel({ id: id, page: page });
             this.current = new GroupView({ model: model });
+        },
+
+        change_timetable: function( group_id ) {
+            this.clear_current();
+
+            var ChangeTimetableModel = require( "change_timetable/model" );
+            var ChangeTimetableView = require( "change_timetable/view" );
+
+            var model = new ChangeTimetableModel();
+            this.current = new ChangeTimetableView({model: model});
+            this.current.set_group_id( group_id );
         }
 
     });

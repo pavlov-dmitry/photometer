@@ -9,6 +9,7 @@ require.config({
 	'jquery': 'lib/jquery',
         'jquery.ui.widget': 'lib/jquery.ui.widget',
         'jquery.imgareaselect': 'lib/jquery.imgareaselect',
+        'jquery.datetimepicker': 'lib/jquery.datetimepicker.full',
 	'semantic': 'lib/semantic',
         'underscore': 'lib/underscore',
         'template': '../template',
