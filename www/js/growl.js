@@ -24,7 +24,15 @@ define( function(require) {
         });
 
         var msg_selector = "#" + content.id;
+
         if ( interval ) {
+
+            if ( interval == "long") {
+                interval = 10000;
+            } else if ( interval == "short" ) {
+                interval = 4000;
+            }
+
             window.setTimeout(
                 function() {
                     close( $(msg_selector) );

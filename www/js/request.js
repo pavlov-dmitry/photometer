@@ -25,7 +25,10 @@ define( function( require ) {
                 unauthorized: function() {
                     self.unauthorized();
                 },
-                finish: function() {}
+                finish: function() {},
+                not_found: function( response, ajax ) {
+                    self.internalError( response, ajax );
+                }
 	    }
 
             var options = {
@@ -60,8 +63,10 @@ define( function( require ) {
 		    }
 		}
                 else if ( resp.status === 401 ) {
-                    console.log( "unauthorized" );
                     handlerObj.unauthorized();
+                }
+                else if ( resp.status === 404 ) {
+                    handlerObj.not_found( resp, this );
                 }
 		else {
 		    self.internalError( resp, this );

@@ -92,8 +92,9 @@ enum FieldType {
 enum ErrorReason {
     TooLong = 0,
     Invalid = 1,
-    StartBeforeEndOfVoiting = 2,
+    TimeInPast = 2,
     NotFound = 3,
+    Empty = 4
 }
 
 #[derive(RustcEncodable)]
@@ -128,12 +129,13 @@ impl GroupCreatedEvent for ChangeTimetable {
 
         let self_start_time = time::get_time();
         let self_end_time = self_start_time + time::Duration::days( DAYS_FOR_VOTE );
+        let current_time = time::now().to_timespec();
 
         // проверка корректности добаляемых событий
         let mut errors = Vec::new();
-        check_for_add( &diff_info.add, &self_end_time, &mut errors );
+        check_for_add( &diff_info.add, &current_time, &mut errors );
         // проверка всех на отключение
-        try!( check_for_remove( &diff_info.remove, &self_end_time, &mut req.stuff(), &mut errors ) );
+        try!( check_for_remove( &diff_info.remove, &current_time, &mut req.stuff(), &mut errors ) );
 
         if errors.is_empty() == false {
             return Err( Ok( Answer::bad( errors ) ) );
@@ -183,6 +185,15 @@ fn parse_times( diff_str: TimetableDiffInfoStr ) -> Result<TimetableDiffInfo, An
     let mut parsed_time = Vec::new();
     let mut errors = Vec::new();
 
+    if diff_str.description.is_empty() {
+        errors.push( FieldErrorInfo {
+            field_class: FieldClass::Common,
+            field_type: FieldType::Description,
+            idx: 0,
+            reason: ErrorReason::Empty
+        });
+    }
+
     if MAX_DESCRIPTION_LENGTH < diff_str.description.len() {
         errors.push( FieldErrorInfo {
             field_class: FieldClass::Common,
@@ -225,9 +236,17 @@ fn parse_times( diff_str: TimetableDiffInfoStr ) -> Result<TimetableDiffInfo, An
     }
 }
 
-fn check_for_add( for_add: &Vec<AddEventInfo>, self_end_time: &Timespec, errors: &mut FieldErrors ) {
+fn check_for_add( for_add: &Vec<AddEventInfo>, current_time: &Timespec, errors: &mut FieldErrors ) {
     // проверка диапазонов времен
     for (idx, add) in for_add.iter().enumerate() {
+        if add.name.is_empty() {
+            errors.push( FieldErrorInfo {
+                field_class: FieldClass::ForAdd,
+                field_type: FieldType::Name,
+                idx: idx,
+                reason: ErrorReason::Empty
+            });
+        }
         if MAX_NAME_LENGTH < add.name.len() {
             errors.push( FieldErrorInfo {
                 field_class: FieldClass::ForAdd,
@@ -244,13 +263,13 @@ fn check_for_add( for_add: &Vec<AddEventInfo>, self_end_time: &Timespec, errors:
                 reason: ErrorReason::TooLong
             });
         }
-        if add.time.sec < self_end_time.sec {
+        if add.time.sec < current_time.sec {
             // return common_error( String::from( "start time must after end of voting" ) );
             errors.push( FieldErrorInfo{
                 field_class: FieldClass::ForAdd,
                 field_type: FieldType::Datetime,
                 idx: idx,
-                reason: ErrorReason::StartBeforeEndOfVoiting
+                reason: ErrorReason::TimeInPast
             });
         }
         // проверка что такие события существуют
@@ -281,7 +300,7 @@ fn check_for_add( for_add: &Vec<AddEventInfo>, self_end_time: &Timespec, errors:
 }
 
 fn check_for_remove( for_remove: &Vec<Id>,
-                     self_end_time: &Timespec,
+                     current_time: &Timespec,
                      stuff: &mut Stuff,
                      errors: &mut FieldErrors
                      ) -> EmptyResult
@@ -294,7 +313,7 @@ fn check_for_remove( for_remove: &Vec<Id>,
         match maybe_event_start_time {
             // проверяем что оно не началось или не начнётся за время голосования
             Some( remove_start_time ) => {
-                if remove_start_time < *self_end_time {
+                if remove_start_time < *current_time {
                     // let answer = Answer::bad( FieldErrorInfo::new(
                     //     "remove_id",
                     //     "start_before_end_of_voting" ) );
@@ -303,7 +322,7 @@ fn check_for_remove( for_remove: &Vec<Id>,
                         field_class: FieldClass::ForRemove,
                         field_type: FieldType::Datetime,
                         idx: idx,
-                        reason: ErrorReason::StartBeforeEndOfVoiting
+                        reason: ErrorReason::TimeInPast
                     });
                 }
             }

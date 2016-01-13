@@ -59,6 +59,10 @@ define( function (require) {
             return this.userState.id;
         },
 
+        navMessages: function() {
+            this.workspace.nav( "mailbox/unreaded" );
+        },
+
         /// текущее состояние пользователя
         userState: null, //new UserStateModel(),
         /// переключатель рабочей среды

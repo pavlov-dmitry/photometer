@@ -1,14 +1,18 @@
-<div id="add-{{id}}" class="ui inline fields">
-  <div class="ui field">
+<div class="ui inline fields">
+  <div id="name-{{idx}}" class="ui field">
     <div class="ui left icon input">
       <i class="info icon"></i>
-      <input class="name-input" type="text" placeholder="Название" required/>
+      <input class="name-input" type="text" placeholder="Название" maxlength="64" required/>
+    </div>
+    <div id="name-{{idx}}-err" class="ui hidden pointing red basic label">
     </div>
   </div>
-  <div class="ui field">
+  <div id="datetime-{{idx}}" class="ui field">
     <div class="ui left icon input">
       <i class="calendar icon"></i>
       <input class="datetimepicker-input" type="text" placeholder="Дата и время события" required/>
+    </div>
+    <div id="datetime-{{idx}}-err" class="ui hidden pointing red basic label">
     </div>
   </div>
   <div class="ui field">

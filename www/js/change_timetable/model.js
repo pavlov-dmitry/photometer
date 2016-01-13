@@ -7,11 +7,13 @@ define( function(require) {
         defaults: {
             group_id: 0,
             add: new AddCollection(),
-            remove: []
+            remove: [],
+            description: ""
         },
 
-        save: function() {
-
+        save: function( group_id ) {
+            var url = "events/group/" + group_id + "/create/5";
+            return request.post( url, this.toJSON() );
         }
     });
 

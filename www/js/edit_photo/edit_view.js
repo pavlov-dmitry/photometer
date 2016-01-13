@@ -84,7 +84,7 @@ define( function( require ) {
                     header: "Переименовано",
                     msg: "Новое имя задано для вашей фотографии",
                     positive: true
-                }, 4000 );
+                }, "short" );
             };
 
             handler.bad = function( data ) {
@@ -135,7 +135,7 @@ define( function( require ) {
                     header: "Миниатюра готова",
                     msg: "Новая миниатюра для вашей фотографии подготовлена.",
                     positive: true
-                }, 4000 );
+                }, "short" );
             }
 
             handle.bad = function( data ) {

@@ -16,6 +16,8 @@ define( function(require) {
                     pages_count: data.pages_count,
                     current_page: data.current_page
                 });
+                // сцуко, то само вызывалось, то млин теперь самому приходится дёргать, что-то не пойму.
+                self.trigger( "update" );
             };
 
             handler.bad = function( data ) {

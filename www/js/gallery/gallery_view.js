@@ -99,6 +99,7 @@ define( function(require) {
         },
 
         check_on_empty: function() {
+            console.log( "check on empty" );
             if ( this.model.length == 0 ) {
                 $("#preview-list").removeClass( "cards" );
                 $("#preview-list").html(

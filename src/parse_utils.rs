@@ -116,7 +116,7 @@ pub fn str_between<'a>( source: &'a str, start: &'a str, end: &'a str ) -> Optio
         } )
 }
 
-static TIME_FORMAT: &'static str = "%Y.%m.%d %k:%M:%S";
+static TIME_FORMAT: &'static str = "%Y/%m/%d %k:%M";
 
 pub fn parse_timespec( s: &str ) -> Result<time::Timespec, time::ParseError> {
     time::strptime( s, TIME_FORMAT )
