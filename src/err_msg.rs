@@ -38,10 +38,10 @@ impl From<ImageError> for CommonError {
 //     CommonError( format!( "invalid path param type '{}'", prm ) )
 // }
 
-#[inline]
-pub fn parsing_error_param( prm: &str ) -> CommonError {
-    CommonError( format!( "error parsing param '{}'", prm ) )
-}
+// #[inline]
+// pub fn parsing_error_param( prm: &str ) -> CommonError {
+//     CommonError( format!( "error parsing param '{}'", prm ) )
+// }
 
 #[inline]
 pub fn fn_failed<E: Display>( fn_name: &str, e: E ) -> CommonError {
