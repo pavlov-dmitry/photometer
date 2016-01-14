@@ -14,6 +14,7 @@ mod group_creation;
 mod late_publication;
 mod group_voting;
 mod change_timetable;
+mod helpers;
 
 pub struct ScheduledEventInfo {
     pub id: Id,
@@ -36,6 +37,17 @@ pub struct FullEventInfo {
     pub data: String,
     /// показывает что событие привязано к какой-то группе
     pub group: Option<Id>
+}
+
+#[derive(Clone, RustcDecodable)]
+struct VoteInfo {
+    vote: String
+}
+
+impl VoteInfo {
+    fn is_yes( &self ) -> bool {
+        self.vote == "yes"
+    }
 }
 
 #[derive(Copy, Clone, RustcEncodable)]

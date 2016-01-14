@@ -8,8 +8,9 @@ use super::{
     UserCreatedEvent,
     FullEventInfo,
     Description,
-    UserAction
+    UserAction,
 };
+use super::helpers;
 use types::{ Id, EmptyResult, CommonResult, CommonError };
 use answer::{ Answer, AnswerResult };
 use database::{ Databaseable };
@@ -22,7 +23,7 @@ use authentication::{ Userable };
 use time;
 use mail_writer::MailWriter;
 use get_body::GetBody;
-use answer_types::{ OkInfo, FieldErrorInfo };
+use answer_types::{ FieldErrorInfo };
 
 #[derive(Clone)]
 pub struct GroupCreation;
@@ -46,11 +47,6 @@ struct GroupInfo {
     name: String,
     description: String,
     members: Vec<Member>
-}
-
-#[derive(Clone, RustcDecodable)]
-struct VoteInfo {
-    vote: String
 }
 
 #[derive(RustcEncodable)]
@@ -264,33 +260,11 @@ impl Event for GroupCreation {
     }
     /// действие которое должен осуществить пользователь
     fn user_action( &self, stuff: &mut Stuff, body: &ScheduledEventInfo, user_id: Id ) -> CommonResult<UserAction> {
-        let db = try!( stuff.get_current_db_conn() );
-        let is_need_vote = try!( db.is_need_user_vote( body.scheduled_id, user_id ) );
-        let action = match is_need_vote {
-            true => UserAction::Vote,
-            false => UserAction::None
-        };
-        Ok( action )
+        helpers::get_action_by_vote( stuff, body.scheduled_id, user_id )
     }
     /// применение действия пользователя на это событие
     fn user_action_post( &self, req: &mut Request, body: &ScheduledEventInfo ) -> AnswerResult {
-        let vote_info = try!( req.get_body::<VoteInfo>() );
-        let vote: bool = vote_info.vote == "yes";
-
-        let user_id = req.user().id;
-        let db = try!( req.stuff().get_current_db_conn() );
-        let is_need_vote = try!( db.is_need_user_vote( body.scheduled_id, user_id ) );
-
-        let answer = if is_need_vote {
-            try!( db.set_vote( body.scheduled_id, user_id, vote ) );
-            Answer::good( OkInfo::new( "accepted" ) )
-        }
-        else {
-            // TODO: возможно нужно создать новый общий тип под такие
-            // действия или использовать старый AccessErrorInfo
-            Answer::bad( FieldErrorInfo::new( "user", "no_need_vote" ) )
-        };
-        Ok( answer )
+        helpers::set_user_vote( req, body )
     }
 }
 

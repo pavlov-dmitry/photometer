@@ -5,6 +5,7 @@ use mysql::value::{
     IntoValue,
     from_row,
     ToValue,
+    ToRow,
     FromValue,
     Value,
     ConvIr
@@ -27,6 +28,8 @@ pub trait DbEvents {
     fn ending_events( &mut self, moment: &Timespec ) -> CommonResult<EventInfos>;
     /// информация о событии
     fn event_info( &mut self, scheduled_id: Id ) -> CommonResult<Option<ScheduledEventInfo>>;
+    /// информация о событиях
+    fn event_infos( &mut self, scheduled_ids: &[Id] ) -> CommonResult<EventInfos>;
     /// добавляет события пачкой
     fn add_events( &mut self, events: &[FullEventInfo] ) -> EmptyResult;
     fn add_disabled_event( &mut self, event: &FullEventInfo ) -> CommonResult<Id>;
@@ -67,19 +70,22 @@ pub fn create_tables( db: &Database ) -> EmptyResult {
 impl DbEvents for MyPooledConn {
     /// считывает события которые должны стратануть за период
     fn starting_events( &mut self, moment: &Timespec ) -> CommonResult<EventInfos> {
-        get_events_impl( self, "start_time <= ? AND state='not_started_yet'", &[ &moment.sec ] )
+        let params: &[&ToValue] = &[ &moment.sec ];
+        get_events_impl( self, "start_time <= ? AND state='not_started_yet'", params )
             .map_err( |e| fn_failed( "starting_events", e ) )
     }
 
     /// считывает события которые исполняются в опеределенный момент
     fn active_events( &mut self ) -> CommonResult<EventInfos> {
-        get_events_impl( self, "state='active'", &[] )
+        let params: &[&ToValue] = &[];
+        get_events_impl( self, "state='active'", params )
             .map_err( |e| fn_failed( "active_events", e ) )
     }
 
     /// считывает собыятия которые должны закончится за период
     fn ending_events( &mut self, moment: &Timespec ) -> CommonResult<EventInfos> {
-        get_events_impl( self, "end_time <= ? AND state='active'", &[ &moment.sec ] )
+        let params: &[&ToValue] = &[ &moment.sec ];
+        get_events_impl( self, "end_time <= ? AND state='active'", params )
             .map_err( |e| fn_failed( "ending_events", e ) )
     }
 
@@ -87,6 +93,12 @@ impl DbEvents for MyPooledConn {
     fn event_info( &mut self, scheduled_id: Id ) -> CommonResult<Option<ScheduledEventInfo>> {
         event_info_impl( self, scheduled_id )
             .map_err( |e| fn_failed( "event_info", e ) )
+    }
+
+    /// информация о событиях
+    fn event_infos( &mut self, scheduled_ids: &[Id] ) -> CommonResult<EventInfos> {
+        event_infos_impl( self, scheduled_ids )
+            .map_err( |e| fn_failed( "event_infos", e ) )
     }
 
     /// добавляет события
@@ -179,7 +191,7 @@ impl FromValue for EventState {
     type Intermediate = EventStateIr;
 }
 
-fn get_events_impl( conn: &mut MyPooledConn, where_cond: &str, values: &[&ToValue] ) -> MyResult<Vec<ScheduledEventInfo>> {
+fn get_events_impl<T: ToRow>( conn: &mut MyPooledConn, where_cond: &str, values: T ) -> MyResult<Vec<ScheduledEventInfo>> {
     let query = format!(
         "SELECT
             id,
@@ -266,6 +278,24 @@ fn event_info_impl( conn: &mut MyPooledConn, scheduled_id: Id ) -> MyResult<Opti
         None => None
     };
     Ok( result )
+}
+
+fn event_infos_impl( conn: &mut MyPooledConn, scheduled_ids: &[Id] ) -> MyResult<EventInfos> {
+    // проверка на пустату
+    if scheduled_ids.is_empty() {
+        return Ok( Vec::new() );
+    }
+
+    let mut where_cond = String::from( "id in ( ?" );
+    for _ in 1..scheduled_ids.len() {
+        where_cond.push_str( ", ?" );
+    }
+    where_cond.push_str( ")" );
+    let values: Vec<Value> = scheduled_ids
+        .iter()
+        .map( |id| id.into_value() )
+        .collect();
+    get_events_impl( conn, &where_cond, &values )
 }
 
 fn event_start_time_impl( conn: &mut MyPooledConn, scheduled_id: Id ) -> MyResult<Option<Timespec>> {

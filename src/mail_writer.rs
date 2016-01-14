@@ -25,19 +25,36 @@ pub trait MailWriter {
     /// сочиняет письмо что группа создана, и всё хорошо
     fn write_welcome_to_group_mail( &self, group_name: &str ) -> (String, String);
 
+
     /// ПУБЛИКАЦИЯ
     /// сочиняет письмо о том что пора выкладываться
     fn write_time_for_publication_mail( &self,
-        event_name: &str,
-        user_name: &str,
-        scheduled_id: Id
-    ) -> (String, String);
+                                         event_name: &str,
+                                         user_name: &str,
+                                         scheduled_id: Id ) -> (String, String);
     /// сочиняет письмо о том что опоздал конечно, но выложиться можешь
     fn write_late_publication_mail( &self,
-        event_name: &str,
-        user_name: &str,
-        scheduled_id: Id
-    ) -> (String, String);
+                                     event_name: &str,
+                                     user_name: &str,
+                                     scheduled_id: Id ) -> (String, String);
+
+
+    /// ГОЛОСОВАНИЕ
+    /// письмо о том что началось новое голосование
+    fn write_group_voiting_started_mail( &self,
+                                          event_name: &str,
+                                          group_name: &str,
+                                          scheduled_id: Id ) -> (String, String);
+    /// письмо о том что голосание закончилось и принято то за что голосовали
+    fn write_group_voiting_accepted_mail( &self,
+                                           event_name: &str,
+                                           group_name: &str,
+                                           scheduled_id: Id ) -> (String, String);
+    /// письмо о том что голосование закончилось и группа проголосавала против
+    fn write_group_voiting_denied_mail( &self,
+                                         event_name: &str,
+                                         group_name: &str,
+                                         scheduled_id: Id ) -> (String, String);
 }
 
 // саоздаёт экземпляр Сочинителя Писем для установки его в Stuff
@@ -181,5 +198,57 @@ impl MailWriter for Stuff {
             events::make_event_link( scheduled_id )
         );
         ( subject, mail )
+    }
+
+    /// письмо о том что началось новое голосование
+    fn write_group_voiting_started_mail( &self,
+                                          event_name: &str,
+                                          group_name: &str,
+                                          scheduled_id: Id ) -> (String, String)
+    {
+        let body = self.get_body();
+        let subject = format!( "Старт голосования за '{}' в группе '{}'",
+                                event_name,
+                                group_name );
+        let mail = format!( "В группе **{}** грядут изменения: {event}. Группа нуждается в твоём мнении! Вырази его перейдя по ссылке: [{event}]({}{})",
+                             group_name,
+                             &body.root_url,
+                             events::make_event_link( scheduled_id ),
+                             event = event_name );
+        (subject, mail)
+    }
+    /// письмо о том что голосание закончилось и принято то за что голосовали
+    fn write_group_voiting_accepted_mail( &self,
+                                           event_name: &str,
+                                           group_name: &str,
+                                           scheduled_id: Id ) -> (String, String)
+    {
+        let body = self.get_body();
+        let subject = format!( "Утверждено '{}' в группе '{}'",
+                                event_name,
+                                group_name );
+        let mail = format!( "В группе **{}** утверждено изменение: {event}. Вот ссылка на результаты голосования [{event}]({}{})",
+                             group_name,
+                             &body.root_url,
+                             events::make_event_link( scheduled_id ),
+                             event = event_name );
+        (subject, mail)
+    }
+    /// письмо о том что голосование закончилось и группа проголосавала против
+    fn write_group_voiting_denied_mail( &self,
+                                         event_name: &str,
+                                         group_name: &str,
+                                         scheduled_id: Id ) -> (String, String)
+    {
+        let body = self.get_body();
+        let subject = format!( "Отклонено '{}' в группе '{}'",
+                                event_name,
+                                group_name );
+        let mail = format!( "В группе **{}** отклонене изменение: {event}. Вот ссылка на результаты голосования [{event}]({}{})",
+                             group_name,
+                             &body.root_url,
+                             events::make_event_link( scheduled_id ),
+                             event = event_name );
+        (subject, mail)
     }
 }

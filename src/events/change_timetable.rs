@@ -30,6 +30,7 @@ const DAYS_FOR_VOTE : i64 = 5;
 const MAX_NAME_LENGTH: usize = 64;
 const MAX_PARAMS_LENGTH: usize = 2048;
 const MAX_DESCRIPTION_LENGTH: usize = 2048;
+const NAME: &'static str = "Изменение расписания";
 
 impl ChangeTimetable {
     pub fn new() -> ChangeTimetable {
@@ -170,7 +171,7 @@ impl GroupCreatedEvent for ChangeTimetable {
         };
         let self_info = FullEventInfo {
             id: ID,
-            name: String::from( "Изменения расписания" ),
+            name: String::from( NAME ),
             start_time: self_start_time,
             end_time: self_end_time,
             data: json::encode( &data ).unwrap(),
@@ -349,17 +350,50 @@ struct Data {
     enable: Vec<Id>
 }
 
+#[derive(RustcEncodable, Debug)]
+struct TimetableEventInfo {
+    name: String,
+    starting_time: String,
+    ending_time: String,
+}
+
+#[derive(RustcEncodable, Debug)]
+struct DescriptionInfo {
+    description: String,
+    enable: Vec<TimetableEventInfo>,
+    disable: Vec<TimetableEventInfo>
+}
+
 fn get_data( body: &ScheduledEventInfo ) -> CommonResult<Data> {
     json::decode( &body.data )
         .map_err( |e| CommonError( format!( "ChangeTimetable event data decode error: {}", e ) ) )
 }
+
 impl ChangeByVoting for ChangeTimetable {
     /// информация о событии
-    fn info( &self, _stuff: &mut Stuff, _body: &ScheduledEventInfo ) -> CommonResult<Description> {
-        // let data = try!( get_data( body ) );
-        // let info_as_string = json::encode( &data ).unwrap();
-        // Ok( info_as_string )
-        unimplemented!();
+    fn info( &self, stuff: &mut Stuff, body: &ScheduledEventInfo ) -> CommonResult<Description> {
+        let data = try!( get_data( body ) );
+        let db = try!( stuff.get_current_db_conn() );
+        let enable_events = try!( db.event_infos( &data.enable ) );
+        let disable_events = try!( db.event_infos( &data.disable ) );
+        let make_info = |event: ScheduledEventInfo| -> TimetableEventInfo {
+            TimetableEventInfo {
+                name: event.name,
+                starting_time: parse_utils::timespec_string( event.start_time ),
+                ending_time: parse_utils::timespec_string( event.end_time )
+            }
+        };
+        let enable_events = enable_events.into_iter()
+            .map( &make_info )
+            .collect::<Vec<_>>();
+        let disable_events = disable_events.into_iter()
+            .map( &make_info )
+            .collect::<Vec<_>>();
+        Ok( Description::new( DescriptionInfo {
+            description: data.description,
+            enable: enable_events,
+            disable: disable_events
+        }))
     }
 
     /// применить елси согласны
@@ -373,5 +407,10 @@ impl ChangeByVoting for ChangeTimetable {
             try!( db.set_event_state( id, EventState::NotStartedYet ) );
         }
         Ok( () )
+    }
+
+    /// краткое имя события, будет в основном использоваться в рассылке
+    fn name( &self, _stuff: &mut Stuff, _body: &ScheduledEventInfo ) -> CommonResult<String> {
+        Ok( String::from( NAME ) )
     }
 }

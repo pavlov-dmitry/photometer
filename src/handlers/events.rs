@@ -109,13 +109,21 @@ pub fn group_create_get( request: &mut Request ) -> IronResult<Response> {
 pub fn group_create_post( request: &mut Request ) -> IronResult<Response> {
     let response = match get_group_and_event_id( request ) {
         Some( (group_id, id) ) => {
-            let answer = AnswerResponse( request.event_group_creation_post( group_id, id ) );
+            let answer = AnswerResponse(
+                get_group_greation_post_answer( request, group_id, id )
+            );
             Response::with( answer )
         },
 
         None => Response::with( status::NotFound )
     };
     Ok( response )
+}
+
+fn get_group_greation_post_answer( req: &mut Request, group_id: Id, event_id: Id ) -> AnswerResult {
+    let result = req.event_group_creation_post( group_id, event_id );
+    try!( req.stuff().maybe_start_some_events() );
+    result
 }
 
 

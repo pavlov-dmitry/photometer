@@ -7,18 +7,19 @@ use super::{
     FullEventInfo,
     events_collection,
     Description,
-    UserAction
+    UserAction,
 };
-use types::{ Id, EmptyResult, CommonResult, CommonError };
+use super::helpers;
+use types::{ Id, EmptyResult, CommonResult, CommonError, common_error };
 use rustc_serialize::json;
 use database::{ Databaseable };
-use stuff::{ Stuffable, Stuff };
+use stuff::{ Stuff };
 use db::votes::{ DbVotes, Votes };
+use db::groups::DbGroups;
+use mail_writer::MailWriter;
 use iron::prelude::*;
-use answer::{ AnswerResult, Answer };
-use authentication::Userable;
-use get_body::GetBody;
-use answer_types::{ OkInfo, FieldErrorInfo };
+use answer::{ AnswerResult };
+use std::cmp;
 
 /// абстракция события которое применяется после того как группа проголосовала ЗА
 pub trait ChangeByVoting {
@@ -29,6 +30,8 @@ pub trait ChangeByVoting {
     fn info( &self, stuff: &mut Stuff, body: &ScheduledEventInfo ) -> CommonResult<Description>;
     /// применить елси согласны
     fn apply( &self, stuff: &mut Stuff, group_id: Id, body: &ScheduledEventInfo ) -> EmptyResult;
+    /// краткое имя события, будет в основном использоваться в рассылке
+    fn name( &self, stuff: &mut Stuff, body: &ScheduledEventInfo ) -> CommonResult<String>;
 }
 
 /// создание нового голосования для группы
@@ -67,11 +70,6 @@ struct Data {
     internal_data: String
 }
 
-#[derive(Clone, RustcDecodable)]
-struct VoteInfo {
-    vote: String
-}
-
 impl Event for GroupVoting {
     /// идентификатор события
     fn id( &self ) -> Id {
@@ -80,21 +78,55 @@ impl Event for GroupVoting {
     /// действие на начало события
     fn start( &self, stuff: &mut Stuff, body: &ScheduledEventInfo ) -> EmptyResult {
         let data = try!( get_data( body ) );
-        let db = try!( stuff.get_current_db_conn() );
-        try!( db.add_rights_of_voting_for_group( body.scheduled_id, data.group_id ) );
+
+        {
+            let db = try!( stuff.get_current_db_conn() );
+            try!( db.add_rights_of_voting_for_group( body.scheduled_id, data.group_id ) );
+        }
+
+        let group_name = try!( get_group_name( stuff, &data ) );
+        let internal_body = make_internal_body( &data, &body );
+        let event_name = try!( get_event_name( stuff, &internal_body ) );
+
+        try!( helpers::send_to_group( stuff, data.group_id, &mut |stuff, _user| {
+            stuff.write_group_voiting_started_mail( &event_name,
+                                                    &group_name,
+                                                    body.scheduled_id )
+        }));
         Ok( () )
     }
     /// действие на окончание события
     fn finish( &self, stuff: &mut Stuff, body: &ScheduledEventInfo ) -> EmptyResult {
         let data = try!( get_data( body ) );
+        let internal_body = make_internal_body( &data, &body );
+        let event_name = try!( get_event_name( stuff, &internal_body ) );
+        let group_name = try!( get_group_name( stuff, &data ) );
+
         let votes = {
             let db = try!( stuff.get_current_db_conn() );
             try!( db.get_votes( body.scheduled_id ) )
         };
-        if is_success( &votes, data.success_coeff ) {
+        // подсчитываем голоса
+        if is_success( &votes, data.success_coeff ) { // если набралось достаточно
             let change = try!( events_collection::get_change_by_voting( data.internal_id ) );
-            let internal_body = make_internal_body( &data, &body );
+
+            // рассылаем всем что мол утверждено
+            try!( helpers::send_to_group( stuff, data.group_id, &mut |stuff, _user| {
+                stuff.write_group_voiting_accepted_mail( &event_name,
+                                                         &group_name,
+                                                         body.scheduled_id )
+            }));
+
+            // и применяем изменение
             try!( change.apply( stuff, data.group_id, &internal_body ) );
+        }
+        else { // если не хватило голосов
+            // расслываем что мол увы.
+            try!( helpers::send_to_group( stuff, data.group_id, &mut |stuff, _user| {
+                stuff.write_group_voiting_denied_mail( &event_name,
+                                                       &group_name,
+                                                       body.scheduled_id )
+            }));
         }
         Ok( () )
     }
@@ -103,7 +135,7 @@ impl Event for GroupVoting {
         let data = try!( get_data( body ) );
         let change = try!( events_collection::get_change_by_voting( data.internal_id ) );
         let internal_body = make_internal_body( &data, &body );
-        let event_obj = try!( change.info( stuff, &internal_body ) );
+        let event_info = try!( change.info( stuff, &internal_body ) );
 
         let votes = {
             let db = try!( stuff.get_current_db_conn() );
@@ -111,10 +143,11 @@ impl Event for GroupVoting {
         };
 
         let desc = Description::new( GroupVoitingInfo {
-            info: event_obj,
+            info: event_info,
             all_count: votes.all_count,
             yes: votes.yes.len(),
-            no: votes.no.len()
+            no: votes.no.len(),
+            min_success_count: min_success_count( votes.all_count, data.success_coeff )
         } );
         Ok( desc )
     }
@@ -128,26 +161,13 @@ impl Event for GroupVoting {
     }
 
     /// действие которое должен осуществить пользователь
-    fn user_action( &self, _stuff: &mut Stuff, _body: &ScheduledEventInfo, _user_id: Id ) -> CommonResult<UserAction> {
-        unimplemented!();
+    fn user_action( &self, stuff: &mut Stuff, body: &ScheduledEventInfo, user_id: Id ) -> CommonResult<UserAction> {
+        helpers::get_action_by_vote( stuff, body.scheduled_id, user_id )
     }
 
     /// применение действия пользователя на это событие
     fn user_action_post( &self, req: &mut Request, body: &ScheduledEventInfo ) -> AnswerResult {
-        let vote_info = try!( req.get_body::<VoteInfo>() );
-        let vote: bool = vote_info.vote == "yes";
-        let user_id = req.user().id;
-        let db = try!( req.stuff().get_current_db_conn() );
-        let is_need_vote = try!( db.is_need_user_vote( body.scheduled_id, user_id ) );
-
-        let answer = if is_need_vote {
-            try!( db.set_vote( body.scheduled_id, user_id, vote ) );
-            Answer::good( OkInfo::new( "accepted" ) )
-        }
-        else {
-            Answer::bad( FieldErrorInfo::new( "user", "no_need_vote" ) )
-        };
-        Ok( answer )
+        helpers::set_user_vote( req, body )
     }
 }
 
@@ -156,14 +176,18 @@ struct GroupVoitingInfo {
     info: Description,
     all_count: usize,
     yes: usize,
-    no: usize
+    no: usize,
+    min_success_count: usize
+}
+
+fn min_success_count( all: usize, success_coeff: f32 ) -> usize {
+    let min_success_count = ( all as f32 * success_coeff ) as usize;
+    //NOTE: нельзя допускать того что-бы действие принималось без чего бы то еще согласия
+    cmp::max( 2, min_success_count )
 }
 
 fn is_success( votes: &Votes, success_coeff: f32 ) -> bool {
-    let min_success_count = ( votes.all_count as f32 * success_coeff ) as usize;
-    //NOTE: нельзя допускать того что-бы действие принималось без чего бы то еще согласия
-    let min_success_count = if min_success_count < 2 { 2 } else { min_success_count };
-    min_success_count <= votes.yes.len()
+    min_success_count( votes.all_count, success_coeff ) <= votes.yes.len()
 }
 
 fn make_internal_body( data: &Data, body: &ScheduledEventInfo ) -> ScheduledEventInfo {
@@ -182,4 +206,18 @@ fn make_internal_body( data: &Data, body: &ScheduledEventInfo ) -> ScheduledEven
 fn get_data( body: &ScheduledEventInfo ) -> CommonResult<Data> {
     json::decode( &body.data )
         .map_err( |e| CommonError( format!( "GroupVoting event data decode error: {}", e ) ) )
+}
+
+fn get_event_name( stuff: &mut Stuff, body: &ScheduledEventInfo ) -> CommonResult<String> {
+    let event = try!( events_collection::get_change_by_voting( body.id ) );
+    event.name( stuff, &body )
+}
+
+fn get_group_name( stuff: &mut Stuff, data: &Data ) -> CommonResult<String> {
+    let db = try!( stuff.get_current_db_conn() );
+    let group_info = try!( db.group_info( data.group_id ) );
+    match group_info {
+        Some( info ) => Ok( info.name ),
+        None => common_error( "GroupVoting::get_group_name: invalid group id".to_owned() )
+    }
 }
