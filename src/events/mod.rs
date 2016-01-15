@@ -62,8 +62,8 @@ pub enum EventId {
 
 pub struct MaybeEventId( pub Option<EventId> );
 
-impl From<u64> for MaybeEventId {
-    fn from(v: u64) -> MaybeEventId {
+impl From<i64> for MaybeEventId {
+    fn from(v: i64) -> MaybeEventId {
         let maybe_id = match v {
             1 => Some( EventId::Publication ),
             2 => Some( EventId::GroupCreation ),

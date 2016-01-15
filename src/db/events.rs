@@ -439,13 +439,13 @@ impl ToValue for EventId {
 pub struct EventIdIr
 {
     val: EventId,
-    raw: u64
+    raw: i64
 }
 
 impl ConvIr<EventId> for EventIdIr {
     fn new(v: Value) -> MyResult<EventIdIr> {
         match v {
-            Value::UInt( num ) => {
+            Value::Int( num ) => {
                 let maybe_event_id: MaybeEventId = From::from( num );
                 let MaybeEventId( maybe_id ) = maybe_event_id;
                 match maybe_id {
@@ -453,7 +453,7 @@ impl ConvIr<EventId> for EventIdIr {
                         val: id,
                         raw: num
                     }),
-                    None => Err( MyError::FromValueError( Value::UInt( num ) ) )
+                    None => Err( MyError::FromValueError( Value::Int( num ) ) )
                 }
             }
             _ => Err( MyError::FromValueError( v ) )
@@ -463,7 +463,7 @@ impl ConvIr<EventId> for EventIdIr {
         self.val
     }
     fn rollback(self) -> Value {
-        Value::UInt( self.raw )
+        Value::Int( self.raw )
     }
 }
 
