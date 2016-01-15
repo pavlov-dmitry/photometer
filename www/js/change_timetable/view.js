@@ -4,7 +4,8 @@ define( function(require) {
         AddView = require( "change_timetable/add_view" ),
         ChangeTimetableInfoModel = require( "change_timetable/info_model" ),
         markdown = require( 'showdown_converter' ),
-        growl = require( "growl" );
+        growl = require( "growl" ),
+        errors_handler = require( "errors_handler" );
     require( "template/change_timetable" );
 
 

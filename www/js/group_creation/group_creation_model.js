@@ -9,7 +9,7 @@ define( function( require ) {
             members: new UsersCollection()
         },
 
-        urlRoot: "/events/create/2",
+        urlRoot: "/events/create/group_creation",
 
         save: function() {
             var request = require( "request" );

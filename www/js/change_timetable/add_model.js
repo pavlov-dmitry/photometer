@@ -3,7 +3,7 @@ define( function(require) {
 
     var AddToTimetableModel = Backbone.Model.extend({
         defaults: {
-            event_id: 1,
+            event_id: "Publication",
             name: "",
             time: "",
             params: ""

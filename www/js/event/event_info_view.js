@@ -25,7 +25,7 @@ define( function(require) {
             this.$el.html( html_content );
 
             var description_data = JSON.parse( data.description );
-            $("#description").html( info.template( description_data ) );
+            $("#description").html( info.makeHtml( description_data ) );
 
             var ActionView = actions( data.action );
             var action_data = {

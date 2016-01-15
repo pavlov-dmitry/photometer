@@ -9,7 +9,7 @@ define( function(require) {
         },
 
         fetch: function( group_id ) {
-            var url = "events/group/" + group_id + "/create/5";
+            var url = "events/group/" + group_id + "/create/change_timetable";
             var handler = request.get( url );
 
             var self = this;

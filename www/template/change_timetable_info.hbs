@@ -1,0 +1,29 @@
+<div class="ui secondary segment zeromargin">
+  <p>
+  {{{description}}}
+  </p>
+  <div class="ui two column stackable grid">
+    <div class="column">
+      <div class="ui horizontal divider green header">
+        <i class="plus icon"></i>
+        Добавляются:
+      </div>
+      <div class="ui divided items">
+        {{#each enable}}
+        {{{include "timetable_value_info" this}}}
+        {{/each}}
+      </div>
+    </div>
+    <div class="column">
+      <div class="ui horizontal divider red header">
+        <i class="minus icon"></i>
+        Удаляются:
+      </div>
+      <div class="ui divided items">
+        {{#each disable}}
+        {{{include "timetable_value_info" this}}}
+        {{/each}}
+      </div>
+    </div>
+  </div>
+</div>

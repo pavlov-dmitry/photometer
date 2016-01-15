@@ -1,20 +1,9 @@
 define( function( require ) {
     var Backbone = require( 'lib/backbone' ),
-        Handlebars = require( 'handlebars.runtime' );
+        Handlebars = require( "handlebars.runtime" );
     require( 'template/photo_view' );
+    require( "handlebars_helpers" );
     var fit_image = require( "helpers/fit_image" );
-
-    Handlebars.registerHelper( "shutter", function( data ) {
-        if ( data < 0 ) {
-            return "1/" + Math.abs( data );
-        }
-        return data;
-    });
-    Handlebars.registerHelper( "aperture", function( data ) {
-        data = data * 10;
-        data = Math.floor( data ) / 10;
-        return data;
-    });
 
     var PhotoView = Backbone.View.extend({
 

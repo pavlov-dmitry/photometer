@@ -12,7 +12,7 @@ define( function(require) {
         },
 
         save: function( group_id ) {
-            var url = "events/group/" + group_id + "/create/5";
+            var url = "events/group/" + group_id + "/create/change_timetable";
             return request.post( url, this.toJSON() );
         }
     });

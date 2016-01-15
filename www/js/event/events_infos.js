@@ -1,36 +1,26 @@
 define( function(require) {
-    var Handlebars = require( "handlebars.runtime" );
-        var markdown = require( "showdown_converter" );
-
-    Handlebars.registerHelper( "markdown", function( data ) {
-        return markdown.makeHtml( data );
-    });
-
     var events_info_collection = function( id ) {
-        var result  = {
+        var base_info = {
             caption: function( name ) {
                 return name;
             },
-            template: function( data ) {
-                return data;
+            makeHtml: function( data ) {
+                return JSON.stringify( data );
             },
             answer: "Вы согласны?"
+        };
+
+        var info = {};
+
+        if ( id === 'GroupCreation') {
+            info = require( "event/info/group_creation" );
+        }
+        else if ( id == 'GroupVoting' ) {
+            info = require( "event/info/group_voting" );
         }
 
-        switch ( id ) {
-
-        case 2:// Group creation
-            var tmpl = require( "template/group_creation_info" );
-            result.caption = function( name ) {
-                return "Создание группы \"" + name + "\"";
-            };
-            result.template = Handlebars.templates.group_creation_info;
-            result.answer = "Вы согласны присоединиться к этой группе?";
-            break;
-
-        }
-
-        return result;
+        $.extend( base_info, info );
+        return base_info;
     }
 
     return events_info_collection;

@@ -144,6 +144,7 @@ impl Event for GroupVoting {
         };
 
         let desc = Description::new( GroupVoitingInfo {
+            internal_id: data.internal_id,
             info: event_info,
             all_count: votes.all_count,
             yes: votes.yes.len(),
@@ -174,6 +175,7 @@ impl Event for GroupVoting {
 
 #[derive(RustcEncodable, Debug)]
 struct GroupVoitingInfo {
+    internal_id: EventId,
     info: Description,
     all_count: usize,
     yes: usize,
