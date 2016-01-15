@@ -7,7 +7,7 @@ define( function(require) {
         el: "#action",
         template: Handlebars.templates.none_action,
 
-        init: function() {
+        initialize: function() {
             this.render();
         },
 

@@ -1,7 +1,8 @@
 define( function(require) {
     var Backbone = require( "lib/backbone" ),
         Handlebars = require( "handlebars.runtime" ),
-        tmpl = require( "template/vote_action" );
+        tmpl = require( "template/vote_action" ),
+        growl = require( "growl" );
 
     var VoteView = Backbone.View.extend({
         el: "#action",
@@ -12,13 +13,12 @@ define( function(require) {
             "click #no-btn": "no_clicked"
         },
 
-        init: function( data ) {
-            this.data = data;
-            this.render();
+        initialize: function() {
+            this.listenTo( this.model, "change", this.render );
         },
 
         render: function( data ) {
-            this.$el.html( this.template( this.data ) );
+            this.$el.html( this.template( this.model.toJSON() ) );
         },
 
         yes_clicked: function() {
@@ -33,19 +33,30 @@ define( function(require) {
             var request = require( "request" );
             var app = require( "app" );
 
-            var url = "/event/" + this.data.id;
+            var id = this.model.get("id");
+            var url = "/event/" + id;
             var handler = request.post( url, { vote: vote });
 
             var self = this;
             handler.good = function() {
-                self.$el.html( "<h2 class=\"ui center aligned basic segment\"><div class=\"content\"><font color=\"green\">Ваше мнение учтено.</font></div></h2>")
-
-                app.userState.fetch();
+                // self.$el.html( "<h2 class=\"ui center aligned basic segment\"><div class=\"content\"><font color=\"green\">Ваше мнение учтено.</font></div></h2>")
+                growl({
+                    header: "Голосование",
+                    msg: "Ваше мнение учтено!",
+                    positive: true
+                }, "short");
             };
             handler.bad = function( data ) {
-                console.log( "vote failed: " + JSON.stringify( data ) );
-                self.$el.html( "<h2 class=\"ui center aligned basic segment\"><div class=\"content\"><font color=\"red\">Похоже нельзя нам голосвать, уже.</font></div></h2>")
+                // self.$el.html( "<h2 class=\"ui center aligned basic segment\"><div class=\"content\"><font color=\"red\">Похоже нельзя нам голосвать, уже.</font></div></h2>")
+                growl({
+                    header: "Голосование",
+                    msg: "Похоже нельзя нам голосвать, уже.",
+                    negative: true
+                }, "short");
             };
+            handler.finish = function() {
+                self.model.finish();
+            }
         }
     });
 
