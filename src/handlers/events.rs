@@ -1,5 +1,6 @@
 use answer::{ AnswerResult, AnswerResponse };
 use events::events_manager::{ EventsManagerRequest, EventsManagerStuff };
+use events::{ EventId };
 use stuff::Stuffable;
 use types::{ Id };
 use iron::prelude::*;
@@ -56,7 +57,7 @@ pub fn create_path() -> &'static str {
 }
 
 pub fn create_get( request: &mut Request ) -> IronResult<Response> {
-    let response = match get_id( ID, request ) {
+    let response = match get_event_id( ID, request ) {
         Some( id ) => {
             let answer = AnswerResponse( request.event_user_creation_get( id ) );
             Response::with( answer )
@@ -68,7 +69,7 @@ pub fn create_get( request: &mut Request ) -> IronResult<Response> {
 }
 
 pub fn create_post( request: &mut Request ) -> IronResult<Response> {
-    let response = match get_id( ID, request ) {
+    let response = match get_event_id( ID, request ) {
         Some( id ) => {
             let answer = AnswerResponse( create_post_answer( id, request ) );
             Response::with( answer )
@@ -84,7 +85,7 @@ fn action_post_answer( id: Id, req: &mut Request ) -> AnswerResult {
     result
 }
 
-fn create_post_answer( event_id: Id, req: &mut Request ) -> AnswerResult {
+fn create_post_answer( event_id: EventId, req: &mut Request ) -> AnswerResult {
     let result = req.event_user_creation_post( event_id );
     try!( req.stuff().maybe_start_some_events() );
     result
@@ -120,22 +121,27 @@ pub fn group_create_post( request: &mut Request ) -> IronResult<Response> {
     Ok( response )
 }
 
-fn get_group_greation_post_answer( req: &mut Request, group_id: Id, event_id: Id ) -> AnswerResult {
+fn get_group_greation_post_answer( req: &mut Request, group_id: Id, event_id: EventId ) -> AnswerResult {
     let result = req.event_group_creation_post( group_id, event_id );
     try!( req.stuff().maybe_start_some_events() );
     result
 }
 
 
+fn get_event_id( prm: &str, req: &Request ) -> Option<EventId> {
+    let id = req.param( prm );
+    FromStr::from_str( id ).ok()
+}
+
 fn get_id( prm: &str, req: &Request ) -> Option<Id> {
     let id = req.param( prm );
     FromStr::from_str( id ).ok()
 }
 
-fn get_group_and_event_id( request: &mut Request ) -> Option<(Id, Id)> {
+fn get_group_and_event_id( request: &mut Request ) -> Option<(Id, EventId)> {
     get_id( GROUP_ID, request )
         .and_then( |group_id|
-            get_id( ID, request )
+            get_event_id( ID, request )
                 .map( |id| ( group_id, id ) )
         )
 }

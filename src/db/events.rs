@@ -13,7 +13,7 @@ use mysql::value::{
 use types::{ Id, CommonResult, EmptyResult, CommonError };
 use time::{ Timespec };
 use std::fmt::Display;
-use events::{ ScheduledEventInfo, EventState, FullEventInfo };
+use events::{ EventId, MaybeEventId, ScheduledEventInfo, EventState, FullEventInfo };
 use database::Database;
 
 type EventInfos = Vec<ScheduledEventInfo>;
@@ -428,4 +428,45 @@ fn to_group_info( group: Option<Id> ) -> (bool, Id) {
         Some( id ) => (true, id),
         None => (false, 0)
     }
+}
+
+impl ToValue for EventId {
+    fn to_value(&self) -> Value {
+        Value::UInt( *self as u64 )
+    }
+}
+
+pub struct EventIdIr
+{
+    val: EventId,
+    raw: u64
+}
+
+impl ConvIr<EventId> for EventIdIr {
+    fn new(v: Value) -> MyResult<EventIdIr> {
+        match v {
+            Value::UInt( num ) => {
+                let maybe_event_id: MaybeEventId = From::from( num );
+                let MaybeEventId( maybe_id ) = maybe_event_id;
+                match maybe_id {
+                    Some( id ) => Ok( EventIdIr {
+                        val: id,
+                        raw: num
+                    }),
+                    None => Err( MyError::FromValueError( Value::UInt( num ) ) )
+                }
+            }
+            _ => Err( MyError::FromValueError( v ) )
+        }
+    }
+    fn commit(self) -> EventId {
+        self.val
+    }
+    fn rollback(self) -> Value {
+        Value::UInt( self.raw )
+    }
+}
+
+impl FromValue for EventId {
+    type Intermediate = EventIdIr;
 }

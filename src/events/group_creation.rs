@@ -4,6 +4,7 @@ use iron::prelude::*;
 
 use super::{
     Event,
+    EventId,
     ScheduledEventInfo,
     UserCreatedEvent,
     FullEventInfo,
@@ -27,7 +28,7 @@ use answer_types::{ FieldErrorInfo };
 
 #[derive(Clone)]
 pub struct GroupCreation;
-pub const ID : Id = 2;
+pub const ID : EventId = EventId::GroupCreation;
 
 impl GroupCreation {
     pub fn new() -> GroupCreation {
@@ -51,7 +52,7 @@ struct GroupInfo {
 
 #[derive(RustcEncodable)]
 struct EditEventInfo {
-    edit_event: Id
+    edit_event: EventId
 }
 
 static NAME : &'static str = "name";
@@ -141,7 +142,7 @@ impl UserCreatedEvent for GroupCreation {
 
 impl Event for GroupCreation {
     /// идентификатор события
-    fn id( &self ) -> Id {
+    fn id( &self ) -> EventId {
         ID
     }
     /// действие на начало события

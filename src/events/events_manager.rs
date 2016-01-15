@@ -2,6 +2,7 @@ use database::{ Databaseable };
 use stuff::{ Stuff, Stuffable };
 use super::{
     Event,
+    EventId,
     ScheduledEventInfo,
     EventState,
     FullEventInfo,
@@ -29,15 +30,15 @@ pub trait EventsManagerStuff {
 pub trait EventsManagerRequest {
     fn event_info( &mut self, scheduled_id: Id ) -> AnswerResult;
     fn event_action_post( &mut self, scheduled_id: Id ) -> AnswerResult;
-    fn event_user_creation_get(&mut self, event_id: Id ) -> AnswerResult;
-    fn event_user_creation_post(&mut self, event_id: Id ) -> AnswerResult;
-    fn event_group_creation_get(&mut self, group_id: Id, event_id: Id ) -> AnswerResult;
-    fn event_group_creation_post(&mut self, group_id: Id, event_id: Id ) -> AnswerResult;
+    fn event_user_creation_get(&mut self, event_id: EventId ) -> AnswerResult;
+    fn event_user_creation_post(&mut self, event_id: EventId ) -> AnswerResult;
+    fn event_group_creation_get(&mut self, group_id: Id, event_id: EventId ) -> AnswerResult;
+    fn event_group_creation_post(&mut self, group_id: Id, event_id: EventId ) -> AnswerResult;
 }
 
 #[derive(Clone, RustcEncodable)]
 struct EventInfoAnswer {
-    id: Id,
+    id: EventId,
     name: String,
     starting_time: String,
     ending_time: String,
@@ -56,7 +57,7 @@ impl EventsManagerStuff for Stuff {
         };
         for event_info in events.iter() {
             let event = try!( events_collection::get_event( event_info.id ) );
-            info!( "starting '{}':{}", event_info.name, event_info.id );
+            info!( "starting '{}':{:?}", event_info.name, event_info.id );
             try!( event.start( self, event_info ) );
             try!( self.set_event_state( event_info.scheduled_id, EventState::Active ) );
         }
@@ -71,7 +72,7 @@ impl EventsManagerStuff for Stuff {
         };
         for event_info in events.iter() {
             let event = try!( events_collection::get_event( event_info.id ) );
-            info!( "finishing '{}':{}", event_info.name, event_info.id );
+            info!( "finishing '{}':{:?}", event_info.name, event_info.id );
             try!( self.finish_him( event, event_info ) );
         }
         Ok( () )
@@ -149,7 +150,7 @@ impl<'a, 'b> EventsManagerRequest for Request<'a, 'b> {
                     let result = try!( event.user_action_post( req, &event_info ) );
                     let stuff = req.stuff();
                     if try!( event.is_complete( stuff, &event_info ) ) {
-                        info!( "early finishing '{}':{}", event_info.name, event_info.id );
+                        info!( "early finishing '{}':{:?}", event_info.name, event_info.id );
                         try!( stuff.finish_him( event, &event_info ) );
                     }
                     result
@@ -165,12 +166,12 @@ impl<'a, 'b> EventsManagerRequest for Request<'a, 'b> {
     }
 
     /// создание пользовательского события
-    fn event_user_creation_get( &mut self, event_id: Id ) -> AnswerResult {
+    fn event_user_creation_get( &mut self, event_id: EventId ) -> AnswerResult {
         let event = try!( events_collection::get_user_created_event( event_id ) );
         event.user_creating_get( self )
     }
 
-    fn event_user_creation_post( &mut self, event_id: Id ) -> AnswerResult {
+    fn event_user_creation_post( &mut self, event_id: EventId ) -> AnswerResult {
         let event = try!( events_collection::get_user_created_event( event_id ) );
         match event.user_creating_post( self ) {
             Ok( event ) => apply_event( event, self ),
@@ -178,12 +179,12 @@ impl<'a, 'b> EventsManagerRequest for Request<'a, 'b> {
         }
     }
 
-    fn event_group_creation_get(&mut self, group_id: Id, event_id: Id ) -> AnswerResult {
+    fn event_group_creation_get(&mut self, group_id: Id, event_id: EventId ) -> AnswerResult {
         let event = try!( events_collection::get_group_created_event( event_id ) );
         event.user_creating_get( self, group_id )
     }
 
-    fn event_group_creation_post(&mut self, group_id: Id, event_id: Id ) -> AnswerResult {
+    fn event_group_creation_post(&mut self, group_id: Id, event_id: EventId ) -> AnswerResult {
         let event = try!( events_collection::get_group_created_event( event_id ) );
 
         let user_id = self.user().id;
@@ -206,7 +207,7 @@ impl<'a, 'b> EventsManagerRequest for Request<'a, 'b> {
 }
 
 fn apply_event( event: FullEventInfo, req: &mut Request ) -> AnswerResult {
-    info!( "event created: '{}':{}", event.name, event.id );
+    info!( "event created: '{}':{:?}", event.name, event.id );
     let db = try!( req.stuff().get_current_db_conn() );
     try!( db.add_events( &[ event ] ) );
 

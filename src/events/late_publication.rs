@@ -1,5 +1,6 @@
 use super::{
     Event,
+    EventId,
     ScheduledEventInfo,
     FullEventInfo,
     Description,
@@ -25,7 +26,7 @@ use std::convert::From;
 
 #[derive(Clone)]
 pub struct LatePublication;
-pub const ID : Id = 3;
+pub const ID : EventId = EventId::LatePublication;
 
 impl LatePublication {
     pub fn new() -> LatePublication {
@@ -55,7 +56,7 @@ struct PhotoInfo {
 
 impl Event for LatePublication {
     /// идентификатор события
-    fn id( &self ) -> Id {
+    fn id( &self ) -> EventId {
         ID
     }
     /// действие на начало события
@@ -157,7 +158,7 @@ impl Event for LatePublication {
 
 #[derive(RustcEncodable, Debug)]
 struct LatePublicationInfo {
-    id: Id,
+    id: EventId,
     name: String,
     all_count: u32,
     published: u32

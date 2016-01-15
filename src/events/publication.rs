@@ -1,5 +1,6 @@
 use super::{
     Event,
+    EventId,
     CreateFromTimetable,
     ScheduledEventInfo,
     Description,
@@ -25,7 +26,7 @@ use answer_types::{ OkInfo, PhotoErrorInfo, AccessErrorInfo };
 
 #[derive(Clone)]
 pub struct Publication;
-pub const ID : Id = 1;
+pub const ID: EventId = EventId::Publication;
 
 impl Publication {
     pub fn new() -> Publication {
@@ -40,7 +41,7 @@ struct PhotoInfo {
 
 impl Event for Publication {
     /// идентификатор события
-    fn id( &self ) -> Id {
+    fn id( &self ) -> EventId {
         ID
     }
 
@@ -147,7 +148,7 @@ impl Event for Publication {
 
 #[derive(RustcEncodable, Debug)]
 struct PublicationInfo {
-    id: Id,
+    id: EventId,
     name: String,
     all_count: u32,
     published: u32

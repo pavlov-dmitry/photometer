@@ -3,6 +3,7 @@
 
 use super::{
     Event,
+    EventId,
     ScheduledEventInfo,
     FullEventInfo,
     events_collection,
@@ -54,7 +55,7 @@ pub fn new( group_id: Id, success_coeff: f32, internal_event: &FullEventInfo ) -
 
 #[derive(Clone)]
 pub struct GroupVoting;
-pub const ID : Id = 4;
+pub const ID : EventId = EventId::GroupVoting;
 
 impl GroupVoting {
     pub fn new() -> GroupVoting {
@@ -64,7 +65,7 @@ impl GroupVoting {
 
 #[derive(RustcEncodable, RustcDecodable)]
 struct Data {
-    internal_id: Id,
+    internal_id: EventId,
     group_id: Id,
     success_coeff: f32,
     internal_data: String
@@ -72,7 +73,7 @@ struct Data {
 
 impl Event for GroupVoting {
     /// идентификатор события
-    fn id( &self ) -> Id {
+    fn id( &self ) -> EventId {
         ID
     }
     /// действие на начало события

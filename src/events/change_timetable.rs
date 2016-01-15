@@ -1,6 +1,7 @@
 /// изменение расписания группы
 
 use super::{
+    EventId,
     GroupCreatedEvent,
     FullEventInfo,
     ScheduledEventInfo,
@@ -24,7 +25,7 @@ use std::convert::From;
 
 #[derive(Clone)]
 pub struct ChangeTimetable;
-pub const ID : Id = 5;
+pub const ID : EventId = EventId::ChangeTimetable;
 
 const DAYS_FOR_VOTE : i64 = 5;
 const MAX_NAME_LENGTH: usize = 64;
@@ -48,7 +49,7 @@ struct TimetableDiffInfoStr {
 
 #[derive(Clone, RustcDecodable)]
 struct AddEventInfoStr {
-    event_id: Id,
+    event_id: EventId,
     name: String,
     time: String,
     params: String
@@ -61,7 +62,7 @@ struct TimetableDiffInfo {
 }
 
 struct AddEventInfo {
-    event_id: Id,
+    event_id: EventId,
     name: String,
     time: Timespec,
     params: String

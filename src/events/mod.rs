@@ -6,6 +6,7 @@ use stuff::Stuff;
 use rustc_serialize::{ Encodable, Encoder };
 use rustc_serialize::json;
 use std::fmt::Debug;
+use std::str::FromStr;
 
 pub mod events_manager;
 mod events_collection;
@@ -17,7 +18,7 @@ mod change_timetable;
 mod helpers;
 
 pub struct ScheduledEventInfo {
-    pub id: Id,
+    pub id: EventId,
     pub scheduled_id: Id,
     pub start_time: Timespec,
     pub end_time: Timespec,
@@ -30,7 +31,7 @@ pub struct ScheduledEventInfo {
 
 #[derive(Debug)]
 pub struct FullEventInfo {
-    pub id: Id,
+    pub id: EventId,
     pub name: String,
     pub start_time: Timespec,
     pub end_time: Timespec,
@@ -47,6 +48,48 @@ struct VoteInfo {
 impl VoteInfo {
     fn is_yes( &self ) -> bool {
         self.vote == "yes"
+    }
+}
+
+#[derive(Copy, Clone, Debug, RustcEncodable, RustcDecodable)]
+pub enum EventId {
+    Publication = 1,
+    GroupCreation = 2,
+    LatePublication = 3,
+    GroupVoting = 4,
+    ChangeTimetable = 5,
+}
+
+pub struct MaybeEventId( pub Option<EventId> );
+
+impl From<u64> for MaybeEventId {
+    fn from(v: u64) -> MaybeEventId {
+        let maybe_id = match v {
+            1 => Some( EventId::Publication ),
+            2 => Some( EventId::GroupCreation ),
+            3 => Some( EventId::LatePublication ),
+            4 => Some( EventId::GroupVoting ),
+            5 => Some( EventId::ChangeTimetable ),
+            _ => None
+        };
+        MaybeEventId( maybe_id )
+    }
+}
+
+#[derive(Debug)]
+pub struct ParseEventIdError;
+
+impl FromStr for EventId {
+    type Err = ParseEventIdError;
+    fn from_str(s: &str) -> Result<EventId, ParseEventIdError> {
+        match s {
+            "publication" => Ok( EventId::Publication ),
+            "group_creation" => Ok( EventId::GroupCreation ),
+            "late_publication" => Ok( EventId::LatePublication ),
+            "group_voting" => Ok( EventId::GroupVoting ),
+            "change_timetable" => Ok( EventId::ChangeTimetable ),
+            _ => Err( ParseEventIdError )
+        }
     }
 }
 
@@ -73,7 +116,7 @@ pub struct Description {
 /// абстракция какого-то автоматического события
 pub trait Event {
     /// идентификатор события
-    fn id( &self ) -> Id;
+    fn id( &self ) -> EventId;
     /// действие на начало события
     fn start( &self, stuff: &mut Stuff, body: &ScheduledEventInfo ) -> EmptyResult;
     /// действие на окончание события
@@ -139,7 +182,7 @@ pub fn get_group_id( body: &ScheduledEventInfo ) -> CommonResult<Id> {
     match body.group {
         Some( id ) => Ok( id ),
         None => common_error(
-            format!( "group_id not found in ScheduledEventInfo id={} scheduled_id={}",
+            format!( "group_id not found in ScheduledEventInfo id={:?} scheduled_id={}",
                       body.id,
                       body.scheduled_id ))
     }
