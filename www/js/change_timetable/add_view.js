@@ -26,6 +26,8 @@ define( function(require) {
             this.$datetimepicker = this.$el.find(".datetimepicker-input");
             this.$datetimepicker.datetimepicker({
                 minDate: 0,
+                weeks: true,
+                dayOfWeekStart: 1
             });
             this.$name_input = this.$el.find( ".name-input" );
             return this;
