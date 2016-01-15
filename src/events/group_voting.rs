@@ -158,8 +158,7 @@ impl Event for GroupVoting {
         let data = try!( get_data( body ) );
         let db = try!( stuff.get_current_db_conn() );
         let votes = try!( db.get_votes( body.scheduled_id ) );
-        let all_voted = votes.all_count == ( votes.yes.len() + votes.no.len() );
-        Ok( all_voted || is_success( &votes, data.success_coeff ) )
+        Ok( is_fail( &votes, data.success_coeff ) || is_success( &votes, data.success_coeff ) )
     }
 
     /// действие которое должен осуществить пользователь
@@ -191,6 +190,13 @@ fn min_success_count( all: usize, success_coeff: f32 ) -> usize {
 
 fn is_success( votes: &Votes, success_coeff: f32 ) -> bool {
     min_success_count( votes.all_count, success_coeff ) <= votes.yes.len()
+}
+
+fn is_fail( votes: &Votes, success_coeff: f32 ) -> bool {
+    let yes_count = votes.yes.len();
+    let no_count = votes.no.len();
+    let not_voited_count = votes.all_count - no_count - yes_count;
+    (not_voited_count + yes_count) < min_success_count( votes.all_count, success_coeff )
 }
 
 fn make_internal_body( data: &Data, body: &ScheduledEventInfo ) -> ScheduledEventInfo {
