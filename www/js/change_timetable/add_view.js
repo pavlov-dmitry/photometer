@@ -1,6 +1,7 @@
 define( function(require) {
     var Backbone = require( "lib/backbone" ),
-        Handlebars = require( "handlebars.runtime" );
+        Handlebars = require( "handlebars.runtime" ),
+        moment = require( "moment" );
     require( "template/add_to_timetable" );
     require( "jquery.datetimepicker");
 
@@ -17,17 +18,20 @@ define( function(require) {
 
         initialize: function() {
             this.listenTo( this.model, 'destroy', this.remove );
+            this.format = "H:m D, d M Y";
         },
 
         render: function( idx ) {
             var data = this.model.toJSON();
             data.idx = idx;
+            this.idx = idx;
             this.$el.html( this.template( data ) );
             this.$datetimepicker = this.$el.find(".datetimepicker-input");
             this.$datetimepicker.datetimepicker({
                 minDate: 0,
                 weeks: true,
-                dayOfWeekStart: 1
+                dayOfWeekStart: 1,
+                format: this.format
             });
             this.$name_input = this.$el.find( ".name-input" );
             return this;
@@ -44,7 +48,11 @@ define( function(require) {
 
         on_datetime_changed: function() {
             var datetime = this.$datetimepicker.val();
-            this.model.set({ time: datetime });
+
+            var datetime_value = moment( datetime, "HH:mm ddd, DD MMM YYYY" );
+            if ( datetime_value.isValid() ) {
+                this.model.set({ time: datetime_value.valueOf() });
+            }
         }
     });
 

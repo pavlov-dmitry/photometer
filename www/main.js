@@ -14,7 +14,8 @@ require.config({
         'underscore': 'lib/underscore',
         'template': '../template',
         'handlebars.runtime': 'lib/handlebars.runtime',
-        'showdown': 'lib/showdown'
+        'showdown': 'lib/showdown',
+        'moment': 'lib/moment-with-russian-locale'
     }
 });
 
@@ -24,14 +25,18 @@ require( [ 'semantic',
            'request',
            'user_state/model',
            'errors_handler',
-           'user_state/header_view'],
+           'user_state/header_view',
+           "jquery.datetimepicker",
+           'moment' ],
          function ( semantic,
                     app,
                     Workspace,
                     request,
                     UserStateModel,
                     errorsHandler,
-                    UserStateHeaderView ) {
+                    UserStateHeaderView,
+                    datetimepicker,
+                    moment ) {
     /// инициализация
     $( function() {
 

@@ -13,8 +13,10 @@ return templates['mail_view'] = template({"1":function(container,depth0,helpers,
     + alias4(((helper = (helper = helpers.subject || (depth0 != null ? depth0.subject : depth0)) != null ? helper : alias2),(typeof helper === alias3 ? helper.call(alias1,{"name":"subject","hash":{},"data":data}) : helper)))
     + "\n"
     + ((stack1 = helpers.unless.call(alias1,(depth0 != null ? depth0.readed : depth0),{"name":"unless","hash":{},"fn":container.program(1, data, 0),"inverse":container.noop,"data":data})) != null ? stack1 : "")
-    + "    </div>\n    <div class=\"description\">\n      "
+    + "    </div>\n    <div class=\"meta\">Создано "
+    + alias4((helpers.duration_from_now || (depth0 && depth0.duration_from_now) || alias2).call(alias1,(depth0 != null ? depth0.creation_time : depth0),{"name":"duration_from_now","hash":{},"data":data}))
+    + "</div>\n    <div class=\"description\">\n      <p>\n      "
     + ((stack1 = (helpers.markdown || (depth0 && depth0.markdown) || alias2).call(alias1,(depth0 != null ? depth0.body : depth0),{"name":"markdown","hash":{},"data":data})) != null ? stack1 : "")
-    + "\n    </div>\n  </div>\n</div>\n";
+    + "\n      </p>\n    </div>\n  </div>\n</div>\n";
 },"useData":true});
 });

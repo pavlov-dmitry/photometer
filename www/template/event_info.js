@@ -10,9 +10,9 @@ return templates['event_info'] = template({"compiler":[7,">= 4.0.0"],"main":func
     + " label\">\n        "
     + alias5(alias4(((stack1 = (depth0 != null ? depth0.state : depth0)) != null ? stack1.text : stack1), depth0))
     + "\n      </div>\n    </div>\n  </h2>\n  <div class=\"ui right aligned basic segment zeromargin\">\n    <i>\n      <strong>Начало:</strong> "
-    + alias5(((helper = (helper = helpers.starting_time || (depth0 != null ? depth0.starting_time : depth0)) != null ? helper : alias2),(typeof helper === alias3 ? helper.call(alias1,{"name":"starting_time","hash":{},"data":data}) : helper)))
+    + alias5((helpers.duration_from_now || (depth0 && depth0.duration_from_now) || alias2).call(alias1,(depth0 != null ? depth0.starting_time : depth0),{"name":"duration_from_now","hash":{},"data":data}))
     + "  <strong>Окончание:</strong> "
-    + alias5(((helper = (helper = helpers.ending_time || (depth0 != null ? depth0.ending_time : depth0)) != null ? helper : alias2),(typeof helper === alias3 ? helper.call(alias1,{"name":"ending_time","hash":{},"data":data}) : helper)))
+    + alias5((helpers.duration_from_now || (depth0 && depth0.duration_from_now) || alias2).call(alias1,(depth0 != null ? depth0.ending_time : depth0),{"name":"duration_from_now","hash":{},"data":data}))
     + "\n    </i>\n  </div>\n  <div id=\"description\">\n    "
     + ((stack1 = ((helper = (helper = helpers.description || (depth0 != null ? depth0.description : depth0)) != null ? helper : alias2),(typeof helper === alias3 ? helper.call(alias1,{"name":"description","hash":{},"data":data}) : helper))) != null ? stack1 : "")
     + "\n  </div>\n  <div id=\"action\">\n    "

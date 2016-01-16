@@ -1,6 +1,7 @@
 define( function(require) {
     var Handlebars = require( "handlebars.runtime" ),
-        markdown = require( "showdown_converter" );
+        markdown = require( "showdown_converter" ),
+        moment = require( "moment" );
 
     Handlebars.registerHelper( "markdown", function( data ) {
         return markdown.makeHtml( data );
@@ -27,6 +28,14 @@ define( function(require) {
         else {
             throw "handlebars template \"" + name + "\" not found by include helper";
         }
+    });
+
+    Handlebars.registerHelper( "time", function( data ) {
+        return moment( data ).format( "HH:mm dddd, DD MMMM YYYY");
+    });
+
+    Handlebars.registerHelper( "duration_from_now", function( data ) {
+        return moment( data ).fromNow();
     });
 
     return {};
