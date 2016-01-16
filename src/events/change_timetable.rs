@@ -71,7 +71,8 @@ struct AddEventInfo {
 #[derive(RustcEncodable)]
 struct ChangeTimetableInfo {
     group_name: String,
-    days_for_voting: i64
+    days_for_voting: i64,
+    current: Vec<TimetableEventInfo>
 }
 
 #[derive(RustcEncodable)]
@@ -113,13 +114,28 @@ impl GroupCreatedEvent for ChangeTimetable {
     /// описание создания
     fn user_creating_get( &self, req: &mut Request, group_id: Id ) -> AnswerResult {
         let db = try!( req.stuff().get_current_db_conn() );
-        let answer = match try!( db.group_info( group_id ) ) {
-            Some( group_info ) => Answer::good( ChangeTimetableInfo{
-                group_name: group_info.name,
-                days_for_voting: DAYS_FOR_VOTE
-            } ),
-            None => Answer::bad( "group_not_found" )
+
+        let group_name = match try!( db.group_info( group_id ) ) {
+            Some( group_info ) => group_info.name,
+            None => return Ok( Answer::bad( "group_not_found" ) )
         };
+
+        let timetable = try!( db.get_group_timetable( group_id ) );
+        let timetable_info = timetable.into_iter()
+            .map( |e| TimetableEventInfo {
+                event_id: e.id,
+                scheduled_id: e.scheduled_id,
+                name: e.name,
+                starting_time: e.start_time.msecs(),
+                ending_time: e.end_time.msecs()
+            })
+            .collect::<Vec<_>>();
+
+        let answer = Answer::good( ChangeTimetableInfo{
+            group_name: group_name,
+            days_for_voting: DAYS_FOR_VOTE,
+            current: timetable_info
+        });
         Ok( answer )
     }
     /// применение создания
@@ -340,6 +356,8 @@ struct Data {
 
 #[derive(RustcEncodable, Debug)]
 struct TimetableEventInfo {
+    event_id: EventId,
+    scheduled_id: Id,
     name: String,
     starting_time: u64,
     ending_time: u64,
@@ -366,6 +384,8 @@ impl ChangeByVoting for ChangeTimetable {
         let disable_events = try!( db.event_infos( &data.disable ) );
         let make_info = |event: ScheduledEventInfo| -> TimetableEventInfo {
             TimetableEventInfo {
+                event_id: event.id,
+                scheduled_id: event.scheduled_id,
                 name: event.name,
                 starting_time: event.start_time.msecs(),
                 ending_time: event.end_time.msecs()

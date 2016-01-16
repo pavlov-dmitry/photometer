@@ -2,10 +2,12 @@ define( function(require) {
     var Backbone = require( "lib/backbone" ),
         Handlebars = require( "handlebars.runtime" ),
         AddView = require( "change_timetable/add_view" ),
+        RemoveView = require( "change_timetable/remove_view" ),
         ChangeTimetableInfoModel = require( "change_timetable/info_model" ),
         markdown = require( 'showdown_converter' ),
         growl = require( "growl" ),
-        errors_handler = require( "errors_handler" );
+        errors_handler = require( "errors_handler" ),
+        moment = require( "moment" );
     require( "template/change_timetable" );
 
 
@@ -18,7 +20,8 @@ define( function(require) {
             "click #new-add-btn": "on_need_new_add",
             "change #description-input": "description_changed",
             "keyup #description-input": "description_changed",
-            "submit #change-timetable-form": "on_submit"
+            "submit #change-timetable-form": "on_submit",
+            "change #remove-datetimepicker": "on_try_add_remove"
         },
 
         initialize: function() {
@@ -26,11 +29,17 @@ define( function(require) {
             this.listenTo( this.info_model, "change", this.on_info_fetched );
 
             this.add_collection = this.model.get( "add" );
+            this.add_collection.reset();
             this.listenTo( this.add_collection, "add", this.on_new_add );
+
+            this.remove_collection = this.model.get( "remove" );
+            this.remove_collection.reset();
+            this.listenTo( this.remove_collection, "add", this.on_new_remove );
         },
 
         close: function () {
             this.stopListening( this.add_collection );
+            this.stopListening( this.remove_collection );
         },
 
         set_group_id: function( group_id ) {
@@ -42,21 +51,54 @@ define( function(require) {
         render: function() {
             this.$el.html( this.template( this.info_model.toJSON() ) );
             this.$desc_preview = $("#desc-preview");
+
+            this.$remove_datetimepicker = $("#remove-datetimepicker");
+            this.$remove_datetimepicker.datetimepicker({
+                format: "Y/m/d",
+                weeks: true,
+                dayOfWeekStart: 1,
+                inline: true,
+                timepicker: false,
+                highlightedDates: this.current_highlighted
+            });
+
             return this;
         },
 
         on_info_fetched: function() {
+            var timetable = this.info_model.get( "current" );
+            var highlighted = _.map( timetable, function( v ) {
+                return v.date_str + "," + v.name;
+            });
+            this.current_highlighted = highlighted;
+
             this.render();
         },
 
         on_new_add: function( data ) {
             var idx = this.add_collection.length - 1;
             var view = new AddView({ model: data });
-            $("#add-list").append( view.render( idx ).$el );
+            $("#add-list").append( view.render( idx, this.current_highlighted ).$el );
+        },
+
+        on_new_remove: function( data ) {
+            var view = new RemoveView({ model: data });
+            $("#remove-list").append( view.render().$el );
         },
 
         on_need_new_add: function() {
             this.add_collection.add_one_more();
+        },
+
+        on_try_add_remove: function() {
+            var date = this.$remove_datetimepicker.val();
+            var current_timetable = this.info_model.get( "current" );
+            var self = this;
+            _.forEach( current_timetable, function( v ) {
+                if ( date === v.date_str ) {
+                    self.remove_collection.try_add( v );
+                }
+            });
         },
 
         description_changed: function() {

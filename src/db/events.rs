@@ -40,6 +40,8 @@ pub trait DbEvents {
     fn event_start_time( &mut self, scheduled_id: Id ) -> CommonResult<Option<Timespec>>;
     /// кол-во непросмотренных событий в группах для пользователя
     fn get_unwatched_events_by_group( &mut self, user_id: Id ) -> CommonResult<UnwatchedInfos>;
+    /// возвращает текущее расписание группы
+    fn get_group_timetable( &mut self, group_id: Id ) -> CommonResult<EventInfos>;
 }
 
 pub fn create_tables( db: &Database ) -> EmptyResult {
@@ -128,6 +130,15 @@ impl DbEvents for MyPooledConn {
     fn get_unwatched_events_by_group( &mut self, user_id: Id ) -> CommonResult<UnwatchedInfos> {
         get_unwatched_events_by_group_impl( self, user_id )
             .map_err( |e| fn_failed( "get_unwatched_events_by_group", e ) )
+    }
+
+    /// возвращает текущее расписание группы
+    fn get_group_timetable( &mut self, group_id: Id ) -> CommonResult<EventInfos> {
+        let params: &[&ToValue] = &[ &group_id ];
+        get_events_impl( self,
+                         "state='not_started_yet' AND user_editable=true AND group_attached=true AND group_id=?",
+                         params )
+            .map_err( |e| fn_failed( "get_group_timetable", e ) )
     }
 }
 

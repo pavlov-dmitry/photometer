@@ -164,6 +164,11 @@ img.logo {
     margin: 0rem !important;
 }
 
+.nopadmar {
+    margin: 0rem !important;
+    padding: 0rem !important;
+}
+
 #yes-btn, #no-btn {
     width: 9rem
 }

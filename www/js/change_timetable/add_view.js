@@ -5,8 +5,6 @@ define( function(require) {
     require( "template/add_to_timetable" );
     require( "jquery.datetimepicker");
 
-    $.datetimepicker.setLocale('ru');
-
     var AddToTimetableView = Backbone.View.extend({
         template: Handlebars.templates.add_to_timetable,
 
@@ -18,10 +16,9 @@ define( function(require) {
 
         initialize: function() {
             this.listenTo( this.model, 'destroy', this.remove );
-            this.format = "H:i D, d M Y";
         },
 
-        render: function( idx ) {
+        render: function( idx, highlighted ) {
             var data = this.model.toJSON();
             data.idx = idx;
             this.idx = idx;
@@ -31,7 +28,8 @@ define( function(require) {
                 minDate: 0,
                 weeks: true,
                 dayOfWeekStart: 1,
-                format: this.format
+                format: "H:i D, d M Y",
+                highlightedDates: highlighted
             });
             this.$name_input = this.$el.find( ".name-input" );
             return this;

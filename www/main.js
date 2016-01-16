@@ -39,9 +39,10 @@ require( [ 'semantic',
                     moment ) {
     /// инициализация
     $( function() {
-
         app.workspace = new Workspace;
         app.userState = new UserStateModel;
+
+        $.datetimepicker.setLocale('ru');
 
         request.internalError = errorsHandler.processInternalError;
         request.unauthorized = function() {
