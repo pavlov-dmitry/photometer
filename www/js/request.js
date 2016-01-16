@@ -19,8 +19,12 @@ define( function( require ) {
 		good: function() { console.log( "default good" ); },
 		bad: function() { console.log( "default.bad" ); },
 		access_denied: function() {
-                    var errorsHandler = require( "errors_handler" );
-                    errorsHandler.error( "Отказано в доступе. Кажется кто-то что-то химичит, или что-то пошле не так." );
+                    var growl = require( "growl" );
+                    growl({
+                        header: "Отказано в доступе",
+                        msg: "Кажется кто-то что-то химичит, или что-то пошло не так.",
+                        negative: true
+                    }, "long");
                 },
                 unauthorized: function() {
                     self.unauthorized();
@@ -52,10 +56,7 @@ define( function( require ) {
 	    ajaxHandler.fail( function( resp ) {
 		if ( resp.status === 400 ) {
 		    var responseData = JSON.parse( resp.responseText );
-		    if ( responseData && responseData.access && responseData.access === "denied" ) {
-			handlerObj.access_denied();
-		    }
-		    else if ( responseData ) {
+		    if ( responseData ) {
 			handlerObj.bad( responseData );
 		    }
 		    else {
@@ -64,6 +65,9 @@ define( function( require ) {
 		}
                 else if ( resp.status === 401 ) {
                     handlerObj.unauthorized();
+                }
+                else if ( resp.status === 403 ) {
+		    handlerObj.access_denied();
                 }
                 else if ( resp.status === 404 ) {
                     handlerObj.not_found( resp, this );

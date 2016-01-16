@@ -51,6 +51,7 @@ define( function(require) {
         render: function() {
             this.$el.html( this.template( this.info_model.toJSON() ) );
             this.$desc_preview = $("#desc-preview");
+            this.$form = $("#change-timetable-form");
 
             this.$remove_datetimepicker = $("#remove-datetimepicker");
             this.$remove_datetimepicker.datetimepicker({
@@ -109,6 +110,7 @@ define( function(require) {
 
         on_submit: function() {
             this.close_all_errors();
+            this.$form.addClass( "loading" );
             var handler = this.model.save( this.group_id );
             var self = this;
             handler.good = function() {
@@ -129,6 +131,9 @@ define( function(require) {
             handler.not_found = this.not_found;
             handler.bad = function( data ) {
                 self.show_errors( data );
+            }
+            handler.finish = function() {
+                self.$form.removeClass( "loading" );
             }
         },
 

@@ -200,7 +200,7 @@ impl<'a, 'b> EventsManagerRequest for Request<'a, 'b> {
                 Err( answer_result ) => answer_result
             }
         } else {
-            let answer = Answer::bad( FieldErrorInfo::new( "user", "not_in_group" ) );
+            let answer = Answer::access_denied();
             Ok( answer )
         }
     }
