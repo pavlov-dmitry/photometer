@@ -26,7 +26,7 @@ pub fn common_error<T>( s: String ) -> CommonResult<T> {
 #[derive(Debug, RustcEncodable)]
 pub struct PhotoInfo {
     pub id: Id,
-    pub upload_time: i64,
+    pub upload_time: u64,
     pub image_type: ImageType,
     pub width: u32,
     pub height: u32,

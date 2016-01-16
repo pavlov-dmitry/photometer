@@ -14,6 +14,7 @@ use db::photos::{ DbPhotos };
 use iron::prelude::*;
 use params_body_parser::{ ParamsBody, BinParamsError };
 use std::convert::From;
+use parse_utils::{ GetMsecs };
 
 static IMAGE : &'static str = "upload_img";
 
@@ -97,7 +98,7 @@ fn make_photo_info( owner: &User,
     let exif_ref = exif.as_ref();
     PhotoInfo {
         id: 0,
-        upload_time: upload_time.sec,
+        upload_time: upload_time.msecs(),
         image_type: img_type,
         width: w,
         height: h,

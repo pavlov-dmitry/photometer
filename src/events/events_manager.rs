@@ -20,7 +20,7 @@ use iron::prelude::*;
 use authentication::Userable;
 use db::groups::DbGroups;
 use answer_types::{ OkInfo, FieldErrorInfo };
-use parse_utils::{ timespec_string };
+use parse_utils::{ GetMsecs };
 
 pub trait EventsManagerStuff {
     fn maybe_start_some_events(&mut self) -> EmptyResult;
@@ -40,8 +40,8 @@ pub trait EventsManagerRequest {
 struct EventInfoAnswer {
     id: EventId,
     name: String,
-    starting_time: String,
-    ending_time: String,
+    starting_time: u64,
+    ending_time: u64,
     state: EventState,
     action: UserAction,
     description: Description
@@ -117,8 +117,8 @@ impl<'a, 'b> EventsManagerRequest for Request<'a, 'b> {
             let answer = EventInfoAnswer {
                 id: event_info.id,
                 state: event_info.state,
-                starting_time: timespec_string( event_info.start_time ),
-                ending_time: timespec_string( event_info.end_time ),
+                starting_time: event_info.start_time.msecs(),
+                ending_time: event_info.end_time.msecs(),
                 name: event_info.name.clone(),
                 action: user_action,
                 description: event_description

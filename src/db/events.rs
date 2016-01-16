@@ -15,6 +15,7 @@ use time::{ Timespec };
 use std::fmt::Display;
 use events::{ EventId, MaybeEventId, ScheduledEventInfo, EventState, FullEventInfo };
 use database::Database;
+use parse_utils::{ GetMsecs, IntoTimespec };
 
 type EventInfos = Vec<ScheduledEventInfo>;
 type UnwatchedInfos = Vec<(Id, u32)>;
@@ -47,8 +48,8 @@ pub fn create_tables( db: &Database ) -> EmptyResult {
             `id` bigint(20) NOT NULL AUTO_INCREMENT,
             `event_id` int(4) NOT NULL DEFAULT '0',
             `event_name` varchar(128) NOT NULL DEFAULT '',
-            `start_time` int(11) NOT NULL DEFAULT '0',
-            `end_time` int(11) NOT NULL DEFAULT '0',
+            `start_time` bigint(20) NOT NULL DEFAULT '0',
+            `end_time` bigint(20) NOT NULL DEFAULT '0',
             `data` TEXT NOT NULL DEFAULT '',
             `state` ENUM(
                 'not_started_yet',
@@ -70,7 +71,7 @@ pub fn create_tables( db: &Database ) -> EmptyResult {
 impl DbEvents for MyPooledConn {
     /// считывает события которые должны стратануть за период
     fn starting_events( &mut self, moment: &Timespec ) -> CommonResult<EventInfos> {
-        let params: &[&ToValue] = &[ &moment.sec ];
+        let params: &[&ToValue] = &[ &moment.msecs() ];
         get_events_impl( self, "start_time <= ? AND state='not_started_yet'", params )
             .map_err( |e| fn_failed( "starting_events", e ) )
     }
@@ -84,7 +85,7 @@ impl DbEvents for MyPooledConn {
 
     /// считывает собыятия которые должны закончится за период
     fn ending_events( &mut self, moment: &Timespec ) -> CommonResult<EventInfos> {
-        let params: &[&ToValue] = &[ &moment.sec ];
+        let params: &[&ToValue] = &[ &moment.msecs() ];
         get_events_impl( self, "end_time <= ? AND state='active'", params )
             .map_err( |e| fn_failed( "ending_events", e ) )
     }
@@ -220,13 +221,14 @@ fn get_events_impl<T: ToRow>( conn: &mut MyPooledConn, where_cond: &str, values:
               data,
               state,
               group_attached,
-              group_id ) = from_row( row );
+              group_id )
+            = from_row::<(Id, EventId, u64, u64, String, String, EventState, bool, Id)>( row );
 
         events.push( ScheduledEventInfo {
             scheduled_id: scheduled_id,
             id: id,
-            start_time: Timespec::new( start_time, 0 ),
-            end_time: Timespec::new( end_time, 0 ),
+            start_time: start_time.into_timespec(),
+            end_time: end_time.into_timespec(),
             name: name,
             data: data,
             state: state,
@@ -262,12 +264,13 @@ fn event_info_impl( conn: &mut MyPooledConn, scheduled_id: Id ) -> MyResult<Opti
                   data,
                   state,
                   group_attached,
-                  group_id ) = from_row( row );
+                  group_id )
+                = from_row::<(EventId, u64, u64, String, String, EventState, bool, Id)>( row );
 
             Some( ScheduledEventInfo {
                 id: id,
-                start_time: Timespec::new( start_time, 0 ),
-                end_time: Timespec::new( end_time, 0 ),
+                start_time: start_time.into_timespec(),
+                end_time: end_time.into_timespec(),
                 scheduled_id: scheduled_id,
                 name: name,
                 data: data,
@@ -313,11 +316,8 @@ fn event_start_time_impl( conn: &mut MyPooledConn, scheduled_id: Id ) -> MyResul
     let result = match sql_result.next() {
         Some( row ) => {
             let row = try!( row );
-            let (sec,) = from_row( row );
-            Some( Timespec{
-                sec: sec,
-                nsec: 0
-            } )
+            let (msecs,): (u64,) = from_row( row );
+            Some( msecs.into_timespec() )
         }
         None => None
     };
@@ -348,8 +348,8 @@ fn add_events_impl( conn: &mut MyPooledConn, events: &[FullEventInfo] ) -> MyRes
         let event = &events[ i ];
         values.push( event.id.into_value() );
         values.push( event.name.clone().into_value() );
-        values.push( event.start_time.sec.into_value() );
-        values.push( event.end_time.sec.into_value() );
+        values.push( event.start_time.msecs().into_value() );
+        values.push( event.end_time.msecs().into_value() );
         values.push( event.data.clone().into_value() );
         let (group_attached, group_id) = to_group_info( event.group );
         values.push( group_attached.into_value() );
@@ -381,8 +381,8 @@ fn add_disabled_event_impl( conn: &mut MyPooledConn, event: &FullEventInfo ) -> 
     let params: &[ &ToValue ] = &[
         &event.id,
         &event.name,
-        &event.start_time.sec,
-        &event.end_time.sec,
+        &event.start_time.msecs(),
+        &event.end_time.msecs(),
         &event.data,
         &EventState::Disabled,
         &group_attached,

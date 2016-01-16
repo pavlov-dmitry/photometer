@@ -20,7 +20,7 @@ use time::{ self, Timespec };
 use rustc_serialize::json;
 use iron::prelude::*;
 use get_body::GetBody;
-use parse_utils;
+use parse_utils::{ GetMsecs, IntoTimespec };
 use std::convert::From;
 
 #[derive(Clone)]
@@ -51,7 +51,7 @@ struct TimetableDiffInfoStr {
 struct AddEventInfoStr {
     event_id: EventId,
     name: String,
-    time: String,
+    time: u64,
     params: String
 }
 
@@ -206,26 +206,13 @@ fn parse_times( diff_str: TimetableDiffInfoStr ) -> Result<TimetableDiffInfo, An
     }
 
     parsed_time.reserve( diff_str.add.len() );
-    for (idx, add) in diff_str.add.into_iter().enumerate() {
-        match parse_utils::parse_timespec( &add.time ) {
-            Ok( tm ) => {
-                parsed_time.push( AddEventInfo {
-                    event_id: add.event_id,
-                    name: add.name,
-                    time: tm,
-                    params: add.params
-                });
-            },
-            Err( _ ) => {
-                // return Err( Err( err_msg::parsing_error_param( "time" ) ) )
-                errors.push( FieldErrorInfo {
-                    field_class: FieldClass::ForAdd,
-                    field_type: FieldType::Datetime,
-                    idx: idx,
-                    reason: ErrorReason::Invalid
-                });
-            }
-        };
+    for add in diff_str.add.into_iter() {
+        parsed_time.push( AddEventInfo {
+            event_id: add.event_id,
+            name: add.name,
+            time: add.time.into_timespec(),
+            params: add.params
+        });
     }
 
     match errors.is_empty() {
@@ -354,8 +341,8 @@ struct Data {
 #[derive(RustcEncodable, Debug)]
 struct TimetableEventInfo {
     name: String,
-    starting_time: String,
-    ending_time: String,
+    starting_time: u64,
+    ending_time: u64,
 }
 
 #[derive(RustcEncodable, Debug)]
@@ -380,8 +367,8 @@ impl ChangeByVoting for ChangeTimetable {
         let make_info = |event: ScheduledEventInfo| -> TimetableEventInfo {
             TimetableEventInfo {
                 name: event.name,
-                starting_time: parse_utils::timespec_string( event.start_time ),
-                ending_time: parse_utils::timespec_string( event.end_time )
+                starting_time: event.start_time.msecs(),
+                ending_time: event.end_time.msecs()
             }
         };
         let enable_events = enable_events.into_iter()

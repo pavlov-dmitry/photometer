@@ -116,16 +116,39 @@ pub fn str_between<'a>( source: &'a str, start: &'a str, end: &'a str ) -> Optio
         } )
 }
 
-static TIME_FORMAT: &'static str = "%Y/%m/%d %k:%M";
+// static TIME_FORMAT: &'static str = "%Y/%m/%d %k:%M";
 
-pub fn parse_timespec( s: &str ) -> Result<time::Timespec, time::ParseError> {
-    time::strptime( s, TIME_FORMAT )
-          .map( |t| t.to_timespec() )
+// pub fn parse_timespec( s: &str ) -> Result<time::Timespec, time::ParseError> {
+//     time::strptime( s, TIME_FORMAT )
+//           .map( |t| t.to_timespec() )
+// }
+
+// pub fn timespec_string( timespec: time::Timespec ) -> String {
+//     let tm = time::at( timespec );
+//     time::strftime( TIME_FORMAT, &tm )
+//         .expect( &format!( "Invalid convertion from timespec to string with format: {}",
+//                             TIME_FORMAT ) )
+// }
+
+pub trait GetMsecs {
+    fn msecs(&self) -> u64;
 }
 
-pub fn timespec_string( timespec: time::Timespec ) -> String {
-    let tm = time::at( timespec );
-    time::strftime( TIME_FORMAT, &tm )
-        .expect( &format!( "Invalid convertion from timespec to string with format: {}",
-                            TIME_FORMAT ) )
+impl GetMsecs for time::Timespec {
+    fn msecs(&self) -> u64 {
+        return ( self.sec as u64 ) * 1000 + ( self.nsec as u64 ) / 1000000;
+    }
+}
+
+pub trait IntoTimespec {
+    fn into_timespec(self) -> time::Timespec;
+}
+
+impl IntoTimespec for u64 {
+    fn into_timespec(self) -> time::Timespec {
+        time::Timespec {
+            sec: ( self / 1000 ) as i64,
+            nsec: ( ( self % 1000 ) * 1000000  ) as i32
+        }
+    }
 }

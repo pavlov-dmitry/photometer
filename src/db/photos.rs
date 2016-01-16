@@ -26,7 +26,7 @@ pub fn create_tables( db: &Database ) -> EmptyResult {
         "CREATE TABLE IF NOT EXISTS `images` (
             `id` bigint(20) NOT NULL AUTO_INCREMENT,
             `owner_id` int(4) unsigned DEFAULT '0',
-            `upload_time` int(11) NOT NULL DEFAULT '0',
+            `upload_time` bigint(20) NOT NULL DEFAULT '0',
             `type` enum( 'jpg', 'png' ) NOT NULL DEFAULT 'jpg',
             `width` int(4) unsigned DEFAULT '0',
             `height` int(4) unsigned DEFAULT '0',

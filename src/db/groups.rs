@@ -7,6 +7,7 @@ use std::fmt::Display;
 use database::Database;
 use std::convert::From;
 use time::Timespec;
+use parse_utils::{ GetMsecs, IntoTimespec };
 
 type Members = Vec<User>;
 type Groups = Vec<(Id, String)>;
@@ -229,7 +230,7 @@ fn set_last_visited_time_impl( conn: &mut MyPooledConn, user_id: Id, group_id: I
                  AND
                      group_id = ?";
     let mut stmt = try!( conn.prepare( query ) );
-    try!( stmt.execute( ( time.sec, user_id, group_id ) ) );
+    try!( stmt.execute( ( time.msecs(), user_id, group_id ) ) );
     Ok( () )
 }
 
@@ -239,8 +240,8 @@ fn get_last_visited_time_impl( conn: &mut MyPooledConn, user_id: Id, group_id: I
     let mut stmt = try!( conn.prepare( query ) );
     let mut result = try!( stmt.execute( ( &user_id, &group_id ) ) );
     let row = try!( result.next().unwrap() );
-    let time = from_row::<i64>( row );
-    Ok( Timespec::new( time, 0 ) )
+    let time_msecs = from_row::<u64>( row );
+    Ok( time_msecs.into_timespec() )
 }
 
 fn member_in_groups_impl( conn: &mut MyPooledConn, user_id: Id ) -> MyResult<Groups> {

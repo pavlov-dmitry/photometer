@@ -11,6 +11,7 @@ use types::{ ImageType };
 use iron::typemap::Key;
 use iron::middleware::BeforeMiddleware;
 use iron::prelude::*;
+use parse_utils::{ GetMsecs };
 
 static GALLERY_DIR : &'static str = "gallery";
 
@@ -65,13 +66,13 @@ impl PhotoStore {
                 let (w, h) = img.dimensions();
                 let crop_size = min( w, h );
                 let preview_filename = self.make_filename( &user.name,
-                                                            upload_time.sec,
+                                                            upload_time.msecs(),
                                                             &img_type,
                                                             true );
                 let preview_filename = Path::new( &preview_filename );
 
                 let photo_filename = self.make_filename( &user.name,
-                                                          upload_time.sec,
+                                                          upload_time.msecs(),
                                                           &img_type,
                                                           false );
                 let photo_filename = Path::new( &photo_filename );
@@ -108,7 +109,7 @@ impl PhotoStore {
 
     pub fn make_crop(
         &self, user: &String,
-        upload_time: i64,
+        upload_time: u64,
         image_type: ImageType,
         (tlx, tly): (u32, u32),
         (brx, bry) : (u32, u32)
@@ -136,7 +137,7 @@ impl PhotoStore {
     }
 
     /// формирует имя файла в зависимости от пользователя и события
-    pub fn make_filename( &self, user: &String, upload_time: i64, tp: &ImageType, is_preview: bool ) -> String {
+    pub fn make_filename( &self, user: &String, upload_time: u64, tp: &ImageType, is_preview: bool ) -> String {
         let extension = if *tp == ImageType::Png || is_preview { "png" } else { "jpg" };
         let postfix = if is_preview { "_preview" } else { "" };
         //Path::new(

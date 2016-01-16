@@ -4,7 +4,7 @@ use mysql::value::{ from_row, ToValue };
 use time;
 use types::{ Id, CommonResult, EmptyResult, MailInfo, CommonError };
 use std::fmt::Display;
-use parse_utils;
+use parse_utils::{ self, GetMsecs };
 use database::Database;
 use std::str::FromStr;
 
@@ -23,7 +23,7 @@ pub fn create_tables( db: &Database ) -> EmptyResult {
     db.execute(
         "CREATE TABLE IF NOT EXISTS `mailbox` (
             `id` bigint(20) NOT NULL AUTO_INCREMENT,
-            `creation_time` int(11) NOT NULL DEFAULT '0',
+            `creation_time` bigint(20) NOT NULL DEFAULT '0',
             `recipient_id` int(4) unsigned DEFAULT '0',
             `sender_name` varchar(128) NOT NULL DEFAULT '',
             `subject` varchar(128) NOT NULL DEFAULT '',
@@ -83,7 +83,7 @@ fn send_mail_impl( conn: &mut MyPooledConn, recipient_id: Id, sender_name: &str,
     let readed = false;
 
     let params: &[ &ToValue ] = &[
-        &now_time.sec,
+        &now_time.msecs(),
         &recipient_id,
         &sender_name,
         &subject,
