@@ -18,7 +18,7 @@ define( function(require) {
 
         initialize: function() {
             this.listenTo( this.model, 'destroy', this.remove );
-            this.format = "H:m D, d M Y";
+            this.format = "H:i D, d M Y";
         },
 
         render: function( idx ) {
