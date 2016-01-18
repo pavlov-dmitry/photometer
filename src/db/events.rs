@@ -42,6 +42,8 @@ pub trait DbEvents {
     fn get_unwatched_events_by_group( &mut self, user_id: Id ) -> CommonResult<UnwatchedInfos>;
     /// возвращает текущее расписание группы
     fn get_group_timetable( &mut self, group_id: Id ) -> CommonResult<EventInfos>;
+    /// "выключает" событие если оно еще не началось
+    fn disable_event_if_not_started( &mut self, scheduled_id: Id ) -> EmptyResult;
 }
 
 pub fn create_tables( db: &Database ) -> EmptyResult {
@@ -139,6 +141,12 @@ impl DbEvents for MyPooledConn {
                          "state='not_started_yet' AND user_editable=true AND group_attached=true AND group_id=?",
                          params )
             .map_err( |e| fn_failed( "get_group_timetable", e ) )
+    }
+
+    /// "выключает" событие если оно еще не началось
+    fn disable_event_if_not_started( &mut self, scheduled_id: Id ) -> EmptyResult {
+        disable_event_if_not_started_impl( self, scheduled_id )
+            .map_err( |e| fn_failed( "disable_event_if_not_started", e ) )
     }
 }
 
@@ -407,6 +415,22 @@ fn add_disabled_event_impl( conn: &mut MyPooledConn, event: &FullEventInfo ) -> 
 fn set_event_state_impl( conn: &mut MyPooledConn, scheduled_id: Id, state: EventState ) -> MyResult<()> {
     let mut stmt = try!( conn.prepare( "UPDATE scheduled_events SET state=? WHERE id=?" ) );
     let params: &[ &ToValue ] = &[ &state, &scheduled_id ];
+    try!( stmt.execute( params ) );
+    Ok( () )
+}
+
+/// "выключает" событие если оно еще не началось
+fn disable_event_if_not_started_impl( conn: &mut MyPooledConn, scheduled_id: Id ) -> MyResult<()> {
+    let mut stmt = try!( conn.prepare( "
+        UPDATE
+            `scheduled_events`
+        SET
+            `state`='disabled'
+        WHERE
+            `id`=? AND
+            `state`='not_started_yet'
+    " ) );
+    let params: &[ &ToValue ] = &[ &scheduled_id ];
     try!( stmt.execute( params ) );
     Ok( () )
 }

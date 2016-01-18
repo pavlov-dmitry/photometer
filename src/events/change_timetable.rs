@@ -409,7 +409,7 @@ impl ChangeByVoting for ChangeTimetable {
         let data = try!( get_data( body ) );
         let db = try!( stuff.get_current_db_conn() );
         for id in data.disable {
-            try!( db.set_event_state( id, EventState::Disabled ) );
+            try!( db.disable_event_if_not_started( id ) );
         }
         for id in data.enable {
             try!( db.set_event_state( id, EventState::NotStartedYet ) );
