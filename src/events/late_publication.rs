@@ -44,7 +44,8 @@ impl LatePublication {
             start_time: start_time,
             end_time: start_time + duration,
             data: json::encode( &info ).unwrap(),
-            group: Some( group_id )
+            group: Some( group_id ),
+            creator: None
         }
     }
 }

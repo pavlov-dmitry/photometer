@@ -9,7 +9,16 @@
   </h2>
   <div class="ui right aligned basic segment zeromargin">
     <i>
-      <strong>Начало:</strong> {{duration_from_now starting_time}}  <strong>Окончание:</strong> {{duration_from_now ending_time}}
+      <strong>Создано</strong>
+      {{#if creator}}
+      <div class="ui blue label">
+        {{creator.name}}
+      </div>
+      {{/if}}
+      <strong>:</strong>
+      {{duration_from_now starting_time}}
+      <strong>Окончание:</strong>
+      {{duration_from_now ending_time}}
     </i>
   </div>
   <div id="description">

@@ -21,6 +21,7 @@ use rustc_serialize::json;
 use iron::prelude::*;
 use get_body::GetBody;
 use parse_utils::{ GetMsecs, IntoTimespec };
+use authentication::{ Userable };
 
 #[derive(Clone)]
 pub struct ChangeTimetable;
@@ -138,6 +139,7 @@ impl GroupCreatedEvent for ChangeTimetable {
     }
     /// применение создания
     fn user_creating_post( &self, req: &mut Request, group_id: Id ) -> Result<FullEventInfo, AnswerResult> {
+        let user_id = req.user().id;
         let diff_info_str = try!( req.get_body::<TimetableDiffInfoStr>() );
 
         // парсим время
@@ -172,7 +174,8 @@ impl GroupCreatedEvent for ChangeTimetable {
                 start_time: start_time,
                 end_time: end_time,
                 data: event_data,
-                group: Some( group_id )
+                group: Some( group_id ),
+                creator: None
             };
             let new_event_id = try!( db.add_disabled_event( &new_event_info ) );
             added_ids.push( new_event_id );
@@ -191,7 +194,8 @@ impl GroupCreatedEvent for ChangeTimetable {
             start_time: self_start_time,
             end_time: self_end_time,
             data: json::encode( &data ).unwrap(),
-            group: Some( group_id )
+            group: Some( group_id ),
+            creator: Some( user_id )
         };
         // создаём голосование и хотим что бы за изменение расписания проголосовала хотя бы половина
         Ok( group_voting::new( group_id, 0.5, &self_info ) )

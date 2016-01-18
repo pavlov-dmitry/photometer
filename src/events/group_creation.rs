@@ -135,7 +135,8 @@ impl UserCreatedEvent for GroupCreation {
             start_time: start_time,
             end_time: end_time,
             data: json::encode( &info ).unwrap(),
-            group: None
+            group: None,
+            creator: Some( user_id )
         })
     }
 }

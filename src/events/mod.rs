@@ -1,5 +1,6 @@
 use types::{ Id, EmptyResult, CommonResult, common_error };
 use answer::{ AnswerResult };
+use authentication::UserInfo;
 use time::Timespec;
 use iron::prelude::*;
 use stuff::Stuff;
@@ -26,7 +27,14 @@ pub struct ScheduledEventInfo {
     pub data: String,
     pub state: EventState,
     /// показывает что событие привязано к какой-то группе
-    pub group: Option<Id>
+    pub group: Option<ShortGroupInfo>,
+    pub creator: Option<UserInfo>
+}
+
+#[derive(Clone, Debug, RustcEncodable)]
+pub struct ShortGroupInfo {
+    pub id: Id,
+    pub name: String
 }
 
 #[derive(Debug)]
@@ -37,7 +45,9 @@ pub struct FullEventInfo {
     pub end_time: Timespec,
     pub data: String,
     /// показывает что событие привязано к какой-то группе
-    pub group: Option<Id>
+    pub group: Option<Id>,
+    /// показывает что это событие создал опередленный пользователь
+    pub creator: Option<Id>
 }
 
 #[derive(Clone, RustcDecodable)]
@@ -180,7 +190,7 @@ pub fn make_event_link( id: Id ) -> String {
 
 pub fn get_group_id( body: &ScheduledEventInfo ) -> CommonResult<Id> {
     match body.group {
-        Some( id ) => Ok( id ),
+        Some( ref group ) => Ok( group.id ),
         None => common_error(
             format!( "group_id not found in ScheduledEventInfo id={:?} scheduled_id={}",
                       body.id,

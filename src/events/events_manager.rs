@@ -17,7 +17,7 @@ use time;
 use answer::{ Answer, AnswerResult };
 use types::{ Id };
 use iron::prelude::*;
-use authentication::Userable;
+use authentication::{ Userable, UserInfo };
 use db::groups::DbGroups;
 use answer_types::{ OkInfo, FieldErrorInfo };
 use parse_utils::{ GetMsecs };
@@ -44,7 +44,8 @@ struct EventInfoAnswer {
     ending_time: u64,
     state: EventState,
     action: UserAction,
-    description: Description
+    description: Description,
+    creator: Option<UserInfo>
 }
 
 impl EventsManagerStuff for Stuff {
@@ -88,9 +89,9 @@ fn is_valid_user_for_action( event_info: &ScheduledEventInfo,
         EventState::Active => {
             // при необходимости проверяем на вхождение в группу
             match event_info.group {
-                Some( group_id ) => {
+                Some( ref group ) => {
                     let db = try!( stuff.get_current_db_conn() );
-                    try!( db.is_member( user_id, group_id ) )
+                    try!( db.is_member( user_id, group.id ) )
                 },
                 None => true
             }
@@ -121,7 +122,8 @@ impl<'a, 'b> EventsManagerRequest for Request<'a, 'b> {
                 ending_time: event_info.end_time.msecs(),
                 name: event_info.name.clone(),
                 action: user_action,
-                description: event_description
+                description: event_description,
+                creator: event_info.creator.clone()
             };
             Ok( Answer::good( answer ) )
         })

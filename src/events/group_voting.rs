@@ -11,12 +11,11 @@ use super::{
     UserAction,
 };
 use super::helpers;
-use types::{ Id, EmptyResult, CommonResult, CommonError, common_error };
+use types::{ Id, EmptyResult, CommonResult, CommonError };
 use rustc_serialize::json;
 use database::{ Databaseable };
 use stuff::{ Stuff };
 use db::votes::{ DbVotes, Votes };
-use db::groups::DbGroups;
 use mail_writer::MailWriter;
 use iron::prelude::*;
 use answer::{ AnswerResult };
@@ -49,7 +48,8 @@ pub fn new( group_id: Id, success_coeff: f32, internal_event: &FullEventInfo ) -
         start_time: internal_event.start_time.clone(),
         end_time: internal_event.end_time.clone(),
         data: json::encode( &data ).unwrap(),
-        group: Some( group_id )
+        group: Some( group_id ),
+        creator: internal_event.creator.clone()
     }
 }
 
@@ -85,7 +85,7 @@ impl Event for GroupVoting {
             try!( db.add_rights_of_voting_for_group( body.scheduled_id, data.group_id ) );
         }
 
-        let group_name = try!( get_group_name( stuff, &data ) );
+        let group_name = get_group_name( body );
         let internal_body = make_internal_body( &data, &body );
         let event_name = try!( get_event_name( stuff, &internal_body ) );
 
@@ -101,7 +101,7 @@ impl Event for GroupVoting {
         let data = try!( get_data( body ) );
         let internal_body = make_internal_body( &data, &body );
         let event_name = try!( get_event_name( stuff, &internal_body ) );
-        let group_name = try!( get_group_name( stuff, &data ) );
+        let group_name = get_group_name( body );
 
         let votes = {
             let db = try!( stuff.get_current_db_conn() );
@@ -208,7 +208,8 @@ fn make_internal_body( data: &Data, body: &ScheduledEventInfo ) -> ScheduledEven
         name: body.name.clone(),
         state: body.state.clone(),
         data: data.internal_data.clone(),
-        group: body.group.clone()
+        group: body.group.clone(),
+        creator: body.creator.clone()
     }
 }
 
@@ -222,11 +223,9 @@ fn get_event_name( stuff: &mut Stuff, body: &ScheduledEventInfo ) -> CommonResul
     event.name( stuff, &body )
 }
 
-fn get_group_name( stuff: &mut Stuff, data: &Data ) -> CommonResult<String> {
-    let db = try!( stuff.get_current_db_conn() );
-    let group_info = try!( db.group_info( data.group_id ) );
-    match group_info {
-        Some( info ) => Ok( info.name ),
-        None => common_error( "GroupVoting::get_group_name: invalid group id".to_owned() )
+fn get_group_name( info: &ScheduledEventInfo ) -> String {
+    match info.group {
+        Some( ref group_info ) => group_info.name.clone(),
+        None => panic!( "GroupVoting invalid event body, without group info." )
     }
 }

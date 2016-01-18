@@ -18,6 +18,12 @@ pub struct User {
     pub mail: String
 }
 
+#[derive(Clone, RustcEncodable)]
+pub struct UserInfo {
+    pub id: Id,
+    pub name: String
+}
+
 /*impl User {
     pub fn new( name: &str, id: Id ) -> User {
         User {

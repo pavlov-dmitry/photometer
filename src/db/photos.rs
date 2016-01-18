@@ -151,7 +151,8 @@ fn get_photo_info_impl( conn: &mut MyPooledConn, photo_id: Id ) -> MyResult<Opti
         i.focal_length,
         i.focal_length_35mm,
         i.camera_model
-        FROM images AS i LEFT JOIN users AS u ON ( u.id = i.owner_id )
+        FROM images AS i
+        LEFT JOIN users AS u ON ( u.id = i.owner_id )
         WHERE u.id IS NOT NULL AND i.id = ?" )
     );
     let mut sql_result = try!( stmt.execute( (photo_id,) ) );
