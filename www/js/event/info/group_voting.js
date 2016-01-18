@@ -4,6 +4,11 @@ define( function(require) {
     require( "template/group_voting_info" );
 
     var group_voting_info = {
+        caption: function( name, data ) {
+            var info_data = JSON.parse( data.info );
+            var info = internal_collection( data.internal_id );
+            return info.caption( name );
+        },
         makeHtml: function( data ) {
             var info_data = JSON.parse( data.info );
             var info = internal_collection( data.internal_id );

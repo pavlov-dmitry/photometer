@@ -21,7 +21,6 @@ use rustc_serialize::json;
 use iron::prelude::*;
 use get_body::GetBody;
 use parse_utils::{ GetMsecs, IntoTimespec };
-use std::convert::From;
 
 #[derive(Clone)]
 pub struct ChangeTimetable;
@@ -31,7 +30,6 @@ const DAYS_FOR_VOTE : i64 = 5;
 const MAX_NAME_LENGTH: usize = 64;
 const MAX_PARAMS_LENGTH: usize = 2048;
 const MAX_DESCRIPTION_LENGTH: usize = 2048;
-const NAME: &'static str = "Изменение расписания";
 
 impl ChangeTimetable {
     pub fn new() -> ChangeTimetable {
@@ -186,9 +184,10 @@ impl GroupCreatedEvent for ChangeTimetable {
             disable: diff_info.remove,
             enable: added_ids
         };
+        let group_name = try!( db.group_info( group_id ) ).unwrap().name;
         let self_info = FullEventInfo {
             id: ID,
-            name: String::from( NAME ),
+            name: group_name,
             start_time: self_start_time,
             end_time: self_end_time,
             data: json::encode( &data ).unwrap(),
@@ -418,7 +417,7 @@ impl ChangeByVoting for ChangeTimetable {
     }
 
     /// краткое имя события, будет в основном использоваться в рассылке
-    fn name( &self, _stuff: &mut Stuff, _body: &ScheduledEventInfo ) -> CommonResult<String> {
-        Ok( String::from( NAME ) )
+    fn name( &self, _stuff: &mut Stuff, body: &ScheduledEventInfo ) -> CommonResult<String> {
+        Ok( format!( "Изменение расписания в группе '{}'", body.name ) )
     }
 }

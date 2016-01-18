@@ -207,9 +207,7 @@ impl MailWriter for Stuff {
                                           scheduled_id: Id ) -> (String, String)
     {
         let body = self.get_body();
-        let subject = format!( "Старт голосования за '{}' в группе '{}'",
-                                event_name,
-                                group_name );
+        let subject = format!( "Старт голосования за '{}'", event_name );
         let mail = format!( "В группе **{}** грядут изменения: {event}. Группа нуждается в твоём мнении! Вырази его перейдя по ссылке: [{event}]({}{})",
                              group_name,
                              &body.root_url,
@@ -224,9 +222,7 @@ impl MailWriter for Stuff {
                                            scheduled_id: Id ) -> (String, String)
     {
         let body = self.get_body();
-        let subject = format!( "Утверждено '{}' в группе '{}'",
-                                event_name,
-                                group_name );
+        let subject = format!( "Утверждено '{}'", event_name );
         let mail = format!( "В группе **{}** утверждено изменение: {event}. Вот ссылка на результаты голосования [{event}]({}{})",
                              group_name,
                              &body.root_url,
@@ -241,10 +237,8 @@ impl MailWriter for Stuff {
                                          scheduled_id: Id ) -> (String, String)
     {
         let body = self.get_body();
-        let subject = format!( "Отклонено '{}' в группе '{}'",
-                                event_name,
-                                group_name );
-        let mail = format!( "В группе **{}** отклонене изменение: {event}. Вот ссылка на результаты голосования [{event}]({}{})",
+        let subject = format!( "Отклонено '{}'", event_name );
+        let mail = format!( "В группе **{}** отклонено изменение: {event}. Вот ссылка на результаты голосования [{event}]({}{})",
                              group_name,
                              &body.root_url,
                              events::make_event_link( scheduled_id ),

@@ -22,13 +22,13 @@ define( function(require) {
         render: function() {
             var data = this.model.toJSON();
             var info = events_info_collection( data.id );
+            var description_data = JSON.parse( data.description );
 
-            data.name = info.caption( data.name );
+            data.name = info.caption( data.name, description_data );
             data.state = this.to_state( data.state );
             var html_content = this.template( data );
             this.$el.html( html_content );
 
-            var description_data = JSON.parse( data.description );
             $("#description").html( info.makeHtml( description_data ) );
 
 
