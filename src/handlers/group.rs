@@ -8,6 +8,7 @@ use db::groups::DbGroups;
 use authentication::Userable;
 use database::Databaseable;
 use stuff::Stuffable;
+use parse_utils::GetMsecs;
 
 #[derive(Clone, Copy, RustcDecodable)]
 struct GroupQuery {
@@ -31,6 +32,7 @@ struct GroupInfo {
     id: Id,
     name: String,
     description: String,
+    creation_time: u64,
     editable: bool,
     members: Vec<UserInfo>
 }
@@ -71,6 +73,7 @@ fn group_info( req: &mut Request ) -> AnswerResult {
                 id: info.id,
                 name: info.name,
                 description: info.description,
+                creation_time: info.creation_time.msecs(),
                 editable: is_member,
                 members: members
             };

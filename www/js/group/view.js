@@ -2,6 +2,7 @@ define ( function( require ) {
     var Backbone = require( "lib/backbone" ),
         Handlebars = require( "handlebars.runtime" );
     require( "template/group_view" );
+    require( "handlebars_helpers" );
 
     var GroupView = Backbone.View.extend({
         el: "#workspace",

@@ -15,7 +15,8 @@ type Groups = Vec<(Id, String)>;
 pub struct GroupInfo {
     pub id: Id,
     pub name: String,
-    pub description: String
+    pub description: String,
+    pub creation_time: Timespec
 }
 
 pub trait DbGroups {
@@ -30,7 +31,7 @@ pub trait DbGroups {
     /// проверяет существоание группы
     fn is_group_exists( &mut self, name: &String ) -> CommonResult<bool>;
     /// создать новую группу
-    fn create_group( &mut self, name: &String, desc: &String ) -> CommonResult<Id>;
+    fn create_group( &mut self, name: &String, desc: &String, creation_time: Timespec ) -> CommonResult<Id>;
     /// добавляет членов группы
     fn add_members( &mut self, group_id: Id, members: &[ Id ] ) -> EmptyResult;
     /// установка последнего времени посещения
@@ -50,6 +51,7 @@ pub fn create_tables( db: &Database ) -> EmptyResult {
             `id` bigint(20) NOT NULL AUTO_INCREMENT,
             `name` varchar(128) NOT NULL DEFAULT '',
             `description` TEXT NOT NULL DEFAULT '',
+            `creation_time` bigint(20) NOT NULL DEFAULT '0',
             PRIMARY KEY ( `id` )
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
         ",
@@ -93,8 +95,8 @@ impl DbGroups for MyPooledConn {
             .map_err( |e| fn_failed( "is_group_exists", e ) )
     }
     /// создать новую группу
-    fn create_group( &mut self, name: &String, desc: &String ) -> CommonResult<Id> {
-        create_group_impl( self, name, desc )
+    fn create_group( &mut self, name: &String, desc: &String, creation_time: Timespec ) -> CommonResult<Id> {
+        create_group_impl( self, name, desc, creation_time )
             .map_err( |e| fn_failed( "create_group", e ) )
     }
     /// добавляет членов группы
@@ -181,15 +183,16 @@ fn is_group_exists_impl( conn: &mut MyPooledConn, name: &str ) -> MyResult<bool>
     Ok( result.count() == 1 )
 }
 
-fn create_group_impl( conn: &mut MyPooledConn, name: &String, desc: &String ) -> MyResult<Id> {
+fn create_group_impl( conn: &mut MyPooledConn, name: &String, desc: &String, creation_time: Timespec ) -> MyResult<Id> {
     let mut stmt = try!( conn.prepare( "
         INSERT INTO groups (
-            name,
-            description
+            `name`,
+            `description`,
+            `creation_time`
         )
-        VALUES ( ?, ? )
+        VALUES ( ?, ?, ? )
     "));
-    let params: &[ &ToValue ] = &[ name, desc ];
+    let params: &[ &ToValue ] = &[ name, desc, &creation_time.msecs() ];
     let result = try!( stmt.execute( params ) );
     Ok( result.last_insert_id() )
 }
@@ -266,7 +269,9 @@ fn member_in_groups_impl( conn: &mut MyPooledConn, user_id: Id ) -> MyResult<Gro
 
 fn group_info_impl( conn: &mut MyPooledConn, group_id: Id ) -> MyResult<Option<GroupInfo>> {
     let query = "SELECT
-                     name, description
+                     name,
+                     description,
+                     creation_time
                  FROM
                      groups
                  WHERE
@@ -276,11 +281,12 @@ fn group_info_impl( conn: &mut MyPooledConn, group_id: Id ) -> MyResult<Option<G
     let info = match sql_result.next() {
         Some( row ) => {
             let row = try!( row );
-            let (name, desc) = from_row( row );
+            let (name, desc, time) = from_row::<(String, String, u64)>( row );
             Some( GroupInfo {
                 id: group_id,
                 name: name,
-                description: desc
+                description: desc,
+                creation_time: time.into_timespec()
             })
         },
         None => None

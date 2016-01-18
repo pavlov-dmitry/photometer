@@ -202,7 +202,9 @@ impl Event for GroupCreation {
                 let users = {
                     let db = try!( stuff.get_current_db_conn() );
                     // создаём группу
-                    let group_id = try!( db.create_group( &info.name, &info.description ) );
+                    let group_id = try!( db.create_group( &info.name,
+                                                          &info.description,
+                                                          time::get_time() ) );
                     // и тех кто проголовал ЗА добавляем в эту группу
                     votes.yes.push( info.initiator );
                     try!( db.add_members( group_id, &votes.yes ) );
