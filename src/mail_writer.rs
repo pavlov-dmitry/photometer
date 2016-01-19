@@ -171,13 +171,13 @@ impl MailWriter for Stuff {
         let body = self.get_body();
         let subject = format!( "Пора выкладывать {}", event_name );
         let mail = format!(
-"Привет {}!
-Настало время публиковать фотографии для **{}**.
-Ты можешь сделать перейдя по вот этой ссылке: {}{}",
+"Привет, **{}**!
+Настало время публиковать фотографии для **{event}**.
+Ты можешь это сделать перейдя по вот этой ссылке: [{event}]({}{})",
             user_name,
-            event_name,
             &body.root_url,
-            events::make_event_link( scheduled_id )
+            events::make_event_link( scheduled_id ),
+            event = event_name
         );
         ( subject, mail )
     }

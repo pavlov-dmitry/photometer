@@ -7,24 +7,31 @@
       </div>
     </div>
   </h2>
-  <div class="ui right aligned basic segment zeromargin">
+  <div class="ui right aligned basic segment nopadmar">
+    <small>
     <i>
-      <strong>Создано</strong>
-      {{#if creator}}
-      <div class="ui blue label">
-        {{creator.name}}
-      </div>
-      {{/if}}
-      <strong>:</strong>
-      {{duration_from_now starting_time}}
-      <strong>Окончание:</strong>
-      {{duration_from_now ending_time}}
+      <strong>
+        Создано
+        {{#if creator}}
+        <div class="ui blue label">
+          {{creator.name}}
+        </div>
+        {{/if}}
+        {{duration_from_now starting_time}}
+      </strong>
+      ({{time starting_time}})
+      <strong>
+        Окончание
+        {{duration_from_now ending_time}}
+      </strong>
+      ({{time ending_time}})
     </i>
+    </small>
   </div>
   <div id="description">
     {{{description}}}
   </div>
-  <div id="action">
-    {{{action}}}
-  </div>
+</div>
+<div id="action">
+  {{{action}}}
 </div>

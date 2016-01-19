@@ -39,7 +39,6 @@ define( function(require) {
 
             var self = this;
             handler.good = function() {
-                // self.$el.html( "<h2 class=\"ui center aligned basic segment\"><div class=\"content\"><font color=\"green\">Ваше мнение учтено.</font></div></h2>")
                 growl({
                     header: "Голосование",
                     msg: "Ваше мнение учтено!",
@@ -47,10 +46,9 @@ define( function(require) {
                 }, "short");
             };
             handler.bad = function( data ) {
-                // self.$el.html( "<h2 class=\"ui center aligned basic segment\"><div class=\"content\"><font color=\"red\">Похоже нельзя нам голосвать, уже.</font></div></h2>")
                 growl({
                     header: "Голосование",
-                    msg: "Похоже нельзя нам голосвать, уже.",
+                    msg: "Похоже нельзя нам голосовать, уже.",
                     negative: true
                 }, "short");
             };

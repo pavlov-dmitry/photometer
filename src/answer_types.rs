@@ -69,6 +69,12 @@ impl PhotoErrorInfo {
             photo: String::from( "not_found" )
         }
     }
+
+    pub fn already_published() -> PhotoErrorInfo {
+        PhotoErrorInfo {
+            photo: String::from( "already_published" )
+        }
+    }
 }
 
 
@@ -98,4 +104,10 @@ impl CountInfo {
             count: count
         }
     }
+}
+
+#[derive(RustcEncodable)]
+pub struct PaginationInfo {
+    pub current: u32,
+    pub count: u32
 }

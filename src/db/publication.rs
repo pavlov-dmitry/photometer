@@ -17,6 +17,8 @@ pub trait DbPublication {
     fn get_unpublished_users( &mut self, scheduled: Id ) -> CommonResult<Vec<User>>;
     /// проверяет на неопубликованность пользователя
     fn is_unpublished_user( &mut self, scheduled: Id, user: Id ) -> CommonResult<bool>;
+    /// проверят опубликованно ли это фото или нет
+    fn is_photo_published( &mut self, photo: Id ) -> CommonResult<bool>;
 }
 
 pub fn create_tables( db: &Database ) -> EmptyResult {
@@ -63,6 +65,11 @@ impl DbPublication for MyPooledConn {
     fn is_unpublished_user( &mut self, scheduled: Id, user: Id ) -> CommonResult<bool> {
         is_unpublished_user_impl( self, scheduled, user )
             .map_err( |e| fn_failed( "is_unpublished_user", e ) )
+    }
+    /// проверят опубликованно ли это фото или нет
+    fn is_photo_published( &mut self, photo: Id ) -> CommonResult<bool> {
+        is_photo_published_impl( self, photo )
+            .map_err( |e| fn_failed( "is_photo_published", e ) )
     }
 }
 
@@ -154,11 +161,25 @@ fn is_unpublished_user_impl( conn: &mut MyPooledConn, scheduled: Id, user: Id ) 
         FROM
             `publication`
         WHERE
-            `scheduled` = ? AND
+            `scheduled_id` = ? AND
             `user_id` = ?
         "
     ));
     let params: &[ &ToValue ] = &[ &scheduled, &user ];
-    let result = try!( stmt.execute( params ) );
-    Ok( result.count() == 0 )
+    let mut result = try!( stmt.execute( params ) );
+    let row = try!( result.next().unwrap() );
+    let (count,): (i32,) = from_row( row );
+    Ok( count == 0 )
+}
+
+fn is_photo_published_impl( conn: &mut MyPooledConn, photo: Id ) -> MyResult<bool> {
+    let mut stmt = try!( conn.prepare(
+        "SELECT
+             `id`
+         FROM `publication`
+         WHERE `photo_id`=?"
+    ));
+    let result = try!( stmt.execute( (photo,) ) );
+    let count = result.count();
+    Ok( count != 0 )
 }

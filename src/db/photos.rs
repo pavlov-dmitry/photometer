@@ -19,6 +19,10 @@ pub trait DbPhotos {
     fn get_photo_neighbours_in_gallery( &mut self, owner_id: Id, photo_id: Id ) -> CommonResult<(Option<Id>, Option<Id>)>;
     ///переименование фотографии
     fn rename_photo( &mut self, photo_id: Id, newname: &str ) -> CommonResult<()>;
+    ///вычисляет кол-во неопубликованных фотографий пользователя
+    fn get_unpublished_photos_count( &mut self, owner_id: Id ) -> CommonResult<u32>;
+    ///возвращает список описаний фоточек которые еще не были опубликованы
+    fn get_unpublished_photo_infos( &mut self, owner_id: Id, offset: u32, count: u32 ) -> CommonResult<Vec<PhotoInfo>>;
 }
 
 pub fn create_tables( db: &Database ) -> EmptyResult {
@@ -90,11 +94,23 @@ impl DbPhotos for MyPooledConn {
             .map_err( |e| fn_failed( "rename_photo", e ) )
     }
 
+    ///вычисляет кол-во неопубликованных фотографий пользователя
+    fn get_unpublished_photos_count( &mut self, owner_id: Id ) -> CommonResult<u32> {
+        get_unpublished_photos_count_impl( self, owner_id )
+            .map_err( |e| fn_failed( "get_unpublished_photos_count", e ) )
+    }
+
+    ///возвращает список описаний фоточек которые еще не были опубликованы
+    fn get_unpublished_photo_infos( &mut self, owner_id: Id, offset: u32, count: u32 ) -> CommonResult<Vec<PhotoInfo>> {
+        get_unpublished_photo_infos_impl( self, owner_id, offset, count )
+            .map_err( |e| fn_failed( "get_unpublished_photo_infos", e ) )
+    }
 }
 
 fn fn_failed<E: Display>( fn_name: &str, e: E ) -> CommonError {
     CommonError( format!( "DbPhotos func '{}' failed: {}", fn_name, e ) )
 }
+
 
 fn add_photo_impl( conn: &mut MyPooledConn, user_id: Id, info: &PhotoInfo ) -> MyResult<()> {
     let mut stmt = try!( conn.prepare(
@@ -173,27 +189,48 @@ fn get_photo_infos_impl(
     count: u32
 ) -> MyResult<Vec<PhotoInfo>>
 {
-    let mut stmt = try!( conn.prepare( "SELECT
-        i.owner_id,
-        u.login,
-        i.id,
-        i.upload_time,
-        i.type,
-        i.width,
-        i.height,
-        i.name,
-        i.iso,
-        i.shutter_speed,
-        i.aperture,
-        i.focal_length,
-        i.focal_length_35mm,
-        i.camera_model
-        FROM images AS i LEFT JOIN users AS u ON ( u.id = i.owner_id )
+    let query = format!(
+        "SELECT {fields}
+        FROM images AS i
+        LEFT JOIN users AS u ON ( u.id = i.owner_id )
         WHERE i.owner_id = ?
         ORDER BY i.upload_time DESC
-        LIMIT ? OFFSET ?;
-    " ) );
+        LIMIT ?
+        OFFSET ?
+        ;",
+        fields = PHOTO_INFO_FIELDS );
     let params: &[ &ToValue ] = &[ &owner_id, &count, &offset ];
+    get_photo_infos_general( conn, &query, params )
+}
+
+fn get_unpublished_photo_infos_impl(
+    conn: &mut MyPooledConn,
+    owner_id: Id,
+    offset: u32,
+    count: u32
+) -> MyResult<Vec<PhotoInfo>>
+{
+    let query = format!(
+        "SELECT {fields}
+        FROM images AS i
+        LEFT JOIN users AS u ON ( u.id = i.owner_id )
+        LEFT JOIN publication AS p ON ( p.photo_id = i.id )
+        WHERE i.owner_id = ?
+          AND p.id is NULL
+        ORDER BY i.upload_time DESC
+        LIMIT ?
+        OFFSET ?
+        ;",
+        fields = PHOTO_INFO_FIELDS );
+    let params: &[ &ToValue ] = &[ &owner_id, &count, &offset ];
+    get_photo_infos_general( conn, &query, params )
+}
+
+fn get_photo_infos_general( conn: &mut MyPooledConn,
+                            query: &str,
+                            params: &[ &ToValue ] ) -> MyResult<Vec<PhotoInfo>>
+{
+    let mut stmt = try!( conn.prepare( &query ) );
     let result = try!( stmt.execute( params ) );
     //что-то с преобразованием на лету через собственный итертор я подупрел =(, пришлось тупо собирать в новый массив
     let photos : Vec<_> = result.filter_map( |sql_row|
@@ -257,6 +294,22 @@ fn get_photo_infos_count_impl( conn: &mut MyPooledConn, owner_id: Id ) -> MyResu
     Ok( count )
 }
 
+fn get_unpublished_photos_count_impl( conn: &mut MyPooledConn, owner_id: Id ) -> MyResult<u32> {
+    let mut stmt = try!( conn.prepare( "
+        SELECT COUNT(i.id)
+        FROM images AS i
+        LEFT JOIN publication AS p ON ( p.photo_id = i.id )
+        WHERE
+            i.owner_id = ? AND
+            p.id is NULL
+    " ) );
+    let params: &[ &ToValue ] = &[ &owner_id ];
+    let mut result = try!( stmt.execute( params ) );
+    let sql_row = try!( result.next().unwrap() );
+    let (count,) = from_row( sql_row );
+    Ok( count )
+}
+
 fn rename_photo_impl( conn: &mut MyPooledConn, photo_id: Id, newname: &str ) -> MyResult<()> {
     let newname = newname.to_string();
     let mut stmt = try!( conn.prepare( "UPDATE images SET name=? WHERE id=?" ) );
@@ -264,6 +317,22 @@ fn rename_photo_impl( conn: &mut MyPooledConn, photo_id: Id, newname: &str ) -> 
     let _ = try!( stmt.execute( params ) );
     Ok( () )
 }
+
+const PHOTO_INFO_FIELDS: &'static str = "
+        i.owner_id,
+        u.login,
+        i.id,
+        i.upload_time,
+        i.type,
+        i.width,
+        i.height,
+        i.name,
+        i.iso,
+        i.shutter_speed,
+        i.aperture,
+        i.focal_length,
+        i.focal_length_35mm,
+        i.camera_model";
 
 fn read_photo_info<I: Iterator<Item = Value>>( mut values: I ) -> PhotoInfo
 {

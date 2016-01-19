@@ -18,6 +18,9 @@ define( function(require) {
         else if ( id == 'GroupVoting' ) {
             info = require( "event/info/group_voting" );
         }
+        else if ( id === 'Publication' ) {
+            info = require( "event/info/publication" );
+        }
 
         $.extend( base_info, info );
         return base_info;

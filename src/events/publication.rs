@@ -5,12 +5,12 @@ use super::{
     ScheduledEventInfo,
     Description,
     UserAction,
-    get_group_id
+    get_group_id,
+    helpers
 };
 use super::late_publication::LatePublication;
 use types::{ Id, EmptyResult, CommonResult };
 use answer::{ Answer, AnswerResult };
-use mailer::Mailer;
 use db::groups::DbGroups;
 use db::publication::DbPublication;
 use db::photos::DbPhotos;
@@ -22,7 +22,7 @@ use authentication::{ Userable };
 use time::{ self, Timespec };
 use iron::prelude::*;
 use get_body::GetBody;
-use answer_types::{ OkInfo, PhotoErrorInfo, AccessErrorInfo };
+use answer_types::{ OkInfo, PhotoErrorInfo };
 
 #[derive(Clone)]
 pub struct Publication;
@@ -48,18 +48,11 @@ impl Event for Publication {
     /// действие на начало события
     fn start( &self, stuff: &mut Stuff, body: &ScheduledEventInfo ) -> EmptyResult {
         let group_id = try!( get_group_id( body ) );
-        let members = {
-            let db = try!( stuff.get_current_db_conn() );
-            try!( db.get_members( group_id ) )
-        };
-        for user in members.iter() {
-            let (subject, mail) = stuff.write_time_for_publication_mail(
-                &body.name,
-                &user.name,
-                body.scheduled_id
-            );
-            try!( stuff.send_mail( user, &subject, &mail ) );
-        }
+        try!( helpers::send_to_group( stuff, group_id, &mut |stuff, user| {
+            stuff.write_time_for_publication_mail( &body.name,
+                                                   &user.name,
+                                                   body.scheduled_id )
+        }));
         Ok( () )
     }
 
@@ -105,7 +98,7 @@ impl Event for Publication {
 
     /// проверка на возможное досрочное завершение
     fn is_complete( &self, _stuff: &mut Stuff, _body: &ScheduledEventInfo ) -> CommonResult<bool> {
-        // публикацию досрочно заверщать не будем, есть в ожидании что-то интересное
+        // публикацию досрочно завершать не будем, есть в ожидании что-то интересное
         Ok( false )
     }
 
@@ -114,33 +107,38 @@ impl Event for Publication {
         let db = try!( stuff.get_current_db_conn() );
         let is_unpublished = try!( db.is_unpublished_user( body.scheduled_id,
                                                            user_id ) );
-        let action = if is_unpublished { UserAction::Publication } else { UserAction::None };
+        let action = match is_unpublished {
+            true => UserAction::Publication,
+            false => UserAction::None
+        };
         Ok( action )
     }
 
     /// применение действия пользователя на это событие
     fn user_action_post( &self, req: &mut Request, body: &ScheduledEventInfo ) -> AnswerResult {
         let photo_id = try!( req.get_body::<PhotoInfo>() ).id;
-        let user = req.user().clone();
+        let user_id = req.user().id;
         let db = try!( req.stuff().get_current_db_conn() );
 
-        let answer = {
-            let photo_info = try!( db.get_photo_info( photo_id ) );
-            if let Some( info ) = photo_info {
-                if info.id == user.id {
-                    try!( db.public_photo( body.scheduled_id,
-                                           user.id,
-                                           photo_id,
-                                           false ) );
-                    Answer::good( OkInfo::new( "published" ) )
+        let answer = match try!( db.get_photo_info( photo_id ) ) {
+            Some( photo_info ) => {
+                if photo_info.owner_id == user_id {
+                    match try!( db.is_photo_published( photo_id ) ) {
+                        false => {
+                            try!( db.public_photo( body.scheduled_id,
+                                                   user_id,
+                                                   photo_id,
+                                                   false ) );
+                            Answer::good( OkInfo::new( "published" ) )
+                        },
+                        true => Answer::bad( PhotoErrorInfo::already_published() )
+                    }
                 }
                 else {
-                    Answer::bad( AccessErrorInfo::new() )
+                    Answer::access_denied()
                 }
-            }
-            else {
-                Answer::bad( PhotoErrorInfo::not_found() )
-            }
+            },
+            None => Answer::bad( PhotoErrorInfo::not_found() )
         };
         Ok( answer )
     }

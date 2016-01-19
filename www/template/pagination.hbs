@@ -1,6 +1,6 @@
 <div class="ui small basic icon buttons">
   {{#if prev}}
-  <a class="ui button" href="{{prev}}" aria-label="Предыдущая">
+  <a class="ui pagination button" {{#if prefix}}href="{{prefix}}{{prev}}"{{else}}data="{{prev}}"{{/if}} aria-label="Предыдущая">
     <i class="angle double left icon"></i>
   </a>
   {{else}}
@@ -10,13 +10,14 @@
   {{/if}}
 
   {{#each pages}}
-  <a class="ui button {{#if active}} active{{/if}}{{#if disabled}} disabled{{/if}}" {{#if link}}href="{{link}}"{{/if}}>
+  <a class="ui {{#if link}}pagination {{/if}}button {{#if active}} active{{/if}}{{#if disabled}} disabled{{/if}}" {{#if link}}{{#if ../prefix}}href="{{../prefix}}{{link}}"{{else}}data="{{link}}"{{/if}}{{/if}}>
     {{name}}
   </a>
   {{/each}}
 
   {{#if next}}
-  <a class="ui button" href="{{next}}" aria-label="Слудующая">
+  <a class="ui pagination button" {{#if prefix}}href="{{prefix}}{{next}}"{{else}}data="{{next}}"{{/if}} aria-label="Слудующая">
+    <!-- <a class="ui pagination button" data="{{next}}" aria-label="Слудующая"> -->
     <i class="angle double right icon"></i>
   </a>
   {{else}}
@@ -25,25 +26,3 @@
   </div>
   {{/if}}
 </div>
-
-<!-- <nav> -->
-<!--   <ul class="pagination"> -->
-<!--     <li {{#if prev}}{{else}}class="disabled"{{/if}}> -->
-<!--       <a {{#if prev}}href="{{prev}}"{{/if}} aria-label="Предыдущая"> -->
-<!--         <span aria-hidden="true">&laquo;</span> -->
-<!--       </a> -->
-<!--     </li> -->
-<!--     {{#each pages}} -->
-<!--     <li {{#if active}}class="active"{{/if}}{{#if disabled}}class="disabled"{{/if}}> -->
-<!--       <a {{#if link}}href="{{link}}"{{/if}} {{#if next}}aria-label=""{{/if}} {{#if next}}aria-label="Слудующая"{{/if}}> -->
-<!--         {{name}} -->
-<!--       </a> -->
-<!--     </li> -->
-<!--     {{/each}} -->
-<!--     <li {{#if next}}{{else}}class="disabled"{{/if}}> -->
-<!--       <a {{#if next}}href="{{next}}"{{/if}} aria-label="Слудующая"> -->
-<!--         <span aria-hidden="true">&raquo;</span> -->
-<!--       </a> -->
-<!--     </li> -->
-<!--   </ul> -->
-<!-- </nav> -->

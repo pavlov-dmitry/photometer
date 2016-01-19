@@ -1,7 +1,10 @@
 define( function(require) {
     var Handlebars = require( "handlebars.runtime" ),
         markdown = require( "showdown_converter" ),
-        moment = require( "moment" );
+        moment = require( "moment" ),
+        make_pagination = require( "make_pagination" );
+    require( "template/pagination" );
+
 
     Handlebars.registerHelper( "markdown", function( data ) {
         return markdown.makeHtml( data );
@@ -36,6 +39,13 @@ define( function(require) {
 
     Handlebars.registerHelper( "duration_from_now", function( data ) {
         return moment( data ).fromNow();
+    });
+
+    Handlebars.registerHelper( "pagination", function( data, link_prefix ) {
+        if ( 1 < data.count ) {
+            var pagination_data = make_pagination( data.current, data.count, link_prefix );
+            return Handlebars.templates.pagination( pagination_data );
+        }
     });
 
     return {};

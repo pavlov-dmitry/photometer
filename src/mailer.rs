@@ -39,7 +39,7 @@ impl Mailer for Stuff {
         // try!( self.send_external_mail( user, subject, body ) );
         Ok( () )
     }
-    fn send_external_mail( &mut self, user: &User, subject: &str, body: &str ) -> EmptyResult {
+    fn send_external_mail( &mut self, _user: &User, _subject: &str, _body: &str ) -> EmptyResult {
         //FIXME: Временно на время тестов отключаем посылку писем во вне
         // self.send_mail_external( user, subject, body )
         Ok( () )

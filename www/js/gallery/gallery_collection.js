@@ -12,10 +12,7 @@ define( function(require) {
             handler.good = function( data ) {
                 self.reset();
                 self.add( data.photos );
-                self.trigger( "pages_changed", {
-                    pages_count: data.pages_count,
-                    current_page: data.current_page
-                });
+                self.trigger( "pages_changed", data.pagination );
                 // сцуко, то само вызывалось, то млин теперь самому приходится дёргать, что-то не пойму.
                 self.trigger( "update" );
             };

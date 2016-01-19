@@ -7,7 +7,7 @@ use iron::prelude::*;
 use get_body::GetBody;
 use answer_types::CountInfo;
 use types::{ Id, PhotoInfo };
-use answer_types::PhotoErrorInfo;
+use answer_types::{ PhotoErrorInfo, PaginationInfo };
 
 // static YEAR: &'static str = "year";
 const IN_PAGE_COUNT: u32 = 12;
@@ -26,6 +26,10 @@ pub fn gallery_path() -> &'static str {
     "/gallery"
 }
 
+pub fn gallery_unpublished_path() -> &'static str {
+    "/gallery/unpublished"
+}
+
 // pub fn by_year_path() -> &'static str {
 //     "/gallery/:year"
 // }
@@ -39,30 +43,15 @@ pub fn gallery_count( request: &mut Request ) -> IronResult<Response> {
     Ok( Response::with( response ) )
 }
 
-// pub fn by_year_count( request: &mut Request ) -> IronResult<Response> {
-//     let year = FromStr::from_str( request.param( YEAR ) );
-//     let answer = match year {
-//         Ok( year ) => by_year_count_answer( request, year ),
-//         Err( _ ) => Err( err_msg::invalid_path_param( YEAR ) )
-//     };
-//     let response = AnswerResponse( answer );
-//     Ok( Response::with( response ) )
-// }
-
 pub fn gallery( request: &mut Request ) -> IronResult<Response> {
     let response = AnswerResponse( gallery_answer( request ) );
     Ok( Response::with( response ) )
 }
 
-// pub fn by_year( request: &mut Request ) -> IronResult<Response> {
-//     let year = FromStr::from_str( request.param( YEAR ) );
-//     let answer = match year {
-//         Ok( year ) => by_year_answer( request, year ),
-//         Err( _ ) => Err( err_msg::invalid_path_param( YEAR ) )
-//     };
-//     let response = AnswerResponse( answer );
-//     Ok( Response::with( response ) )
-// }
+pub fn gallery_unpublished( request: &mut Request ) -> IronResult<Response> {
+    let response = AnswerResponse( gallery_unpublished_answer( request ) );
+    Ok( Response::with( response ) )
+}
 
 fn gallery_count_answer( req: &mut Request ) -> AnswerResult {
     let user_id = req.user().id;
@@ -80,8 +69,7 @@ struct PageInfo {
 #[derive(RustcEncodable)]
 struct GalleryInfo {
     owner_id: Id,
-    current_page: u32,
-    pages_count: u32,
+    pagination: PaginationInfo,
     photos: Vec<PhotoInfo>
 }
 
@@ -99,38 +87,54 @@ fn gallery_answer( req: &mut Request ) -> AnswerResult {
         IN_PAGE_COUNT
     ) );
 
-    let mut pages_count = photos_count / IN_PAGE_COUNT;
-    if ( photos_count % IN_PAGE_COUNT ) != 0 {
-        pages_count += 1;
-    }
+    let pages_count = calc_page_count( photos_count );
 
     let gallery_info = GalleryInfo {
         owner_id: user_id,
-        current_page: page,
-        pages_count: pages_count,
+        pagination: PaginationInfo {
+            current: page,
+            count: pages_count
+        },
         photos: photo_infos
     };
     let answer = Answer::good( gallery_info );
     Ok( answer )
 }
 
-// fn times_gate_for_year( year: i32 ) -> (time::Tm, time::Tm) {
-//     (
-//         time::Tm {
-//             tm_year: year - FROM_YEAR,
-//             ..time::empty_tm()
-//         },
-//         time::Tm {
-//             tm_year: year - FROM_YEAR,
-//             tm_mon: 11,
-//             tm_mday: 31,
-//             tm_hour: 23,
-//             tm_min: 59,
-//             tm_sec: 59,
-//             ..time::empty_tm()
-//         }
-//     )
-// }
+fn gallery_unpublished_answer( req: &mut Request ) -> AnswerResult {
+    let page = try!( req.get_body::<PageInfo>() ).page;
+
+    let user_id = req.user().id;
+    let db = try!( req.stuff().get_current_db_conn() );
+
+    let unpublished_count = try!( db.get_unpublished_photos_count( user_id ) );
+    let photos = try!( db.get_unpublished_photo_infos(
+        user_id,
+        page * IN_PAGE_COUNT,
+        IN_PAGE_COUNT
+    ));
+
+    let pages_count = calc_page_count( unpublished_count );
+
+    let gallery_info = GalleryInfo {
+        owner_id: user_id,
+        pagination: PaginationInfo {
+            current: page,
+            count: pages_count
+        },
+        photos: photos
+    };
+    let answer = Answer::good( gallery_info );
+    Ok( answer )
+}
+
+fn calc_page_count( all_count: u32 ) -> u32 {
+    let mut pages_count = all_count / IN_PAGE_COUNT;
+    if ( all_count % IN_PAGE_COUNT ) != 0 {
+        pages_count += 1;
+    }
+    pages_count
+}
 
 #[derive(Clone, RustcDecodable)]
 struct PhotoContextInfo {

@@ -1,0 +1,47 @@
+<div id="photos-container" class="ui container basic segment nopadmar">
+  <p>
+    {{{pagination pagination ""}}}
+  </p>
+  <div class="ui stackable cards">
+    {{#each photos}}
+    <div id="card-{{id}}" class="centered card mw300">
+      <div class="blurring dimmable image">
+        <div class="ui dimmer">
+          <div class="content">
+            <div class="center">
+              <div class="ui primary publish button" data="{{id}}">Опубликовать</div>
+            </div>
+          </div>
+        </div>
+        <img exify_intitialized="true" src="preview/{{id}}.png" alt="Нет картинки :(">
+      </div>
+      <div class="content">
+        <div class="ui {{#unless name}}disabled {{/unless}}header">
+          {{#if name}}
+          {{name}}
+          {{else}}
+          <i>Без имени</i>
+          {{/if}}
+        </div>
+        <div class="meta">
+          <span class="date">Загружено {{duration_from_now upload_time}}</span>
+        </div>
+      </div>
+    </div>
+    {{else}}
+    </div>
+    <div class="ui center aligned very padded basic segment">
+      <h1 class="ui disabled icon header">
+        <i class="film icon"></i>
+        У вам нет неопубликованных фотографии.
+      </h1>
+      <h3 class="ui disabled header">
+        Попробуйте загрузить новое фото в свою <a href="#gallery">Галлерею</a>
+      </h3>
+    </div>
+    {{/each}}
+  </div>
+  <p>
+    {{{pagination pagination ""}}}
+  </p>
+</div>

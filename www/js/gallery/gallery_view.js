@@ -48,21 +48,16 @@ define( function(require) {
                 },
 
                 done: function() {
-                    console.log( "upload done" );
                     self.model.fetch( 0 );
                 },
 
                 fail: function() {
                     var errorHandler = require( "errors_handler" );
                     errorHandler.error( "Не получилось загрузить файл, может попробуем еще раз?" );
-                    console.log( "upload fail" );
                 },
 
                 progressall : function( e, data ) {
-                    console.log( "progress loaded - " + data.loaded );
-                    console.log( "progress total - " + data.total );
                     var progress = parseInt(data.loaded / data.total * 100, 10);
-                    console.log( "progress - " + progress );
                     self.$progress.progress({ percent: progress });
                 }
             })
@@ -109,8 +104,8 @@ define( function(require) {
         },
 
         pagesChanged: function( data ) {
-            if ( 1 < data.pages_count ) {
-                var pagination = make_pagination( data.current_page, data.pages_count, "#gallery/" );
+            if ( 1 < data.count ) {
+                var pagination = make_pagination( data.current, data.count, "#gallery/" );
 
                 var content = this.pagination_tmpl( pagination );
                 $("#header-pagination").html( content );

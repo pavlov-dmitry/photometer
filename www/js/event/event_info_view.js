@@ -60,6 +60,9 @@ define( function(require) {
             this.stopListening( this.action_model );
             if ( this.action_view ) {
                 this.action_view.undelegateEvents();
+                if ( this.action_view.close ) {
+                    this.action_view.close();
+                }
             }
         }
     });
