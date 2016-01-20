@@ -15,7 +15,7 @@ use database::{ Databaseable };
 use db::events::DbEvents;
 use db::groups::DbGroups;
 use answer::{ Answer, AnswerResult };
-use types::{ Id, CommonResult, EmptyResult, CommonError };
+use types::{ Id, CommonResult, EmptyResult, CommonError, common_error };
 use time::{ self, Timespec };
 use rustc_serialize::json;
 use iron::prelude::*;
@@ -187,10 +187,9 @@ impl GroupCreatedEvent for ChangeTimetable {
             disable: diff_info.remove,
             enable: added_ids
         };
-        let group_name = try!( db.group_info( group_id ) ).unwrap().name;
         let self_info = FullEventInfo {
             id: ID,
-            name: group_name,
+            name: String::from( "Изменение расписания" ),
             start_time: self_start_time,
             end_time: self_end_time,
             data: json::encode( &data ).unwrap(),
@@ -422,6 +421,12 @@ impl ChangeByVoting for ChangeTimetable {
 
     /// краткое имя события, будет в основном использоваться в рассылке
     fn name( &self, _stuff: &mut Stuff, body: &ScheduledEventInfo ) -> CommonResult<String> {
-        Ok( format!( "Изменение расписания в группе '{}'", body.name ) )
+        match body.group {
+            Some( ref group_info ) => Ok( format!(
+                "Изменение расписания в группе '{}'",
+                group_info.name
+            )),
+            None => common_error( "invalid group".to_owned() )
+        }
     }
 }

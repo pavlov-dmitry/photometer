@@ -5,7 +5,7 @@ define( function(require) {
 
     var change_timetable_info = {
         caption: function( name ) {
-            return "Изменение расписания в группе '" + name + "'";
+            return name;
         },
         makeHtml: function( data ) {
             return Handlebars.templates.change_timetable_info( data );
