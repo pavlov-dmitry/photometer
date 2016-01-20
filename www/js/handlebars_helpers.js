@@ -33,8 +33,12 @@ define( function(require) {
         }
     });
 
-    Handlebars.registerHelper( "time", function( data ) {
+    Handlebars.registerHelper( "fulltime", function( data ) {
         return moment( data ).format( "HH:mm dddd, DD MMMM YYYY");
+    });
+
+    Handlebars.registerHelper( "time", function( data ) {
+        return moment( data ).format( "HH:mm ddd, DD MMM YYYY");
     });
 
     Handlebars.registerHelper( "duration_from_now", function( data ) {
@@ -45,6 +49,15 @@ define( function(require) {
         if ( 1 < data.count ) {
             var pagination_data = make_pagination( data.current, data.count, link_prefix );
             return Handlebars.templates.pagination( pagination_data );
+        }
+    });
+
+    Handlebars.registerHelper( "if_equal", function( data, value, options ) {
+        if ( data === value ) {
+            return options.fn( this );
+        }
+        else {
+            return options.inverse( this );
         }
     });
 

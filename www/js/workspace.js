@@ -20,8 +20,8 @@ define( function(require) {
             'gallery_photo/:user_id/:photo_id': "gallery_photo",
             'group_creation': "group_creation",
             'event/:id': "event_info",
-            'group/:id': "group_show",
-            'group/:id/:page': "group_show_page",
+            'group/info/:id': "group_info",
+            'group/feed/:id': "group_feed",
             "change_timetable/:id": "change_timetable"
         },
 
@@ -172,18 +172,24 @@ define( function(require) {
             this.current = new EventInfoView({ model: model });
         },
 
-        group_show: function( id ) {
-            this.group_show_page( id, 0 );
-        },
-
-        group_show_page: function( id, page ) {
+        group_info: function( id ) {
             this.clear_current();
 
             var GroupModel = require( "group/model" );
             var GroupView = require( "group/view" );
 
-            var model = new GroupModel({ id: id, page: page });
+            var model = new GroupModel({ id: id });
             this.current = new GroupView({ model: model });
+        },
+
+        group_feed: function( id ) {
+            this.clear_current();
+
+            var GroupFeedModel = require( "group_feed/model" );
+            var GroupFeedView = require( "group_feed/view" );
+
+            var model = new GroupFeedModel({ id: id });
+            this.current = new GroupFeedView({ model: model });
         },
 
         change_timetable: function( group_id ) {

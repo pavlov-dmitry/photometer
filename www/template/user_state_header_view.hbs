@@ -20,7 +20,7 @@
     </a>
     {{#if is_groups}}
     <div class="ui buttons">
-      <a class="{{#if isNavInGroup}}active {{/if}}button item" href="#group/{{current_group.id}}">
+      <a class="{{#if isNavInGroup}}active {{/if}}button item" href="#group/feed/{{current_group.id}}">
         <i class="icon users"></i>
         {{current_group.name}}
         {{#if current_group.unwatched_events}}
@@ -38,7 +38,7 @@
         {{/if}}
         <div class="menu">
           {{#each groups}}
-          <a class="item" href="#group/{{id}}">
+          <a class="item" href="#group/feed/{{id}}">
             <i class="icon users"></i>
             {{name}}
             {{#if unwatched_events}}

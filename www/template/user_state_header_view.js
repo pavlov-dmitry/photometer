@@ -27,7 +27,7 @@ return templates['user_state_header_view'] = template({"1":function(container,de
 
   return "    <div class=\"ui buttons\">\n      <a class=\""
     + ((stack1 = helpers["if"].call(alias1,(depth0 != null ? depth0.isNavInGroup : depth0),{"name":"if","hash":{},"fn":container.program(7, data, 0),"inverse":container.noop,"data":data})) != null ? stack1 : "")
-    + "button item\" href=\"#group/"
+    + "button item\" href=\"#group/feed/"
     + alias3(alias2(((stack1 = (depth0 != null ? depth0.current_group : depth0)) != null ? stack1.id : stack1), depth0))
     + "\">\n        <i class=\"icon users\"></i>\n        "
     + alias3(alias2(((stack1 = (depth0 != null ? depth0.current_group : depth0)) != null ? stack1.name : stack1), depth0))
@@ -59,7 +59,7 @@ return templates['user_state_header_view'] = template({"1":function(container,de
 },"16":function(container,depth0,helpers,partials,data) {
     var stack1, helper, alias1=depth0 != null ? depth0 : {}, alias2=helpers.helperMissing, alias3="function", alias4=container.escapeExpression;
 
-  return "          <a class=\"item\" href=\"#group/"
+  return "          <a class=\"item\" href=\"#group/feed/"
     + alias4(((helper = (helper = helpers.id || (depth0 != null ? depth0.id : depth0)) != null ? helper : alias2),(typeof helper === alias3 ? helper.call(alias1,{"name":"id","hash":{},"data":data}) : helper)))
     + "\">\n            <i class=\"icon users\"></i>\n            "
     + alias4(((helper = (helper = helpers.name || (depth0 != null ? depth0.name : depth0)) != null ? helper : alias2),(typeof helper === alias3 ? helper.call(alias1,{"name":"name","hash":{},"data":data}) : helper)))

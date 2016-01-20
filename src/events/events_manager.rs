@@ -7,7 +7,8 @@ use super::{
     EventState,
     FullEventInfo,
     UserAction,
-    Description
+    Description,
+    ShortGroupInfo
 };
 use super::events_collection;
 use super::events_collection::{ EventPtr };
@@ -45,7 +46,8 @@ struct EventInfoAnswer {
     state: EventState,
     action: UserAction,
     description: Description,
-    creator: Option<UserInfo>
+    creator: Option<UserInfo>,
+    group: Option<ShortGroupInfo>
 }
 
 impl EventsManagerStuff for Stuff {
@@ -123,7 +125,8 @@ impl<'a, 'b> EventsManagerRequest for Request<'a, 'b> {
                 name: event_info.name.clone(),
                 action: user_action,
                 description: event_description,
-                creator: event_info.creator.clone()
+                creator: event_info.creator.clone(),
+                group: event_info.group.clone()
             };
             Ok( Answer::good( answer ) )
         })

@@ -16,10 +16,14 @@ use rustc_serialize::json;
 use database::{ Databaseable };
 use stuff::{ Stuff };
 use db::votes::{ DbVotes, Votes };
+use db::group_feed::DbGroupFeed;
 use mail_writer::MailWriter;
 use iron::prelude::*;
 use answer::{ AnswerResult };
 use std::cmp;
+use time;
+use super::feed_types::FeedEventState;
+use parse_utils::{ GetMsecs };
 
 /// абстракция события которое применяется после того как группа проголосовала ЗА
 pub trait ChangeByVoting {
@@ -71,6 +75,12 @@ struct Data {
     internal_data: String
 }
 
+#[derive(Debug, RustcEncodable)]
+struct FeedData {
+    internal_id: EventId,
+    is_success: bool
+}
+
 impl Event for GroupVoting {
     /// идентификатор события
     fn id( &self ) -> EventId {
@@ -94,6 +104,18 @@ impl Event for GroupVoting {
                                                     &group_name,
                                                     body.scheduled_id )
         }));
+
+        // Добавляем запись в ленту группы
+        let db = try!( stuff.get_current_db_conn() );
+        let feed_data = Description::new( FeedData {
+            internal_id: data.internal_id,
+            is_success: true
+        }).to_string();
+        try!( db.add_to_group_feed( time::get_time().msecs(),
+                                    data.group_id,
+                                    body.scheduled_id,
+                                    FeedEventState::Start,
+                                    &feed_data ) );
         Ok( () )
     }
     /// действие на окончание события
@@ -108,7 +130,8 @@ impl Event for GroupVoting {
             try!( db.get_votes( body.scheduled_id ) )
         };
         // подсчитываем голоса
-        if is_success( &votes, data.success_coeff ) { // если набралось достаточно
+        let is_success = is_success( &votes, data.success_coeff );
+        if  is_success { // если набралось достаточно
             let change = try!( events_collection::get_change_by_voting( data.internal_id ) );
 
             // рассылаем всем что мол утверждено
@@ -129,6 +152,19 @@ impl Event for GroupVoting {
                                                        body.scheduled_id )
             }));
         }
+
+        // Добавляем запись в ленту группы
+        let db = try!( stuff.get_current_db_conn() );
+        let feed_data = Description::new( FeedData {
+            internal_id: data.internal_id,
+            is_success: is_success
+        }).to_string();
+        try!( db.add_to_group_feed( time::get_time().msecs(),
+                                    data.group_id,
+                                    body.scheduled_id,
+                                    FeedEventState::Finish,
+                                    &feed_data ) );
+
         Ok( () )
     }
     /// информация о состоянии события

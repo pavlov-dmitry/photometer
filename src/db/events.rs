@@ -199,7 +199,7 @@ impl ConvIr<EventState> for EventStateIr
                         DISABLED_STR => Some( EventState::Disabled ),
                         _ => None
                     },
-                    _ => None
+                    _ => None,
                 };
                 match val {
                     Some( val ) => Ok( EventStateIr{ val: val, bytes: bytes } ),

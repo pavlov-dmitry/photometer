@@ -4,16 +4,32 @@ use types::{ Id };
 use answer_types::{ FieldErrorInfo };
 use get_body::GetBody;
 use db::groups::DbGroups;
-// use types::PhotoInfo;
+use db::group_feed::DbGroupFeed;
 use authentication::Userable;
 use database::Databaseable;
 use stuff::Stuffable;
 use parse_utils::GetMsecs;
+use events::feed_types::FeedEventInfo;
 
 #[derive(Clone, Copy, RustcDecodable)]
 struct GroupQuery {
     group_id: Id,
 }
+
+#[derive(Clone, Copy, RustcDecodable)]
+struct GroupFeedQuery {
+    group_id: Id,
+    page: u32
+}
+
+#[derive(RustcEncodable)]
+struct GroupFeedResult {
+    group_id: Id,
+    group_name: String,
+    feed: Vec<FeedEventInfo>
+}
+
+const IN_PAGE_COUNT: u32 = 10;
 
 #[derive(Clone, Copy, RustcDecodable)]
 struct PublicationQuery {
@@ -54,6 +70,11 @@ pub fn get_group_info( req: &mut Request ) -> IronResult<Response> {
     Ok( Response::with( answer ) )
 }
 
+pub fn get_group_feed( req: &mut Request ) -> IronResult<Response> {
+    let answer = AnswerResponse( group_feed( req ) );
+    Ok( Response::with( answer ) )
+}
+
 fn group_info( req: &mut Request ) -> AnswerResult {
     let group_id = try!( req.get_body::<GroupQuery>() ).group_id;
     let user_id = req.user().id;
@@ -81,5 +102,26 @@ fn group_info( req: &mut Request ) -> AnswerResult {
         },
         None => Answer::bad( FieldErrorInfo::not_found( "group" ) )
     };
+    Ok( answer )
+}
+
+fn group_feed( req: &mut Request ) -> AnswerResult {
+    let group_query = try!( req.get_body::<GroupFeedQuery>() );
+    let db = try!( req.stuff().get_current_db_conn() );
+
+    let answer = match try!( db.group_info( group_query.group_id ) ) {
+        Some( group_info ) => {
+            let feed = try!( db.get_group_feed( group_query.group_id,
+                                                IN_PAGE_COUNT,
+                                                IN_PAGE_COUNT * group_query.page ) );
+            Answer::good( GroupFeedResult{
+                group_id: group_info.id,
+                group_name: group_info.name,
+                feed: feed
+            })
+        },
+        None => Answer::bad( "not_found" )
+    };
+
     Ok( answer )
 }

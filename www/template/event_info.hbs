@@ -1,32 +1,33 @@
 <div class="ui basic padded segment container">
-  <h2 class="ui dividing header">
-    <div class="content">
-      {{{name}}}
-      <div class="ui small {{state.color}} label">
-        {{state.text}}
+  <div class="ui basic segment">
+    <div class="ui huge event breadcrumb">
+      {{#if creator}}
+      <div class="section">
+        {{creator.name}}
+      </div>
+      <i class="at icon devider"></i>
+      {{/if}}
+      {{#if group}}
+      <a class="section" href="#/group/feed/{{group.id}}">
+        {{group.name}}
+      </a>
+      <i class="right chevron icon devider"></i>
+      {{/if}}
+      <div class="active section">
+        {{{name}}}
       </div>
     </div>
-  </h2>
-  <div class="ui right aligned basic segment nopadmar">
-    <small>
-    <i>
-      <strong>
+    <div class="ui small {{state.color}} event label">
+      {{state.text}}
+    </div>
+    <p class="header-date">
         Создано
-        {{#if creator}}
-        <div class="ui blue label">
-          {{creator.name}}
-        </div>
-        {{/if}}
         {{duration_from_now starting_time}}
-      </strong>
-      ({{time starting_time}})
-      <strong>
+        {{time starting_time}},
         Окончание
         {{duration_from_now ending_time}}
-      </strong>
-      ({{time ending_time}})
-    </i>
-    </small>
+        {{time ending_time}}
+    </p>
   </div>
   <div id="description">
     {{{description}}}

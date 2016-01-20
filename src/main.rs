@@ -90,7 +90,9 @@ fn main() {
     router.get( handlers::events::group_create_path(), handlers::events::group_create_get );
     router.post( handlers::events::group_create_path(), handlers::events::group_create_post );
 
-    router.get( "/group_info", handlers::group::get_group_info );
+    router.get( "/group/info", handlers::group::get_group_info );
+    router.get( "/group/feed", handlers::group::get_group_feed );
+
 
     router.get( handlers::authentication::user_info_path(), handlers::authentication::user_info );
 

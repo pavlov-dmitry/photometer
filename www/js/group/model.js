@@ -9,11 +9,12 @@ define ( function( require ) {
 
         fetch: function() {
             var request = require( "request" );
-            var handler = request.get( "group_info", { group_id: this.get("id") });
+            var handler = request.get( "group/info", { group_id: this.get("id") });
             var self = this;
             handler.good = function( data ) {
                 self.set( data );
             }
+
             return handler;
         }
     });

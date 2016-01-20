@@ -1,0 +1,50 @@
+<div class="event">
+  <div class="label">
+    {{#if_equal state "Start"}}
+    <i class="alarm icon"></i>
+    {{else}}
+      {{#if data.is_success}}
+      <i class="green checkmark icon"></i>
+      {{else}}
+      <i class="red alarm slash icon"></i>
+      {{/if}}
+    {{/if_equal}}
+  </div>
+  <div class="content">
+    <div class="date">
+      {{duration_from_now creation_time}}
+      {{#if is_new}}
+      <div class="ui yellow tag label">новое</div>
+      {{/if}}
+    </div>
+    <div class="summary">
+      {{#if_equal state "Start"}}
+        {{#if creator}}
+        <a class="user" href="#user/{{creator.id}}">
+          {{creator.name}}
+        </a>
+        создал(а)
+        {{else}}
+        Началось
+        {{/if}}
+        голосование за
+        <a href="#event/{{scheduled_id}}">{{event_name}}</a>.
+      {{else}}
+        Голосование за
+        <a href="#event/{{scheduled_id}}">{{event_name}}</a>
+        {{#if creator}}
+        созданное
+        <a class="user" href="#user/{{creator.id}}">
+          {{creator.name}}
+        </a>
+        {{/if}}
+        завершилось
+        {{#if data.is_success}}
+        положительно.
+        {{else}}
+        отрицательно.
+        {{/if}}
+      {{/if_equal}}
+    </div>
+  </div>
+</div>

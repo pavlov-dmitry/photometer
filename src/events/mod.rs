@@ -8,6 +8,7 @@ use rustc_serialize::{ Encodable, Encoder };
 use rustc_serialize::json;
 use std::fmt::Debug;
 use std::str::FromStr;
+use std::string::ToString;
 
 pub mod events_manager;
 mod events_collection;
@@ -17,6 +18,7 @@ mod late_publication;
 mod group_voting;
 mod change_timetable;
 mod helpers;
+pub mod feed_types;
 
 pub struct ScheduledEventInfo {
     pub id: EventId,
@@ -175,6 +177,12 @@ impl Description {
             value: json::encode( &v )
                 .expect( &format!( "Invalid encoding to description struct: {:?}", v ) )
         }
+    }
+}
+
+impl ToString for Description {
+    fn to_string(&self) -> String {
+        self.value.clone()
     }
 }
 

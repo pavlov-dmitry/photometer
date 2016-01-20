@@ -14,8 +14,6 @@ define( function(require) {
         pagination_tmpl: Handlebars.templates.pagination,
 
         initialize: function() {
-            var self = this;
-
             this.listenTo( this.model, "add", this.addOne );
             this.listenTo( this.model, "reset", this.onReset );
             this.listenTo( this.model, "update", this.onUpdate );
