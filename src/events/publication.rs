@@ -6,7 +6,6 @@ use super::{
     Description,
     UserAction,
     get_group_id,
-    helpers
 };
 use super::late_publication::LatePublication;
 use types::{ Id, EmptyResult, CommonResult };
@@ -15,7 +14,6 @@ use db::groups::DbGroups;
 use db::publication::DbPublication;
 use db::photos::DbPhotos;
 use db::events::DbEvents;
-use mail_writer::MailWriter;
 use database::{ Databaseable };
 use stuff::{ Stuffable, Stuff };
 use authentication::{ Userable };
@@ -51,11 +49,6 @@ impl Event for Publication {
     /// действие на начало события
     fn start( &self, stuff: &mut Stuff, body: &ScheduledEventInfo ) -> EmptyResult {
         let group_id = try!( get_group_id( body ) );
-        try!( helpers::send_to_group( stuff, group_id, &mut |stuff, user| {
-            stuff.write_time_for_publication_mail( &body.name,
-                                                   &user.name,
-                                                   body.scheduled_id )
-        }));
 
         // Добавляем запись в ленту группы
         let db = try!( stuff.get_current_db_conn() );

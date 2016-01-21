@@ -16,7 +16,6 @@ use rustc_serialize::json;
 use database::{ Databaseable };
 use stuff::{ Stuff };
 use db::votes::{ DbVotes, Votes };
-use mail_writer::MailWriter;
 use iron::prelude::*;
 use answer::{ AnswerResult };
 use std::cmp;
@@ -95,16 +94,6 @@ impl Event for GroupVoting {
             try!( db.add_rights_of_voting_for_group( body.scheduled_id, data.group_id ) );
         }
 
-        let group_name = get_group_name( body );
-        let internal_body = make_internal_body( &data, &body );
-        let event_name = try!( get_event_name( stuff, &internal_body ) );
-
-        try!( helpers::send_to_group( stuff, data.group_id, &mut |stuff, _user| {
-            stuff.write_group_voiting_started_mail( &event_name,
-                                                    &group_name,
-                                                    body.scheduled_id )
-        }));
-
         // Добавляем запись в ленту группы
         let db = try!( stuff.get_current_db_conn() );
         let feed_data = Description::new( FeedData {
@@ -122,8 +111,6 @@ impl Event for GroupVoting {
     fn finish( &self, stuff: &mut Stuff, body: &ScheduledEventInfo ) -> EmptyResult {
         let data = try!( get_data( body ) );
         let internal_body = make_internal_body( &data, &body );
-        let event_name = try!( get_event_name( stuff, &internal_body ) );
-        let group_name = get_group_name( body );
 
         let votes = {
             let db = try!( stuff.get_current_db_conn() );
@@ -133,24 +120,8 @@ impl Event for GroupVoting {
         let is_success = is_success( &votes, data.success_coeff );
         if  is_success { // если набралось достаточно
             let change = try!( events_collection::get_change_by_voting( data.internal_id ) );
-
-            // рассылаем всем что мол утверждено
-            try!( helpers::send_to_group( stuff, data.group_id, &mut |stuff, _user| {
-                stuff.write_group_voiting_accepted_mail( &event_name,
-                                                         &group_name,
-                                                         body.scheduled_id )
-            }));
-
             // и применяем изменение
             try!( change.apply( stuff, data.group_id, &internal_body ) );
-        }
-        else { // если не хватило голосов
-            // расслываем что мол увы.
-            try!( helpers::send_to_group( stuff, data.group_id, &mut |stuff, _user| {
-                stuff.write_group_voiting_denied_mail( &event_name,
-                                                       &group_name,
-                                                       body.scheduled_id )
-            }));
         }
 
         // Добавляем запись в ленту группы
@@ -254,14 +225,14 @@ fn get_data( body: &ScheduledEventInfo ) -> CommonResult<Data> {
         .map_err( |e| CommonError( format!( "GroupVoting event data decode error: {}", e ) ) )
 }
 
-fn get_event_name( stuff: &mut Stuff, body: &ScheduledEventInfo ) -> CommonResult<String> {
-    let event = try!( events_collection::get_change_by_voting( body.id ) );
-    event.name( stuff, &body )
-}
+// fn get_event_name( stuff: &mut Stuff, body: &ScheduledEventInfo ) -> CommonResult<String> {
+//     let event = try!( events_collection::get_change_by_voting( body.id ) );
+//     event.name( stuff, &body )
+// }
 
-fn get_group_name( info: &ScheduledEventInfo ) -> String {
-    match info.group {
-        Some( ref group_info ) => group_info.name.clone(),
-        None => panic!( "GroupVoting invalid event body, without group info." )
-    }
-}
+// fn get_group_name( info: &ScheduledEventInfo ) -> String {
+//     match info.group {
+//         Some( ref group_info ) => group_info.name.clone(),
+//         None => panic!( "GroupVoting invalid event body, without group info." )
+//     }
+// }
