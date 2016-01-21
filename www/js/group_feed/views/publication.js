@@ -7,7 +7,7 @@ define( function(require) {
 
     var PublicationFeedView = Backbone.View.extend({
         initialize: function() {
-            this.listenTo( this.model, "change", this.render );
+            this.listenTo( this.model, "change:photos", this.render );
             var self = this;
             var handler = request.get( "publication", { id: this.model.get("scheduled_id") });
             handler.good = function( data ) {

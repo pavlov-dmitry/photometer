@@ -94,6 +94,7 @@ fn main() {
 
     router.get( "/group/info", handlers::group::get_group_info );
     router.get( "/group/feed", handlers::group::get_group_feed );
+    router.get( "/group/feed/element", handlers::group::get_group_feed_element );
 
 
     router.get( handlers::authentication::user_info_path(), handlers::authentication::user_info );

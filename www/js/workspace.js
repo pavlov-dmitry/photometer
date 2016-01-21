@@ -22,6 +22,7 @@ define( function(require) {
             'event/:id': "event_info",
             'group/info/:id': "group_info",
             'group/feed/:id': "group_feed",
+            'group/feed/element/:id': "group_feed_element",
             'change_timetable/:id': "change_timetable",
             'publication/:feed_id/photo/:photo_id': "publication_photo"
         },
@@ -212,6 +213,16 @@ define( function(require) {
 
             var model = new GroupFeedModel({ id: id });
             this.current = new GroupFeedView({ model: model });
+        },
+
+        group_feed_element: function( id ) {
+            this.clear_current();
+
+            var GroupFeedElementModel = require( "group_feed/element_model" );
+            var GroupFeedElementView = require( "group_feed/element_view" );
+
+            var model = new GroupFeedElementModel({ id: id });
+            this.current = new GroupFeedElementView({ model: model });
         },
 
         change_timetable: function( group_id ) {

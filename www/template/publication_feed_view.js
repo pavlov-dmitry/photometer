@@ -17,8 +17,8 @@ return templates['publication_feed_view'] = template({"1":function(container,dep
 },"9":function(container,depth0,helpers,partials,data) {
     var helper, alias1=depth0 != null ? depth0 : {}, alias2=helpers.helperMissing, alias3="function", alias4=container.escapeExpression;
 
-  return "      Фотографии с <a href=\"#event/"
-    + alias4(((helper = (helper = helpers.scheduled_id || (depth0 != null ? depth0.scheduled_id : depth0)) != null ? helper : alias2),(typeof helper === alias3 ? helper.call(alias1,{"name":"scheduled_id","hash":{},"data":data}) : helper)))
+  return "      Фотографии с <a href=\"#group/feed/element/"
+    + alias4(((helper = (helper = helpers.id || (depth0 != null ? depth0.id : depth0)) != null ? helper : alias2),(typeof helper === alias3 ? helper.call(alias1,{"name":"id","hash":{},"data":data}) : helper)))
     + "\">"
     + alias4(((helper = (helper = helpers.event_name || (depth0 != null ? depth0.event_name : depth0)) != null ? helper : alias2),(typeof helper === alias3 ? helper.call(alias1,{"name":"event_name","hash":{},"data":data}) : helper)))
     + "</a>\n";

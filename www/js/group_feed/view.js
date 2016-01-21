@@ -29,18 +29,12 @@ define( function(require) {
         },
 
         add: function( model ) {
-            var View = this.view_by_event( model.get("event_id") );
+            var views_factory = require( "group_feed/views_factory" );
+            var View = views_factory( model.get("event_id") );
             var view = new View( {model: model} );
             $("#feeds").append( view.render().$el );
         },
 
-        view_by_event: function( event_id ) {
-            switch ( event_id ) {
-            case 'GroupVoting': return require( "group_feed/views/group_voting" );
-            case 'Publication': return require( "group_feed/views/publication" );
-            }
-            return null;
-        }
     });
 
     return GroupFeedView;

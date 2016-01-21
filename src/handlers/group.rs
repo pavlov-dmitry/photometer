@@ -74,6 +74,11 @@ pub fn get_group_feed( req: &mut Request ) -> IronResult<Response> {
     Ok( Response::with( answer ) )
 }
 
+pub fn get_group_feed_element( req: &mut Request ) -> IronResult<Response> {
+    let answer = AnswerResponse( group_feed_element( req ) );
+    Ok( Response::with( answer ) )
+}
+
 fn group_info( req: &mut Request ) -> AnswerResult {
     let group_id = try!( req.get_body::<GroupQuery>() ).group_id;
     let user_id = req.user().id;
@@ -119,8 +124,23 @@ fn group_feed( req: &mut Request ) -> AnswerResult {
                 feed: feed
             })
         },
-        None => Answer::bad( "not_found" )
+        None => Answer::not_found()
     };
 
+    Ok( answer )
+}
+
+#[derive(Clone, RustcDecodable)]
+struct GroupFeedElementQuery {
+    id: Id
+}
+
+fn group_feed_element( req: &mut Request ) -> AnswerResult {
+    let element_id = try!( req.get_body::<GroupFeedElementQuery>() ).id;
+    let db = try!( req.stuff().get_current_db_conn() );
+    let answer = match try!( db.get_feed_info( element_id ) ) {
+        Some( feed_info ) => Answer::good( feed_info ),
+        None => Answer::not_found()
+    };
     Ok( answer )
 }
