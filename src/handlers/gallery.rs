@@ -61,6 +61,11 @@ fn gallery_count_answer( req: &mut Request ) -> AnswerResult {
     Ok( answer )
 }
 
+pub fn get_publication( request: &mut Request ) -> IronResult<Response> {
+    let response = AnswerResponse( publication_answer( request ) );
+    Ok( Response::with( response ) )
+}
+
 #[derive(Clone, RustcDecodable)]
 struct PageInfo {
     page: u32
@@ -173,4 +178,16 @@ fn photo_info_answer( req: &mut Request ) -> AnswerResult {
         next: next
     });
     Ok( answer )
+}
+
+#[derive(Clone, RustcDecodable)]
+struct PublicationQuery {
+    id: Id
+}
+
+fn publication_answer( req: &mut Request ) -> AnswerResult {
+    let scheduled_id = try!( req.get_body::<PublicationQuery>() ).id;
+    let db = try!( req.stuff().get_current_db_conn() );
+    let photos = try!( db.get_publication_photo_infos( scheduled_id ) );
+    Ok( Answer::good( photos ) )
 }

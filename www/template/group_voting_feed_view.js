@@ -11,7 +11,7 @@ return templates['group_voting_feed_view'] = template({"1":function(container,de
 },"6":function(container,depth0,helpers,partials,data) {
     return "      <i class=\"red alarm slash icon\"></i>\n";
 },"8":function(container,depth0,helpers,partials,data) {
-    return "      <div class=\"ui yellow tag label\">новое</div>\n";
+    return "      <div class=\"ui yellow label\">новое</div>\n";
 },"10":function(container,depth0,helpers,partials,data) {
     var stack1, helper, alias1=depth0 != null ? depth0 : {}, alias2=helpers.helperMissing, alias3="function", alias4=container.escapeExpression;
 

@@ -16,12 +16,12 @@ use rustc_serialize::json;
 use database::{ Databaseable };
 use stuff::{ Stuff };
 use db::votes::{ DbVotes, Votes };
-use db::group_feed::DbGroupFeed;
 use mail_writer::MailWriter;
 use iron::prelude::*;
 use answer::{ AnswerResult };
 use std::cmp;
 use time;
+use db::group_feed::DbGroupFeed;
 use super::feed_types::FeedEventState;
 use parse_utils::{ GetMsecs };
 

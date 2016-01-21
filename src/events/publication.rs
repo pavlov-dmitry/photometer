@@ -23,6 +23,9 @@ use time::{ self, Timespec };
 use iron::prelude::*;
 use get_body::GetBody;
 use answer_types::{ OkInfo, PhotoErrorInfo };
+use db::group_feed::DbGroupFeed;
+use super::feed_types::FeedEventState;
+use parse_utils::{ GetMsecs };
 
 #[derive(Clone)]
 pub struct Publication;
@@ -53,6 +56,14 @@ impl Event for Publication {
                                                    &user.name,
                                                    body.scheduled_id )
         }));
+
+        // Добавляем запись в ленту группы
+        let db = try!( stuff.get_current_db_conn() );
+        try!( db.add_to_group_feed( time::get_time().msecs(),
+                                    group_id,
+                                    body.scheduled_id,
+                                    FeedEventState::Start,
+                                    "" ) );
         Ok( () )
     }
 
@@ -61,6 +72,14 @@ impl Event for Publication {
         let group_id = try!( get_group_id( body ) );
         let db = try!( stuff.get_current_db_conn() );
         try!( db.make_publication_visible( body.scheduled_id ) );
+
+        // Добавляем запись в ленту группы
+        try!( db.add_to_group_feed( time::get_time().msecs(),
+                                    group_id,
+                                    body.scheduled_id,
+                                    FeedEventState::Finish,
+                                    "" ) );
+
         //TODO: старт голосования
 
         //старт события загрузки опоздавших

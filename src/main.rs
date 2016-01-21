@@ -76,6 +76,7 @@ fn main() {
     router.get( handlers::gallery::gallery_path(), handlers::gallery::gallery );
     router.get( handlers::gallery::photo_info_path(), handlers::gallery::photo_info );
     router.get( handlers::gallery::gallery_unpublished_path(), handlers::gallery::gallery_unpublished );
+    router.get( "/publication", handlers::gallery::get_publication );
 
     router.get( "/mailbox", handlers::mailbox::get );
     router.get( "/mailbox/unreaded", handlers::mailbox::get_unreaded );

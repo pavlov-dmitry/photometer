@@ -23,6 +23,8 @@ pub trait DbPhotos {
     fn get_unpublished_photos_count( &mut self, owner_id: Id ) -> CommonResult<u32>;
     ///возвращает список описаний фоточек которые еще не были опубликованы
     fn get_unpublished_photo_infos( &mut self, owner_id: Id, offset: u32, count: u32 ) -> CommonResult<Vec<PhotoInfo>>;
+    /// возвращает описания фотографий от опеределенной публикации
+    fn get_publication_photo_infos( &mut self, scheduled_id: Id ) -> CommonResult<Vec<PhotoInfo>>;
 }
 
 pub fn create_tables( db: &Database ) -> EmptyResult {
@@ -104,6 +106,12 @@ impl DbPhotos for MyPooledConn {
     fn get_unpublished_photo_infos( &mut self, owner_id: Id, offset: u32, count: u32 ) -> CommonResult<Vec<PhotoInfo>> {
         get_unpublished_photo_infos_impl( self, owner_id, offset, count )
             .map_err( |e| fn_failed( "get_unpublished_photo_infos", e ) )
+    }
+
+    /// возвращает описания фотографий от опеределенной публикации
+    fn get_publication_photo_infos( &mut self, scheduled_id: Id ) -> CommonResult<Vec<PhotoInfo>> {
+        get_publication_photo_infos_impl( self, scheduled_id )
+            .map_err( |e| fn_failed( "get_publication_photo_infos", e ) )
     }
 }
 
@@ -223,6 +231,22 @@ fn get_unpublished_photo_infos_impl(
         ;",
         fields = PHOTO_INFO_FIELDS );
     let params: &[ &ToValue ] = &[ &owner_id, &count, &offset ];
+    get_photo_infos_general( conn, &query, params )
+}
+
+fn get_publication_photo_infos_impl( conn: &mut MyPooledConn,
+                                     scheduled_id: Id ) -> MyResult<Vec<PhotoInfo>>
+{
+    let query = format!(
+        "SELECT {fields}
+        FROM publication AS p
+        LEFT JOIN images AS i ON( i.id = p.photo_id )
+        LEFT JOIN users AS u ON ( u.id = p.user_id )
+        WHERE p.scheduled_id=?
+          AND p.visible=true",
+        fields = PHOTO_INFO_FIELDS
+    );
+    let params: &[ &ToValue ] = &[ &scheduled_id ];
     get_photo_infos_general( conn, &query, params )
 }
 

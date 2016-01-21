@@ -116,7 +116,7 @@ fn get_group_feed_impl( conn: &mut MyPooledConn,
              e.event_name,
              g.id,
              g.name,
-             u.id,
+             e.creator_id,
              u.login
          FROM `group_feed` as f
          LEFT JOIN `scheduled_events` as e ON ( e.id = f.scheduled_id )
@@ -135,30 +135,43 @@ fn get_group_feed_impl( conn: &mut MyPooledConn,
     for row in sql_result {
         let row = try!( row );
         let mut values = row.into_iter();
-        feed.push( FeedEventInfo {
-            creation_time: from_value( values.next().unwrap() ),
-            state: from_value( values.next().unwrap() ),
-            data: from_value( values.next().unwrap() ),
-            scheduled_id: from_value( values.next().unwrap() ),
-            event_id: from_value( values.next().unwrap() ),
-            start_time: from_value( values.next().unwrap() ),
-            end_time: from_value( values.next().unwrap() ),
-            event_name: from_value( values.next().unwrap() ),
-            group: ShortGroupInfo{
-                id: from_value( values.next().unwrap() ),
-                name: from_value( values.next().unwrap() )
+
+        let creation_time = from_value( values.next().unwrap() );
+        let state = from_value( values.next().unwrap() );
+        let data = from_value( values.next().unwrap() );
+        let scheduled_id = from_value( values.next().unwrap() );
+        let event_id = from_value( values.next().unwrap() );
+        let start_time = from_value( values.next().unwrap() );
+        let end_time = from_value( values.next().unwrap() );
+        let event_name = from_value( values.next().unwrap() );
+        let group = ShortGroupInfo{
+            id: from_value( values.next().unwrap() ),
+            name: from_value( values.next().unwrap() )
+        };
+        let user_id = from_value( values.next().unwrap() );
+        let user = match user_id {
+            0 => {
+                // дочитываем значение
+                let _ = from_value::<Option<String>>( values.next().unwrap() );
+                None
             },
-            creator: match from_value::<Id>( values.next().unwrap() ) {
-                0 => {
-                    // дочитываем значение
-                    let _ = from_value::<Option<String>>( values.next().unwrap() );
-                    None
-                },
-                id@_ => Some( UserInfo {
-                    id: id,
-                    name: from_value( values.next().unwrap() )
-                })
-            }
+            _ => Some( UserInfo {
+                id: user_id,
+                name: from_value( values.next().unwrap() )
+            })
+        };
+
+        feed.push( FeedEventInfo {
+            creation_time: creation_time,
+            state: state,
+            data: data,
+            scheduled_id: scheduled_id,
+            event_id: event_id,
+            start_time: start_time,
+            end_time: end_time,
+            event_name: event_name,
+            group: group,
+            creator: user
         });
     }
     Ok( feed )

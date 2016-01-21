@@ -7,7 +7,7 @@ define( function(require) {
         render: function() {
             var data = this.model.toJSON();
             data.data = JSON.parse( data.data );
-            var html = Handlebars.templates.group_voting_feed_view( this.model.toJSON() );
+            var html = Handlebars.templates.group_voting_feed_view( data );
             this.$el = $( html );
             return this;
         }
