@@ -15,7 +15,7 @@ use database::{ Databaseable };
 use db::events::DbEvents;
 use db::groups::DbGroups;
 use answer::{ Answer, AnswerResult };
-use types::{ Id, CommonResult, EmptyResult, CommonError, common_error };
+use types::{ Id, ShortInfo, CommonResult, EmptyResult, CommonError, common_error };
 use time::{ self, Timespec };
 use rustc_serialize::json;
 use iron::prelude::*;
@@ -69,7 +69,7 @@ struct AddEventInfo {
 
 #[derive(RustcEncodable)]
 struct ChangeTimetableInfo {
-    group_name: String,
+    group: ShortInfo,
     days_for_voting: i64,
     current: Vec<TimetableEventInfo>
 }
@@ -114,9 +114,12 @@ impl GroupCreatedEvent for ChangeTimetable {
     fn user_creating_get( &self, req: &mut Request, group_id: Id ) -> AnswerResult {
         let db = try!( req.stuff().get_current_db_conn() );
 
-        let group_name = match try!( db.group_info( group_id ) ) {
-            Some( group_info ) => group_info.name,
-            None => return Ok( Answer::bad( "group_not_found" ) )
+        let group_info = match try!( db.group_info( group_id ) ) {
+            Some( group_info ) => ShortInfo {
+                id: group_info.id,
+                name: group_info.name
+            },
+            None => return Ok( Answer::not_found() )
         };
 
         let timetable = try!( db.get_group_timetable( group_id ) );
@@ -131,7 +134,7 @@ impl GroupCreatedEvent for ChangeTimetable {
             .collect::<Vec<_>>();
 
         let answer = Answer::good( ChangeTimetableInfo{
-            group_name: group_name,
+            group: group_info,
             days_for_voting: DAYS_FOR_VOTE,
             current: timetable_info
         });

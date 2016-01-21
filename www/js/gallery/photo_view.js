@@ -44,6 +44,10 @@ define( function( require ) {
             return this;
         },
 
+        close: function() {
+            document.getElementById( 'main-menu' ).scrollIntoView();
+        }
+
     });
 
     return PhotoView;

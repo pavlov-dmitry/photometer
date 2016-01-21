@@ -213,6 +213,7 @@ define( function(require) {
 
             var model = new GroupFeedModel({ id: id });
             this.current = new GroupFeedView({ model: model });
+            app.userState.navToGroup();
         },
 
         group_feed_element: function( id ) {
@@ -223,6 +224,7 @@ define( function(require) {
 
             var model = new GroupFeedElementModel({ id: id });
             this.current = new GroupFeedElementView({ model: model });
+            app.userState.navToGroup();
         },
 
         change_timetable: function( group_id ) {

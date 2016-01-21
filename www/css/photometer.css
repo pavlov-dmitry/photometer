@@ -47,6 +47,11 @@ img.logo {
     right: 1rem;
 }
 
+.container > .topright {
+    top: -0.4rem;
+    right: 0;
+}
+
 .item .topright {
     right: 0rem;
 }
@@ -185,14 +190,22 @@ img.logo {
 .ui.list.header-date > li {
     line-height: 1.1em;
 }
-.ui.event.breadcrumb {
-    line-height: 1.35em;
-}
-.ui.event.label {
-    margin-left: 1.5em;
-    line-height: 1.5em;
-}
+/* .ui.event.breadcrumb { */
+/*     line-height: 1.35em; */
+/* } */
+/* .ui.event.label { */
+/*     margin-left: 1.5em; */
+/*     line-height: 1.5em; */
+/* } */
 
 .ui.basic.segment.container {
     margin: 0;
+}
+
+.event > .content > .extra > .cards {
+    margin: 0;
+}
+
+#workspace > .container {
+    margin-top: 1em;
 }

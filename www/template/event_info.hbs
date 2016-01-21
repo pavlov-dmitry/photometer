@@ -1,34 +1,37 @@
-<div class="ui basic padded segment container">
-  <div class="ui basic segment">
-    <div class="ui huge event breadcrumb">
-      {{#if creator}}
-      <div class="section">
-        {{creator.name}}
-      </div>
-      <i class="at icon devider"></i>
-      {{/if}}
-      {{#if group}}
-      <a class="section" href="#/group/feed/{{group.id}}">
-        {{group.name}}
-      </a>
-      <i class="right chevron icon devider"></i>
-      {{/if}}
-      <div class="active section">
-        {{{name}}}
-      </div>
+<div class="ui container">
+  <div class="ui huge event breadcrumb">
+    {{#if_equal id "Publication"}}
+    <i class="large announcement icon"></i>
+    {{else if_equal id "GroupVoting"}}
+    <i class="large alarm icon"></i>
+    {{/if_equal}}
+    {{#if creator}}
+    <a class="section" href="#user/{{creator.id}}">
+      {{creator.name}}
+    </a>
+    <i class="at icon divider"></i>
+    {{/if}}
+    {{#if group}}
+    <a class="section" href="#/group/feed/{{group.id}}">
+      {{group.name}}
+    </a>
+    <i class="right chevron icon divider"></i>
+    {{/if}}
+    <div class="active section">
+      {{{name}}}
     </div>
-    <div class="ui small {{state.color}} event label">
-      {{state.text}}
-    </div>
-    <p class="header-date">
-        Создано
-        {{duration_from_now starting_time}}
-        {{time starting_time}},
-        Окончание
-        {{duration_from_now ending_time}}
-        {{time ending_time}}
-    </p>
   </div>
+  <div class="ui small {{state.color}} event label">
+    {{state.text}}
+  </div>
+  <p class="header-date">
+    Создано
+    {{duration_from_now starting_time}}
+    {{time starting_time}},
+    Окончание
+    {{duration_from_now ending_time}}
+    {{time ending_time}}
+  </p>
   <div id="description">
     {{{description}}}
   </div>

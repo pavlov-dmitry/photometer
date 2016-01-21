@@ -3,7 +3,7 @@ define(['handlebars.runtime'], function(Handlebars) {
 return templates['photo_view'] = template({"1":function(container,depth0,helpers,partials,data) {
     var stack1, alias1=container.lambda, alias2=container.escapeExpression;
 
-  return "<div class=\"ui basic segment container\">\n  <div class=\"ui huge breadcrumb\">\n    <i class=\"big photo icon\"></i>\n    <a class=\"section\" href=\"#user/"
+  return "<div class=\"ui container\">\n  <div class=\"ui huge breadcrumb\">\n    <i class=\"big photo icon\"></i>\n    <a class=\"section\" href=\"#user/"
     + alias2(alias1(((stack1 = ((stack1 = (depth0 != null ? depth0.photo : depth0)) != null ? stack1.owner : stack1)) != null ? stack1.id : stack1), depth0))
     + "\">"
     + alias2(alias1(((stack1 = ((stack1 = (depth0 != null ? depth0.photo : depth0)) != null ? stack1.owner : stack1)) != null ? stack1.name : stack1), depth0))

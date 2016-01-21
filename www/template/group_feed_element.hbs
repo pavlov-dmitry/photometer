@@ -1,14 +1,13 @@
 <div class="ui container">
-  <div class="ui basic padded segment">
-    <div class="ui huge breadcrumb">
-      {{#if creator}}
-      <a class="section" href="#user/{{creator.id}}">{{creator.name}}</a>
-      <i class="at divider icon"></i>
-      {{/if}}
-      <a class="section" href="#group/feed/{{group.id}}">{{group.name}}</a>
-      <i class="right chevron divider icon"></i>
-      <div class="active section">{{event_name}}</div>
-    </div>
+  <div class="ui huge breadcrumb">
+    <i class="large users icon"></i>
+    {{#if creator}}
+    <a class="section" href="#user/{{creator.id}}">{{creator.name}}</a>
+    <i class="at divider icon"></i>
+    {{/if}}
+    <a class="section" href="#group/feed/{{group.id}}">{{group.name}}</a>
+    <i class="right chevron divider icon"></i>
+    <div class="active section">{{event_name}}</div>
   </div>
   <div id="feed-view" class="ui large feed">
   </div>

@@ -15,7 +15,7 @@ return templates['group_view'] = template({"1":function(container,depth0,helpers
 },"compiler":[7,">= 4.0.0"],"main":function(container,depth0,helpers,partials,data) {
     var stack1, helper, alias1=depth0 != null ? depth0 : {}, alias2=helpers.helperMissing, alias3=container.escapeExpression;
 
-  return "<div class=\"ui container basic padded segment\">\n  <h2 class=\"ui dividing header\">\n    <div class=\"content\">\n      <i class=\"users icon\"></i>\n      "
+  return "<div class=\"ui relative container\">\n  <h2 class=\"ui dividing header\">\n    <div class=\"content\">\n      <i class=\"users icon\"></i>\n      "
     + alias3(((helper = (helper = helpers.name || (depth0 != null ? depth0.name : depth0)) != null ? helper : alias2),(typeof helper === "function" ? helper.call(alias1,{"name":"name","hash":{},"data":data}) : helper)))
     + "\n    </div>\n  </h2>\n"
     + ((stack1 = helpers["if"].call(alias1,(depth0 != null ? depth0.editable : depth0),{"name":"if","hash":{},"fn":container.program(1, data, 0),"inverse":container.noop,"data":data})) != null ? stack1 : "")
