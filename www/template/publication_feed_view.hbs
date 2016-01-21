@@ -23,17 +23,17 @@
     </div>
     {{#if_equal state "Finish"}}
     <div class="extra">
-      <div class="ui stackable cards">
+      <div class="ui stackable link cards">
         {{#each photos}}
         <div class="ui card mw300">
           <div class="content">
-            <a href="#user/{{owner_id}}" class="right floated author">
-              @{{owner_name}}
+            <a href="#user/{{owner.id}}" class="right floated author">
+              @{{owner.name}}
             </a>
           </div>
-          <div class="image">
+          <a class="image" href="#publication/{{../id}}/photo/{{id}}">
             <img exify_intitialized="true" src="preview/{{id}}.png" alt="Загружается ...">
-          </div>
+          </a>
           <div class="content">
             <div class="ui {{#unless name}}disabled {{/unless}}header">
               {{#if name}}

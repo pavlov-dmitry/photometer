@@ -25,22 +25,22 @@ define( function( require ) {
             this.resize_handler = function() {
                 fit_image( self.fit_image_options );
             };
+            this.model.fetch();
         },
 
         render: function() {
             this.$el.html( this.template( this.model.toJSON() ) );
 
-            var imgWidth = this.model.get( "width" );
-            var imgHeight = this.model.get( "height" );
-            this.fit_image_options.height_coeff = imgHeight / imgWidth;
+            var photo = this.model.get("photo");
+            this.fit_image_options.height_coeff = photo.height / photo.width;
 
             $(window).on( "resize", this.resize_handler );
             var self = this;
             $("#photo").on( "load", function() {
                 $("#loader").remove();
                 self.resize_handler();
+                document.getElementById( 'photo' ).scrollIntoView();
             });
-            document.getElementById( 'photo' ).scrollIntoView();
             return this;
         },
 

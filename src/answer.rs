@@ -33,7 +33,8 @@ impl<Body: Encodable + 'static> ToString for AnswerBody<Body> {
 pub enum Answer {
     Good( ToStringPtr ),
     Bad( ToStringPtr ),
-    AccessDenied
+    AccessDenied,
+    NotFound
 }
 
 pub type AnswerResult = CommonResult<Answer>;
@@ -50,6 +51,10 @@ impl Answer {
 
     pub fn access_denied() -> Answer {
         Answer::AccessDenied
+    }
+
+    pub fn not_found() -> Answer {
+        Answer::NotFound
     }
 }
 
@@ -78,7 +83,10 @@ impl Modifier<Response> for AnswerResponse {
                     &Answer::AccessDenied => {
                         let answer_status = status::Forbidden;
                         answer_status.modify( res );
-                        "access denied".to_owned().modify( res );
+                    }
+
+                    &Answer::NotFound => {
+                        status::NotFound.modify( res );
                     }
                 }
             }

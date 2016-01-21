@@ -1,7 +1,6 @@
 use iron::prelude::*;
 use answer::{ AnswerResult, Answer, AnswerResponse };
 use types::{ Id };
-use answer_types::{ FieldErrorInfo };
 use get_body::GetBody;
 use db::groups::DbGroups;
 use db::group_feed::DbGroupFeed;
@@ -100,7 +99,7 @@ fn group_info( req: &mut Request ) -> AnswerResult {
             };
             Answer::good( group )
         },
-        None => Answer::bad( FieldErrorInfo::not_found( "group" ) )
+        None => Answer::not_found()
     };
     Ok( answer )
 }

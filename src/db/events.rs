@@ -11,7 +11,13 @@ use mysql::value::{
     Value,
     ConvIr
 };
-use types::{ Id, CommonResult, EmptyResult, CommonError };
+use types::{
+    Id,
+    CommonResult,
+    EmptyResult,
+    CommonError,
+    ShortInfo
+};
 use time::{ Timespec };
 use std::fmt::Display;
 use events::{
@@ -19,10 +25,8 @@ use events::{
     MaybeEventId,
     ScheduledEventInfo,
     EventState,
-    FullEventInfo,
-    ShortGroupInfo
+    FullEventInfo
 };
-use authentication::UserInfo;
 use database::Database;
 use parse_utils::{ GetMsecs, IntoTimespec };
 
@@ -271,7 +275,7 @@ fn get_events_impl<T: ToRow>( conn: &mut MyPooledConn, where_cond: &str, values:
             data: data,
             state: state,
             group: match group_attached {
-                true => Some( ShortGroupInfo{
+                true => Some( ShortInfo{
                     id: group_id,
                     name: group_name.unwrap()
                 }),
@@ -279,7 +283,7 @@ fn get_events_impl<T: ToRow>( conn: &mut MyPooledConn, where_cond: &str, values:
             },
             creator: match creator_id {
                 0 => None,
-                _ => Some( UserInfo {
+                _ => Some( ShortInfo {
                     id: creator_id,
                     name: creator_name.unwrap(),
                 })
@@ -345,7 +349,7 @@ fn event_info_impl( conn: &mut MyPooledConn, scheduled_id: Id ) -> MyResult<Opti
                 data: data,
                 state: state,
                 group: match group_attached {
-                    true => Some( ShortGroupInfo{
+                    true => Some( ShortInfo{
                         id: group_id,
                         name: group_name.unwrap()
                     }),
@@ -353,7 +357,7 @@ fn event_info_impl( conn: &mut MyPooledConn, scheduled_id: Id ) -> MyResult<Opti
                 },
                 creator: match creator_id {
                     0 => None,
-                    _ => Some( UserInfo {
+                    _ => Some( ShortInfo {
                         id: creator_id,
                         name: creator_name.unwrap(),
                     })

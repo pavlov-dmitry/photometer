@@ -17,7 +17,6 @@ define( function(require) {
                 page: 0
             });
             handler.good = function( data ) {
-                console.log( JSON.stringify( data ) );
                 var common_data = {
                     group_id: data.group_id,
                     group_name: data.group_name

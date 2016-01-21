@@ -9,6 +9,7 @@ define( function(require) {
 
         initialize: function() {
             this.feeds = this.model.get("feed");
+            this.feeds.reset();
             this.listenTo( this.feeds, "add", this.add );
             this.listenTo( this.model, "change:group_name", this.render );
 

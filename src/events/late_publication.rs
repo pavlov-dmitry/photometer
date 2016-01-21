@@ -21,8 +21,9 @@ use rustc_serialize::json;
 use authentication::Userable;
 use iron::prelude::*;
 use get_body::GetBody;
-use answer_types::{ OkInfo, AccessErrorInfo, PhotoErrorInfo };
+use answer_types::{ OkInfo, AccessErrorInfo };
 use std::convert::From;
+use parse_utils::GetMsecs;
 
 #[derive(Clone)]
 pub struct LatePublication;
@@ -135,11 +136,12 @@ impl Event for LatePublication {
         let answer = if need_publish {
             let photo_info = try!( db.get_photo_info( photo_id ) );
             if let Some( photo_info ) = photo_info {
-                if photo_info.owner_id == user_id {
+                if photo_info.owner.id == user_id {
                     try!( db.public_photo( info.parent_id,
                                            user_id,
                                            photo_id,
-                                           true ) );
+                                           true,
+                                           time::get_time().msecs() ) );
                     Answer::good( OkInfo::new( "published" ) )
                 }
                 else {
@@ -147,7 +149,7 @@ impl Event for LatePublication {
                 }
             }
             else {
-                Answer::bad( PhotoErrorInfo::not_found() )
+                Answer::not_found()
             }
         }
         else {

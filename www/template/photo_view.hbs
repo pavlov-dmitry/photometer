@@ -1,8 +1,22 @@
+{{#if group}}
+<div class="ui basic segment container">
+  <div class="ui huge breadcrumb">
+    <i class="big photo icon"></i>
+    <a class="section" href="#user/{{photo.owner.id}}">{{photo.owner.name}}</a>
+    <i class="at divider icon"></i>
+    <a class="section" href="#group/feed/{{group.id}}">{{group.name}}</a>
+    <i class="right chevron divider icon"></i>
+    <a class="section" href="#group/feed/element/{{feed.id}}">{{feed.name}}</a>
+    <i class="right chevron divider icon"></i>
+    <div class="active section">{{photo.name}}</div>
+  </div>
+</div>
+{{/if}}
 <div id="photo-container">
   <div id="loader" class="ui active dimmer">
     <div class="ui text loader">Загрузка</div>
   </div>
-    <img id="photo" src="/photo/{{id}}.jpg" class="incenter"/>
+    <img id="photo" src="/photo/{{photo.id}}.jpg" class="incenter"/>
     {{#if next}}
     <a href="#{{context_url}}{{next}}">
       <div class="next pager">
@@ -24,21 +38,22 @@
     <div class="exifview">
       <div class="ui very padded basic segment">
         <h2 class="ui center aligned header">
-          {{#if shutter_speed}}
-            {{#if camera_model}}
-            {{camera_model}}
+          {{#if photo.shutter_speed}}
+            {{#if photo.camera_model}}
+            <i class="camera retro icon"></i>
+            {{photo.camera_model}}
             {{/if}}
-            {{#if focal_length}}
-            {{focal_length}}mm
+            {{#if photo.focal_length}}
+            {{photo.focal_length}}mm
             {{/if}}
-            {{#if iso}}
-            ISO:{{iso}}
+            {{#if photo.iso}}
+            ISO:{{photo.iso}}
             {{/if}}
-            {{#if shutter_speed}}
-            {{shutter shutter_speed}}с
+            {{#if photo.shutter_speed}}
+            {{shutter photo.shutter_speed}}с
             {{/if}}
-            {{#if aperture}}
-            f{{aperture aperture}}
+            {{#if photo.aperture}}
+            f{{aperture photo.aperture}}
             {{/if}}
           {{else}}
             Данные о параметрах съёмки отсутствуют.
@@ -47,10 +62,25 @@
       </div>
     </div>
     <div class="nameviewer">
-      <div class="ui very padded basic segment">
-        <h2 class="ui center aligned header">
-          {{name}}@{{owner_name}}
-        </h2>
+      <div class="ui very padded center aligned basic segment">
+          <div class="ui huge breadcrumb">
+            {{#if group}}
+            <i class="big photo icon"></i>
+            <a class="section" href="#user/{{photo.owner.id}}">{{photo.owner.name}}</a>
+            <i class="at divider icon"></i>
+            <a class="section" href="#group/feed/{{group.id}}">{{group.name}}</a>
+            <i class="right chevron divider icon"></i>
+            <a class="section" href="#group/feed/element/{{feed.id}}">{{feed.name}}</a>
+            <i class="right chevron divider icon"></i>
+            {{/if}}
+            <div class="active section">
+              {{#if photo.name}}
+              {{photo.name}}
+              {{else}}
+              <i>Без имени</i>
+              {{/if}}
+            </div>
+          </div>
       </div>
     </div>
 </div>

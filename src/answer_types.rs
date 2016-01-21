@@ -64,12 +64,6 @@ impl PhotoErrorInfo {
         }
     }
 
-    pub fn not_found() -> PhotoErrorInfo {
-        PhotoErrorInfo {
-            photo: String::from( "not_found" )
-        }
-    }
-
     pub fn already_published() -> PhotoErrorInfo {
         PhotoErrorInfo {
             photo: String::from( "already_published" )

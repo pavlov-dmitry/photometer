@@ -58,7 +58,7 @@ pub fn get_image( req: &mut Request, is_preview: bool ) -> IronResult<Response> 
                 status::Ok,
                 //временно используем Path, пока image не перейдёт на новое io
                 Path::new( &req.photo_store().make_filename(
-                    &info.owner_name,
+                    &info.owner.name,
                     info.upload_time,
                     &info.image_type,
                     is_preview

@@ -9,7 +9,7 @@ return templates['add_to_timetable'] = template({"compiler":[7,">= 4.0.0"],"main
     + alias4(((helper = (helper = helpers.idx || (depth0 != null ? depth0.idx : depth0)) != null ? helper : alias2),(typeof helper === alias3 ? helper.call(alias1,{"name":"idx","hash":{},"data":data}) : helper)))
     + "-err\" class=\"ui hidden pointing red basic label\">\n    </div>\n  </div>\n  <div id=\"datetime-"
     + alias4(((helper = (helper = helpers.idx || (depth0 != null ? depth0.idx : depth0)) != null ? helper : alias2),(typeof helper === alias3 ? helper.call(alias1,{"name":"idx","hash":{},"data":data}) : helper)))
-    + "\" class=\"ui field\">\n    <div class=\"ui left icon input\">\n      <i class=\"calendar icon\"></i>\n      <input class=\"datetimepicker-input\" type=\"text\" placeholder=\"Дата и время события\" readonly required/>\n    </div>\n    <div id=\"datetime-"
+    + "\" class=\"ui field\">\n    <div class=\"ui left icon input\">\n      <i class=\"calendar icon\"></i>\n      <input class=\"datetimepicker-input\" type=\"text\" placeholder=\"Дата и время события\" required/>\n    </div>\n    <div id=\"datetime-"
     + alias4(((helper = (helper = helpers.idx || (depth0 != null ? depth0.idx : depth0)) != null ? helper : alias2),(typeof helper === alias3 ? helper.call(alias1,{"name":"idx","hash":{},"data":data}) : helper)))
     + "-err\" class=\"ui hidden pointing red basic label\">\n    </div>\n  </div>\n  <div class=\"ui field\">\n    <button class=\"ui icon basic remove button\" type=\"button\">\n      <i class=\"close icon\"></i>\n    </button>\n  </div>\n</div>\n";
 },"useData":true});

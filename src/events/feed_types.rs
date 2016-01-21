@@ -1,10 +1,9 @@
 use super::{
-    EventId,
-    ShortGroupInfo
+    EventId
 };
-use authentication::UserInfo;
 use types::{
-    Id
+    Id,
+    ShortInfo
 };
 
 #[derive(Clone, RustcEncodable)]
@@ -15,6 +14,7 @@ pub enum FeedEventState {
 
 #[derive(RustcEncodable)]
 pub struct FeedEventInfo {
+    pub id: Id,
     pub creation_time: u64,
     pub start_time: u64,
     pub end_time: u64,
@@ -23,6 +23,6 @@ pub struct FeedEventInfo {
     pub event_name: String,
     pub state: FeedEventState,
     pub data: String,
-    pub creator: Option<UserInfo>,
-    pub group: ShortGroupInfo
+    pub creator: Option<ShortInfo>,
+    pub group: ShortInfo
 }

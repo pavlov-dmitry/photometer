@@ -4,7 +4,7 @@ use authentication::{ Userable, User };
 use err_msg;
 use time;
 use time::{ Timespec };
-use types::{ PhotoInfo, ImageType, common_error };
+use types::{ PhotoInfo, ImageType, ShortInfo, common_error };
 use answer_types::{ OkInfo, PhotoErrorInfo };
 use exif_reader;
 use exif_reader::{ ExifValues };
@@ -109,8 +109,10 @@ fn make_photo_info( owner: &User,
         focal_length: exif_ref.and_then( |e| e.focal_length() ),
         focal_length_35mm: exif_ref.and_then( |e| e.focal_length_35mm() ),
         camera_model: exif_ref.and_then( |e| e.camera_model().map( |cm| cm.to_string() ) ),
-        owner_id: owner.id,
-        owner_name: owner.name.clone()
+        owner: ShortInfo {
+            id: owner.id,
+            name: owner.name.clone()
+        }
     }
 }
 

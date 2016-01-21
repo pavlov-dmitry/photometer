@@ -37,8 +37,7 @@ pub struct PhotoInfo {
     pub focal_length: Option<u16>,
     pub focal_length_35mm: Option<u16>,
     pub camera_model: Option<String>,
-    pub owner_id: Id,
-    pub owner_name: String
+    pub owner: ShortInfo
 }
 
 #[derive(PartialEq, Clone, Debug)]
@@ -70,4 +69,10 @@ pub struct MailInfo {
     pub subject: String,
     pub body: String,
     pub readed: bool
+}
+
+#[derive(Clone, Debug, RustcEncodable)]
+pub struct ShortInfo {
+    pub id: Id,
+    pub name: String
 }

@@ -141,13 +141,14 @@ impl Event for Publication {
 
         let answer = match try!( db.get_photo_info( photo_id ) ) {
             Some( photo_info ) => {
-                if photo_info.owner_id == user_id {
+                if photo_info.owner.id == user_id {
                     match try!( db.is_photo_published( photo_id ) ) {
                         false => {
                             try!( db.public_photo( body.scheduled_id,
                                                    user_id,
                                                    photo_id,
-                                                   false ) );
+                                                   false,
+                                                   time::get_time().msecs() ) );
                             Answer::good( OkInfo::new( "published" ) )
                         },
                         true => Answer::bad( PhotoErrorInfo::already_published() )
@@ -157,7 +158,7 @@ impl Event for Publication {
                     Answer::access_denied()
                 }
             },
-            None => Answer::bad( PhotoErrorInfo::not_found() )
+            None => Answer::not_found()
         };
         Ok( answer )
     }

@@ -3,11 +3,12 @@ use database::{ Databaseable };
 use stuff::Stuffable;
 use authentication::{ Userable };
 use db::photos::{ DbPhotos };
+use db::group_feed::DbGroupFeed;
 use iron::prelude::*;
 use get_body::GetBody;
 use answer_types::CountInfo;
-use types::{ Id, PhotoInfo };
-use answer_types::{ PhotoErrorInfo, PaginationInfo };
+use types::{ Id, PhotoInfo, ShortInfo };
+use answer_types::{ PaginationInfo };
 
 // static YEAR: &'static str = "year";
 const IN_PAGE_COUNT: u32 = 12;
@@ -63,6 +64,11 @@ fn gallery_count_answer( req: &mut Request ) -> AnswerResult {
 
 pub fn get_publication( request: &mut Request ) -> IronResult<Response> {
     let response = AnswerResponse( publication_answer( request ) );
+    Ok( Response::with( response ) )
+}
+
+pub fn get_publication_photo( request: &mut Request ) -> IronResult<Response> {
+    let response = AnswerResponse( publication_photo_answer( request ) );
     Ok( Response::with( response ) )
 }
 
@@ -167,12 +173,58 @@ fn photo_info_answer( req: &mut Request ) -> AnswerResult {
     let photo_info = try!( db.get_photo_info( photo_context.photo ) );
     let photo_info = match photo_info {
         Some( photo_info ) => photo_info,
-        None => return Ok( Answer::bad( PhotoErrorInfo::not_found() ) )
+        None => return Ok( Answer::not_found() )
     };
 
     let (prev, next) = try!( db.get_photo_neighbours_in_gallery( photo_context.user, photo_context.photo ) );
 
     let answer = Answer::good( GalleryPhotoInfo{
+        prev: prev,
+        photo: photo_info,
+        next: next
+    });
+    Ok( answer )
+}
+
+#[derive(Clone, RustcDecodable)]
+struct PublicationPhotoQuery {
+    feed_id: Id,
+    photo_id: Id
+}
+
+#[derive(RustcEncodable)]
+struct PublicationPhotoInfo {
+    group: ShortInfo,
+    feed: ShortInfo,
+    prev: Option<Id>,
+    photo: PhotoInfo,
+    next: Option<Id>
+}
+
+fn publication_photo_answer( req: &mut Request ) -> AnswerResult {
+    let photo_query = try!( req.get_body::<PublicationPhotoQuery>() );
+
+    let db = try!( req.stuff().get_current_db_conn() );
+    let feed_info = try!( db.get_feed_info( photo_query.feed_id ) );
+    let feed_info = match feed_info {
+        Some( info ) => info,
+        None => return Ok( Answer::not_found() )
+    };
+    let photo_info = try!( db.get_photo_info( photo_query.photo_id ) );
+    let photo_info = match photo_info {
+        Some( photo_info ) => photo_info,
+        None => return Ok( Answer::not_found() )
+    };
+    let (prev, next) = try!( db.get_photo_neighbours_in_publication(
+        feed_info.scheduled_id,
+        photo_query.photo_id
+    ) );
+    let answer = Answer::good( PublicationPhotoInfo{
+        feed: ShortInfo {
+            id: feed_info.id,
+            name: feed_info.event_name
+        },
+        group: feed_info.group,
         prev: prev,
         photo: photo_info,
         next: next

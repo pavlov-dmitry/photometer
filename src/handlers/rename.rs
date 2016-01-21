@@ -7,7 +7,7 @@ use db::photos::{ DbPhotos };
 use iron::prelude::*;
 use types::Id;
 use get_body::GetBody;
-use answer_types::{ OkInfo, PhotoErrorInfo, AccessErrorInfo };
+use answer_types::{ OkInfo, AccessErrorInfo };
 
 pub fn rename_photo( req: &mut Request ) -> IronResult<Response> {
     let answer = AnswerResponse( rename_answer( req ) );
@@ -28,7 +28,7 @@ fn rename_answer( request: &mut Request ) -> AnswerResult {
     };
     let answer = match maybe_photo_info {
         Some( info ) => {
-            if info.owner_id == request.user().id {
+            if info.owner.id == request.user().id {
                 let db = try!( request.stuff().get_current_db_conn() );
                 let _ = try!( db.rename_photo( rename_info.id, &rename_info.name ) );
                 Answer::good( OkInfo::new( "rename" ) )
@@ -37,7 +37,7 @@ fn rename_answer( request: &mut Request ) -> AnswerResult {
                 Answer::bad( AccessErrorInfo::new() )
             }
         },
-        None => Answer::bad( PhotoErrorInfo::not_found() )
+        None => Answer::not_found()
     };
     Ok( answer )
 }

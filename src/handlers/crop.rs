@@ -34,14 +34,14 @@ fn crop_photo_answer( request: &mut Request ) -> AnswerResult {
 
     let answer = match maybe_photo_info {
         Some( info ) => {
-            if info.owner_id == request.user().id {
+            if info.owner.id == request.user().id {
                 let photo_store = request.photo_store();
                 let x1 = crop_info.x1 as u32;
                 let x2 = crop_info.x2 as u32;
                 let y1 = crop_info.y1 as u32;
                 let y2 = crop_info.y2 as u32;
                 let crop_result = photo_store.make_crop(
-                    &info.owner_name,
+                    &info.owner.name,
                     info.upload_time,
                     info.image_type,
                     (x1, y1),
@@ -61,7 +61,7 @@ fn crop_photo_answer( request: &mut Request ) -> AnswerResult {
             }
         },
 
-        None => Answer::bad( PhotoErrorInfo::not_found() )
+        None => Answer::not_found()
     };
     Ok( answer )
 }

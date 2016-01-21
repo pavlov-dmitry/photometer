@@ -1,6 +1,11 @@
-use types::{ Id, EmptyResult, CommonResult, common_error };
+use types::{
+    Id,
+    EmptyResult,
+    CommonResult,
+    common_error,
+    ShortInfo
+};
 use answer::{ AnswerResult };
-use authentication::UserInfo;
 use time::Timespec;
 use iron::prelude::*;
 use stuff::Stuff;
@@ -29,14 +34,8 @@ pub struct ScheduledEventInfo {
     pub data: String,
     pub state: EventState,
     /// показывает что событие привязано к какой-то группе
-    pub group: Option<ShortGroupInfo>,
-    pub creator: Option<UserInfo>
-}
-
-#[derive(Clone, Debug, RustcEncodable)]
-pub struct ShortGroupInfo {
-    pub id: Id,
-    pub name: String
+    pub group: Option<ShortInfo>,
+    pub creator: Option<ShortInfo>
 }
 
 #[derive(Debug)]

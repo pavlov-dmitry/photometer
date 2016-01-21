@@ -7,18 +7,17 @@ use super::{
     EventState,
     FullEventInfo,
     UserAction,
-    Description,
-    ShortGroupInfo
+    Description
 };
 use super::events_collection;
 use super::events_collection::{ EventPtr };
 use db::events::{ DbEvents };
-use types::{ EmptyResult, CommonResult };
+use types::{ EmptyResult, CommonResult, ShortInfo };
 use time;
 use answer::{ Answer, AnswerResult };
 use types::{ Id };
 use iron::prelude::*;
-use authentication::{ Userable, UserInfo };
+use authentication::{ Userable };
 use db::groups::DbGroups;
 use answer_types::{ OkInfo, FieldErrorInfo };
 use parse_utils::{ GetMsecs };
@@ -46,8 +45,8 @@ struct EventInfoAnswer {
     state: EventState,
     action: UserAction,
     description: Description,
-    creator: Option<UserInfo>,
-    group: Option<ShortGroupInfo>
+    creator: Option<ShortInfo>,
+    group: Option<ShortInfo>
 }
 
 impl EventsManagerStuff for Stuff {

@@ -22,7 +22,8 @@ define( function(require) {
             'event/:id': "event_info",
             'group/info/:id': "group_info",
             'group/feed/:id': "group_feed",
-            "change_timetable/:id": "change_timetable"
+            'change_timetable/:id': "change_timetable",
+            'publication/:feed_id/photo/:photo_id': "publication_photo"
         },
 
         clear_current: function() {
@@ -130,7 +131,10 @@ define( function(require) {
 
             var model = new PhotoModel( {id: id} );
             model.photo_url = "gallery/photo_info";
-            model.user_id = app.user_id();
+            model.photo_data = {
+                user: app.user_id(),
+                photo: id
+            };
 
             this.current = new PhotoEditView( { model: model } );
         },
@@ -143,13 +147,31 @@ define( function(require) {
 
             var model = new PhotoModel({ id: photo_id });
             model.photo_url = "gallery/photo_info";
-            model.user_id = user_id;
+            model.photo_data = {
+                photo: photo_id,
+                user: user_id
+            }
             model.set({ context_url: "gallery_photo/" + user_id + "/" });
 
             this.current = new PhotoView({ model: model });
-            model.fetch();
 
             app.userState.navToGallery();
+        },
+
+        publication_photo: function( feed_id, photo_id ) {
+            this.clear_current();
+
+            var PhotoModel = require( "gallery/photo_model" );
+            var PhotoView = require( "gallery/photo_view" );
+
+            var model = new PhotoModel({ id: photo_id });
+            model.photo_url = "publication/photo";
+            model.photo_data = {
+                feed_id: feed_id,
+                photo_id: photo_id
+            };
+            model.set({ context_url: "publication/" + feed_id + "/photo/" });
+            this.current = new PhotoView({ model: model });
         },
 
         group_creation: function() {
@@ -201,7 +223,8 @@ define( function(require) {
             var model = new ChangeTimetableModel();
             this.current = new ChangeTimetableView({model: model});
             this.current.set_group_id( group_id );
-        }
+        },
+
 
     });
 

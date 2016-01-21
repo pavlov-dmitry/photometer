@@ -15,12 +15,12 @@ define( function(require) {
         fetch: function() {
             var self = this;
             var Request = require( "request" );
-            var handler = Request.get( this.photo_url, { photo: this.id, user: this.user_id } );
+            var handler = Request.get( this.photo_url, this.photo_data );
             handler.good = function( data ) {
-                var photo_data = data.photo;
-                photo_data.next = data.next;
-                photo_data.prev = data.prev;
-                self.set( photo_data );
+                // var photo_data = data.photo;
+                // photo_data.next = data.next;
+                // photo_data.prev = data.prev;
+                self.set( data );
             }
 
             handler.bad = function( data ) {
@@ -37,8 +37,6 @@ define( function(require) {
             }
         }
     })
-
-
 
     return PhotoModel;
 })

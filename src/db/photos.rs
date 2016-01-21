@@ -1,7 +1,7 @@
 use mysql::conn::pool::{ MyPooledConn };
 use mysql::error::{ MyResult, MyError };
 use mysql::value::{ from_row, from_value, ToValue, FromValue, Value, ConvIr };
-use types::{ Id, PhotoInfo, ImageType, CommonResult, EmptyResult, CommonError };
+use types::{ Id, PhotoInfo, ImageType, ShortInfo, CommonResult, EmptyResult, CommonError };
 use database::Database;
 use std::fmt::Display;
 use std::str;
@@ -25,6 +25,8 @@ pub trait DbPhotos {
     fn get_unpublished_photo_infos( &mut self, owner_id: Id, offset: u32, count: u32 ) -> CommonResult<Vec<PhotoInfo>>;
     /// возвращает описания фотографий от опеределенной публикации
     fn get_publication_photo_infos( &mut self, scheduled_id: Id ) -> CommonResult<Vec<PhotoInfo>>;
+    /// выдаёт соседнии фотографии относительно публикации
+    fn get_photo_neighbours_in_publication( &mut self, scheduled_id: Id, photo_id: Id ) -> CommonResult<(Option<Id>, Option<Id>)>;
 }
 
 pub fn create_tables( db: &Database ) -> EmptyResult {
@@ -112,6 +114,12 @@ impl DbPhotos for MyPooledConn {
     fn get_publication_photo_infos( &mut self, scheduled_id: Id ) -> CommonResult<Vec<PhotoInfo>> {
         get_publication_photo_infos_impl( self, scheduled_id )
             .map_err( |e| fn_failed( "get_publication_photo_infos", e ) )
+    }
+
+    /// выдаёт соседнии фотографии относительно публикации
+    fn get_photo_neighbours_in_publication( &mut self, scheduled_id: Id, photo_id: Id ) -> CommonResult<(Option<Id>, Option<Id>)> {
+        get_photo_neighbours_in_publication_impl( self, scheduled_id, photo_id )
+            .map_err( |e| fn_failed( "get_photo_neighbours_in_publication_impl", e ) )
     }
 }
 
@@ -272,25 +280,54 @@ fn get_photo_neighbours_in_gallery_impl( conn: &mut MyPooledConn, owner_id: Id, 
     Ok( ( prev, next ) )
 }
 
+fn get_photo_neighbours_in_publication_impl( conn: &mut MyPooledConn, scheduled_id: Id, photo_id: Id ) -> MyResult<(Option<Id>, Option<Id>)> {
+    let prev = try!( get_neighbour_in_publication( conn, scheduled_id, photo_id, false ) );
+    let next = try!( get_neighbour_in_publication( conn, scheduled_id, photo_id, true ) );
+    Ok( (prev, next) )
+}
+
 fn get_neighbour_in_gallery( conn: &mut MyPooledConn, owner_id: Id, photo_id: Id, is_next: bool ) -> MyResult<Option<Id>> {
     let comp_sign = if is_next { "<" } else { ">" };
     let sort_direction = if is_next { "DESC" } else { "ASC" };
-    let query = format!("
-                        SELECT
-                            `id`
-                        FROM
-                            `images`
-                        WHERE
-                            `owner_id` = ? AND
-                            `upload_time` {} (SELECT `upload_time` FROM `images` WHERE `id` = ?)
-                        ORDER BY
-                            `upload_time` {}
-                        LIMIT 1;",
-                        comp_sign,
-                        sort_direction );
+    let query = format!(
+        "SELECT
+             `id`
+         FROM
+             `images`
+         WHERE
+             `owner_id` = ? AND
+             `upload_time` {} (SELECT `upload_time` FROM `images` WHERE `id` = ?)
+         ORDER BY
+             `upload_time` {}
+         LIMIT 1;",
+        comp_sign,
+        sort_direction );
 
-    let mut stmt = try!( conn.prepare( query ) );
     let params: &[ &ToValue ] = &[ &owner_id, &photo_id ];
+    read_neighbour_general( conn, &query, params )
+}
+
+fn get_neighbour_in_publication( conn: &mut MyPooledConn, scheduled_id: Id, photo_id: Id, is_next: bool ) -> MyResult<Option<Id>> {
+    let comp_sign = if is_next { ">" } else { "<" };
+    let sort_direction = if is_next { "ASC" } else { "DESC" };
+    let query = format!(
+        "SELECT
+             p.photo_id
+         FROM publication AS p
+         WHERE p.scheduled_id = ?
+           AND p.time {} (SELECT `time` FROM `publication` WHERE scheduled_id = ? AND photo_id = ? )
+         ORDER BY
+               time {}
+         LIMIT 1;",
+        comp_sign,
+        sort_direction );
+
+    let params: &[ &ToValue ] = &[ &scheduled_id, &scheduled_id, &photo_id ];
+    read_neighbour_general( conn, &query, params )
+}
+
+fn read_neighbour_general( conn: &mut MyPooledConn, query: &str, params: &[ &ToValue ] ) -> MyResult<Option<Id>> {
+    let mut stmt = try!( conn.prepare( query ) );
     let mut result = try!( stmt.execute( params ) );
     let neighbour: Option<Id> = match result.next() {
         Some( row ) => {
@@ -361,8 +398,10 @@ const PHOTO_INFO_FIELDS: &'static str = "
 fn read_photo_info<I: Iterator<Item = Value>>( mut values: I ) -> PhotoInfo
 {
     PhotoInfo {
-        owner_id: from_value( values.next().unwrap() ),
-        owner_name: from_value( values.next().unwrap() ),
+        owner: ShortInfo {
+            id: from_value( values.next().unwrap() ),
+            name: from_value( values.next().unwrap() ),
+        },
         id: from_value( values.next().unwrap() ),
         upload_time: from_value( values.next().unwrap() ),
         image_type: from_value( values.next().unwrap() ),

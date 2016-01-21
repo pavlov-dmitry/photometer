@@ -8,7 +8,7 @@ use authentication::User;
 
 pub trait DbPublication {
     /// публикует фото
-    fn public_photo( &mut self, scheduled: Id, user: Id, photo: Id, visible: bool ) -> EmptyResult;
+    fn public_photo( &mut self, scheduled: Id, user: Id, photo: Id, visible: bool, time: u64 ) -> EmptyResult;
     /// открывает на просмотр определнную группу фото
     fn make_publication_visible( &mut self, scheduled: Id ) -> EmptyResult;
     /// кол-во уже опубликованных фото
@@ -25,6 +25,7 @@ pub fn create_tables( db: &Database ) -> EmptyResult {
     db.execute(
         "CREATE TABLE IF NOT EXISTS `publication` (
             `id` bigint(20) NOT NULL AUTO_INCREMENT,
+            `time` bigint(20) NOT NULL DEFAULT '0',
             `scheduled_id` bigint(20) NOT NULL DEFAULT '0',
             `user_id` bigint(20) NOT NULL DEFAULT '0',
             `photo_id` bigint(20) NOT NULL DEFAULT '0',
@@ -39,8 +40,8 @@ pub fn create_tables( db: &Database ) -> EmptyResult {
 
 impl DbPublication for MyPooledConn {
     /// публикует фото
-    fn public_photo( &mut self, scheduled: Id, user: Id, photo: Id, visible: bool ) -> EmptyResult {
-        public_photo_impl( self, scheduled, user, photo, visible )
+    fn public_photo( &mut self, scheduled: Id, user: Id, photo: Id, visible: bool, time: u64 ) -> EmptyResult {
+        public_photo_impl( self, scheduled, user, photo, visible, time )
             .map_err( |e| fn_failed( "public_photo", e ) )
     }
 
@@ -77,18 +78,26 @@ fn fn_failed<E: Display>( fn_name: &str, e: E ) -> CommonError {
     CommonError( format!( "DbPublication {} failed: {}", fn_name, e ) )
 }
 
-fn public_photo_impl( conn: &mut MyPooledConn, scheduled: Id, user: Id, photo: Id, visible: bool ) -> MyResult<()> {
+fn public_photo_impl( conn: &mut MyPooledConn,
+                      scheduled: Id,
+                      user: Id,
+                      photo: Id,
+                      visible: bool,
+                      time: u64 ) -> MyResult<()>
+{
     let mut stmt = try!( conn.prepare("
         INSERT INTO publication (
+            time,
             scheduled_id,
             user_id,
             photo_id,
             visible
         )
-        VALUES( ?, ?, ?, ? )
+        VALUES( ?, ?, ?, ?, ? )
         ON DUPLICATE KEY UPDATE photo_id=?
     "));
     let params: &[ &ToValue ] = &[
+        &time,
         &scheduled,
         &user,
         &photo,

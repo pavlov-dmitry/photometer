@@ -136,27 +136,26 @@ img.logo {
     background-color: rgba( 0, 0, 0, 0 );
     transition: 0.5s;
 }
-.nameviewer .header {
+.nameviewer .ui.breadcrumb,
+.nameviewer .ui.breadcrumb > .icon,
+.nameviewer .ui.breadcrumb a {
     color: rgba(0, 0, 0, 0);
     transition: 0.5s;
-    font-family: serif;
+    /* font-family: serif; */
 }
-.nameviewer a {
-    color: rgba(0, 0, 0, 0);
+.nameviewer:hover .ui.breadcrumb a {
+    color: #7abaff;
     transition: 0.5s;
 }
-.nameviewer:hover a {
-    color: rgba(255, 255, 255, 1);
-    transition: 0.5s;
-}
-.nameviewer:hover a:hover {
+.nameviewer:hover .ui.breadcrumb a:hover {
     color: #1e70bf;
 }
 .nameviewer:hover {
     background-color: rgba( 0, 0, 0, 0.8 );
     transition: 0.5s;
 }
-.nameviewer:hover .header {
+.nameviewer:hover .ui.breadcrumb,
+.nameviewer:hover .ui.breadcrumb .icon {
     color: rgba(255, 255, 255, 1);
     transition: 0.5s;
 }
@@ -192,4 +191,8 @@ img.logo {
 .ui.event.label {
     margin-left: 1.5em;
     line-height: 1.5em;
+}
+
+.ui.basic.segment.container {
+    margin: 0;
 }
