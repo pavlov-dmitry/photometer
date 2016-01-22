@@ -1,6 +1,7 @@
 define( function(require) {
     var Backbone = require( "lib/backbone" ),
-        Handlebars = require( "handlebars.runtime" );
+        Handlebars = require( "handlebars.runtime" ),
+        app = require( "app" );
     require( "template/group_feed" );
 
     var GroupFeedView = Backbone.View.extend({
@@ -54,6 +55,7 @@ define( function(require) {
         feeds_changed: function() {
             this.$feeds_loader.removeClass( "active" );
             $("#feeds").visibility( "refresh" );
+            app.userState.fetch();
         },
 
         no_more: function() {

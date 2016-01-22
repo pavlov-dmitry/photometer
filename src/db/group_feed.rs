@@ -1,7 +1,7 @@
 use std::str;
 use mysql::conn::pool::{ MyPooledConn };
 use mysql::error::{ MyResult, MyError };
-use mysql::value::{ from_value, ToValue, FromValue, Value, ConvIr };
+use mysql::value::{ from_value, from_row, ToValue, FromValue, Value, ConvIr };
 use database::Database;
 use std::fmt::Display;
 use types::{
@@ -16,6 +16,8 @@ use events::feed_types::{
     FeedEventInfo
 };
 
+type UnwatchedFeedsByGroup = Vec<(Id, u32)>;
+
 pub trait DbGroupFeed {
     /// Добавить новое событие в ленту группы
     fn add_to_group_feed( &mut self,
@@ -28,6 +30,11 @@ pub trait DbGroupFeed {
     fn get_group_feed( &mut self, user_id: Id, group_id: Id, count: u32, offset: u32 ) -> CommonResult<Vec<FeedEventInfo>>;
     /// получить событие по идентификатору
     fn get_feed_info( &mut self, user_id: Id, id: Id ) -> CommonResult<Option<FeedEventInfo>>;
+    /// получить кол-во не просмотренных сообщений для пользователя
+    fn get_unwatched_feed_elements_by_groups(
+        &mut self,
+        user_id: Id
+    ) -> CommonResult<UnwatchedFeedsByGroup>;
 }
 
 pub fn create_tables( db: &Database ) -> EmptyResult {
@@ -81,6 +88,16 @@ impl DbGroupFeed for MyPooledConn {
     fn get_feed_info( &mut self, user_id: Id, id: Id ) -> CommonResult<Option<FeedEventInfo>> {
         get_feed_info_impl( self, user_id, id )
             .map_err( |e| fn_failed( "get_feed_info", e ) )
+    }
+
+    /// получить кол-во не просмотренных сообщений для пользователя
+    fn get_unwatched_feed_elements_by_groups(
+        &mut self,
+        user_id: Id
+    ) -> CommonResult<UnwatchedFeedsByGroup>
+    {
+        get_unwatched_feed_elements_by_groups_impl( self, user_id )
+            .map_err( |e| fn_failed( "get_unwatched_feed_elements_by_groups", e ) )
     }
 }
 
@@ -224,6 +241,27 @@ fn get_group_feed_impl( conn: &mut MyPooledConn,
         feed.push( read_fields( values ) );
     }
     Ok( feed )
+}
+
+fn get_unwatched_feed_elements_by_groups_impl( conn: &mut MyPooledConn,
+                                               user_id: Id ) -> MyResult<UnwatchedFeedsByGroup>
+{
+    let query = "
+        SELECT f.group_id, COUNT( f.id )
+        FROM group_feed AS f
+        LEFT JOIN group_members AS gm ON( gm.group_id = f.group_id )
+        LEFT JOIN visited AS v ON ( v.user_id=gm.user_id AND v.content_type='feed' AND v.content_id=f.id )
+        WHERE gm.user_id=? AND v.id is NULL
+        GROUP BY f.group_id
+    ";
+    let mut stmt = try!( conn.prepare( query ) );
+    let sql_result = try!( stmt.execute( (user_id,) ) );
+    let mut result = Vec::new();
+    for row in sql_result {
+        let row = try!( row );
+        result.push( from_row( row ) );
+    }
+    Ok( result )
 }
 
 const START: &'static str = "start";

@@ -63,6 +63,10 @@ define( function (require) {
             this.workspace.nav( "mailbox/unreaded" );
         },
 
+        navGroup: function( group_id ) {
+            this.workspace.nav( "group/feed/" + group_id );
+        },
+
         /// текущее состояние пользователя
         userState: null, //new UserStateModel(),
         /// переключатель рабочей среды

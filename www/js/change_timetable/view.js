@@ -125,8 +125,9 @@ define( function(require) {
                 );
                 // обновляем состояние, чтоб увидеть что пришло новое письмо
                 var app = require( "app" );
-                app.userState.fetch();
-                app.navMessages();
+                // app.userState.fetch();
+                var group = self.info_model.get("group");
+                app.navGroup( group.id );
             }
             handler.not_found = this.not_found;
             handler.bad = function( data ) {

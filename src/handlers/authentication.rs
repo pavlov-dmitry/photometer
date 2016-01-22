@@ -4,7 +4,7 @@ use stuff::Stuffable;
 use db::users::{ DbUsers };
 use db::mailbox::{ DbMailbox };
 use db::groups::{ DbGroups };
-use db::events::{ DbEvents };
+use db::group_feed::{ DbGroupFeed };
 use authentication::{ User, SessionsStoreable, Userable };
 use photo_store::{ PhotoStoreable };
 use err_msg;
@@ -166,7 +166,7 @@ fn user_info_answer( req: &mut Request ) -> AnswerResult {
 
     let unreaded_count = try!( db.messages_count( user_id, true ) );
     let groups = try!( db.member_in_groups( user_id ) );
-    let unwatched_by_groups = try!( db.get_unwatched_events_by_group( user_id ) );
+    let unwatched_by_groups = try!( db.get_unwatched_feed_elements_by_groups( user_id ) );
 
     let groups = groups.into_iter().map( |(id, name)| {
         let unwatched_group = unwatched_by_groups
