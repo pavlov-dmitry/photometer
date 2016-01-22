@@ -25,9 +25,9 @@ pub trait DbGroupFeed {
                           state: FeedEventState,
                           data: &str ) -> EmptyResult;
     /// Получить события в ленте
-    fn get_group_feed( &mut self, group_id: Id, count: u32, offset: u32 ) -> CommonResult<Vec<FeedEventInfo>>;
+    fn get_group_feed( &mut self, user_id: Id, group_id: Id, count: u32, offset: u32 ) -> CommonResult<Vec<FeedEventInfo>>;
     /// получить событие по идентификатору
-    fn get_feed_info( &mut self, id: Id ) -> CommonResult<Option<FeedEventInfo>>;
+    fn get_feed_info( &mut self, user_id: Id, id: Id ) -> CommonResult<Option<FeedEventInfo>>;
 }
 
 pub fn create_tables( db: &Database ) -> EmptyResult {
@@ -68,17 +68,18 @@ impl DbGroupFeed for MyPooledConn {
 
     /// Получить события в ленте
     fn get_group_feed( &mut self,
+                       user_id: Id,
                        group_id: Id,
                        count: u32,
                        offset: u32 ) -> CommonResult<Vec<FeedEventInfo>>
     {
-        get_group_feed_impl( self, group_id, count, offset )
+        get_group_feed_impl( self, user_id, group_id, count, offset )
             .map_err( |e| fn_failed( "get_group_feed", e ) )
     }
 
     /// получить событие по идентификатору
-    fn get_feed_info( &mut self, id: Id ) -> CommonResult<Option<FeedEventInfo>> {
-        get_feed_info_impl( self, id )
+    fn get_feed_info( &mut self, user_id: Id, id: Id ) -> CommonResult<Option<FeedEventInfo>> {
+        get_feed_info_impl( self, user_id, id )
             .map_err( |e| fn_failed( "get_feed_info", e ) )
     }
 }
@@ -118,7 +119,8 @@ const FIELDS: &'static str = "
              g.id,
              g.name,
              e.creator_id,
-             u.login";
+             u.login,
+             v.id";
 
 fn read_fields<I: Iterator<Item = Value>>( mut values: I ) -> FeedEventInfo {
     let id = from_value( values.next().unwrap() );
@@ -146,9 +148,15 @@ fn read_fields<I: Iterator<Item = Value>>( mut values: I ) -> FeedEventInfo {
             name: from_value( values.next().unwrap() )
         })
     };
+    let visited_id: Option<Id> = from_value( values.next().unwrap() );
+    let is_new = match visited_id {
+        Some( _ ) => false,
+        None => true
+    };
 
     FeedEventInfo {
         id: id,
+        is_new: is_new,
         creation_time: creation_time,
         state: state,
         data: data,
@@ -162,18 +170,19 @@ fn read_fields<I: Iterator<Item = Value>>( mut values: I ) -> FeedEventInfo {
     }
 }
 
-fn get_feed_info_impl( conn: &mut MyPooledConn, id: Id ) -> MyResult<Option<FeedEventInfo>> {
+fn get_feed_info_impl( conn: &mut MyPooledConn, user_id: Id, id: Id ) -> MyResult<Option<FeedEventInfo>> {
     let query = format!(
         "SELECT {}
          FROM `group_feed` as f
          LEFT JOIN `scheduled_events` as e ON ( e.id = f.scheduled_id )
          LEFT JOIN `groups` as g ON ( g.id = f.group_id )
          LEFT JOIN `users` as u ON ( u.id = e.creator_id )
+         LEFT JOIN `visited` as v ON ( v.user_id = ? AND v.content = '0' AND v.content_id = f.id )
          WHERE f.id = ?",
         FIELDS
     );
     let mut stmt = try!( conn.prepare( &query ) );
-    let mut sql_result = try!( stmt.execute( (id,) ) );
+    let mut sql_result = try!( stmt.execute( (user_id, id) ) );
     let result = match sql_result.next() {
         Some( row ) => {
             let row = try!( row );
@@ -185,6 +194,7 @@ fn get_feed_info_impl( conn: &mut MyPooledConn, id: Id ) -> MyResult<Option<Feed
 }
 
 fn get_group_feed_impl( conn: &mut MyPooledConn,
+                        user_id: Id,
                         group_id: Id,
                         count: u32,
                         offset: u32 ) -> MyResult<Vec<FeedEventInfo>>
@@ -195,6 +205,7 @@ fn get_group_feed_impl( conn: &mut MyPooledConn,
          LEFT JOIN `scheduled_events` as e ON ( e.id = f.scheduled_id )
          LEFT JOIN `groups` as g ON ( g.id = f.group_id )
          LEFT JOIN `users` as u ON ( u.id = e.creator_id )
+         LEFT JOIN `visited` as v ON ( v.user_id = ? AND v.content = '0' AND v.content_id = f.id )
          WHERE f.group_id=?
          ORDER BY f.creation_time DESC
          LIMIT ?
@@ -202,7 +213,7 @@ fn get_group_feed_impl( conn: &mut MyPooledConn,
         FIELDS
     );
     let mut stmt = try!( conn.prepare( &query ) );
-    let params: &[ &ToValue ] = &[ &group_id, &count, &offset ];
+    let params: &[ &ToValue ] = &[ &user_id, &group_id, &count, &offset ];
     let sql_result = try!( stmt.execute( params ) );
 
     let (low_count, _) = sql_result.size_hint();

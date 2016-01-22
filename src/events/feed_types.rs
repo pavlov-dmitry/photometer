@@ -15,6 +15,7 @@ pub enum FeedEventState {
 #[derive(RustcEncodable)]
 pub struct FeedEventInfo {
     pub id: Id,
+    pub is_new: bool,
     pub creation_time: u64,
     pub start_time: u64,
     pub end_time: u64,

@@ -4,6 +4,7 @@ use types::{ Id };
 use get_body::GetBody;
 use db::groups::DbGroups;
 use db::group_feed::DbGroupFeed;
+use db::visited::{ DbVisited, VisitedContent };
 use authentication::Userable;
 use database::Databaseable;
 use stuff::Stuffable;
@@ -111,13 +112,19 @@ fn group_info( req: &mut Request ) -> AnswerResult {
 
 fn group_feed( req: &mut Request ) -> AnswerResult {
     let group_query = try!( req.get_body::<GroupFeedQuery>() );
+    let user_id = req.user().id;
     let db = try!( req.stuff().get_current_db_conn() );
 
     let answer = match try!( db.group_info( group_query.group_id ) ) {
         Some( group_info ) => {
-            let feed = try!( db.get_group_feed( group_query.group_id,
+            let feed = try!( db.get_group_feed( user_id,
+                                                group_query.group_id,
                                                 IN_PAGE_COUNT,
                                                 IN_PAGE_COUNT * group_query.page ) );
+            let new_feeds = feed.iter()
+                .filter_map( |f| if f.is_new { Some( f.id ) } else { None } )
+                .collect::<Vec<_>>();
+            try!( db.set_visited( user_id, VisitedContent::Feed, &new_feeds ) );
             Answer::good( GroupFeedResult{
                 group_id: group_info.id,
                 group_name: group_info.name,
@@ -137,9 +144,15 @@ struct GroupFeedElementQuery {
 
 fn group_feed_element( req: &mut Request ) -> AnswerResult {
     let element_id = try!( req.get_body::<GroupFeedElementQuery>() ).id;
+    let user_id = req.user().id;
     let db = try!( req.stuff().get_current_db_conn() );
-    let answer = match try!( db.get_feed_info( element_id ) ) {
-        Some( feed_info ) => Answer::good( feed_info ),
+    let answer = match try!( db.get_feed_info( user_id, element_id ) ) {
+        Some( feed_info ) => {
+            if feed_info.is_new {
+                try!( db.set_visited( user_id, VisitedContent::Feed, &[ feed_info.id ] ) );
+            }
+            Answer::good( feed_info )
+        },
         None => Answer::not_found()
     };
     Ok( answer )

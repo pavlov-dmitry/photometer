@@ -203,9 +203,10 @@ struct PublicationPhotoInfo {
 
 fn publication_photo_answer( req: &mut Request ) -> AnswerResult {
     let photo_query = try!( req.get_body::<PublicationPhotoQuery>() );
+    let user_id = req.user().id;
 
     let db = try!( req.stuff().get_current_db_conn() );
-    let feed_info = try!( db.get_feed_info( photo_query.feed_id ) );
+    let feed_info = try!( db.get_feed_info( user_id, photo_query.feed_id ) );
     let feed_info = match feed_info {
         Some( info ) => info,
         None => return Ok( Answer::not_found() )
