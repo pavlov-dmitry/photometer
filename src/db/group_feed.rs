@@ -177,7 +177,7 @@ fn get_feed_info_impl( conn: &mut MyPooledConn, user_id: Id, id: Id ) -> MyResul
          LEFT JOIN `scheduled_events` as e ON ( e.id = f.scheduled_id )
          LEFT JOIN `groups` as g ON ( g.id = f.group_id )
          LEFT JOIN `users` as u ON ( u.id = e.creator_id )
-         LEFT JOIN `visited` as v ON ( v.user_id = ? AND v.content = '0' AND v.content_id = f.id )
+         LEFT JOIN `visited` as v ON ( v.user_id=? AND v.content_type='feed' AND v.content_id=f.id )
          WHERE f.id = ?",
         FIELDS
     );
@@ -205,7 +205,7 @@ fn get_group_feed_impl( conn: &mut MyPooledConn,
          LEFT JOIN `scheduled_events` as e ON ( e.id = f.scheduled_id )
          LEFT JOIN `groups` as g ON ( g.id = f.group_id )
          LEFT JOIN `users` as u ON ( u.id = e.creator_id )
-         LEFT JOIN `visited` as v ON ( v.user_id = ? AND v.content = '0' AND v.content_id = f.id )
+         LEFT JOIN `visited` as v ON ( v.user_id=? AND v.content_type='feed' AND v.content_id=f.id )
          WHERE f.group_id=?
          ORDER BY f.creation_time DESC
          LIMIT ?

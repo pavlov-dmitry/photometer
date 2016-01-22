@@ -1,6 +1,13 @@
+use std::str;
 use mysql::conn::pool::{ MyPooledConn };
-use mysql::error::{ MyResult };
-use mysql::value::{ IntoValue, Value };
+use mysql::error::{ MyResult, MyError };
+use mysql::value::{
+    IntoValue,
+    Value,
+    ToValue,
+    FromValue,
+    ConvIr
+};
 use database::Database;
 use std::fmt::Display;
 use types::{
@@ -10,7 +17,7 @@ use types::{
 };
 
 pub enum VisitedContent {
-    Feed = 0
+    Feed
 }
 
 pub trait DbVisited {
@@ -27,7 +34,9 @@ pub fn create_tables( db: &Database ) -> EmptyResult {
         "CREATE TABLE IF NOT EXISTS `visited` (
             `id` bigint(20) NOT NULL AUTO_INCREMENT,
             `user_id` bigint(20) NOT NULL DEFAULT '0',
-            `content` int(4) unsigned DEFAULT '0',
+            `content_type` ENUM(
+                'feed'
+            ) NOT NULL DEFAULT 'feed',
             `content_id` bigint(20) NOT NULL DEFAULT '0',
             PRIMARY KEY ( `id` )
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
@@ -70,7 +79,7 @@ fn set_visited_impl( conn: &mut MyPooledConn,
     let mut query = format!(
         "INSERT INTO visited (
             user_id,
-            content,
+            content_type,
             content_id
         )
         VALUES( ?, ?, ? )"
@@ -81,7 +90,6 @@ fn set_visited_impl( conn: &mut MyPooledConn,
 
     let mut stmt = try!( conn.prepare( &query ) );
     let mut values: Vec<Value> = Vec::with_capacity( items.len() * 3 );
-    let content = content as i32;
     for id in items {
         values.push( user_id.into_value() );
         values.push( content.into_value() );
@@ -89,4 +97,51 @@ fn set_visited_impl( conn: &mut MyPooledConn,
     }
     try!( stmt.execute( values ) );
     Ok( () )
+}
+
+const FEED_STR: &'static str = "feed";
+
+impl ToValue for VisitedContent {
+    fn to_value(&self) -> Value {
+        match self {
+            &VisitedContent::Feed => Value::Bytes( FEED_STR.bytes().collect() )
+        }
+    }
+}
+
+pub struct VisitedContentIr
+{
+    val: VisitedContent,
+    bytes: Vec<u8>
+}
+
+impl ConvIr<VisitedContent> for VisitedContentIr {
+    fn new(v: Value) -> MyResult<VisitedContentIr> {
+        match v {
+            Value::Bytes( bytes ) => {
+                let value = match str::from_utf8( &bytes ) {
+                    Ok( s ) => match s {
+                        FEED_STR => Some( VisitedContent::Feed ),
+                        _ => None
+                    },
+                    _ => None
+                };
+                match value {
+                    Some( t ) => Ok( VisitedContentIr{ val: t, bytes: bytes } ),
+                    None => Err( MyError::FromValueError( Value::Bytes( bytes ) ) )
+                }
+            },
+            _ => Err(MyError::FromValueError(v))
+        }
+    }
+    fn commit(self) -> VisitedContent {
+        self.val
+    }
+    fn rollback(self) -> Value {
+        Value::Bytes( self.bytes )
+    }
+}
+
+impl FromValue for VisitedContent {
+    type Intermediate = VisitedContentIr;
 }
