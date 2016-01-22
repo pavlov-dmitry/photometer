@@ -41,11 +41,10 @@ define( function( require ) {
             this.$el.html( this.template( this.model.toJSON() ) );
 
             if ( !this.selection ) {
-                var imgWidth = this.model.get( "width" );
-                var imgHeight = this.model.get( "height" );
-                var halfSideSize = Math.min( imgWidth, imgHeight ) / 2;
-                var halfImgWidth = imgWidth / 2;
-                var halfImgHeight = imgHeight / 2;
+                var photo = this.model.get("photo");
+                var halfSideSize = Math.min( photo.width, photo.height ) / 2;
+                var halfImgWidth = photo.width / 2;
+                var halfImgHeight = photo.height / 2;
                 this.selection = {
                     x1: halfImgWidth - halfSideSize,
                     y1: halfImgHeight - halfSideSize,
@@ -53,7 +52,7 @@ define( function( require ) {
                     y2: halfImgHeight + halfSideSize
                 };
 
-                this.fit_image_options.height_coeff = imgHeight / imgWidth;
+                this.fit_image_options.height_coeff = photo.height / photo.width;
                 this.fit_image_options.top_offset = $("#photo").offset().top;
                 this.fit_image_options.bottom_offset = $("#crop-btn").outerHeight() + 2;
             }
@@ -158,12 +157,14 @@ define( function( require ) {
             fit_image( this.fit_image_options );
 
             var self = this;
+            console.log( JSON.stringify( this.selection ) );
+            var photo = this.model.get("photo");
             this.ias = $("img#photo").imgAreaSelect({
                 instance: true,
                 aspectRatio: "1:1",
                 handles: true,
-                imageWidth: this.model.get( "width" ),
-                imageHeight: this.model.get( "height" ),
+                imageWidth: photo.width,
+                imageHeight: photo.height,
                 x1: this.selection.x1,
                 x2: this.selection.x2,
                 y1: this.selection.y1,

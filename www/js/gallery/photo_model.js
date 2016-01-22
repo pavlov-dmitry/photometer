@@ -9,7 +9,6 @@ define( function(require) {
             // предусмотрены Хребтом
             'photo_url': "gallery/photo_info",
             'context_url': "gallery/0/",
-            'name': "нет имени"
         },
 
         fetch: function() {
