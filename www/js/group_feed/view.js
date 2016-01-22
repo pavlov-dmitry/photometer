@@ -11,7 +11,9 @@ define( function(require) {
             this.feeds = this.model.get("feed");
             this.feeds.reset();
             this.listenTo( this.feeds, "add", this.add );
+            this.listenTo( this.model, "fetched", this.feeds_changed );
             this.listenTo( this.model, "change:group_name", this.render );
+            this.listenTo( this.model, "no_more", this.no_more );
 
             var handler = this.model.fetch();
             handler.bad = function() {
@@ -26,6 +28,20 @@ define( function(require) {
 
         render: function() {
             this.$el.html( this.template( this.model.toJSON() ) );
+            this.$feeds_loader = $("#feeds-loader");
+
+            var self = this;
+            $("#feeds").visibility({
+                once: false,
+                observeChanges: true,
+                initialCheck: false,
+                onBottomVisible: function() {
+                    if ( !self.no_more_content ) {
+                        self.$feeds_loader.addClass( "active" );
+                        self.model.need_more();
+                    }
+                }
+            });
         },
 
         add: function( model ) {
@@ -34,6 +50,16 @@ define( function(require) {
             var view = new View( {model: model} );
             $("#feeds").append( view.render().$el );
         },
+
+        feeds_changed: function() {
+            this.$feeds_loader.removeClass( "active" );
+            $("#feeds").visibility( "refresh" );
+        },
+
+        no_more: function() {
+            this.no_more_content = true;
+            $("#feeds-loader").removeClass( "active" );
+        }
 
     });
 
