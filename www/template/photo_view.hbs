@@ -19,20 +19,36 @@
     <img id="photo" src="/photo/{{photo.id}}.jpg" class="incenter"/>
     {{#if next}}
     <a href="#{{context_url}}{{next}}">
+    {{/if}}
       <div class="next pager">
+          {{#if next}}
         <div class="inside">
           <i style="right: 20%" class="massive angle right next icon"></i>
         </div>
+          {{else}}
+        <div class="inside bounder">
+          <div style="right: 20%" class="next">]</div>
+        </div>
+          {{/if}}
       </div>
+    {{#if next}}
     </a>
     {{/if}}
     {{#if prev}}
     <a href="#{{context_url}}{{prev}}">
+    {{/if}}
       <div class="prev pager">
+          {{#if prev}}
         <div class="inside">
           <i style="left: 20%" class="massive angle left prev icon"></i>
         </div>
+          {{else}}
+        <div class="inside bounder">
+          <div style="left: 20%" class="prev">[</div>
+        </div>
+          {{/if}}
       </div>
+    {{#if prev}}
     </a>
     {{/if}}
     <div class="exifview">

@@ -112,6 +112,11 @@ img.logo {
     top: 40%;
     width: 100%;
 }
+.bounder {
+    top: 47%;
+    font-weight: bold;
+    font-size: 5em;
+}
 
 .exifview {
     bottom: 0rem;

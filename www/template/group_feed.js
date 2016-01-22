@@ -7,6 +7,6 @@ return templates['group_feed'] = template({"compiler":[7,">= 4.0.0"],"main":func
     + alias4(((helper = (helper = helpers.group_id || (depth0 != null ? depth0.group_id : depth0)) != null ? helper : alias2),(typeof helper === alias3 ? helper.call(alias1,{"name":"group_id","hash":{},"data":data}) : helper)))
     + "\">"
     + alias4(((helper = (helper = helpers.group_name || (depth0 != null ? depth0.group_name : depth0)) != null ? helper : alias2),(typeof helper === alias3 ? helper.call(alias1,{"name":"group_name","hash":{},"data":data}) : helper)))
-    + "</a>\n    </div>\n  </h1>\n  <div id=\"feeds\" class=\"ui large feed\">\n  </div>\n  <div id=\"feeds-loader\" class=\"ui active centered inline text loader\">\n    Подгружаем дальше ...\n  </div>\n</div>\n";
+    + "</a>\n    </div>\n  </h1>\n  <div id=\"feeds\" class=\"ui large feed\">\n  </div>\n  <div id=\"feeds-loader\" class=\"ui centered inline text loader\">\n    Подгружаем дальше ...\n  </div>\n</div>\n";
 },"useData":true});
 });
