@@ -160,7 +160,7 @@ define( function(require) {
         },
 
         publication_photo: function( feed_id, photo_id ) {
-            this.clear_current();
+            this.clear_current( true );
 
             var PhotoModel = require( "gallery/photo_model" );
             var PhotoView = require( "gallery/photo_view" );
