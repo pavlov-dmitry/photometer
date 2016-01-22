@@ -27,12 +27,12 @@ define( function(require) {
             'publication/:feed_id/photo/:photo_id': "publication_photo"
         },
 
-        clear_current: function() {
+        clear_current: function( is_next_photo ) {
             var view = this.current;
             if ( view ) {
                 view.undelegateEvents();
                 if ( view.close ) {
-                    view.close();
+                    view.close( is_next_photo );
                 }
             }
             app.userState.resetNav();
@@ -141,7 +141,7 @@ define( function(require) {
         },
 
         gallery_photo: function( user_id, photo_id ) {
-            this.clear_current();
+            this.clear_current( true );
 
             var PhotoModel = require( "gallery/photo_model" );
             var PhotoView = require( "gallery/photo_view" );

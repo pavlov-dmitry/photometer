@@ -102,7 +102,7 @@ return templates['photo_view'] = template({"1":function(container,depth0,helpers
     var stack1, alias1=depth0 != null ? depth0 : {};
 
   return ((stack1 = helpers["if"].call(alias1,(depth0 != null ? depth0.group : depth0),{"name":"if","hash":{},"fn":container.program(1, data, 0),"inverse":container.noop,"data":data})) != null ? stack1 : "")
-    + "<div id=\"photo-container\">\n  <div id=\"loader\" class=\"ui active dimmer\">\n    <div class=\"ui text loader\">Загрузка</div>\n  </div>\n    <img id=\"photo\" src=\"/photo/"
+    + "<div id=\"photo-container\" class=\"full-height\">\n  <div id=\"loader\" class=\"ui dimmer full-height\">\n    <div class=\"ui text loader\">Загрузка</div>\n  </div>\n    <img id=\"photo\" src=\"/photo/"
     + container.escapeExpression(container.lambda(((stack1 = (depth0 != null ? depth0.photo : depth0)) != null ? stack1.id : stack1), depth0))
     + ".jpg\" class=\"incenter\"/>\n"
     + ((stack1 = helpers["if"].call(alias1,(depth0 != null ? depth0.next : depth0),{"name":"if","hash":{},"fn":container.program(3, data, 0),"inverse":container.noop,"data":data})) != null ? stack1 : "")

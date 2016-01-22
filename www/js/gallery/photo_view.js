@@ -36,16 +36,27 @@ define( function( require ) {
 
             $(window).on( "resize", this.resize_handler );
             var self = this;
+            self.photo_loaded = false;
             $("#photo").on( "load", function() {
-                $("#loader").remove();
+                self.photo_loaded = true;
                 self.resize_handler();
+                $("#loader").dimmer( "hide" );
                 document.getElementById( 'photo' ).scrollIntoView();
             });
+            // если фотка не покажется в течении некоторого вермени, то показываем загрузку
+            setTimeout( function() {
+                if ( !self.photo_loaded ) {
+                    $("#loader").dimmer( "show" );
+                }
+            }, 200 );
+            self.resize_handler();
             return this;
         },
 
-        close: function() {
-            document.getElementById( 'main-menu' ).scrollIntoView();
+        close: function( is_next_photo ) {
+            if ( !is_next_photo ) {
+                document.getElementById( 'main-menu' ).scrollIntoView();
+            }
         }
 
     });
