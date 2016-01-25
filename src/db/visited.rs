@@ -17,7 +17,8 @@ use types::{
 };
 
 pub enum VisitedContent {
-    Feed
+    Feed,
+    Comment
 }
 
 pub trait DbVisited {
@@ -35,7 +36,8 @@ pub fn create_tables( db: &Database ) -> EmptyResult {
             `id` bigint(20) NOT NULL AUTO_INCREMENT,
             `user_id` bigint(20) NOT NULL DEFAULT '0',
             `content_type` ENUM(
-                'feed'
+                'feed',
+                'comment'
             ) NOT NULL DEFAULT 'feed',
             `content_id` bigint(20) NOT NULL DEFAULT '0',
             PRIMARY KEY ( `id` )
@@ -100,11 +102,13 @@ fn set_visited_impl( conn: &mut MyPooledConn,
 }
 
 const FEED_STR: &'static str = "feed";
+const COMMENT_STR: &'static str = "comment";
 
 impl ToValue for VisitedContent {
     fn to_value(&self) -> Value {
         match self {
-            &VisitedContent::Feed => Value::Bytes( FEED_STR.bytes().collect() )
+            &VisitedContent::Feed => Value::Bytes( FEED_STR.bytes().collect() ),
+            &VisitedContent::Comment => Value::Bytes( COMMENT_STR.bytes().collect() )
         }
     }
 }
@@ -122,6 +126,7 @@ impl ConvIr<VisitedContent> for VisitedContentIr {
                 let value = match str::from_utf8( &bytes ) {
                     Ok( s ) => match s {
                         FEED_STR => Some( VisitedContent::Feed ),
+                        COMMENT_STR => Some( VisitedContent::Comment ),
                         _ => None
                     },
                     _ => None

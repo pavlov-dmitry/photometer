@@ -9,6 +9,7 @@ use get_body::GetBody;
 use answer_types::CountInfo;
 use types::{ Id, PhotoInfo, ShortInfo };
 use answer_types::{ PaginationInfo };
+use super::helpers::make_pagination;
 
 // static YEAR: &'static str = "year";
 const IN_PAGE_COUNT: u32 = 12;
@@ -98,14 +99,9 @@ fn gallery_answer( req: &mut Request ) -> AnswerResult {
         IN_PAGE_COUNT
     ) );
 
-    let pages_count = calc_page_count( photos_count );
-
     let gallery_info = GalleryInfo {
         owner_id: user_id,
-        pagination: PaginationInfo {
-            current: page,
-            count: pages_count
-        },
+        pagination: make_pagination( page, photos_count, IN_PAGE_COUNT ),
         photos: photo_infos
     };
     let answer = Answer::good( gallery_info );
@@ -125,26 +121,13 @@ fn gallery_unpublished_answer( req: &mut Request ) -> AnswerResult {
         IN_PAGE_COUNT
     ));
 
-    let pages_count = calc_page_count( unpublished_count );
-
     let gallery_info = GalleryInfo {
         owner_id: user_id,
-        pagination: PaginationInfo {
-            current: page,
-            count: pages_count
-        },
+        pagination: make_pagination( page, unpublished_count, IN_PAGE_COUNT ),
         photos: photos
     };
     let answer = Answer::good( gallery_info );
     Ok( answer )
-}
-
-fn calc_page_count( all_count: u32 ) -> u32 {
-    let mut pages_count = all_count / IN_PAGE_COUNT;
-    if ( all_count % IN_PAGE_COUNT ) != 0 {
-        pages_count += 1;
-    }
-    pages_count
 }
 
 #[derive(Clone, RustcDecodable)]

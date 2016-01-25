@@ -76,3 +76,14 @@ pub struct ShortInfo {
     pub id: Id,
     pub name: String
 }
+
+#[derive(Clone, Debug, RustcEncodable)]
+pub struct CommentInfo {
+    pub id: Id,
+    pub creation_time: u64,
+    pub edit_time: u64,
+    pub creator: ShortInfo,
+    pub text: String,
+    pub is_editable: bool,
+    pub is_new: bool
+}

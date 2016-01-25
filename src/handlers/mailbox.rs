@@ -6,7 +6,8 @@ use authentication::{ Userable };
 use iron::prelude::*;
 use get_body::GetBody;
 use types::{ Id, MailInfo };
-use answer_types::{ OkInfo, CountInfo, AccessErrorInfo };
+use answer_types::{ OkInfo, CountInfo, AccessErrorInfo, PaginationInfo };
+use super::helpers::make_pagination;
 
 const IN_PAGE_COUNT: u32 = 10;
 
@@ -45,8 +46,7 @@ struct PageInfo {
 
 #[derive(RustcEncodable)]
 struct MailsInfo {
-    current_page: u32,
-    pages_count: u32,
+    pagination: PaginationInfo,
     mails: Vec<MailInfo>
 }
 
@@ -65,14 +65,9 @@ fn get_answer( req: &mut Request, only_unreaded: bool ) -> AnswerResult {
     };
 
     let messages_count = try!( db.messages_count( user_id, only_unreaded ) );
-    let mut pages_count = messages_count / IN_PAGE_COUNT;
-    if ( messages_count % IN_PAGE_COUNT ) != 0 {
-        pages_count += 1;
-    }
 
     let mails = MailsInfo {
-        current_page: page,
-        pages_count: pages_count,
+        pagination: make_pagination( page, messages_count, IN_PAGE_COUNT ),
         mails: infos
     };
     let answer = Answer::good( mails );

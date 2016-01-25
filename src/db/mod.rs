@@ -7,5 +7,6 @@ pub mod publication;
 pub mod votes;
 pub mod group_feed;
 pub mod visited;
+pub mod comments;
 
 mod handler_error;
