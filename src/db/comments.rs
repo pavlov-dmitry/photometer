@@ -240,7 +240,7 @@ fn get_comments_impl( conn: &mut MyPooledConn,
          LEFT JOIN users as u ON ( u.id = c.user_id )
          LEFT JOIN visited as v ON ( v.user_id=? AND v.content_type='comment' AND v.content_id=c.id )
          WHERE comment_for=?
-               for_id=?
+           AND for_id=?
          LIMIT ?
          OFFSET ?",
         FIELDS
@@ -260,10 +260,10 @@ fn get_comments_count_impl( conn: &mut MyPooledConn,
                             comments_for: CommentFor,
                             for_id: Id ) -> MyResult<Option<u32>>
 {
-    let query = "SELECY COUNT(id)
+    let query = "SELECT COUNT(id)
                  FROM comments
-                 WHERE comment_for=?,
-                       for_id=?";
+                 WHERE comment_for=?
+                   AND for_id=?";
     let mut stmt = try!( conn.prepare( query ) );
     let mut sql_result = try!( stmt.execute( (comments_for, for_id) ) );
     let result = match sql_result.next() {

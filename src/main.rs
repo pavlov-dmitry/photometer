@@ -98,9 +98,8 @@ fn main() {
 
     router.get( "/event/comments", handlers::comments::get_event_comments );
     router.get( "/photo/comments", handlers::comments::get_photo_comments );
-    router.post( "/event/comment", handlers::comments::post_event_comment );
-    router.post( "/photo/comment", handlers::comments::post_photo_comment );
-
+    router.post( "/event/comments", handlers::comments::post_event_comment );
+    router.post( "/photo/comments", handlers::comments::post_photo_comment );
 
     router.get( handlers::authentication::user_info_path(), handlers::authentication::user_info );
 
