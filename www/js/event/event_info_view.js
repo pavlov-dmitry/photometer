@@ -2,6 +2,8 @@ define( function(require) {
     var Backbone = require( "lib/backbone" ),
         Handlebars = require( "handlebars.runtime" ),
         ActionModel = require( "event/action_model" ),
+        CommentsModel = require( "comments/model" ),
+        CommentsView = require( "comments/view" ),
         event_info_tmpl = require( "template/event_info" ),
         events_info_collection = require( "event/events_infos" ),
         actions = require( "event/actions" ),
@@ -39,6 +41,9 @@ define( function(require) {
             }
             this.action_view = new ActionView({ model: this.action_model });
             this.action_model.set( action_data );
+
+            var comments_model = new CommentsModel({ event_id: this.model.get("scheduled_id") });
+            this.comments_view = new CommentsView({ model: comments_model });
         },
 
         to_state: function( state ) {
@@ -58,6 +63,9 @@ define( function(require) {
 
         close: function() {
             this.stopListening( this.action_model );
+            if ( this.comments_view ) {
+                this.comments_view.close();
+            }
             if ( this.action_view ) {
                 this.action_view.undelegateEvents();
                 if ( this.action_view.close ) {

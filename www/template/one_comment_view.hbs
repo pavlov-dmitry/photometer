@@ -1,0 +1,23 @@
+<div class="comment">
+  <div class="avatar">
+    <i class="user icon"></i>
+  </div>
+  <div class="content">
+    <a class="author" href="#user/{{creator.id}}">{{creator.name}}</a>
+    <div class="metadata">
+      <div class="date">{{duration_from_now creation_time}}</div>
+      {{#if is_new}}
+      <div class="ui yellow label">новый</div>
+      {{/if}}
+    </div>
+    <div class="text">
+      {{text}}
+    </div>
+    <div class="actions">
+      <a class="quote action">Цитировать</a>
+      {{#if is_editable}}
+      <a class="edit action">Редактировать</a>
+      {{/if}}
+    </div>
+  </div>
+</div>

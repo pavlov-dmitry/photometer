@@ -214,3 +214,16 @@ img.logo {
 #workspace > .container {
     margin-top: 1em;
 }
+
+#comment-editor .top.segment {
+    padding-bottom: 0px;
+    border-bottom: 0px;
+}
+
+blockquote {
+    background-color: rgba(0, 0, 0, 0.07);
+    margin: 0.5em 1em 0.5em 1em;
+    padding: 0.5em 1em 0.5em 1.5em;
+    border-radius: 0.3em;
+    border-left: 0.3em solid #85b7d9;
+}

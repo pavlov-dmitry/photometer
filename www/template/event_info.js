@@ -49,6 +49,6 @@ return templates['event_info'] = template({"1":function(container,depth0,helpers
     + ((stack1 = ((helper = (helper = helpers.description || (depth0 != null ? depth0.description : depth0)) != null ? helper : alias2),(typeof helper === alias3 ? helper.call(alias1,{"name":"description","hash":{},"data":data}) : helper))) != null ? stack1 : "")
     + "\n  </div>\n</div>\n<div id=\"action\">\n  "
     + ((stack1 = ((helper = (helper = helpers.action || (depth0 != null ? depth0.action : depth0)) != null ? helper : alias2),(typeof helper === alias3 ? helper.call(alias1,{"name":"action","hash":{},"data":data}) : helper))) != null ? stack1 : "")
-    + "\n</div>\n";
+    + "\n</div>\n<div class=\"ui container\">\n  <div id=\"comments\"></div>\n  <div id=\"comment-editor\"></div>\n</div>\n";
 },"useData":true});
 });
