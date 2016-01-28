@@ -112,7 +112,9 @@ fn make_photo_info( owner: &User,
         owner: ShortInfo {
             id: owner.id,
             name: owner.name.clone()
-        }
+        },
+        comments_count: 0,
+        unreaded_comments: 0
     }
 }
 

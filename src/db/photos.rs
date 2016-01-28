@@ -1,7 +1,16 @@
 use mysql::conn::pool::{ MyPooledConn };
 use mysql::error::{ MyResult, MyError };
 use mysql::value::{ from_row, from_value, ToValue, FromValue, Value, ConvIr };
-use types::{ Id, PhotoInfo, ImageType, ShortInfo, CommonResult, EmptyResult, CommonError };
+use types::{
+    Id,
+    PhotoInfo,
+    ShortPhotoInfo,
+    ImageType,
+    ShortInfo,
+    CommonResult,
+    EmptyResult,
+    CommonError
+};
 use database::Database;
 use std::fmt::Display;
 use std::str;
@@ -10,9 +19,10 @@ pub trait DbPhotos {
     /// добавление фотографии в галлерею пользователя
     fn add_photo( &mut self, user_id: Id, info: &PhotoInfo ) -> CommonResult<()>;
     /// получение информации о фото
-    fn get_photo_info( &mut self, photo_id: Id ) -> CommonResult<Option<PhotoInfo>>;
+    fn get_photo_info( &mut self, reader_id: Id, photo_id: Id ) -> CommonResult<Option<PhotoInfo>>;
+    fn get_short_photo_info( &mut self, photo_id: Id ) -> CommonResult<Option<ShortPhotoInfo>>;
     ///возвращает список описаний фоточек
-    fn get_photo_infos( &mut self, owner_id: Id, offset: u32, count: u32 ) -> CommonResult<Vec<PhotoInfo>>;
+    fn get_photo_infos( &mut self, reader_id: Id, owner_id: Id, offset: u32, count: u32 ) -> CommonResult<Vec<PhotoInfo>>;
     ///вычисляет кол-во фоток пользователя за опеределнный период
     fn get_photo_infos_count( &mut self, owner_id: Id ) -> CommonResult<u32>;
     ///выдаёт соседнии фотографии относительно опеределенной в галлереи опередленного пользователя
@@ -22,9 +32,9 @@ pub trait DbPhotos {
     ///вычисляет кол-во неопубликованных фотографий пользователя
     fn get_unpublished_photos_count( &mut self, owner_id: Id ) -> CommonResult<u32>;
     ///возвращает список описаний фоточек которые еще не были опубликованы
-    fn get_unpublished_photo_infos( &mut self, owner_id: Id, offset: u32, count: u32 ) -> CommonResult<Vec<PhotoInfo>>;
+    fn get_unpublished_photo_infos( &mut self, reader_id: Id, owner_id: Id, offset: u32, count: u32 ) -> CommonResult<Vec<PhotoInfo>>;
     /// возвращает описания фотографий от опеределенной публикации
-    fn get_publication_photo_infos( &mut self, scheduled_id: Id ) -> CommonResult<Vec<PhotoInfo>>;
+    fn get_publication_photo_infos( &mut self, reader_id: Id, scheduled_id: Id ) -> CommonResult<Vec<PhotoInfo>>;
     /// выдаёт соседнии фотографии относительно публикации
     fn get_photo_neighbours_in_publication( &mut self, scheduled_id: Id, photo_id: Id ) -> CommonResult<(Option<Id>, Option<Id>)>;
 }
@@ -69,14 +79,18 @@ impl DbPhotos for MyPooledConn {
     }
 
     /// получение информации о фото
-    fn get_photo_info( &mut self, photo_id: Id ) -> CommonResult<Option<PhotoInfo>> {
-        get_photo_info_impl( self, photo_id )
+    fn get_photo_info( &mut self, reader_id: Id, photo_id: Id ) -> CommonResult<Option<PhotoInfo>> {
+        get_photo_info_impl( self, reader_id, photo_id )
             .map_err( |e| fn_failed( "get_photo_info", e ) )
+    }
+    fn get_short_photo_info( &mut self, photo_id: Id ) -> CommonResult<Option<ShortPhotoInfo>> {
+        get_short_photo_info_impl( self, photo_id )
+            .map_err( |e| fn_failed( "get_short_photo_info", e ) )
     }
 
     ///возвращает список описаний фоточек
-    fn get_photo_infos( &mut self, owner_id: Id, offset: u32, count: u32 ) -> CommonResult<Vec<PhotoInfo>> {
-        get_photo_infos_impl( self, owner_id, offset, count )
+    fn get_photo_infos( &mut self, reader_id: Id, owner_id: Id, offset: u32, count: u32 ) -> CommonResult<Vec<PhotoInfo>> {
+        get_photo_infos_impl( self, reader_id, owner_id, offset, count )
             .map_err( |e| fn_failed( "get_photo_infos", e ) )
     }
 
@@ -105,14 +119,14 @@ impl DbPhotos for MyPooledConn {
     }
 
     ///возвращает список описаний фоточек которые еще не были опубликованы
-    fn get_unpublished_photo_infos( &mut self, owner_id: Id, offset: u32, count: u32 ) -> CommonResult<Vec<PhotoInfo>> {
-        get_unpublished_photo_infos_impl( self, owner_id, offset, count )
+    fn get_unpublished_photo_infos( &mut self, reader_id: Id, owner_id: Id, offset: u32, count: u32 ) -> CommonResult<Vec<PhotoInfo>> {
+        get_unpublished_photo_infos_impl( self, reader_id, owner_id, offset, count )
             .map_err( |e| fn_failed( "get_unpublished_photo_infos", e ) )
     }
 
     /// возвращает описания фотографий от опеределенной публикации
-    fn get_publication_photo_infos( &mut self, scheduled_id: Id ) -> CommonResult<Vec<PhotoInfo>> {
-        get_publication_photo_infos_impl( self, scheduled_id )
+    fn get_publication_photo_infos( &mut self, reader_id: Id, scheduled_id: Id ) -> CommonResult<Vec<PhotoInfo>> {
+        get_publication_photo_infos_impl( self, reader_id, scheduled_id )
             .map_err( |e| fn_failed( "get_publication_photo_infos", e ) )
     }
 
@@ -167,27 +181,16 @@ fn add_photo_impl( conn: &mut MyPooledConn, user_id: Id, info: &PhotoInfo ) -> M
     Ok( () )
 }
 
-fn get_photo_info_impl( conn: &mut MyPooledConn, photo_id: Id ) -> MyResult<Option< PhotoInfo>> {
-    let mut stmt = try!( conn.prepare( "SELECT
-        i.owner_id,
-        u.login,
-        i.id,
-        i.upload_time,
-        i.type,
-        i.width,
-        i.height,
-        i.name,
-        i.iso,
-        i.shutter_speed,
-        i.aperture,
-        i.focal_length,
-        i.focal_length_35mm,
-        i.camera_model
+fn get_photo_info_impl( conn: &mut MyPooledConn, reader_id: Id, photo_id: Id ) -> MyResult<Option< PhotoInfo>> {
+    let query = format!(
+        "SELECT {}
         FROM images AS i
         LEFT JOIN users AS u ON ( u.id = i.owner_id )
-        WHERE u.id IS NOT NULL AND i.id = ?" )
+        WHERE u.id IS NOT NULL AND i.id = ?",
+        PHOTO_INFO_FIELDS
     );
-    let mut sql_result = try!( stmt.execute( (photo_id,) ) );
+    let mut stmt = try!( conn.prepare( &query ) );
+    let mut sql_result = try!( stmt.execute( (reader_id, photo_id) ) );
     match sql_result.next() {
         None => Ok( None ),
         Some( sql_row ) => {
@@ -198,8 +201,42 @@ fn get_photo_info_impl( conn: &mut MyPooledConn, photo_id: Id ) -> MyResult<Opti
     }
 }
 
+fn get_short_photo_info_impl( conn: &mut MyPooledConn, photo_id: Id ) -> MyResult<Option<ShortPhotoInfo>> {
+    let query = format!(
+        "SELECT i.id,
+                i.upload_time,
+                i.type,
+                i.owner_id,
+                u.login
+        FROM images AS i
+        LEFT JOIN users AS u ON ( u.id = i.owner_id )
+        WHERE u.id IS NOT NULL AND i.id = ?"
+    );
+    let mut stmt = try!( conn.prepare( &query ) );
+    let mut sql_result = try!( stmt.execute( (photo_id,) ) );
+    let result = match sql_result.next() {
+        Some( sql_row ) => {
+            let row_data = try!( sql_row );
+            let (id, time, img_type, owner_id, owner_name) = from_row( row_data );
+            let info = ShortPhotoInfo {
+                id: id,
+                upload_time: time,
+                image_type: img_type,
+                owner: ShortInfo {
+                    id: owner_id,
+                    name: owner_name
+                }
+            };
+            Some( info )
+        },
+        None => None
+    };
+    Ok( result )
+}
+
 fn get_photo_infos_impl(
     conn: &mut MyPooledConn,
+    reader_id: Id,
     owner_id: Id,
     offset: u32,
     count: u32
@@ -215,12 +252,13 @@ fn get_photo_infos_impl(
         OFFSET ?
         ;",
         fields = PHOTO_INFO_FIELDS );
-    let params: &[ &ToValue ] = &[ &owner_id, &count, &offset ];
+    let params: &[ &ToValue ] = &[ &reader_id, &owner_id, &count, &offset ];
     get_photo_infos_general( conn, &query, params )
 }
 
 fn get_unpublished_photo_infos_impl(
     conn: &mut MyPooledConn,
+    reader_id: Id,
     owner_id: Id,
     offset: u32,
     count: u32
@@ -238,11 +276,12 @@ fn get_unpublished_photo_infos_impl(
         OFFSET ?
         ;",
         fields = PHOTO_INFO_FIELDS );
-    let params: &[ &ToValue ] = &[ &owner_id, &count, &offset ];
+    let params: &[ &ToValue ] = &[ &reader_id, &owner_id, &count, &offset ];
     get_photo_infos_general( conn, &query, params )
 }
 
 fn get_publication_photo_infos_impl( conn: &mut MyPooledConn,
+                                     reader_id: Id,
                                      scheduled_id: Id ) -> MyResult<Vec<PhotoInfo>>
 {
     let query = format!(
@@ -254,7 +293,7 @@ fn get_publication_photo_infos_impl( conn: &mut MyPooledConn,
           AND p.visible=true",
         fields = PHOTO_INFO_FIELDS
     );
-    let params: &[ &ToValue ] = &[ &scheduled_id ];
+    let params: &[ &ToValue ] = &[ &reader_id, &scheduled_id ];
     get_photo_infos_general( conn, &query, params )
 }
 
@@ -380,40 +419,52 @@ fn rename_photo_impl( conn: &mut MyPooledConn, photo_id: Id, newname: &str ) -> 
 }
 
 const PHOTO_INFO_FIELDS: &'static str = "
-        i.owner_id,
-        u.login,
-        i.id,
-        i.upload_time,
-        i.type,
-        i.width,
-        i.height,
-        i.name,
-        i.iso,
-        i.shutter_speed,
-        i.aperture,
-        i.focal_length,
-        i.focal_length_35mm,
-        i.camera_model";
+    i.owner_id,
+    u.login,
+    i.id,
+    i.upload_time,
+    i.type,
+    i.width,
+    i.height,
+    i.name,
+    i.iso,
+    i.shutter_speed,
+    i.aperture,
+    i.focal_length,
+    i.focal_length_35mm,
+    i.camera_model,
+    ( SELECT COUNT( id ) FROM comments WHERE comment_for='photo' AND for_id=i.id ),
+    ( SELECT COUNT( cc.id )
+      FROM comments AS cc
+      LEFT JOIN visited AS vv
+           ON ( vv.content_type='comment'
+                AND vv.content_id = cc.id
+                AND vv.user_id=? )
+      WHERE cc.comment_for='photo' AND cc.for_id=i.id AND vv.id is NULL )";
 
 fn read_photo_info<I: Iterator<Item = Value>>( mut values: I ) -> PhotoInfo
 {
+    let mut next = || values.next().expect("DbPhotos invalid columns count on read PhotoInfo");
+
     PhotoInfo {
         owner: ShortInfo {
-            id: from_value( values.next().unwrap() ),
-            name: from_value( values.next().unwrap() ),
+            id: from_value( next() ),
+            name: from_value( next() ),
         },
-        id: from_value( values.next().unwrap() ),
-        upload_time: from_value( values.next().unwrap() ),
-        image_type: from_value( values.next().unwrap() ),
-        width: from_value( values.next().unwrap() ),
-        height: from_value( values.next().unwrap() ),
-        name: from_value( values.next().unwrap() ),
-        iso: if_not( from_value( values.next().unwrap() ), ISO_DEFAULT ),
-        shutter_speed: if_not( from_value( values.next().unwrap() ), SHUTTER_SPEED_DEFAULT ),
-        aperture: if_not( from_value( values.next().unwrap() ), APERTURE_DEFAULT ),
-        focal_length: if_not( from_value( values.next().unwrap() ), FOCAL_LENGTH_DEFAULT ),
-        focal_length_35mm: if_not( from_value( values.next().unwrap() ), FOCAL_LENGTH_35MM_DEFAULT ),
-        camera_model: if_not( from_value( values.next().unwrap() ), CAMERA_MODEL_DEFAULT.to_string() )
+        id: from_value( next() ),
+        upload_time: from_value( next() ),
+        image_type: from_value( next() ),
+        width: from_value( next() ),
+        height: from_value( next() ),
+        name: from_value( next() ),
+        iso: if_not( from_value( next() ), ISO_DEFAULT ),
+        shutter_speed: if_not( from_value( next() ), SHUTTER_SPEED_DEFAULT ),
+        aperture: if_not( from_value( next() ), APERTURE_DEFAULT ),
+        focal_length: if_not( from_value( next() ), FOCAL_LENGTH_DEFAULT ),
+        focal_length_35mm: if_not( from_value( next() ), FOCAL_LENGTH_35MM_DEFAULT ),
+        camera_model: if_not( from_value( next() ), CAMERA_MODEL_DEFAULT.to_string() ),
+        comments_count: from_value( next() ),
+        unreaded_comments: from_value( next() )
     }
 }
 

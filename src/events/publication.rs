@@ -132,7 +132,7 @@ impl Event for Publication {
         let user_id = req.user().id;
         let db = try!( req.stuff().get_current_db_conn() );
 
-        let answer = match try!( db.get_photo_info( photo_id ) ) {
+        let answer = match try!( db.get_short_photo_info( photo_id ) ) {
             Some( photo_info ) => {
                 if photo_info.owner.id == user_id {
                     match try!( db.is_photo_published( photo_id ) ) {

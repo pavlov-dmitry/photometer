@@ -5,7 +5,11 @@
   </div>
   <div class="ui bottom attached tab segment active">
     {{#if is_preview}}
+    {{#if text}}
     {{{markdown text}}}
+    {{else}}
+    <i>Комментарий пуст</i>
+    {{/if}}
     {{else}}
     <div class="ui field">
       <textarea class="comment-body" maxlength="1024" placeholder="Оставьте здесь комментарий ... (поддерживается форматирование markdown)" required>{{text}}</textarea>

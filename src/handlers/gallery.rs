@@ -95,6 +95,7 @@ fn gallery_answer( req: &mut Request ) -> AnswerResult {
 
     let photo_infos = try!( db.get_photo_infos(
         user_id,
+        user_id,
         page * IN_PAGE_COUNT,
         IN_PAGE_COUNT
     ) );
@@ -116,6 +117,7 @@ fn gallery_unpublished_answer( req: &mut Request ) -> AnswerResult {
 
     let unpublished_count = try!( db.get_unpublished_photos_count( user_id ) );
     let photos = try!( db.get_unpublished_photo_infos(
+        user_id,
         user_id,
         page * IN_PAGE_COUNT,
         IN_PAGE_COUNT
@@ -151,9 +153,10 @@ pub fn photo_info( request: &mut Request ) -> IronResult<Response> {
 
 fn photo_info_answer( req: &mut Request ) -> AnswerResult {
     let photo_context = try!( req.get_body::<PhotoContextInfo>() );
+    let user_id = req.user().id;
 
     let db = try!( req.stuff().get_current_db_conn() );
-    let photo_info = try!( db.get_photo_info( photo_context.photo ) );
+    let photo_info = try!( db.get_photo_info( user_id, photo_context.photo ) );
     let photo_info = match photo_info {
         Some( photo_info ) => photo_info,
         None => return Ok( Answer::not_found() )
@@ -194,7 +197,7 @@ fn publication_photo_answer( req: &mut Request ) -> AnswerResult {
         Some( info ) => info,
         None => return Ok( Answer::not_found() )
     };
-    let photo_info = try!( db.get_photo_info( photo_query.photo_id ) );
+    let photo_info = try!( db.get_photo_info( user_id, photo_query.photo_id ) );
     let photo_info = match photo_info {
         Some( photo_info ) => photo_info,
         None => return Ok( Answer::not_found() )
@@ -223,7 +226,8 @@ struct PublicationQuery {
 
 fn publication_answer( req: &mut Request ) -> AnswerResult {
     let scheduled_id = try!( req.get_body::<PublicationQuery>() ).id;
+    let user_id = req.user().id;
     let db = try!( req.stuff().get_current_db_conn() );
-    let photos = try!( db.get_publication_photo_infos( scheduled_id ) );
+    let photos = try!( db.get_publication_photo_infos( user_id, scheduled_id ) );
     Ok( Answer::good( photos ) )
 }

@@ -46,5 +46,12 @@
         {{/if}}
       {{/if_equal}}
     </div>
+    {{#if comments_count}}
+    <div class="extra">
+      <div class="{{#if unreaded_comments}}new {{/if}}comments">
+        <i class="comment outline icon"></i> {{comments_count}}
+      </div>
+    </div>
+    {{/if}}
   </div>
 </div>

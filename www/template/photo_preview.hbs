@@ -10,6 +10,11 @@
         <i>Без имени</i>
       {{/if}}
     </div>
+    {{#if comments_count}}
+    <div class="right floated {{#if unreaded_comments}}new {{/if}}comments">
+      <i class="comment outline icon"></i> {{comments_count}}
+    </div>
+    {{/if}}
     <div class="meta">
       <span class="date">Загружено {{duration_from_now upload_time}}</span>
     </div>

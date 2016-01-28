@@ -37,7 +37,16 @@ pub struct PhotoInfo {
     pub focal_length: Option<u16>,
     pub focal_length_35mm: Option<u16>,
     pub camera_model: Option<String>,
-    pub owner: ShortInfo
+    pub owner: ShortInfo,
+    pub comments_count: usize,
+    pub unreaded_comments: usize
+}
+
+pub struct ShortPhotoInfo {
+    pub id: Id,
+    pub upload_time: u64,
+    pub image_type: ImageType,
+    pub owner: ShortInfo,
 }
 
 #[derive(PartialEq, Clone, Debug)]

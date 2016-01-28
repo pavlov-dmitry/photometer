@@ -61,7 +61,7 @@ define( function( require ) {
             this.comments_view = new CommentsView({ model: comments_model });
 
             $(".ui.sticky").sticky({
-                context: "#comments-container"
+
             });
 
             return this;

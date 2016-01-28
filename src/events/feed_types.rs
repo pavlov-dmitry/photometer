@@ -25,5 +25,7 @@ pub struct FeedEventInfo {
     pub state: FeedEventState,
     pub data: String,
     pub creator: Option<ShortInfo>,
-    pub group: ShortInfo
+    pub group: ShortInfo,
+    pub comments_count: usize,
+    pub unreaded_comments: usize
 }

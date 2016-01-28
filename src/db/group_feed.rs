@@ -124,52 +124,64 @@ fn add_to_group_feed_impl( conn: &mut MyPooledConn,
 }
 
 const FIELDS: &'static str = "
-             f.id,
-             f.creation_time,
-             f.state,
-             f.data,
-             e.id,
-             e.event_id,
-             e.start_time,
-             e.end_time,
-             e.event_name,
-             g.id,
-             g.name,
-             e.creator_id,
-             u.login,
-             v.id";
+    f.id,
+    f.creation_time,
+    f.state,
+    f.data,
+    e.id,
+    e.event_id,
+    e.start_time,
+    e.end_time,
+    e.event_name,
+    g.id,
+    g.name,
+    e.creator_id,
+    u.login,
+    v.id,
+    ( SELECT COUNT( id ) FROM comments WHERE comment_for='event' AND for_id=f.scheduled_id ),
+    ( SELECT COUNT( cc.id )
+      FROM comments AS cc
+      LEFT JOIN visited AS vv
+           ON ( vv.content_type='comment'
+                AND vv.content_id = cc.id
+                AND vv.user_id=? )
+      WHERE cc.comment_for='event' AND cc.for_id=f.scheduled_id AND vv.id is NULL )";
 
 fn read_fields<I: Iterator<Item = Value>>( mut values: I ) -> FeedEventInfo {
-    let id = from_value( values.next().unwrap() );
-    let creation_time = from_value( values.next().unwrap() );
-    let state = from_value( values.next().unwrap() );
-    let data = from_value( values.next().unwrap() );
-    let scheduled_id = from_value( values.next().unwrap() );
-    let event_id = from_value( values.next().unwrap() );
-    let start_time = from_value( values.next().unwrap() );
-    let end_time = from_value( values.next().unwrap() );
-    let event_name = from_value( values.next().unwrap() );
+    let mut next = || values.next().expect( "DbGroupFeed invalid columns count on read FeedInfo");
+
+    let id = from_value( next() );
+    let creation_time = from_value( next() );
+    let state = from_value( next() );
+    let data = from_value( next() );
+    let scheduled_id = from_value( next() );
+    let event_id = from_value( next() );
+    let start_time = from_value( next() );
+    let end_time = from_value( next() );
+    let event_name = from_value( next() );
     let group = ShortInfo{
-        id: from_value( values.next().unwrap() ),
-        name: from_value( values.next().unwrap() )
+        id: from_value( next() ),
+        name: from_value( next() )
     };
-    let user_id = from_value( values.next().unwrap() );
+    let user_id = from_value( next() );
     let user = match user_id {
         0 => {
             // дочитываем значение
-            let _ = from_value::<Option<String>>( values.next().unwrap() );
+            let _ = from_value::<Option<String>>( next() );
             None
         },
         _ => Some( ShortInfo {
             id: user_id,
-            name: from_value( values.next().unwrap() )
+            name: from_value( next() )
         })
     };
-    let visited_id: Option<Id> = from_value( values.next().unwrap() );
+    let visited_id: Option<Id> = from_value( next() );
     let is_new = match visited_id {
         Some( _ ) => false,
         None => true
     };
+    let comments_count = from_value( next() );
+    let unreaded_comments = from_value( next() );
 
     FeedEventInfo {
         id: id,
@@ -183,7 +195,9 @@ fn read_fields<I: Iterator<Item = Value>>( mut values: I ) -> FeedEventInfo {
         end_time: end_time,
         event_name: event_name,
         group: group,
-        creator: user
+        creator: user,
+        comments_count: comments_count,
+        unreaded_comments: unreaded_comments
     }
 }
 
@@ -199,7 +213,7 @@ fn get_feed_info_impl( conn: &mut MyPooledConn, user_id: Id, id: Id ) -> MyResul
         FIELDS
     );
     let mut stmt = try!( conn.prepare( &query ) );
-    let mut sql_result = try!( stmt.execute( (user_id, id) ) );
+    let mut sql_result = try!( stmt.execute( (user_id, user_id, id) ) );
     let result = match sql_result.next() {
         Some( row ) => {
             let row = try!( row );
@@ -230,7 +244,7 @@ fn get_group_feed_impl( conn: &mut MyPooledConn,
         FIELDS
     );
     let mut stmt = try!( conn.prepare( &query ) );
-    let params: &[ &ToValue ] = &[ &user_id, &group_id, &count, &offset ];
+    let params: &[ &ToValue ] = &[ &user_id, &user_id, &group_id, &count, &offset ];
     let sql_result = try!( stmt.execute( params ) );
 
     let (low_count, _) = sql_result.size_hint();

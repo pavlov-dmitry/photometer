@@ -50,7 +50,7 @@ pub fn get_image( req: &mut Request, is_preview: bool ) -> IronResult<Response> 
     };
     let maybe_info = {
         let db = try_notfound!( req.stuff().get_current_db_conn() );
-        try_notfound!( db.get_photo_info( image_id ) )
+        try_notfound!( db.get_short_photo_info( image_id ) )
     };
     match maybe_info {
         Some( info ) => {

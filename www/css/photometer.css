@@ -235,3 +235,13 @@ blockquote {
 #comments-container {
     max-width: 90%;
 }
+
+.event .content .extra .comments,
+.card .content .comments {
+    color: rgba(0, 0, 0, 0.4);
+}
+
+.event .content .extra .new.comments,
+.card .content .new.comments {
+    color: #fbbd08;
+}

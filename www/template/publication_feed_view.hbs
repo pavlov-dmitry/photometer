@@ -30,6 +30,11 @@
             <a href="#user/{{owner.id}}" class="right floated author">
               @{{owner.name}}
             </a>
+            {{#if comments_count}}
+            <div class="left floated {{#if unreaded_comments}}new {{/if}}comments">
+              <i class="comment outline icon"></i> {{comments_count}}
+            </div>
+            {{/if}}
           </div>
           <a class="image" href="#publication/{{../id}}/photo/{{id}}">
             <img exify_intitialized="true" src="preview/{{id}}.png" alt="Загружается ...">

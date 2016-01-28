@@ -134,7 +134,7 @@ impl Event for LatePublication {
         // если такой пользователь есть должен выложиться
         let need_publish = try!( db.is_unpublished_user( info.parent_id, user_id ) );
         let answer = if need_publish {
-            let photo_info = try!( db.get_photo_info( photo_id ) );
+            let photo_info = try!( db.get_short_photo_info( photo_id ) );
             if let Some( photo_info ) = photo_info {
                 if photo_info.owner.id == user_id {
                     try!( db.public_photo( info.parent_id,
