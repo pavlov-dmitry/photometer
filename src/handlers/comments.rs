@@ -1,5 +1,6 @@
 use iron::prelude::*;
 use db::comments::{ DbComments, CommentFor };
+use db::visited::{ DbVisited, VisitedContent };
 use get_body::GetBody;
 use answer::{ AnswerResult, Answer, AnswerResponse };
 use types::{ Id, CommentInfo };
@@ -65,6 +66,13 @@ fn get_comments( req: &mut Request, comment_for: CommentFor ) -> AnswerResult {
                                                   comments_query.id,
                                                   IN_PAGE_COUNT,
                                                   comments_query.page * IN_PAGE_COUNT ) );
+            // помечаем новые комментрии как посещенные
+            let new_visited = comments.iter()
+                .filter( |c| c.is_new )
+                .map( |c| c.id )
+                .collect::<Vec<Id>>();
+            try!( db.set_visited( user_id, VisitedContent::Comment, &new_visited ) );
+
             Answer::good( CommentsInfo{
                 all_count: count,
                 pagination: make_pagination( comments_query.page, count, IN_PAGE_COUNT ),
