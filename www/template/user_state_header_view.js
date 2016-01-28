@@ -19,7 +19,7 @@ return templates['user_state_header_view'] = template({"1":function(container,de
 },"4":function(container,depth0,helpers,partials,data) {
     var helper;
 
-  return "      <div class=\"ui black label\">\n        "
+  return "      <div class=\"ui yellow label\">\n        "
     + container.escapeExpression(((helper = (helper = helpers.unreaded_messages || (depth0 != null ? depth0.unreaded_messages : depth0)) != null ? helper : helpers.helperMissing),(typeof helper === "function" ? helper.call(depth0 != null ? depth0 : {},{"name":"unreaded_messages","hash":{},"data":data}) : helper)))
     + "\n      </div>\n";
 },"6":function(container,depth0,helpers,partials,data) {
@@ -41,7 +41,7 @@ return templates['user_state_header_view'] = template({"1":function(container,de
 },"9":function(container,depth0,helpers,partials,data) {
     var stack1;
 
-  return "        <div class=\"ui black label\">\n          "
+  return "        <div class=\"ui yellow label\">\n          "
     + container.escapeExpression(container.lambda(((stack1 = (depth0 != null ? depth0.current_group : depth0)) != null ? stack1.unwatched_events : stack1), depth0))
     + "\n        </div>\n";
 },"11":function(container,depth0,helpers,partials,data) {
@@ -53,7 +53,7 @@ return templates['user_state_header_view'] = template({"1":function(container,de
     + ((stack1 = helpers.each.call(alias1,(depth0 != null ? depth0.groups : depth0),{"name":"each","hash":{},"fn":container.program(16, data, 0),"inverse":container.noop,"data":data})) != null ? stack1 : "")
     + "        </div>\n      </div>\n";
 },"12":function(container,depth0,helpers,partials,data) {
-    return "        <i class=\"chevron circle down icon\"></i>\n";
+    return "        <i class=\"yellow chevron circle down icon\"></i>\n";
 },"14":function(container,depth0,helpers,partials,data) {
     return "        <i class=\"dropdown icon\"></i>\n";
 },"16":function(container,depth0,helpers,partials,data) {
@@ -69,7 +69,7 @@ return templates['user_state_header_view'] = template({"1":function(container,de
 },"17":function(container,depth0,helpers,partials,data) {
     var helper;
 
-  return "            <div class=\"ui black label\">\n              "
+  return "            <div class=\"ui yellow label\">\n              "
     + container.escapeExpression(((helper = (helper = helpers.unwatched_events || (depth0 != null ? depth0.unwatched_events : depth0)) != null ? helper : helpers.helperMissing),(typeof helper === "function" ? helper.call(depth0 != null ? depth0 : {},{"name":"unwatched_events","hash":{},"data":data}) : helper)))
     + "\n            </div>\n";
 },"compiler":[7,">= 4.0.0"],"main":function(container,depth0,helpers,partials,data) {

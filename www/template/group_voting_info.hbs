@@ -1,15 +1,41 @@
 {{{internal_html}}}
-<div class="ui right aligned basic segment zeromargin">
-  <div class="ui basic blue label">
-    Голосуют: {{all_count}}
-  </div>
-  <div class="ui basic green label">
-    За: {{yes}}
-  </div>
-  <div class="ui basic red label">
-    Против: {{no}}
-  </div>
-  <div class="ui basic yellow label">
-    Необходимо для принятия: {{min_success_count}}
+<div class="ui center aligned basic segment zeromargin">
+  <div class="ui four small statistics">
+    <div class="statistic">
+      <div class="value">
+        <i class="user icon"></i>
+        {{all_count}}
+      </div>
+      <div class="label">
+        Голосуют
+      </div>
+    </div>
+    <div class="statistic">
+      <div class="value">
+        <i class="thumbs up icon"></i>
+        {{yes}}
+      </div>
+      <div class="label">
+        За
+      </div>
+    </div>
+    <div class="statistic">
+      <div class="value">
+        <i class="thumbs down icon"></i>
+        {{no}}
+      </div>
+      <div class="label">
+        Против
+      </div>
+    </div>
+    <div class="statistic">
+      <div class="value">
+        <i class="flag icon"></i>
+        {{min_success_count}}
+      </div>
+      <div class="label">
+        Необходимо для принятия
+      </div>
+    </div>
   </div>
 </div>

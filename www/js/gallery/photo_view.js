@@ -60,9 +60,7 @@ define( function( require ) {
             var comments_model = new CommentsModel({ photo_id: this.model.get("id") });
             this.comments_view = new CommentsView({ model: comments_model });
 
-            $(".ui.sticky").sticky({
-
-            });
+            $(".ui.sticky").sticky();
 
             return this;
         },

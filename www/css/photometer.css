@@ -245,3 +245,7 @@ blockquote {
 .card .content .new.comments {
     color: #fbbd08;
 }
+
+.description {
+    font-size: 1.5em;
+}

@@ -9,7 +9,7 @@ return templates['one_comment_view'] = template({"1":function(container,depth0,h
 },"compiler":[7,">= 4.0.0"],"main":function(container,depth0,helpers,partials,data) {
     var stack1, alias1=container.lambda, alias2=container.escapeExpression, alias3=depth0 != null ? depth0 : {}, alias4=helpers.helperMissing;
 
-  return "<div class=\"comment\">\n  <div class=\"avatar\">\n    <i class=\"big comment icon\"></i>\n  </div>\n  <div class=\"content\">\n    <a class=\"author\" href=\"#user/"
+  return "<div class=\"comment\">\n  <div class=\"avatar\">\n    <i class=\"big horizontally flipped comment icon\"></i>\n  </div>\n  <div class=\"content\">\n    <a class=\"author\" href=\"#user/"
     + alias2(alias1(((stack1 = (depth0 != null ? depth0.creator : depth0)) != null ? stack1.id : stack1), depth0))
     + "\">"
     + alias2(alias1(((stack1 = (depth0 != null ? depth0.creator : depth0)) != null ? stack1.name : stack1), depth0))

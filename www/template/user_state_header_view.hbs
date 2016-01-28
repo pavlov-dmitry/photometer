@@ -9,7 +9,7 @@
       </i>
       Сообщения
       {{#if unreaded_messages}}
-      <div class="ui black label">
+      <div class="ui yellow label">
         {{unreaded_messages}}
       </div>
       {{/if}}
@@ -24,7 +24,7 @@
         <i class="icon users"></i>
         {{current_group.name}}
         {{#if current_group.unwatched_events}}
-        <div class="ui black label">
+        <div class="ui yellow label">
           {{current_group.unwatched_events}}
         </div>
         {{/if}}
@@ -32,7 +32,7 @@
       {{#if is_many_groups}}
       <div id="groups_menu" class="ui top right pointing floating dropdown icon button item">
         {{#if has_unreaded_in_groups}}
-        <i class="chevron circle down icon"></i>
+        <i class="yellow chevron circle down icon"></i>
         {{else}}
         <i class="dropdown icon"></i>
         {{/if}}
@@ -42,7 +42,7 @@
             <i class="icon users"></i>
             {{name}}
             {{#if unwatched_events}}
-            <div class="ui black label">
+            <div class="ui yellow label">
               {{unwatched_events}}
             </div>
             {{/if}}

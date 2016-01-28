@@ -1,14 +1,34 @@
-<div class="ui secondary segment zeromargin">
-    {{{markdown description}}}
+<div class="ui secondary segment zeromargin description">
+  {{{markdown description}}}
 </div>
 <div class="ui right aligned basic segment zeromargin">
-  <div class="ui basic blue label">
-    Приглашенных: {{all_count}}
-  </div>
-  <div class="ui basic green label">
-    Согласившихся: {{yes}}
-  </div>
-  <div class="ui basic red label">
-    Отказавшихся: {{no}}
+  <div class="ui three small statistics">
+    <div class="statistic">
+      <div class="value">
+        <i class="child icon"></i>
+        {{all_count}}
+      </div>
+      <div class="label">
+        Приглашенных
+      </div>
+    </div>
+    <div class="statistic">
+      <div class="value">
+        <i class="thumbs up icon"></i>
+        {{yes}}
+      </div>
+      <div class="label">
+        Согласившихся
+      </div>
+    </div>
+    <div class="statistic">
+      <div class="value">
+        <i class="thumbs down icon"></i>
+        {{no}}
+      </div>
+      <div class="label">
+        Отказавшихся
+      </div>
+    </div>
   </div>
 </div>
