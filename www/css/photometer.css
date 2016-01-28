@@ -231,3 +231,7 @@ blockquote {
 .ui.comments .comment {
     margin-top: 2em;
 }
+
+#comments-container {
+    max-width: 90%;
+}

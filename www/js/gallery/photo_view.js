@@ -13,6 +13,10 @@ define( function( require ) {
 
         template: Handlebars.templates.photo_view,
 
+        events: {
+            "click #show-photo": "show_photo"
+        },
+
         initialize: function() {
             this.listenTo( this.model, 'change', this.render );
 
@@ -43,7 +47,7 @@ define( function( require ) {
                 self.photo_loaded = true;
                 self.resize_handler();
                 $("#loader").dimmer( "hide" );
-                document.getElementById( 'photo' ).scrollIntoView();
+                self.show_photo();
             });
             // если фотка не покажется в течении некоторого вермени, то показываем загрузку
             setTimeout( function() {
@@ -56,6 +60,10 @@ define( function( require ) {
             var comments_model = new CommentsModel({ photo_id: this.model.get("id") });
             this.comments_view = new CommentsView({ model: comments_model });
 
+            $(".ui.sticky").sticky({
+                context: "#comments-container"
+            });
+
             return this;
         },
 
@@ -66,6 +74,10 @@ define( function( require ) {
             if ( !is_next_photo ) {
                 document.getElementById( 'main-menu' ).scrollIntoView();
             }
+        },
+
+        show_photo: function() {
+            document.getElementById( 'photo' ).scrollIntoView();
         }
 
     });
