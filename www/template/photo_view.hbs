@@ -1,3 +1,4 @@
+{{!-- Пока убрал за ненадобностью
 {{#if group}}
 <div class="ui container">
   <div class="ui huge breadcrumb">
@@ -12,6 +13,7 @@
   </div>
 </div>
 {{/if}}
+--}}
 <div id="photo-container" class="full-height">
   <div id="loader" class="ui dimmer full-height">
     <div class="ui text loader">Загрузка</div>
@@ -96,7 +98,9 @@
               {{#if photo.name}}
               {{photo.name}}
               {{else}}
-              <i>Без имени</i>
+              <a href="#edit_photo/{{id}}">
+                <i>Без имени</i>
+              </a>
               {{/if}}
             </div>
           </div>
