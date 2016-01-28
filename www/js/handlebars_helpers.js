@@ -61,5 +61,22 @@ define( function(require) {
         }
     });
 
+    Handlebars.registerHelper( "humanize", function( value, one, two2four, ten ) {
+        var value = value % 100;
+        if ( 20 < value )
+        {
+            value = value % 10;
+        }
+        switch( value ) {
+        case 1:
+            return one;
+        case 2:
+        case 3:
+        case 4:
+            return two2four;
+        }
+        return ten;
+    });
+
     return {};
 })

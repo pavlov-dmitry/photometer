@@ -4,6 +4,7 @@ define( function(require) {
         OneCommentView = require( "comments/one_comment_view" ),
         CommentEditor = require( "comments/editor" );
     require( "template/comments_view" );
+    require( "handlebars_helpers" );
 
     var CommentsView = Backbone.View.extend({
         el: "#comments",

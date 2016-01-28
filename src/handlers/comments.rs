@@ -47,6 +47,7 @@ struct CommentsQuery {
 
 #[derive(RustcEncodable)]
 struct CommentsInfo {
+    all_count: u32,
     pagination: PaginationInfo,
     comments: Vec<CommentInfo>
 }
@@ -65,6 +66,7 @@ fn get_comments( req: &mut Request, comment_for: CommentFor ) -> AnswerResult {
                                                   IN_PAGE_COUNT,
                                                   comments_query.page * IN_PAGE_COUNT ) );
             Answer::good( CommentsInfo{
+                all_count: count,
                 pagination: make_pagination( comments_query.page, count, IN_PAGE_COUNT ),
                 comments: comments
             })

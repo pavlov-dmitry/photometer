@@ -22,7 +22,10 @@ define( function(require) {
             var handler = request.get( url, { id: id, page: page });
             var self = this;
             handler.good = function( data ) {
-                self.set({ pagination: data.pagination });
+                self.set({
+                    all_count: data.all_count,
+                    pagination: data.pagination
+                });
                 var comments = self.get("comments");
                 comments.reset();
                 comments.add( data.comments );
