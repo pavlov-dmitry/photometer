@@ -1,21 +1,29 @@
-<div class="">
-  <form class="ui form">
-    <div class="ui top attached tabular menu">
-      <a class="{{#unless is_preview}}active {{/unless}}edit tab item">Редактировать</a>
-      <a class="{{#if is_preview}}active {{/if}}preview tab item">Предпросмотр</a>
+<form class="ui form">
+  <div class="ui top attached tabular menu">
+    <a class="{{#unless is_preview}}active {{/unless}}edit tab item">Редактировать</a>
+    <a class="{{#if is_preview}}active {{/if}}preview tab item">Предпросмотр</a>
+  </div>
+  <div class="ui bottom attached tab segment active">
+    {{#if is_preview}}
+    {{{markdown text}}}
+    {{else}}
+    <div class="ui field">
+      <textarea class="comment-body" maxlength="1024" placeholder="Оставьте здесь комментарий ... (поддерживается форматирование markdown)" required>{{text}}</textarea>
     </div>
-    <div class="ui bottom attached tab segment active">
-      {{#if is_preview}}
-      {{{markdown text}}}
-      {{else}}
-      <div class="ui field">
-        <textarea id="comment-body" placeholder="Оставьте здесь комментарий ... (поддерживается форматирование markdown)" required>{{text}}</textarea>
-      </div>
-      {{/if}}
-    </div>
-    <div class="ui tiny hidden divider"></div>
-    <button class="ui primary submit labeled icon button" type="submit">
-      <i class="edit icon"></i> Комментировать
-    </button>
-  </form>
-</div>
+    {{/if}}
+  </div>
+  <div class="ui tiny hidden divider"></div>
+  <button class="ui primary submit labeled icon button" type="submit">
+    <i class="edit icon"></i>
+    {{#if cancelable}}
+    Редактировать
+    {{else}}
+    Комментировать
+    {{/if}}
+  </button>
+  {{#if cancelable}}
+  <button class="ui cancel button" type="button">
+    Отменить
+  </button>
+  {{/if}}
+</form>

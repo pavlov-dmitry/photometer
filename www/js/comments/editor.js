@@ -7,20 +7,24 @@ define( function(require) {
     var Editor = Backbone.View.extend({
         template: Handlebars.templates.comment_editor,
         events: {
-            "change #comment-body" : "on_comment_change",
+            "change .comment-body" : "on_comment_change",
             "click .edit.tab": "on_edit_tab",
-            "click .preview.tab": "on_preview_tab"
+            "click .preview.tab": "on_preview_tab",
+            "submit .form": "on_submit",
+            "click .cancel.button": "on_cancel"
         },
 
         initialize: function() {
             this.listenTo( this.model, "change:is_preview", this.render )
+            this.listenTo( this.model, "reset", this.render )
         },
 
         close: function() {},
 
         render: function() {
             this.$el.html( this.template( this.model.toJSON() ) );
-            this.$comment_body = $("#comment-body");
+            this.$comment_body = this.$el.find(".comment-body");
+            this.$form = this.$el.find( ".form" );
             return this;
         },
 
@@ -29,14 +33,30 @@ define( function(require) {
         },
 
         on_edit_tab: function() {
-            console.log( "edit" );
             this.model.set({ is_preview: false });
         },
 
         on_preview_tab: function() {
-            console.log( "preview" );
             this.model.set({ is_preview: true });
+        },
+
+        on_submit: function() {
+            var text = this.model.get("text");
+            if ( text.length == 0 )
+                return;
+
+            this.$form.addClass( "loading" );
+            var handler = this.model.save();
+            var self = this;
+            handler.finish = function() {
+                self.$form.removeClass( "loading" );
+            }
+        },
+
+        on_cancel: function() {
+            this.model.cancel();
         }
+
     });
 
     return Editor;

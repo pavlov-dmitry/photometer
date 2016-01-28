@@ -1,4 +1,3 @@
-
 use std::str;
 use mysql::conn::pool::{ MyPooledConn };
 use mysql::error::{ MyResult, MyError };
@@ -104,7 +103,7 @@ impl DbComments for MyPooledConn {
         get_comment_info_impl( self,
                                reader_id,
                                comment_id )
-            .map_err( |e| fn_failed( "read_comment_info", e ) )
+            .map_err( |e| fn_failed( "get_comment_info", e ) )
     }
     /// Чтение комментариев
     fn get_comments( &mut self,
@@ -115,7 +114,7 @@ impl DbComments for MyPooledConn {
                       offset: u32 ) -> CommonResult<Vec<CommentInfo>>
     {
         get_comments_impl( self, reader_id, comments_for, for_id, count, offset )
-            .map_err( |e| fn_failed( "read_comments", e ) )
+            .map_err( |e| fn_failed( "get_comments", e ) )
     }
     /// чтение кол-ва комментариев
     fn get_comments_count( &mut self,
@@ -142,8 +141,8 @@ fn add_comment_impl( conn: &mut MyPooledConn,
 {
     let mut stmt = try!( conn.prepare(
         "INSERT INTO comments (
-            time,
             user_id,
+            time,
             comment_for,
             for_id,
             text
@@ -211,7 +210,7 @@ fn get_comment_info_impl( conn: &mut MyPooledConn,
          FROM comments AS c
          LEFT JOIN users as u ON ( u.id = c.user_id )
          LEFT JOIN visited as v ON ( v.user_id=? AND v.content_type='comment' AND v.content_id=c.id )
-         WHERE id = ?",
+         WHERE c.id = ?",
         FIELDS
     );
     let mut stmt = try!( conn.prepare( &query ) );

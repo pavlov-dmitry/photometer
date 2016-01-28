@@ -1,22 +1,31 @@
 <div class="comment">
   <div class="avatar">
-    <i class="user icon"></i>
+    <i class="big comment icon"></i>
   </div>
   <div class="content">
     <a class="author" href="#user/{{creator.id}}">{{creator.name}}</a>
     <div class="metadata">
       <div class="date">{{duration_from_now creation_time}}</div>
       {{#if is_new}}
-      <div class="ui yellow label">новый</div>
+      <div class="ui tiny yellow label">новый</div>
       {{/if}}
     </div>
     <div class="text">
-      {{text}}
+      <div class="editor"></div>
+      <div class="text-content">
+        {{{markdown text}}}
+      </div>
     </div>
     <div class="actions">
-      <a class="quote action">Цитировать</a>
+      <a class="quote action">
+        <i class="reply icon"></i>
+        Цитировать
+      </a>
       {{#if is_editable}}
-      <a class="edit action">Редактировать</a>
+      <a class="edit action">
+        <i class="edit icon"></i>
+        Редактировать
+      </a>
       {{/if}}
     </div>
   </div>

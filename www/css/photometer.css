@@ -227,3 +227,7 @@ blockquote {
     border-radius: 0.3em;
     border-left: 0.3em solid #85b7d9;
 }
+
+.ui.comments .comment {
+    margin-top: 2em;
+}

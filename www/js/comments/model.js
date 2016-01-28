@@ -14,8 +14,9 @@ define( function(require) {
 
         fetch: function( page ) {
             if ( !page ) {
-                page = 0;
+                page = this.get("page");
             }
+            this.set({ page: page });
             var url = this.get_url();
             var id = this.get_id();
             var handler = request.get( url, { id: id, page: page });
@@ -47,6 +48,22 @@ define( function(require) {
                 id = this.get("photo_id");
             }
             return id;
+        },
+
+        save: function() {
+            var url = this.get_url();
+            var id = this.get_id();
+            var handler = request.post( url, {
+                id: id,
+                text: this.get("text")
+            });
+            var self = this;
+            handler.good = function( data ) {
+                self.set({text: ""});
+                self.trigger( "reset" );
+                self.fetch();
+            }
+            return handler;
         }
     })
 

@@ -1,6 +1,8 @@
 define( function( require ) {
     var Backbone = require( 'lib/backbone' ),
-        Handlebars = require( "handlebars.runtime" );
+        Handlebars = require( "handlebars.runtime" ),
+        CommentsModel = require( "comments/model" ),
+        CommentsView = require( "comments/view" );
     require( 'template/photo_view' );
     require( "handlebars_helpers" );
     var fit_image = require( "helpers/fit_image" );
@@ -50,10 +52,17 @@ define( function( require ) {
                 }
             }, 200 );
             self.resize_handler();
+
+            var comments_model = new CommentsModel({ photo_id: this.model.get("id") });
+            this.comments_view = new CommentsView({ model: comments_model });
+
             return this;
         },
 
         close: function( is_next_photo ) {
+            if ( this.comments_view ) {
+                this.comments_view.close();
+            }
             if ( !is_next_photo ) {
                 document.getElementById( 'main-menu' ).scrollIntoView();
             }
