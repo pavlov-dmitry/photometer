@@ -30,7 +30,12 @@ textarea {
 }
 
 img.logo {
-    width: 7rem;
+    width: 9rem;
+}
+
+#main-menu .header.item {
+    padding-top: 5px;
+    padding-bottom: 5px;
 }
 
 .mw300 {
