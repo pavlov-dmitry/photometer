@@ -3,7 +3,7 @@ define(['handlebars.runtime'], function(Handlebars) {
 return templates['user_state_header_view'] = template({"1":function(container,depth0,helpers,partials,data) {
     var stack1, helper, alias1=depth0 != null ? depth0 : {};
 
-  return "<div id=\"main-menu\" class=\"ui pointing secondary stackable main menu\">\n  <div class=\"ui container\">\n    <div class=\"header item\">\n      <img class=\"ui logo\" src=\"i/logo.png\">\n    </div>\n    <a class=\"item"
+  return "<div id=\"main-menu\" class=\"ui pointing secondary stackable main menu\">\n  <div class=\"ui container\">\n    <div class=\"header item\">\n      <img class=\"ui logo\" src=\"i/logo.png\" data-variation=\"wide\">\n    </div>\n    <a class=\"item"
     + ((stack1 = helpers["if"].call(alias1,(depth0 != null ? depth0.isNavInMessages : depth0),{"name":"if","hash":{},"fn":container.program(2, data, 0),"inverse":container.noop,"data":data})) != null ? stack1 : "")
     + "\" href=\"#mailbox/unreaded\">\n      <i class=\"icon inbox\">\n      </i>\n      Сообщения\n"
     + ((stack1 = helpers["if"].call(alias1,(depth0 != null ? depth0.unreaded_messages : depth0),{"name":"if","hash":{},"fn":container.program(4, data, 0),"inverse":container.noop,"data":data})) != null ? stack1 : "")

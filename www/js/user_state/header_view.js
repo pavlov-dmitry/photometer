@@ -25,6 +25,12 @@ define( function( require ) {
             if ( this.model.get( "is_many_groups") ) {
                 $("#groups_menu").dropdown();
             }
+
+            $("img.logo").popup({
+                on: "click",
+                title: "Посвящение",
+                html: "Создание данного сайта посвящается моей, горячо любимой, Танюшечке-Лапотушечке <i class=\"heart icon\"></i>"
+            });
         }
 
     } );
