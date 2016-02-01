@@ -59,11 +59,15 @@ return templates['group_voting_feed_view'] = template({"1":function(container,de
 
   return "    <div class=\"extra\">\n      <div class=\""
     + ((stack1 = helpers["if"].call(alias1,(depth0 != null ? depth0.unreaded_comments : depth0),{"name":"if","hash":{},"fn":container.program(23, data, 0),"inverse":container.noop,"data":data})) != null ? stack1 : "")
-    + "comments\">\n        <i class=\"comment outline icon\"></i> "
+    + "comments\">\n        <i class=\"comment "
+    + ((stack1 = helpers.unless.call(alias1,(depth0 != null ? depth0.unreaded_comments : depth0),{"name":"unless","hash":{},"fn":container.program(25, data, 0),"inverse":container.noop,"data":data})) != null ? stack1 : "")
+    + "icon\"></i> "
     + container.escapeExpression(((helper = (helper = helpers.comments_count || (depth0 != null ? depth0.comments_count : depth0)) != null ? helper : helpers.helperMissing),(typeof helper === "function" ? helper.call(alias1,{"name":"comments_count","hash":{},"data":data}) : helper)))
     + "\n      </div>\n    </div>\n";
 },"23":function(container,depth0,helpers,partials,data) {
     return "new ";
+},"25":function(container,depth0,helpers,partials,data) {
+    return "outline ";
 },"compiler":[7,">= 4.0.0"],"main":function(container,depth0,helpers,partials,data) {
     var stack1, alias1=depth0 != null ? depth0 : {}, alias2=helpers.helperMissing;
 
