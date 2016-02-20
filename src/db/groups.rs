@@ -34,10 +34,6 @@ pub trait DbGroups {
     fn create_group( &mut self, name: &String, desc: &String, creation_time: Timespec ) -> CommonResult<Id>;
     /// добавляет членов группы
     fn add_members( &mut self, group_id: Id, members: &[ Id ] ) -> EmptyResult;
-    /// установка последнего времени посещения
-    fn set_last_visited_time( &mut self, user_id: Id, group_id: Id, time: Timespec ) -> EmptyResult;
-    /// считывание последнего времени посещения
-    fn get_last_visited_time( &mut self, user_id: Id, group_id: Id ) -> CommonResult<Timespec>;
     /// список групп в которых пользователь является членом
     fn member_in_groups( &mut self, user_id: Id ) -> CommonResult<Groups>;
     /// информация о группе
@@ -62,7 +58,6 @@ pub fn create_tables( db: &Database ) -> EmptyResult {
             `id` bigint(20) NOT NULL AUTO_INCREMENT,
             `user_id` bigint(20) NOT NULL DEFAULT '0',
             `group_id` bigint(20) NOT NULL DEFAULT '0',
-            `last_visited_time` int(11) NOT NULL DEFAULT '0',
             PRIMARY KEY ( `id` ),
             KEY `members_idx` ( `user_id`, `group_id` )
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
@@ -103,16 +98,6 @@ impl DbGroups for MyPooledConn {
     fn add_members( &mut self, group_id: Id, members: &[ Id ] ) -> EmptyResult {
         add_members_impl( self, group_id, members )
             .map_err( |e| fn_failed( "add_members", e ) )
-    }
-    /// установка последнего времени посещения
-    fn set_last_visited_time( &mut self, user_id: Id, group_id: Id, time: Timespec ) -> EmptyResult {
-        set_last_visited_time_impl( self, user_id, group_id, time )
-            .map_err( |e| fn_failed( "set_last_visited_time", e ) )
-    }
-    /// считывание последнего времени посещения
-    fn get_last_visited_time( &mut self, user_id: Id, group_id: Id ) -> CommonResult<Timespec> {
-        get_last_visited_time_impl( self, user_id, group_id )
-            .map_err( |e| fn_failed( "get_last_visited_time", e ) )
     }
     /// список групп в которых пользователь является членом
     fn member_in_groups( &mut self, user_id: Id ) -> CommonResult<Groups> {
@@ -220,31 +205,6 @@ fn add_members_impl( conn: &mut MyPooledConn, group_id: Id, members: &[ Id ] ) -
 
     try!( stmt.execute( values ) );
     Ok( () )
-}
-
-/// установка последнего времени посещения
-fn set_last_visited_time_impl( conn: &mut MyPooledConn, user_id: Id, group_id: Id, time: Timespec ) -> MyResult<()> {
-    let query = "UPDATE
-                     group_members
-                 SET
-                    last_visited_time = ?
-                 WHERE
-                     user_id = ?
-                 AND
-                     group_id = ?";
-    let mut stmt = try!( conn.prepare( query ) );
-    try!( stmt.execute( ( time.msecs(), user_id, group_id ) ) );
-    Ok( () )
-}
-
-/// считывание последнего времени посещения
-fn get_last_visited_time_impl( conn: &mut MyPooledConn, user_id: Id, group_id: Id ) -> MyResult<Timespec> {
-    let query = "SELECT last_visited_time FROM group_members WHERE user_id=? AND group_id=?";
-    let mut stmt = try!( conn.prepare( query ) );
-    let mut result = try!( stmt.execute( ( &user_id, &group_id ) ) );
-    let row = try!( result.next().unwrap() );
-    let time_msecs = from_row::<u64>( row );
-    Ok( time_msecs.into_timespec() )
 }
 
 fn member_in_groups_impl( conn: &mut MyPooledConn, user_id: Id ) -> MyResult<Groups> {

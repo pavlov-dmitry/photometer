@@ -148,9 +148,9 @@ impl GroupCreatedEvent for ChangeTimetable {
         // парсим время
         let diff_info = try!( parse_times( diff_info_str ) );
 
-        let self_start_time = time::get_time();
+        let current_time = time::get_time();
+        let self_start_time = current_time.clone();
         let self_end_time = self_start_time + time::Duration::days( DAYS_FOR_VOTE );
-        let current_time = time::now().to_timespec();
 
         // проверка корректности добаляемых событий
         let mut errors = Vec::new();

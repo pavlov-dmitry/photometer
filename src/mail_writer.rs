@@ -55,6 +55,19 @@ pub trait MailWriter {
                                          event_name: &str,
                                          group_name: &str,
                                          scheduled_id: Id ) -> (String, String);
+
+    /// ПРИГЛАШЕНИЕ ПОЛЬЗОВАТЕЛЯ В ГРУППУ
+    // письмо о том что вас приглашают в группу
+    fn write_invite_to_group_mail( &self,
+                                    inviter_name: &str,
+                                    group_name: &str,
+                                    scheduled_id: Id ) -> (String, String);
+
+    // письмо о том что пользователю было выслано письмо о регистрации, с сылкой со слежением
+    fn write_user_invited_to_group_mail( &self,
+                                          invited_name: &str,
+                                          group_name: &str,
+                                          scheduled_id: Id ) -> (String, String);
 }
 
 // саоздаёт экземпляр Сочинителя Писем для установки его в Stuff
@@ -100,23 +113,20 @@ impl MailWriter for Stuff {
 
     /// сочиняет приветственное письмо
     fn write_welcome_mail( &self ) -> (String, String) {
-        let body = self.get_body();
         let mail = format!( "Добро пожаловать на Фотометр!\n
-Попробуйте загрузить парочку фотографий в собственную [галлерею]({}/#gallery \"Пошли посмотрим?\")",
-                             &body.root_url );
+Попробуйте загрузить парочку фотографий в собственную [галлерею](/#gallery \"Пошли посмотрим?\")",
+                             );
         ( String::from( "Добро пожаловать." ), mail )
     }
 
     /// cочиняет письмо о создании новой группы
     fn write_group_creation_started_mail( &self, group_name: &str, scheduled_id: Id) -> (String, String) {
-        let body = self.get_body();
         let subject = format!( "Создание новой группы \"{}\"", group_name );
         let mail = format!(
 "Приглашения о создании группы **{}** разосланы.
-Узнать подробности и следить за процессом присоединения вы можете пройдя по этой [ссылке]({}{}).
+Узнать подробности и следить за процессом присоединения вы можете пройдя по этой [ссылке]({}).
 Если группа будет организована, вы получите новое сообщение, то же самое будет если она не будет организована по какой-то причине.",
             group_name,
-            &body.root_url,
             events::make_event_link( scheduled_id )
         );
         (subject, mail)
@@ -124,14 +134,12 @@ impl MailWriter for Stuff {
 
     /// cочиняет письмо о создании новой группы
     fn write_group_invite_mail( &self, group_name: &str, scheduled_id: Id ) -> (String, String) {
-        let body = self.get_body();
         let subject = format!( "Создание новой группы \"{}\"", group_name );
         let mail = format!(
 "Вас приглашают создать новую группу **{}**.
-Узнать подробности и принять решение о присоединении вы можете пройдя по этой [ссылке]({}{}).
+Узнать подробности и принять решение о присоединении вы можете пройдя по этой [ссылке]({}).
 У вас есть сутки чтобы принять решение.",
             group_name,
-            &body.root_url,
             events::make_event_link( scheduled_id )
         );
         (subject, mail)
@@ -206,11 +214,9 @@ impl MailWriter for Stuff {
                                           group_name: &str,
                                           scheduled_id: Id ) -> (String, String)
     {
-        let body = self.get_body();
         let subject = format!( "Старт голосования за '{}'", event_name );
-        let mail = format!( "В группе **{}** грядут изменения: {event}. Группа нуждается в твоём мнении! Вырази его перейдя по ссылке: [{event}]({}{})",
+        let mail = format!( "В группе **{}** грядут изменения: {event}. Группа нуждается в твоём мнении! Вырази его перейдя по ссылке: [{event}]({})",
                              group_name,
-                             &body.root_url,
                              events::make_event_link( scheduled_id ),
                              event = event_name );
         (subject, mail)
@@ -221,11 +227,9 @@ impl MailWriter for Stuff {
                                            group_name: &str,
                                            scheduled_id: Id ) -> (String, String)
     {
-        let body = self.get_body();
         let subject = format!( "Утверждено '{}'", event_name );
-        let mail = format!( "В группе **{}** утверждено изменение: {event}. Вот ссылка на результаты голосования [{event}]({}{})",
+        let mail = format!( "В группе **{}** утверждено изменение: {event}. Вот ссылка на результаты голосования [{event}]({})",
                              group_name,
-                             &body.root_url,
                              events::make_event_link( scheduled_id ),
                              event = event_name );
         (subject, mail)
@@ -236,13 +240,40 @@ impl MailWriter for Stuff {
                                          group_name: &str,
                                          scheduled_id: Id ) -> (String, String)
     {
-        let body = self.get_body();
         let subject = format!( "Отклонено '{}'", event_name );
-        let mail = format!( "В группе **{}** отклонено изменение: {event}. Вот ссылка на результаты голосования [{event}]({}{})",
+        let mail = format!( "В группе **{}** отклонено изменение: {event}. Вот ссылка на результаты голосования [{event}]({})",
                              group_name,
-                             &body.root_url,
                              events::make_event_link( scheduled_id ),
                              event = event_name );
+        (subject, mail)
+    }
+
+    // письмо о том что вас приглашают в группу
+    fn write_invite_to_group_mail(
+        &self,
+        inviter_name: &str,
+        group_name: &str,
+        scheduled_id: Id ) -> (String, String)
+    {
+        let subject = format!( "Приглашение в группу '{}'", group_name );
+        let mail = format!( "Пользователь **{}** приглашает вас присоединиться в группу {}. Прочитать про группу и принять решение, можно перейдя по [вот этой ссылке]({}).",
+                             inviter_name,
+                             group_name,
+                             events::make_event_link( scheduled_id ) );
+        (subject, mail)
+    }
+
+    // письмо о том что пользователю было выслано письмо о регистрации, с сылкой со слежением
+    fn write_user_invited_to_group_mail( &self,
+                                          invited_name: &str,
+                                          group_name: &str,
+                                          scheduled_id: Id ) -> (String, String)
+    {
+        let subject = format!( "'{}' приглашен в группу '{}'", invited_name, group_name );
+        let mail = format!( "Приглашение в группу **{}** для пользователя **{}** выслано, добавить комментарий и следить за прогрессом можно перейдя [вот по этой ссылке]({}).",
+                             group_name,
+                             invited_name,
+                             events::make_event_link( scheduled_id ) );
         (subject, mail)
     }
 }

@@ -69,6 +69,7 @@ pub enum EventId {
     LatePublication = 3,
     GroupVoting = 4,
     ChangeTimetable = 5,
+    UserInvite = 6,
 }
 
 pub struct MaybeEventId( pub Option<EventId> );
