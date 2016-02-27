@@ -2,9 +2,9 @@ use answer::{ AnswerResult, Answer, AnswerResponse };
 use stuff::Stuffable;
 use database::Databaseable;
 use iron::prelude::*;
-use authentication::User;
 use get_body::GetBody;
 use db::users::DbUsers;
+use types::ShortInfo;
 
 const IN_PAGE_COUNT: u32 = 100;
 
@@ -24,7 +24,7 @@ struct UsersQuery {
 
 #[derive(RustcEncodable)]
 struct UsersResult {
-    users: Vec<User>
+    users: Vec<ShortInfo>
 }
 
 fn get_users( req: &mut Request ) -> AnswerResult {

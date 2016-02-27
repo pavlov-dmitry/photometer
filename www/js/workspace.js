@@ -24,6 +24,7 @@ define( function(require) {
             'group/feed/:id': "group_feed",
             'group/feed/element/:id': "group_feed_element",
             'change_timetable/:id': "change_timetable",
+            'user_invite/:id' : "user_invite",
             'publication/:feed_id/photo/:photo_id': "publication_photo"
         },
 
@@ -237,6 +238,16 @@ define( function(require) {
             this.current = new ChangeTimetableView({model: model});
             this.current.set_group_id( group_id );
         },
+
+        user_invite: function( group_id ) {
+            this.clear_current();
+
+            var UserInviteModel = require( "user_invite/model" );
+            var UserInviteView = require( "user_invite/view" );
+
+            var model = new UserInviteModel({group_id: group_id});
+            this.current = new UserInviteView({model: model});
+        }
 
 
     });

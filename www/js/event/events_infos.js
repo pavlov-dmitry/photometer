@@ -21,6 +21,9 @@ define( function(require) {
         else if ( id === 'Publication' ) {
             info = require( "event/info/publication" );
         }
+        else if ( id === 'UserInvite' ) {
+            info = require( "event/info/user_invite" );
+        }
 
         $.extend( base_info, info );
         return base_info;

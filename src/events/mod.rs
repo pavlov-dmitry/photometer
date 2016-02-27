@@ -22,6 +22,7 @@ mod group_creation;
 mod late_publication;
 mod group_voting;
 mod change_timetable;
+mod invite_to_group;
 mod helpers;
 pub mod feed_types;
 
@@ -82,6 +83,7 @@ impl From<i64> for MaybeEventId {
             3 => Some( EventId::LatePublication ),
             4 => Some( EventId::GroupVoting ),
             5 => Some( EventId::ChangeTimetable ),
+            6 => Some( EventId::UserInvite ),
             _ => None
         };
         MaybeEventId( maybe_id )
@@ -100,6 +102,7 @@ impl FromStr for EventId {
             "late_publication" => Ok( EventId::LatePublication ),
             "group_voting" => Ok( EventId::GroupVoting ),
             "change_timetable" => Ok( EventId::ChangeTimetable ),
+            "user_invite" => Ok( EventId::UserInvite ),
             _ => Err( ParseEventIdError )
         }
     }

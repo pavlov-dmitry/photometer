@@ -1,7 +1,7 @@
 use mysql::conn::pool::{ MyPooledConn };
 use mysql::error::{ MyResult };
 use mysql::value::{ Value, IntoValue, ToValue, from_row };
-use types::{ Id, CommonResult, EmptyResult, CommonError };
+use types::{ Id, ShortInfo, CommonResult, EmptyResult, CommonError };
 use std::fmt::Display;
 use database::Database;
 
@@ -24,7 +24,7 @@ pub trait DbUsers {
     /// возвращает пользователя по имени
     fn user_by_name( &mut self, name: &str ) -> CommonResult<Option<User>>;
     /// возвращает имена полльзователей имена которых похожи на шаблон
-    fn get_users_like( &mut self, pattern: &str, offset: u32, count: u32 ) -> CommonResult<Vec<User>>;
+    fn get_users_like( &mut self, pattern: &str, offset: u32, count: u32 ) -> CommonResult<Vec<ShortInfo>>;
 }
 
 pub fn create_tables( db: &Database ) -> EmptyResult {
@@ -87,7 +87,7 @@ impl DbUsers for MyPooledConn {
             .map_err( |e| fn_failed( "user_by_name", e ) )
     }
     /// возвращает имена полльзователей имена которых похожи на шаблон
-    fn get_users_like( &mut self, pattern: &str, offset: u32, count: u32 ) -> CommonResult<Vec<User>> {
+    fn get_users_like( &mut self, pattern: &str, offset: u32, count: u32 ) -> CommonResult<Vec<ShortInfo>> {
         get_users_like_impl( self, pattern, offset, count )
             .map_err( |e| fn_failed( "get_users_like", e ) )
     }
@@ -261,12 +261,15 @@ fn user_by_name_impl( conn: &mut MyPooledConn, name: &str ) -> MyResult<Option<U
     }
 }
 
-fn get_users_like_impl( conn: &mut MyPooledConn, pattern: &str, offset: u32, count: u32 ) -> MyResult<Vec<User>> {
+fn get_users_like_impl( conn: &mut MyPooledConn,
+                        pattern: &str,
+                        offset: u32,
+                        count: u32 ) -> MyResult<Vec<ShortInfo>>
+{
     let mut stmt = try!( conn.prepare( "
         SELECT
             `id`,
-            `login`,
-            `mail`
+            `login`
         FROM
             `users`
         WHERE
@@ -281,11 +284,10 @@ fn get_users_like_impl( conn: &mut MyPooledConn, pattern: &str, offset: u32, cou
     let mut results = Vec::new();
     for row in sql_result {
         let row = try!( row );
-        let (id, name, mail) = from_row( row );
-        let user = User {
+        let (id, name) = from_row( row );
+        let user = ShortInfo {
             id: id,
             name: name,
-            mail: mail
         };
         results.push( user );
     }

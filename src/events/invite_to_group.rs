@@ -5,18 +5,29 @@ use super::{
     Event,
     EventId,
     ScheduledEventInfo,
-    UserCreatedEvent,
+    GroupCreatedEvent,
     FullEventInfo,
     Description,
     UserAction,
 };
-use types::{ Id, EmptyResult, CommonResult, CommonError };
+use super::helpers;
+use types::{ Id, ShortInfo, EmptyResult, CommonResult, CommonError };
+use answer::{ Answer, AnswerResult };
+use answer_types::{ FieldErrorInfo };
+use database::{ Databaseable };
 use db::users::DbUsers;
 use db::groups::DbGroups;
+use db::votes::DbVotes;
+use time;
+use stuff::{ Stuff, Stuffable };
+use get_body::{ GetBody };
+use authentication::{ Userable };
+use mail_writer::{ MailWriter };
+use mailer::{ Mailer };
 
 #[derive(Clone)]
 pub struct UserInviteToGroup;
-pub ID: EventId = EventId::UserInvite;
+pub const ID: EventId = EventId::UserInvite;
 
 impl UserInviteToGroup {
     pub fn new() -> UserInviteToGroup {
@@ -24,23 +35,25 @@ impl UserInviteToGroup {
     }
 }
 
-#[derive(RustcEncodable, RustcDecodable)]
+#[derive(Clone, RustcEncodable, RustcDecodable)]
 struct UserInviteInfo {
     group_id: Id,
     user_id: Id,
     text: String
 }
 
-#[derive(RustcEncodable)]
+#[derive(Debug, RustcEncodable)]
 struct InviteInfo {
     group: ShortInfo,
-    group_description: String
-    user: ShortInfo
+    group_description: String,
+    user: ShortInfo,
+    is_voted: bool,
+    success: bool
 }
 
 impl GroupCreatedEvent for UserInviteToGroup {
     /// описание создания
-    fn user_creating_get( &self, _req: &mut Request, group_id: Id ) -> AnswerResult {
+    fn user_creating_get( &self, req: &mut Request, group_id: Id ) -> AnswerResult {
         let db = try!( req.stuff().get_current_db_conn() );
 
         let group_info = match try!( db.group_info( group_id ) ) {
@@ -54,7 +67,7 @@ impl GroupCreatedEvent for UserInviteToGroup {
         Ok( Answer::good( group_info ) )
     }
     /// применение создания
-    fn user_creating_post( &self, req: &mut Request, group_id: Id ) -> Result<FullEventInfo, AnswerResult> {
+    fn user_creating_post( &self, req: &mut Request, _group_id: Id ) -> Result<FullEventInfo, AnswerResult> {
         let invite_info = try!( req.get_body::<UserInviteInfo>() );
         let user_id = req.user().id;
 
@@ -75,7 +88,6 @@ impl GroupCreatedEvent for UserInviteToGroup {
 
         //NOTE: тут делаем unwrap так как сверху проверяли на наличие
         let user_info = try!( db.user_by_id( invite_info.user_id ) ).unwrap();
-        let group_info = try!( db.group_info( invite_info.group_id ) ).unwrap();
 
         let start_time = time::get_time();
         let end_time = start_time + time::Duration::days( 7 );
@@ -92,7 +104,7 @@ impl GroupCreatedEvent for UserInviteToGroup {
     }
 }
 
-impl Event for UserInvite {
+impl Event for UserInviteToGroup {
     /// идентификатор события
     fn id( &self ) -> EventId {
         ID
@@ -100,39 +112,45 @@ impl Event for UserInvite {
     /// действие на начало события
     fn start( &self, stuff: &mut Stuff, body: &ScheduledEventInfo ) -> EmptyResult {
         let info = try!( get_info( &body.data ) );
+        let inviter = body.creator.as_ref().unwrap();
 
-        // ставим что пользователь может проголовать, будет ли он присоединяться
-        let db = try!( stuff.get_current_db_conn() );
-        try!( db.add_rights_of_voting( body.scheduled_id, &[ info.user_id ] ) );
+        let (user_info, group_info ) = {
+            // ставим что пользователь может проголовать, будет ли он присоединяться
+            let db = try!( stuff.get_current_db_conn() );
+            try!( db.add_rights_of_voting( body.scheduled_id, &[ info.user_id ] ) );
 
-        // пишем и отсылаем письмо с приглашением в группу
-        let inviter_id = body.creator.unwrap();
-        let inviter_info = try!( db.user_by_id( inviter_id ) ).unwrap();
-        let user_info = try!( db.user_by_id( info.user_id ) ).unwrap();
+            // пишем и отсылаем письмо с приглашением в группу
+            let user_info = try!( db.user_by_id( info.user_id ) ).unwrap();
 
-        let group_info = try!( db.group_info( info.group_id ) ).unwrap();
+            let group_info = try!( db.group_info( info.group_id ) ).unwrap();
 
-        let (subject, body) = stuff.write_invite_to_group_mail( &inviter_info.name,
+            (user_info, group_info)
+        };
+
+        let (subject, body) = stuff.write_invite_to_group_mail( &inviter.name,
                                                                 &group_info.name,
                                                                 body.scheduled_id );
-        try!( stuff.send_mail( &mut self, &user_info, &subject, &body ) );
+        try!( stuff.send_mail( &user_info, &subject, &body ) );
+        Ok( () )
     }
     /// действие на окончание события
     fn finish( &self, stuff: &mut Stuff, body: &ScheduledEventInfo ) -> EmptyResult {
-        let info = try!( get_info( &body.data ) );
+        // let info = try!( get_info( &body.data ) );
         let db = try!( stuff.get_current_db_conn() );
         let votes = try!( db.get_votes( body.scheduled_id ) );
         if 0 < votes.yes.len() {
             //TODO: создать событие для голосвания всей группой о приглашении нового пользователя
         }
+        Ok( () )
     }
     /// информация о состоянии события
     fn info( &self, stuff: &mut Stuff, body: &ScheduledEventInfo ) -> CommonResult<Description> {
         let info = try!( get_info( &body.data ) );
         let db = try!( stuff.get_current_db_conn() );
         let votes = try!( db.get_votes( body.scheduled_id ) );
-        let group_info = try!( db.group_info( body.group_id ) ).unwrap();
-        let user_info = try!( db.user_by_id( body.user_id ) ).unwrap();
+        let group_id = info.group_id;
+        let group_info = try!( db.group_info( group_id ) ).unwrap();
+        let user_info = try!( db.user_by_id( info.user_id ) ).unwrap();
         let invite_info = InviteInfo {
             group: ShortInfo {
                 id: group_info.id,
@@ -142,7 +160,9 @@ impl Event for UserInvite {
             user: ShortInfo {
                 id: user_info.id,
                 name: user_info.name
-            }
+            },
+            is_voted: 0 < ( votes.yes.len() + votes.no.len() ),
+            success: 0 < votes.yes.len()
         };
         let desc = Description::new( invite_info );
         Ok( desc )

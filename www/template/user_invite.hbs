@@ -1,0 +1,39 @@
+<div class="ui container">
+  <h1 class="ui dividing header">
+    <div class="content">
+      <i class="add user icon"></i>
+      <a class="section" href="#group/info/{{id}}">{{name}}</a>
+      <i class="angle double right icon"></i>
+      Приглашение нового участника
+    </div>
+  </h1>
+  <form id="form-user-invite" class="ui form" onsubmit="return false" role="user-invite">
+    <div class="field">
+      <label>Пригласить:</label>
+      <select id="user" class="ui fluid search dropdown" required>
+        <option value="">Выберите пользователя...</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Описание:</label>
+      <textarea type="text" class="form-control" id="description-input" placeholder="Подробное описание почему нужно пригласить данного пользователя, с поддержкой формата markdown." maxlentgh="2048" rows="10" value="{{description}}" required/>
+      <h4 class="ui header">
+        <div class="content">
+          Предпросмотр описания:
+        </div>
+      </h4>
+      <div class="ui secondary segment description">
+        <div id="info-preview">
+        </div>
+      </div>
+    </div>
+    <div id="form-errors" class="ui negative hidden message">
+      <div class="header">Ну пока не вышло:</div>
+      <ul id="errors-list" class="list">
+      </ul>
+    </div>
+    <button class="ui primary button" type="submit">
+      Пригласить
+    </button>
+  </form>
+</div>

@@ -1,11 +1,13 @@
 define(['handlebars.runtime'], function(Handlebars) {
   Handlebars = Handlebars["default"];  var template = Handlebars.template, templates = Handlebars.templates = Handlebars.templates || {};
 return templates['group_view'] = template({"1":function(container,depth0,helpers,partials,data) {
-    var helper;
+    var helper, alias1=depth0 != null ? depth0 : {}, alias2=helpers.helperMissing, alias3="function", alias4=container.escapeExpression;
 
   return "  <div id=\"edit-btn\" class=\"ui top right pointing dropdown basic icon button topright\">\n    <i class=\"configure icon\"></i>\n    <div class=\"menu\">\n      <a class=\"item\" href=\"#change_timetable/"
-    + container.escapeExpression(((helper = (helper = helpers.id || (depth0 != null ? depth0.id : depth0)) != null ? helper : helpers.helperMissing),(typeof helper === "function" ? helper.call(depth0 != null ? depth0 : {},{"name":"id","hash":{},"data":data}) : helper)))
-    + "\">\n        <i class=\"calendar icon\"></i>\n        Изменить расписание\n      </a>\n      <a class=\"item\" href=\"#\">\n        <i class=\"add user icon\"></i>\n        Пригласить пользователя\n      </a>\n    </div>\n  </div>\n";
+    + alias4(((helper = (helper = helpers.id || (depth0 != null ? depth0.id : depth0)) != null ? helper : alias2),(typeof helper === alias3 ? helper.call(alias1,{"name":"id","hash":{},"data":data}) : helper)))
+    + "\">\n        <i class=\"calendar icon\"></i>\n        Изменить расписание\n      </a>\n      <a class=\"item\" href=\"#user_invite/"
+    + alias4(((helper = (helper = helpers.id || (depth0 != null ? depth0.id : depth0)) != null ? helper : alias2),(typeof helper === alias3 ? helper.call(alias1,{"name":"id","hash":{},"data":data}) : helper)))
+    + "\">\n        <i class=\"add user icon\"></i>\n        Пригласить пользователя\n      </a>\n    </div>\n  </div>\n";
 },"3":function(container,depth0,helpers,partials,data) {
     var helper;
 
