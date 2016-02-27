@@ -7,6 +7,7 @@ use iron::prelude::*;
 use iron::status;
 use std::str::FromStr;
 use router_params::RouterParams;
+use types::EmptyResult;
 
 static ID: &'static str = "id";
 static GROUP_ID: &'static str = "group_id";
@@ -79,15 +80,24 @@ pub fn create_post( request: &mut Request ) -> IronResult<Response> {
     Ok( response )
 }
 
+fn trigger_events( req: &mut Request ) -> EmptyResult {
+    let started = try!( req.stuff().maybe_start_some_events() );
+    let ended = try!( req.stuff().maybe_end_some_events() );
+    if started || ended {
+        try!( trigger_events( req ) );
+    }
+    Ok( () )
+}
+
 fn action_post_answer( id: Id, req: &mut Request ) -> AnswerResult {
     let result = req.event_action_post( id );
-    try!( req.stuff().maybe_start_some_events() );
+    try!( trigger_events( req ) );
     result
 }
 
 fn create_post_answer( event_id: EventId, req: &mut Request ) -> AnswerResult {
     let result = req.event_user_creation_post( event_id );
-    try!( req.stuff().maybe_start_some_events() );
+    try!( trigger_events( req ) );
     result
 }
 
@@ -123,7 +133,7 @@ pub fn group_create_post( request: &mut Request ) -> IronResult<Response> {
 
 fn get_group_greation_post_answer( req: &mut Request, group_id: Id, event_id: EventId ) -> AnswerResult {
     let result = req.event_group_creation_post( group_id, event_id );
-    try!( req.stuff().maybe_start_some_events() );
+    try!( trigger_events( req ) );
     result
 }
 

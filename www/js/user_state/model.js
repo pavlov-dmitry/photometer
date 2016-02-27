@@ -26,7 +26,11 @@ define( function( require ) {
                     name: data.name,
                     unreaded_messages: data.unreaded_messages_count,
                     id: data.id,
-                    groups: data.groups
+                    groups: data.groups,
+                    is_groups: false,
+                    current_group: null,
+                    is_many_groups: false,
+                    has_unreaded_in_groups: false
                 };
                 if ( 0 < model_data.groups.length ) {
                     model_data.is_groups = true;

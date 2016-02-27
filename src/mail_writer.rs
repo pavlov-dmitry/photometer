@@ -256,7 +256,7 @@ impl MailWriter for Stuff {
         scheduled_id: Id ) -> (String, String)
     {
         let subject = format!( "Приглашение в группу '{}'", group_name );
-        let mail = format!( "Пользователь **{}** приглашает вас присоединиться в группу {}. Прочитать про группу и принять решение, можно перейдя по [вот этой ссылке]({}).",
+        let mail = format!( "Пользователь **{}** приглашает вас присоединиться в группу **{}**. Прочитать про группу и принять решение, можно перейдя по [вот этой ссылке]({}).",
                              inviter_name,
                              group_name,
                              events::make_event_link( scheduled_id ) );

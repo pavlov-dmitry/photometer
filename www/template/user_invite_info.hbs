@@ -6,25 +6,31 @@
 <div class="ui secondary segment zeromargin description">
   {{{markdown group_description}}}
 </div>
-{{#if is_voted}}
 <div class="ui center aligned basic segment">
   <div class="ui one small statistics">
     <div class="statistic">
       <div class="value">
-      {{#if success}}
-        <i class="thumb up icon"></i>
-      </div>
-      <div class="label">
-        {{user.name}} дал согласие
-      </div>
+      {{#if is_voted}}
+        {{#if success}}
+          <i class="thumbs up icon"></i>
+        </div>
+        <div class="label">
+          <a href="#user/{{user.id}}">{{user.name}}</a> дал согласие
+        </div>
+        {{else}}
+          <i class="thumbs down icon"></i>
+        </div>
+        <div class="label">
+          <a href="#user/{{user.id}}">{{user.name}}</a> отказался
+        </div>
+        {{/if}}
       {{else}}
-        <i class="thumb down icon"></i>
+        <i class="help icon"></i>
       </div>
       <div class="label">
-        {{user.name}} отказался
+        <a href="#user/{{user.id}}">{{user.name}}</a> еще не принял решение
       </div>
       {{/if}}
     </div>
   </div>
 </div>
-{{/if}}

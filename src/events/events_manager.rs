@@ -23,8 +23,8 @@ use answer_types::{ OkInfo, FieldErrorInfo };
 use parse_utils::{ GetMsecs };
 
 pub trait EventsManagerStuff {
-    fn maybe_start_some_events(&mut self) -> EmptyResult;
-    fn maybe_end_some_events(&mut self) -> EmptyResult;
+    fn maybe_start_some_events(&mut self) -> CommonResult<bool>;
+    fn maybe_end_some_events(&mut self) -> CommonResult<bool>;
 }
 
 pub trait EventsManagerRequest {
@@ -52,7 +52,7 @@ struct EventInfoAnswer {
 impl EventsManagerStuff for Stuff {
 
     /// исполняет события на старт
-    fn maybe_start_some_events( &mut self ) -> EmptyResult {
+    fn maybe_start_some_events( &mut self ) -> CommonResult<bool> {
         let events = {
             let db = try!( self.get_current_db_conn() );
             try!( db.starting_events( &time::get_time() ) )
@@ -63,11 +63,11 @@ impl EventsManagerStuff for Stuff {
             try!( event.start( self, event_info ) );
             try!( self.set_event_state( event_info.scheduled_id, EventState::Active ) );
         }
-        Ok( () )
+        Ok( !events.is_empty() )
     }
 
     /// исполняет события на заверщение
-    fn maybe_end_some_events( &mut self ) -> EmptyResult {
+    fn maybe_end_some_events( &mut self ) -> CommonResult<bool> {
         let events = {
             let db = try!( self.get_current_db_conn() );
             try!( db.ending_events( &time::get_time() ) )
@@ -77,7 +77,7 @@ impl EventsManagerStuff for Stuff {
             info!( "finishing '{}':{:?}", event_info.name, event_info.id );
             try!( self.finish_him( event, event_info ) );
         }
-        Ok( () )
+        Ok( !events.is_empty() )
     }
 }
 

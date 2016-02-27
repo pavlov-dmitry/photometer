@@ -24,10 +24,7 @@ define( function(require) {
                 self.add( data.mails );
 
                 self.trigger( "update" );
-                self.trigger( "pages_changed", {
-                    pages_count: data.pages_count,
-                    current_page: data.current_page
-                });
+                self.trigger( "pages_changed", data.pagination );
             };
 
             handler.bad = function( data ) {

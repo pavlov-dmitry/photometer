@@ -55,15 +55,15 @@ define( function(require) {
         },
 
 
-        pagesChanged: function( data ) {
-            if ( 1 < data.pagination.count ) {
+        pagesChanged: function( pagination ) {
+            if ( 1 < pagination.count ) {
                 var link_prefix = "#mailbox/";
                 if ( this.model.is_only_unreaded ) {
                     link_prefix += "unreaded/";
                 }
 
-                var pagination = make_pagination( data.pagination.page,
-                                                  data.pagination.count,
+                var pagination = make_pagination( pagination.current,
+                                                  pagination.count,
                                                   link_prefix );
 
                 var content = this.pagination_tmpl( pagination );

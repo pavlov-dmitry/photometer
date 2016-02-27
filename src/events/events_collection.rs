@@ -27,6 +27,7 @@ pub fn get_event( id: EventId ) -> CommonResult<EventPtr> {
         group_creation::ID => Ok( Box::new( GroupCreation::new() ) as EventPtr ),
         late_publication::ID => Ok( Box::new( LatePublication::new() ) as EventPtr ),
         group_voting::ID => Ok( Box::new( GroupVoting::new() ) as EventPtr ),
+        invite_to_group::ID => Ok( Box::new( UserInviteToGroup::new() ) as EventPtr ),
         _ => common_error( format!( "EventsCollection, event with id={:?} not found.", id ) )
     }
 }

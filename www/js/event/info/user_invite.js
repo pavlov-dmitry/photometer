@@ -1,6 +1,6 @@
 define( function(require) {
     var Handlebars = require( "handlebars.runtime" );
-    require( "template/publication_info");
+    require( "template/user_invite_info" );
 
     var publication_info = {
         makeHtml: function( data ) {
