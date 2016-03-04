@@ -254,3 +254,7 @@ blockquote {
 .description {
     font-size: 1.5em;
 }
+
+.ui.feed > .event > .content .fluid.extra.text {
+    max-width: 100%
+}

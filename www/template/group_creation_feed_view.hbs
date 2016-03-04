@@ -1,0 +1,18 @@
+<div class="event">
+  <div class="label">
+    <i class="child icon"></i>
+  </div>
+  <div class="content">
+    <div class="date">
+      {{duration_from_now creation_time}}
+      {{#if is_new}}
+      <div class="ui yellow label">новое</div>
+      {{/if}}
+    </div>
+    <div class="summary">
+      Группа <a href="#group/info/{{group.id}}">{{group.name}}</a> создана!
+    </div>
+    <div class="fluid extra text">
+      Это лента событий группы. Выше этого сообщения будут появляться разные события группы. Для того что-бы начать, стоит добавить в расписание группы несколько событий. Это можно сделать нажав на <i class="configure icon"></i>"гаечный ключ" на странице информации о группе <a href="#group/info/{{group.id}}">{{group.name}}</a>.
+    </div>
+</div>

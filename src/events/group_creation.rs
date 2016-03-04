@@ -20,11 +20,14 @@ use db::votes::DbVotes;
 use mailer::Mailer;
 use db::users::DbUsers;
 use db::groups::DbGroups;
+use db::group_feed::DbGroupFeed;
 use authentication::{ Userable };
 use time;
 use mail_writer::MailWriter;
 use get_body::GetBody;
 use answer_types::{ FieldErrorInfo };
+use events::feed_types::FeedEventState;
+use parse_utils::GetMsecs;
 
 #[derive(Clone)]
 pub struct GroupCreation;
@@ -199,7 +202,7 @@ impl Event for GroupCreation {
         if group_exist == false {
             // елси хоть кто-то решил присоединиться
             if votes.yes.is_empty() == false {
-                let users = {
+                let ( group_id, users ) = {
                     let db = try!( stuff.get_current_db_conn() );
                     // создаём группу
                     let group_id = try!( db.create_group( &info.name,
@@ -208,13 +211,21 @@ impl Event for GroupCreation {
                     // и тех кто проголовал ЗА добавляем в эту группу
                     votes.yes.push( info.initiator );
                     try!( db.add_members( group_id, &votes.yes ) );
-                    try!( db.users_by_id( &votes.yes ) )
+                    let users = try!( db.users_by_id( &votes.yes ) );
+                    (group_id, users)
                 };
                 // рассылаем письма что группа создана
                 let (subject, mail) = stuff.write_welcome_to_group_mail( &info.name );
                 for member in users.iter() {
                     try!( stuff.send_mail( member, &subject, &mail ) );
                 }
+                // добавляем первую запись в ленту группы
+                let db = try!( stuff.get_current_db_conn() );
+                try!( db.add_to_group_feed( time::get_time().msecs(),
+                                            group_id,
+                                            body.scheduled_id,
+                                            FeedEventState::Finish,
+                                            "" ) );
             }
             else {
                 // отсылаем жалостливое письмо что никто в твою группу не хочет, если он еще здесь
