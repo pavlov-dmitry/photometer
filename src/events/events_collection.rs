@@ -13,6 +13,7 @@ use super::late_publication::{ self, LatePublication };
 use super::group_voting::{ self, GroupVoting, ChangeByVoting };
 use super::change_timetable::{ self, ChangeTimetable };
 use super::invite_to_group::{ self, UserInviteToGroup };
+use super::join_to_group::{ self, JoinToGroup };
 
 
 pub type EventPtr = Box<Event + Send + Sync>;
@@ -49,6 +50,7 @@ pub fn get_user_created_event( id: EventId ) -> CommonResult<UserCreatedEventPtr
 pub fn get_change_by_voting( id: EventId ) -> CommonResult<ChangeByVotingPtr> {
     match id {
         change_timetable::ID => Ok( Box::new( ChangeTimetable::new() ) as ChangeByVotingPtr ),
+        join_to_group::ID => Ok( Box::new( JoinToGroup::new() ) as ChangeByVotingPtr ),
         _ => common_error( format!( "EventsCollection, change by voting event with id={:?} not found.", id ) )
     }
 }

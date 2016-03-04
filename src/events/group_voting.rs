@@ -11,7 +11,13 @@ use super::{
     UserAction,
 };
 use super::helpers;
-use types::{ Id, EmptyResult, CommonResult, CommonError };
+use types::{
+    Id,
+    EmptyResult,
+    CommonResult,
+    CommonError,
+    ShortInfo,
+};
 use rustc_serialize::json;
 use database::{ Databaseable };
 use stuff::{ Stuff };
@@ -31,17 +37,18 @@ pub trait ChangeByVoting {
     // закодированного JSON объекта, придумать какой-нить более
     // элегантный способ, чтобы возвращался сразу объект
     fn info( &self, stuff: &mut Stuff, body: &ScheduledEventInfo ) -> CommonResult<Description>;
+    // действие на старт голосования
+    fn start( &self, stuff: &mut Stuff, group: &ShortInfo, body: &ScheduledEventInfo ) -> EmptyResult;
     /// применить елси согласны
-    fn apply( &self, stuff: &mut Stuff, group_id: Id, body: &ScheduledEventInfo ) -> EmptyResult;
+    fn apply( &self, stuff: &mut Stuff, group: &ShortInfo, body: &ScheduledEventInfo ) -> EmptyResult;
     /// краткое имя события, будет в основном использоваться в рассылке
-    fn name( &self, stuff: &mut Stuff, body: &ScheduledEventInfo ) -> CommonResult<String>;
+    fn name( &self, stuff: &mut Stuff, group: &ShortInfo, body: &ScheduledEventInfo ) -> CommonResult<String>;
 }
 
 /// создание нового голосования для группы
 pub fn new( group_id: Id, success_coeff: f32, internal_event: &FullEventInfo ) -> FullEventInfo {
     let data = Data {
         internal_id: internal_event.id,
-        group_id: group_id,
         success_coeff: success_coeff,
         internal_data: internal_event.data.clone()
     };
@@ -69,7 +76,6 @@ impl GroupVoting {
 #[derive(RustcEncodable, RustcDecodable)]
 struct Data {
     internal_id: EventId,
-    group_id: Id,
     success_coeff: f32,
     internal_data: String
 }
@@ -88,28 +94,34 @@ impl Event for GroupVoting {
     /// действие на начало события
     fn start( &self, stuff: &mut Stuff, body: &ScheduledEventInfo ) -> EmptyResult {
         let data = try!( get_data( body ) );
+        let group = body.group.as_ref().unwrap();
 
         {
             let db = try!( stuff.get_current_db_conn() );
-            try!( db.add_rights_of_voting_for_group( body.scheduled_id, data.group_id ) );
+            try!( db.add_rights_of_voting_for_group( body.scheduled_id, group.id ) );
+
+            // Добавляем запись в ленту группы
+            let feed_data = Description::new( FeedData {
+                internal_id: data.internal_id,
+                is_success: true
+            }).to_string();
+            try!( db.add_to_group_feed( time::get_time().msecs(),
+                                        group.id,
+                                        body.scheduled_id,
+                                        FeedEventState::Start,
+                                        &feed_data ) );
         }
 
-        // Добавляем запись в ленту группы
-        let db = try!( stuff.get_current_db_conn() );
-        let feed_data = Description::new( FeedData {
-            internal_id: data.internal_id,
-            is_success: true
-        }).to_string();
-        try!( db.add_to_group_feed( time::get_time().msecs(),
-                                    data.group_id,
-                                    body.scheduled_id,
-                                    FeedEventState::Start,
-                                    &feed_data ) );
+        let event = try!( events_collection::get_change_by_voting( data.internal_id ) );
+        let internal_body = make_internal_body( &data, &body );
+        try!( event.start( stuff, group, &internal_body ) );
+
         Ok( () )
     }
     /// действие на окончание события
     fn finish( &self, stuff: &mut Stuff, body: &ScheduledEventInfo ) -> EmptyResult {
         let data = try!( get_data( body ) );
+        let group_id = body.group.as_ref().unwrap().id;
         let internal_body = make_internal_body( &data, &body );
 
         let votes = {
@@ -121,7 +133,8 @@ impl Event for GroupVoting {
         if  is_success { // если набралось достаточно
             let change = try!( events_collection::get_change_by_voting( data.internal_id ) );
             // и применяем изменение
-            try!( change.apply( stuff, data.group_id, &internal_body ) );
+            let group = body.group.as_ref().unwrap();
+            try!( change.apply( stuff, group, &internal_body ) );
         }
 
         // Добавляем запись в ленту группы
@@ -131,7 +144,7 @@ impl Event for GroupVoting {
             is_success: is_success
         }).to_string();
         try!( db.add_to_group_feed( time::get_time().msecs(),
-                                    data.group_id,
+                                    group_id,
                                     body.scheduled_id,
                                     FeedEventState::Finish,
                                     &feed_data ) );

@@ -68,6 +68,11 @@ pub trait MailWriter {
                                           invited_name: &str,
                                           group_name: &str,
                                           scheduled_id: Id ) -> (String, String);
+
+    // письмо о том что полсле согласия пользователя, слово должна сказать группа
+    fn write_time_for_group_join_voit_mail( &self,
+                                            group_name: &str,
+                                            scheduled_id: Id ) -> (String, String);
 }
 
 // саоздаёт экземпляр Сочинителя Писем для установки его в Stuff
@@ -273,6 +278,18 @@ impl MailWriter for Stuff {
         let mail = format!( "Приглашение в группу **{}** для пользователя **{}** выслано, добавить комментарий и следить за прогрессом можно перейдя [вот по этой ссылке]({}).",
                              group_name,
                              invited_name,
+                             events::make_event_link( scheduled_id ) );
+        (subject, mail)
+    }
+
+    // письмо о том что полсле согласия пользователя, слово должна сказать группа
+    fn write_time_for_group_join_voit_mail( &self,
+                                            group_name: &str,
+                                            scheduled_id: Id ) -> (String, String)
+    {
+        let subject = format!( "Голосование группы '{}' за ваше принятие", group_name );
+        let mail = format!( "После вашего согласия присоединиться к группе **{}**, теперь группа должна принять решение о вашем вступлении. Следить за их решением можно перейдя [вот по этой ссылке]({}).",
+                             group_name,
                              events::make_event_link( scheduled_id ) );
         (subject, mail)
     }

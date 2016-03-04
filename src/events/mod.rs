@@ -23,6 +23,7 @@ mod late_publication;
 mod group_voting;
 mod change_timetable;
 mod invite_to_group;
+mod join_to_group;
 mod helpers;
 pub mod feed_types;
 
@@ -71,6 +72,7 @@ pub enum EventId {
     GroupVoting = 4,
     ChangeTimetable = 5,
     UserInvite = 6,
+    JoinToGroup = 7,
 }
 
 pub struct MaybeEventId( pub Option<EventId> );
@@ -84,6 +86,7 @@ impl From<i64> for MaybeEventId {
             4 => Some( EventId::GroupVoting ),
             5 => Some( EventId::ChangeTimetable ),
             6 => Some( EventId::UserInvite ),
+            7 => Some( EventId::JoinToGroup ),
             _ => None
         };
         MaybeEventId( maybe_id )
@@ -103,6 +106,7 @@ impl FromStr for EventId {
             "group_voting" => Ok( EventId::GroupVoting ),
             "change_timetable" => Ok( EventId::ChangeTimetable ),
             "user_invite" => Ok( EventId::UserInvite ),
+            "join_to_group" => Ok( EventId::JoinToGroup ),
             _ => Err( ParseEventIdError )
         }
     }

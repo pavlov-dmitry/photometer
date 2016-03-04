@@ -11,6 +11,7 @@ use super::{
     UserAction,
 };
 use super::helpers;
+use super::join_to_group::{ JoinToGroup };
 use types::{ Id, ShortInfo, EmptyResult, CommonResult, CommonError };
 use answer::{ Answer, AnswerResult };
 use answer_types::{ FieldErrorInfo };
@@ -18,6 +19,7 @@ use database::{ Databaseable };
 use db::users::DbUsers;
 use db::groups::DbGroups;
 use db::votes::DbVotes;
+use db::events::DbEvents;
 use time;
 use stuff::{ Stuff, Stuffable };
 use get_body::{ GetBody };
@@ -163,8 +165,16 @@ impl Event for UserInviteToGroup {
         let db = try!( stuff.get_current_db_conn() );
         let votes = try!( db.get_votes( body.scheduled_id ) );
         if 0 < votes.yes.len() {
-            //TODO: создать событие для голосвания всей группой о приглашении нового пользователя
-            println!( "need create join to group event with {:?}", info );
+            let creator = body.creator.as_ref().unwrap();
+            let user_info = try!( db.user_by_id( info.user_id ) ).unwrap();
+            let join_event = JoinToGroup::create( creator.id,
+                                                  info.group_id,
+                                                  ShortInfo {
+                                                      id: user_info.id,
+                                                      name: user_info.name
+                                                  },
+                                                  &info.text );
+            try!( db.add_events( &[ join_event ] ) );
         }
         Ok( () )
     }

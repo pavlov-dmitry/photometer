@@ -124,7 +124,7 @@ fn edit_comment( req: &mut Request ) -> AnswerResult {
 
     let user_id = req.user().id;
     let db = try!( req.stuff().get_current_db_conn() );
-    let comment_info = try!( db.get_comment_info( user_id, user_id ) );
+    let comment_info = try!( db.get_comment_info( user_id, info.id ) );
     let answer = match comment_info {
         Some( comment ) => {
             if comment.creator.id == user_id {

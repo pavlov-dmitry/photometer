@@ -15,7 +15,7 @@ use database::{ Databaseable };
 use db::events::DbEvents;
 use db::groups::DbGroups;
 use answer::{ Answer, AnswerResult };
-use types::{ Id, ShortInfo, CommonResult, EmptyResult, CommonError, common_error };
+use types::{ Id, ShortInfo, CommonResult, EmptyResult, CommonError };
 use time::{ self, Timespec };
 use rustc_serialize::json;
 use iron::prelude::*;
@@ -409,8 +409,13 @@ impl ChangeByVoting for ChangeTimetable {
         }))
     }
 
+    fn start( &self, _stuff: &mut Stuff, _group: &ShortInfo, _body: &ScheduledEventInfo ) -> EmptyResult
+    {
+        Ok( () )
+    }
+
     /// применить елси согласны
-    fn apply( &self, stuff: &mut Stuff, _group_id: Id, body: &ScheduledEventInfo ) -> EmptyResult {
+    fn apply( &self, stuff: &mut Stuff, _group: &ShortInfo, body: &ScheduledEventInfo ) -> EmptyResult {
         let data = try!( get_data( body ) );
         let db = try!( stuff.get_current_db_conn() );
         for id in data.disable {
@@ -423,13 +428,7 @@ impl ChangeByVoting for ChangeTimetable {
     }
 
     /// краткое имя события, будет в основном использоваться в рассылке
-    fn name( &self, _stuff: &mut Stuff, body: &ScheduledEventInfo ) -> CommonResult<String> {
-        match body.group {
-            Some( ref group_info ) => Ok( format!(
-                "Изменение расписания в группе '{}'",
-                group_info.name
-            )),
-            None => common_error( "invalid group".to_owned() )
-        }
+    fn name( &self, _stuff: &mut Stuff, group: &ShortInfo, _body: &ScheduledEventInfo ) -> CommonResult<String> {
+        Ok( format!("Изменение расписания в группе '{}'", group.name ) )
     }
 }
