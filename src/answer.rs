@@ -11,7 +11,7 @@ pub trait AnswerSendable {
     fn send_answer( &mut self, answer: &AnswerResult );
 }
 
-type ToStringPtr = Box<ToString>;
+pub type ToStringPtr = Box<ToString>;
 
 //TODO: после обновления до беты убрать static lifetime
 struct AnswerBody<Body: Encodable + 'static> {

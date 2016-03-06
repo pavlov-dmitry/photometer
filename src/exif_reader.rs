@@ -98,7 +98,7 @@ impl ExifValues for ExifEntries {
 
 #[allow(dead_code)]
 #[derive(Debug)]
-enum ExifValue {
+pub enum ExifValue {
     Byte( u8 ),
     Text( String ),
     Short( u16 ),

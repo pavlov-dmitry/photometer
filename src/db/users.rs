@@ -1,6 +1,6 @@
-use mysql::conn::pool::{ MyPooledConn };
-use mysql::error::{ MyResult };
-use mysql::value::{ Value, IntoValue, ToValue, from_row };
+use mysql;
+use mysql::conn::pool::{ PooledConn };
+use mysql::value::{ Value, ToValue, from_row };
 use types::{ Id, ShortInfo, CommonResult, EmptyResult, CommonError };
 use std::fmt::Display;
 use database::Database;
@@ -44,7 +44,7 @@ pub fn create_tables( db: &Database ) -> EmptyResult {
     )
 }
 
-impl DbUsers for MyPooledConn {
+impl DbUsers for PooledConn {
     /// выбирает id пользователя по имени и паролю
     fn get_user( &mut self, name: &str, pass: &str ) -> CommonResult<Option<User>> {
         get_user_impl( self, name, pass )
@@ -97,7 +97,7 @@ fn fn_failed<E: Display>( fn_name: &str, e: E ) -> CommonError {
     CommonError( format!( "DbUsers func '{}' failed: {}", fn_name, e ) )
 }
 
-fn get_user_impl( conn: &mut MyPooledConn, name: &str, pass: &str ) -> MyResult<Option<User>> {
+fn get_user_impl( conn: &mut PooledConn, name: &str, pass: &str ) -> mysql::Result<Option<User>> {
     let name = name.to_string(); // помогает убрать internal compiler error
     let pass = pass.to_string();
     let mut stmt = try!( conn.prepare(
@@ -128,7 +128,7 @@ fn get_user_impl( conn: &mut MyPooledConn, name: &str, pass: &str ) -> MyResult<
     }
 }
 
-fn add_user_impl( conn: &mut MyPooledConn, name: &str, pass: &str, mail: &str, regkey: &str ) -> MyResult<User> {
+fn add_user_impl( conn: &mut PooledConn, name: &str, pass: &str, mail: &str, regkey: &str ) -> mysql::Result<User> {
     let name = name.to_string();
     let pass = pass.to_string();
     let mut stmt = try!( conn.prepare(
@@ -148,7 +148,7 @@ fn add_user_impl( conn: &mut MyPooledConn, name: &str, pass: &str, mail: &str, r
     } )
 }
 
-fn activate_user_impl( conn: &mut MyPooledConn, regkey: &str ) -> MyResult<Option<User>> {
+fn activate_user_impl( conn: &mut PooledConn, regkey: &str ) -> mysql::Result<Option<User>> {
     let maybe_user = {
         let mut stmt = try!( conn.prepare(
             "SELECT
@@ -183,7 +183,7 @@ fn activate_user_impl( conn: &mut MyPooledConn, regkey: &str ) -> MyResult<Optio
     Ok( maybe_user )
 }
 
-fn user_exists_impl( conn: &mut MyPooledConn, name: &str, mail: &str ) -> MyResult<bool> {
+fn user_exists_impl( conn: &mut PooledConn, name: &str, mail: &str ) -> mysql::Result<bool> {
     let name = name.to_string();
     let mut stmt = try!( conn.prepare( "select id from users where login=? OR mail=?" ) );
     let params: &[ &ToValue ] = &[ &name, &mail ];
@@ -191,13 +191,13 @@ fn user_exists_impl( conn: &mut MyPooledConn, name: &str, mail: &str ) -> MyResu
     Ok( sql_result.count() == 1 )
 }
 
-fn user_id_exists_impl( conn: &mut MyPooledConn, id: Id  ) -> MyResult<bool> {
+fn user_id_exists_impl( conn: &mut PooledConn, id: Id  ) -> mysql::Result<bool> {
     let mut stmt = try!( conn.prepare( "select id from users where id=? AND activated=true" ) );
     let sql_result = try!( stmt.execute( (id,) ) );
     Ok( sql_result.count() == 1 )
 }
 
-fn user_by_id_impl( conn: &mut MyPooledConn, id: Id ) -> MyResult<Option<User>> {
+fn user_by_id_impl( conn: &mut PooledConn, id: Id ) -> mysql::Result<Option<User>> {
     let mut stmt = try!( conn.prepare( "select login, mail from users where id=? AND activated=true" ) );
     let mut sql_result = try!( stmt.execute( (id,) ) );
     match sql_result.next() {
@@ -215,7 +215,7 @@ fn user_by_id_impl( conn: &mut MyPooledConn, id: Id ) -> MyResult<Option<User>> 
     }
 }
 
-fn users_by_id_impl( conn: &mut MyPooledConn, ids: &[Id] ) -> MyResult<Vec<User>> {
+fn users_by_id_impl( conn: &mut PooledConn, ids: &[Id] ) -> mysql::Result<Vec<User>> {
     let mut query = format!( "select id, login, mail from users where id in ( ? " );
     for _ in 1 .. ids.len() {
         query.push_str( ", ?" );
@@ -225,7 +225,7 @@ fn users_by_id_impl( conn: &mut MyPooledConn, ids: &[Id] ) -> MyResult<Vec<User>
     let mut stmt = try!( conn.prepare( &query ) );
     let mut values: Vec<Value> = Vec::new();
     for id in ids.iter() {
-        values.push( id.into_value() );
+        values.push( id.to_value() );
     }
 
     let mut users = Vec::new();
@@ -243,7 +243,7 @@ fn users_by_id_impl( conn: &mut MyPooledConn, ids: &[Id] ) -> MyResult<Vec<User>
     Ok( users )
 }
 
-fn user_by_name_impl( conn: &mut MyPooledConn, name: &str ) -> MyResult<Option<User>> {
+fn user_by_name_impl( conn: &mut PooledConn, name: &str ) -> mysql::Result<Option<User>> {
     let mut stmt = try!( conn.prepare( "select id, mail from users where login=? AND activated=true" ) );
     let mut sql_result = try!( stmt.execute( (name,) ) );
     match sql_result.next() {
@@ -261,10 +261,10 @@ fn user_by_name_impl( conn: &mut MyPooledConn, name: &str ) -> MyResult<Option<U
     }
 }
 
-fn get_users_like_impl( conn: &mut MyPooledConn,
+fn get_users_like_impl( conn: &mut PooledConn,
                         pattern: &str,
                         offset: u32,
-                        count: u32 ) -> MyResult<Vec<ShortInfo>>
+                        count: u32 ) -> mysql::Result<Vec<ShortInfo>>
 {
     let mut stmt = try!( conn.prepare( "
         SELECT

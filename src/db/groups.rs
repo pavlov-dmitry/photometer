@@ -1,6 +1,6 @@
-use mysql::conn::pool::{ MyPooledConn };
-use mysql::error::{ MyResult };
-use mysql::value::{ from_row, ToValue, Value, IntoValue };
+use mysql::conn::pool::{ PooledConn };
+use mysql;
+use mysql::value::{ from_row, ToValue, Value };
 use types::{ Id, CommonResult, EmptyResult, CommonError };
 use authentication::{ User };
 use std::fmt::Display;
@@ -9,8 +9,8 @@ use std::convert::From;
 use time::Timespec;
 use parse_utils::{ GetMsecs, IntoTimespec };
 
-type Members = Vec<User>;
-type Groups = Vec<(Id, String)>;
+pub type Members = Vec<User>;
+pub type Groups = Vec<(Id, String)>;
 
 pub struct GroupInfo {
     pub id: Id,
@@ -66,7 +66,7 @@ pub fn create_tables( db: &Database ) -> EmptyResult {
     )
 }
 
-impl DbGroups for MyPooledConn {
+impl DbGroups for PooledConn {
     /// возращает итератор на членов группы
     fn get_members<'a>( &mut self, group_id: Id ) -> CommonResult<Members> {
         get_members_impl( self, group_id )
@@ -115,7 +115,7 @@ fn fn_failed<E: Display>( fn_name: &str, e: E ) -> CommonError {
     CommonError( format!( "DbGroups {} failed: {}", fn_name, e ) )
 }
 
-fn get_members_impl( conn: &mut MyPooledConn, group_id: Id ) -> MyResult<Members> {
+fn get_members_impl( conn: &mut PooledConn, group_id: Id ) -> mysql::Result<Members> {
     let mut stmt = try!( conn.prepare(
         "SELECT
             g.user_id,
@@ -138,7 +138,7 @@ fn get_members_impl( conn: &mut MyPooledConn, group_id: Id ) -> MyResult<Members
     Ok( members )
 }
 
-fn get_members_count_impl( conn: &mut MyPooledConn, group_id: Id ) -> MyResult<u32> {
+fn get_members_count_impl( conn: &mut PooledConn, group_id: Id ) -> mysql::Result<u32> {
     let mut stmt = try!( conn.prepare( "SELECT COUNT(id) FROM group_members WHERE group_id=?" ));
     let params: &[ &ToValue ] = &[ &group_id ];
     let mut result = try!( stmt.execute( params ) );
@@ -147,28 +147,28 @@ fn get_members_count_impl( conn: &mut MyPooledConn, group_id: Id ) -> MyResult<u
     Ok( count )
 }
 
-fn is_member_impl( conn: &mut MyPooledConn, user_id: Id, group_id: Id ) -> MyResult<bool> {
+fn is_member_impl( conn: &mut PooledConn, user_id: Id, group_id: Id ) -> mysql::Result<bool> {
     let mut stmt = try!( conn.prepare( "SELECT id FROM group_members WHERE user_id=? AND group_id=?" ) );
     let params: &[ &ToValue ] = &[ &user_id, &group_id ];
     let result = try!( stmt.execute( params ) );
     Ok( result.count() == 1 )
 }
 
-fn is_group_id_exists_impl( conn: &mut MyPooledConn, group_id: Id ) -> MyResult<bool> {
+fn is_group_id_exists_impl( conn: &mut PooledConn, group_id: Id ) -> mysql::Result<bool> {
     let mut stmt = try!( conn.prepare( "SELECT id FROM groups WHERE id=?" ) );
     let params: &[ &ToValue ] = &[ &group_id ];
     let result = try!( stmt.execute( params ) );
     Ok( result.count() == 1 )
 }
 
-fn is_group_exists_impl( conn: &mut MyPooledConn, name: &str ) -> MyResult<bool> {
+fn is_group_exists_impl( conn: &mut PooledConn, name: &str ) -> mysql::Result<bool> {
     let mut stmt = try!( conn.prepare( "SELECT id FROM groups WHERE name=?" ) );
     let params: &[ &ToValue ] = &[ &name ];
     let result = try!( stmt.execute( params ) );
     Ok( result.count() == 1 )
 }
 
-fn create_group_impl( conn: &mut MyPooledConn, name: &String, desc: &String, creation_time: Timespec ) -> MyResult<Id> {
+fn create_group_impl( conn: &mut PooledConn, name: &String, desc: &String, creation_time: Timespec ) -> mysql::Result<Id> {
     let mut stmt = try!( conn.prepare( "
         INSERT INTO groups (
             `name`,
@@ -182,7 +182,7 @@ fn create_group_impl( conn: &mut MyPooledConn, name: &String, desc: &String, cre
     Ok( result.last_insert_id() )
 }
 
-fn add_members_impl( conn: &mut MyPooledConn, group_id: Id, members: &[ Id ] ) -> MyResult<()> {
+fn add_members_impl( conn: &mut PooledConn, group_id: Id, members: &[ Id ] ) -> mysql::Result<()> {
     let mut query: String = String::from("
         INSERT INTO group_members (
             user_id,
@@ -199,15 +199,15 @@ fn add_members_impl( conn: &mut MyPooledConn, group_id: Id, members: &[ Id ] ) -
 
     let mut values: Vec<Value> = Vec::new();
     for i in 0 .. members.len() {
-        values.push( members[ i ].into_value() );
-        values.push( group_id.into_value() );
+        values.push( members[ i ].to_value() );
+        values.push( group_id.to_value() );
     }
 
     try!( stmt.execute( values ) );
     Ok( () )
 }
 
-fn member_in_groups_impl( conn: &mut MyPooledConn, user_id: Id ) -> MyResult<Groups> {
+fn member_in_groups_impl( conn: &mut PooledConn, user_id: Id ) -> mysql::Result<Groups> {
     let query = "SELECT
                      gm.group_id, g.name
                  FROM
@@ -227,7 +227,7 @@ fn member_in_groups_impl( conn: &mut MyPooledConn, user_id: Id ) -> MyResult<Gro
 }
 
 
-fn group_info_impl( conn: &mut MyPooledConn, group_id: Id ) -> MyResult<Option<GroupInfo>> {
+fn group_info_impl( conn: &mut PooledConn, group_id: Id ) -> mysql::Result<Option<GroupInfo>> {
     let query = "SELECT
                      name,
                      description,

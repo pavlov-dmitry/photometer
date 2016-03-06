@@ -1,8 +1,7 @@
 use std::str;
-use mysql::conn::pool::{ MyPooledConn };
-use mysql::error::{ MyResult, MyError };
+use mysql;
+use mysql::conn::pool::{ PooledConn };
 use mysql::value::{
-    IntoValue,
     Value,
     FromValue,
     ConvIr,
@@ -73,7 +72,7 @@ pub fn create_tables( db: &Database ) -> EmptyResult {
     )
 }
 
-impl DbComments for MyPooledConn {
+impl DbComments for PooledConn {
     /// Добавляет комментарий
     fn add_comment( &mut self,
                      user_id: Id,
@@ -132,12 +131,12 @@ fn fn_failed<E: Display>( fn_name: &str, e: E ) -> CommonError {
     CommonError( format!( "DbComments {} failed: {}", fn_name, e ) )
 }
 
-fn add_comment_impl( conn: &mut MyPooledConn,
+fn add_comment_impl( conn: &mut PooledConn,
                      user_id: Id,
                      time: u64,
                      comment_for: CommentFor,
                      for_id: Id,
-                     text: &str ) -> MyResult<()>
+                     text: &str ) -> mysql::Result<()>
 {
     let mut stmt = try!( conn.prepare(
         "INSERT INTO comments (
@@ -153,10 +152,10 @@ fn add_comment_impl( conn: &mut MyPooledConn,
     Ok( () )
 }
 
-fn edit_comment_impl( conn: &mut MyPooledConn,
+fn edit_comment_impl( conn: &mut PooledConn,
                       comment_id: Id,
                       time: u64,
-                      text: &str ) -> MyResult<()>
+                      text: &str ) -> mysql::Result<()>
 {
     let mut stmt = try!( conn.prepare(
         "UPDATE comments
@@ -201,9 +200,9 @@ fn read_comment_fields<I: Iterator<Item = Value>>( reader_id: Id, mut values: I 
     }
 }
 
-fn get_comment_info_impl( conn: &mut MyPooledConn,
+fn get_comment_info_impl( conn: &mut PooledConn,
                           reader_id: Id,
-                          comment_id: Id ) -> MyResult<Option<CommentInfo>>
+                          comment_id: Id ) -> mysql::Result<Option<CommentInfo>>
 {
     let query = format!(
         "SELECT {}
@@ -218,7 +217,7 @@ fn get_comment_info_impl( conn: &mut MyPooledConn,
     let result = match sql_result.next() {
         Some( row ) => {
             let row = try!( row );
-            let values = row.into_iter();
+            let values = row.unwrap().into_iter();
             Some( read_comment_fields( reader_id, values ) )
         },
         None => None
@@ -226,12 +225,12 @@ fn get_comment_info_impl( conn: &mut MyPooledConn,
     Ok( result )
 }
 
-fn get_comments_impl( conn: &mut MyPooledConn,
+fn get_comments_impl( conn: &mut PooledConn,
                       reader_id: Id,
                       comments_for: CommentFor,
                       for_id: Id,
                       count: u32,
-                      offset: u32 ) -> MyResult<Vec<CommentInfo>>
+                      offset: u32 ) -> mysql::Result<Vec<CommentInfo>>
 {
     let query = format!(
         "SELECT {}
@@ -249,15 +248,15 @@ fn get_comments_impl( conn: &mut MyPooledConn,
     let mut result = Vec::with_capacity( 10 );
     for row in sql_result {
         let row = try!( row );
-        let values = row.into_iter();
+        let values = row.unwrap().into_iter();
         result.push( read_comment_fields( reader_id, values ) );
     }
     Ok( result )
 }
 
-fn get_comments_count_impl( conn: &mut MyPooledConn,
+fn get_comments_count_impl( conn: &mut PooledConn,
                             comments_for: CommentFor,
-                            for_id: Id ) -> MyResult<Option<u32>>
+                            for_id: Id ) -> mysql::Result<Option<u32>>
 {
     let query = "SELECT COUNT(id)
                  FROM comments
@@ -279,8 +278,8 @@ fn get_comments_count_impl( conn: &mut MyPooledConn,
 const EVENT_STR: &'static str = "event";
 const PHOTO_STR: &'static str = "photo";
 
-impl IntoValue for CommentFor {
-    fn into_value(self) -> Value {
+impl Into<Value> for CommentFor {
+    fn into(self) -> Value {
         match self {
             CommentFor::Event => Value::Bytes( EVENT_STR.bytes().collect() ),
             CommentFor::Photo => Value::Bytes( PHOTO_STR.bytes().collect() )
@@ -295,7 +294,7 @@ pub struct CommentForIr {
 }
 
 impl ConvIr<CommentFor> for CommentForIr {
-    fn new(v: Value) -> MyResult<CommentForIr> {
+    fn new(v: Value) -> mysql::Result<CommentForIr> {
         match v {
             Value::Bytes( bytes ) => {
                 let value = match str::from_utf8( &bytes ) {
@@ -308,10 +307,10 @@ impl ConvIr<CommentFor> for CommentForIr {
                 };
                 match value {
                     Some( t ) => Ok( CommentForIr{ val: t, bytes: bytes }),
-                    None => Err( MyError::FromValueError( Value::Bytes( bytes ) ) )
+                    None => Err( mysql::Error::FromValueError( Value::Bytes( bytes ) ) )
                 }
             },
-            _ => Err(MyError::FromValueError(v))
+            _ => Err(mysql::Error::FromValueError(v))
         }
     }
     fn commit(self) -> CommentFor {

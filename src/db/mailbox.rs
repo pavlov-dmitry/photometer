@@ -1,5 +1,5 @@
-use mysql::conn::pool::{ MyPooledConn };
-use mysql::error::{ MyResult };
+use mysql;
+use mysql::conn::pool::{ PooledConn };
 use mysql::value::{ from_row, ToValue };
 use time;
 use types::{ Id, CommonResult, EmptyResult, MailInfo, CommonError };
@@ -37,7 +37,7 @@ pub fn create_tables( db: &Database ) -> EmptyResult {
     )
 }
 
-impl DbMailbox for MyPooledConn {
+impl DbMailbox for PooledConn {
     /// посылает письмо одному из участников
     fn send_mail_to( &mut self, recipient_id: Id, sender_name: &str, subject: &str, body: &str ) -> EmptyResult {
         send_mail_impl( self, recipient_id, sender_name, subject, body )
@@ -66,7 +66,7 @@ fn fn_failed<E: Display>( fn_name: &str, e: E ) -> CommonError {
     CommonError( format!( "DbMailbox {} failed: {}", fn_name, e ) )
 }
 
-fn send_mail_impl( conn: &mut MyPooledConn, recipient_id: Id, sender_name: &str, subject: &str, body: &str ) -> MyResult<()> {
+fn send_mail_impl( conn: &mut PooledConn, recipient_id: Id, sender_name: &str, subject: &str, body: &str ) -> mysql::Result<()> {
     let now_time = time::get_time();
     let mut stmt = try!( conn.prepare( "
         INSERT INTO mailbox (
@@ -94,7 +94,7 @@ fn send_mail_impl( conn: &mut MyPooledConn, recipient_id: Id, sender_name: &str,
     Ok( () )
 }
 
-fn messages_count_impl( conn: &mut MyPooledConn, owner_id: Id, only_unreaded: bool ) -> MyResult<u32> {
+fn messages_count_impl( conn: &mut PooledConn, owner_id: Id, only_unreaded: bool ) -> mysql::Result<u32> {
     let where_postfix = if only_unreaded { " AND readed='false'" } else { "" };
     let query = format!( "SELECT COUNT(id) FROM mailbox WHERE recipient_id=? {};", where_postfix );
 
@@ -107,13 +107,13 @@ fn messages_count_impl( conn: &mut MyPooledConn, owner_id: Id, only_unreaded: bo
 }
 
 fn messages_from_last_impl<F: FnMut(MailInfo)>(
-    conn: &mut MyPooledConn,
+    conn: &mut PooledConn,
     owner_id: Id,
     only_unreaded: bool,
     offset: u32,
     count: u32,
     take_mail: &mut F
-) -> MyResult<()>
+) -> mysql::Result<()>
 {
     let where_postfix = if only_unreaded { "AND readed='false'" } else { "" };
     let order = if only_unreaded { "ASC" } else { "DESC" };
@@ -150,7 +150,7 @@ fn messages_from_last_impl<F: FnMut(MailInfo)>(
     Ok( () )
 }
 
-fn mark_as_readed_impl( conn: &mut MyPooledConn, owner_id: Id, message_id: Id ) -> MyResult<bool> {
+fn mark_as_readed_impl( conn: &mut PooledConn, owner_id: Id, message_id: Id ) -> mysql::Result<bool> {
     let mut stmt = try!( conn.prepare( "UPDATE mailbox SET readed=true WHERE id=? AND recipient_id=?" ) );
     let params: &[ &ToValue ] = &[ &message_id, &owner_id ];
     let sql_result = try!( stmt.execute( params ) );

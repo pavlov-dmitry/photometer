@@ -1,6 +1,6 @@
 /// модуль работы с БД
-use mysql::conn::{ MyOpts };
-use mysql::conn::pool::{ MyPool, MyPooledConn };
+use mysql::conn::{ Opts };
+use mysql::conn::pool::{ Pool, PooledConn };
 use std::default::{ Default };
 
 use types::{ CommonResult, EmptyResult, CommonError, common_error };
@@ -12,17 +12,17 @@ use stuff::{ Stuff, StuffInstallable };
 
 pub trait Databaseable {
     //создаёт новое подключение
-    fn get_new_db_conn(&self) -> CommonResult<MyPooledConn>;
+    fn get_new_db_conn(&self) -> CommonResult<PooledConn>;
     //реализует ленивую отдачу текущего подключения
-    fn get_current_db_conn(&mut self) -> CommonResult<&mut MyPooledConn>;
+    fn get_current_db_conn(&mut self) -> CommonResult<&mut PooledConn>;
 }
 
 #[derive(Clone)]
 pub struct Database {
-    pool: MyPool
+    pool: Pool
 }
 
-pub type DbConnection = MyPooledConn;
+pub type DbConnection = PooledConn;
 
 impl Database {
     fn init(&self) -> EmptyResult {
@@ -60,14 +60,14 @@ pub fn create_db_connection(
     min_connections: usize,
     max_connections: usize
 ) -> CommonResult<Database> {
-    let opts = MyOpts{
+    let opts = Opts{
         db_name: Some( db_name ),
         user: Some( user ),
         pass: Some( pass ),
         ..Default::default()
     };
 
-    let pool = MyPool::new_manual( min_connections, max_connections, opts );
+    let pool = Pool::new_manual( min_connections, max_connections, opts );
     match pool {
         Ok( pool ) => {
             let db = Database{ pool: pool };
@@ -89,15 +89,15 @@ impl StuffInstallable for Database {
 }
 
 struct ConnectionKey;
-impl Key for ConnectionKey { type Value = MyPooledConn; }
+impl Key for ConnectionKey { type Value = PooledConn; }
 
 impl Databaseable for Stuff {
-    fn get_new_db_conn(&self) -> CommonResult<MyPooledConn> {
+    fn get_new_db_conn(&self) -> CommonResult<PooledConn> {
         self.extensions.get::<Database>().unwrap()
             .pool.get_conn()
             .map_err( |e| CommonError( format!( "Can't create db connection: {}", e ) ) )
     }
-    fn get_current_db_conn(&mut self) -> CommonResult<&mut MyPooledConn> {
+    fn get_current_db_conn(&mut self) -> CommonResult<&mut PooledConn> {
         if self.extensions.contains::<ConnectionKey>() == false {
             let conn = try!( self.get_new_db_conn() );
             self.extensions.insert::<ConnectionKey>( conn );

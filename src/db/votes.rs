@@ -1,6 +1,6 @@
-use mysql::conn::pool::{ MyPooledConn };
-use mysql::error::{ MyResult };
-use mysql::value::{ from_row, ToValue, Value, IntoValue };
+use mysql;
+use mysql::conn::pool::{ PooledConn };
+use mysql::value::{ from_row, ToValue, Value };
 use std::fmt::Display;
 use types::{ Id, EmptyResult, CommonResult, CommonError };
 use database::Database;
@@ -42,7 +42,7 @@ pub fn create_tables( db: &Database ) -> EmptyResult {
     )
 }
 
-impl DbVotes for MyPooledConn {
+impl DbVotes for PooledConn {
     /// добавляет право голоса по какому-то событию
     fn add_rights_of_voting( &mut self, scheduled_id: Id, users: &[Id] ) -> EmptyResult {
         add_rights_of_voting_impl( self, scheduled_id, users )
@@ -80,7 +80,7 @@ fn fn_failed<E: Display>( fn_name: &str, e: E ) -> CommonError {
     CommonError( format!( "DbVotes `{}` failed: {}", fn_name, e ) )
 }
 
-fn add_rights_of_voting_impl( conn: &mut MyPooledConn, scheduled_id: Id, users: &[Id] ) -> MyResult<()> {
+fn add_rights_of_voting_impl( conn: &mut PooledConn, scheduled_id: Id, users: &[Id] ) -> mysql::Result<()> {
     let mut query = format!(
         "INSERT INTO votes (
             scheduled_id,
@@ -96,15 +96,15 @@ fn add_rights_of_voting_impl( conn: &mut MyPooledConn, scheduled_id: Id, users: 
 
     let mut values: Vec<Value> = Vec::new();
     for i in 0 .. users.len() {
-        values.push( scheduled_id.into_value() );
-        values.push( users[ i ].into_value() );
+        values.push( scheduled_id.to_value() );
+        values.push( users[ i ].to_value() );
     }
 
     try!( stmt.execute( &values ) );
     Ok( () )
 }
 
-fn add_rights_of_voting_for_group_impl( conn: &mut MyPooledConn, scheduled_id: Id, group_id: Id ) -> MyResult<()> {
+fn add_rights_of_voting_for_group_impl( conn: &mut PooledConn, scheduled_id: Id, group_id: Id ) -> mysql::Result<()> {
     let mut stmt = try!( conn.prepare(
         "INSERT
             INTO `votes` ( `scheduled_id`, `user_id` )
@@ -123,7 +123,7 @@ fn add_rights_of_voting_for_group_impl( conn: &mut MyPooledConn, scheduled_id: I
     Ok( () )
 }
 
-fn is_all_voted_impl( conn: &mut MyPooledConn, scheduled_id: Id ) -> MyResult<bool> {
+fn is_all_voted_impl( conn: &mut PooledConn, scheduled_id: Id ) -> mysql::Result<bool> {
     let mut stmt = try!( conn.prepare( "SELECT COUNT( id ) FROM votes WHERE scheduled_id = ? AND voted=false" ) );
     let params: &[ &ToValue ] = &[ &scheduled_id ];
     let mut result = try!( stmt.execute( params ) );
@@ -132,7 +132,7 @@ fn is_all_voted_impl( conn: &mut MyPooledConn, scheduled_id: Id ) -> MyResult<bo
     Ok( count == 0 )
 }
 
-fn is_need_user_vote_impl( conn: &mut MyPooledConn, scheduled_id: Id, user_id: Id ) -> MyResult<bool> {
+fn is_need_user_vote_impl( conn: &mut PooledConn, scheduled_id: Id, user_id: Id ) -> mysql::Result<bool> {
     let mut stmt = try!( conn.prepare( "
         SELECT
             COUNT( `id` )
@@ -150,7 +150,7 @@ fn is_need_user_vote_impl( conn: &mut MyPooledConn, scheduled_id: Id, user_id: I
     Ok( count == 1 )
 }
 
-fn get_votes_impl( conn: &mut MyPooledConn, scheduled_id: Id ) -> MyResult<Votes> {
+fn get_votes_impl( conn: &mut PooledConn, scheduled_id: Id ) -> mysql::Result<Votes> {
     let mut stmt = try!( conn.prepare( "SELECT user_id, voted, vote FROM votes WHERE scheduled_id = ?" ) );
     let params: &[ &ToValue ] = &[ &scheduled_id ];
     let result = try!( stmt.execute( params ) );
@@ -178,7 +178,7 @@ fn get_votes_impl( conn: &mut MyPooledConn, scheduled_id: Id ) -> MyResult<Votes
     Ok( votes )
 }
 
-fn set_vote_impl( conn: &mut MyPooledConn, scheduled_id: Id, user_id: Id, vote: bool ) -> MyResult<()> {
+fn set_vote_impl( conn: &mut PooledConn, scheduled_id: Id, user_id: Id, vote: bool ) -> mysql::Result<()> {
     let mut stmt = try!( conn.prepare( "UPDATE votes SET vote=?, voted=true WHERE scheduled_id=? AND user_id=?" ) );
     let params: &[ &ToValue ] = &[ &vote, &scheduled_id, &user_id ];
     try!( stmt.execute( params ) );

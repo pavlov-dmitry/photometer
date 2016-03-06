@@ -1,4 +1,4 @@
-use mysql::error::{ MyError };
+use mysql;
 use std::convert::From;
 use std::fmt;
 use std::fmt::{ Display, Formatter };
@@ -6,12 +6,12 @@ use std::fmt::{ Display, Formatter };
 pub type DbHandlerResult<T> = Result<T, DbHandlerError>;
 
 pub enum DbHandlerError {
-    MySql( MyError ),
+    MySql( mysql::Error ),
     Common( String )
 }
 
-impl From<MyError> for DbHandlerError {
-    fn from( err: MyError ) -> DbHandlerError {
+impl From<mysql::Error> for DbHandlerError {
+    fn from( err: mysql::Error ) -> DbHandlerError {
         DbHandlerError::MySql( err )
     }
 }

@@ -1,12 +1,11 @@
 use std::str;
-use mysql::conn::pool::{ MyPooledConn };
-use mysql::error::{ MyResult, MyError };
+use mysql;
+use mysql::conn::pool::{ PooledConn };
+use mysql::error::{ Result, Error };
 use mysql::value::{
-    IntoValue,
     from_row,
     from_value,
     ToValue,
-    ToRow,
     FromValue,
     Value,
     ConvIr
@@ -30,7 +29,7 @@ use events::{
 use database::Database;
 use parse_utils::{ GetMsecs, IntoTimespec };
 
-type EventInfos = Vec<ScheduledEventInfo>;
+pub type EventInfos = Vec<ScheduledEventInfo>;
 
 pub trait DbEvents {
     /// считывает события которые должны стратануть за период
@@ -83,7 +82,7 @@ pub fn create_tables( db: &Database ) -> EmptyResult {
     )
 }
 
-impl DbEvents for MyPooledConn {
+impl DbEvents for PooledConn {
     /// считывает события которые должны стратануть за период
     fn starting_events( &mut self, moment: &Timespec ) -> CommonResult<EventInfos> {
         let params: &[&ToValue] = &[ &moment.msecs() ];
@@ -183,7 +182,7 @@ pub struct EventStateIr {
 
 impl ConvIr<EventState> for EventStateIr
 {
-    fn new(v: Value) -> MyResult<EventStateIr> {
+    fn new(v: Value) -> Result<EventStateIr> {
         match v {
             Value::Bytes( bytes ) => {
                 let val = match str::from_utf8( &bytes ) {
@@ -198,10 +197,10 @@ impl ConvIr<EventState> for EventStateIr
                 };
                 match val {
                     Some( val ) => Ok( EventStateIr{ val: val, bytes: bytes } ),
-                    None => Err( MyError::FromValueError( Value::Bytes( bytes ) ) )
+                    None => Err( Error::FromValueError( Value::Bytes( bytes ) ) )
                 }
             },
-            _ => Err( MyError::FromValueError( v ) )
+            _ => Err( Error::FromValueError( v ) )
         }
     }
     fn commit(self) -> EventState {
@@ -216,7 +215,7 @@ impl FromValue for EventState {
     type Intermediate = EventStateIr;
 }
 
-fn get_events_impl<T: ToRow>( conn: &mut MyPooledConn, where_cond: &str, values: T ) -> MyResult<Vec<ScheduledEventInfo>> {
+fn get_events_impl<T: Into<mysql::Params>>( conn: &mut PooledConn, where_cond: &str, values: T ) -> Result<Vec<ScheduledEventInfo>> {
     let query = format!(
         "SELECT
             e.id,
@@ -242,7 +241,7 @@ fn get_events_impl<T: ToRow>( conn: &mut MyPooledConn, where_cond: &str, values:
     let mut events = Vec::new();
     for sql_row in sql_result {
         let row = try!( sql_row );
-        let mut values = row.into_iter();
+        let mut values = row.unwrap().into_iter();
 
         let scheduled_id = from_value( values.next().unwrap() );
         let id = from_value( values.next().unwrap() );
@@ -284,7 +283,7 @@ fn get_events_impl<T: ToRow>( conn: &mut MyPooledConn, where_cond: &str, values:
     Ok( events )
 }
 
-fn event_info_impl( conn: &mut MyPooledConn, scheduled_id: Id ) -> MyResult<Option<ScheduledEventInfo>> {
+fn event_info_impl( conn: &mut PooledConn, scheduled_id: Id ) -> mysql::Result<Option<ScheduledEventInfo>> {
     let mut stmt = try!( conn.prepare(
         "SELECT
             e.event_id,
@@ -360,7 +359,7 @@ fn event_info_impl( conn: &mut MyPooledConn, scheduled_id: Id ) -> MyResult<Opti
     Ok( result )
 }
 
-fn event_infos_impl( conn: &mut MyPooledConn, scheduled_ids: &[Id] ) -> MyResult<EventInfos> {
+fn event_infos_impl( conn: &mut PooledConn, scheduled_ids: &[Id] ) -> mysql::Result<EventInfos> {
     // проверка на пустату
     if scheduled_ids.is_empty() {
         return Ok( Vec::new() );
@@ -373,12 +372,12 @@ fn event_infos_impl( conn: &mut MyPooledConn, scheduled_ids: &[Id] ) -> MyResult
     where_cond.push_str( ")" );
     let values: Vec<Value> = scheduled_ids
         .iter()
-        .map( |id| id.into_value() )
+        .map( |id| id.to_value() )
         .collect();
     get_events_impl( conn, &where_cond, &values )
 }
 
-fn event_start_time_impl( conn: &mut MyPooledConn, scheduled_id: Id ) -> MyResult<Option<Timespec>> {
+fn event_start_time_impl( conn: &mut PooledConn, scheduled_id: Id ) -> mysql::Result<Option<Timespec>> {
     let mut stmt = try!( conn.prepare("
         SELECT
             `start_time`
@@ -401,7 +400,7 @@ fn event_start_time_impl( conn: &mut MyPooledConn, scheduled_id: Id ) -> MyResul
     Ok( result )
 }
 
-fn add_events_impl( conn: &mut MyPooledConn, events: &[FullEventInfo] ) -> MyResult<()> {
+fn add_events_impl( conn: &mut PooledConn, events: &[FullEventInfo] ) -> mysql::Result<()> {
     let mut query = format!(
         "INSERT INTO scheduled_events (
             event_id,
@@ -424,28 +423,28 @@ fn add_events_impl( conn: &mut MyPooledConn, events: &[FullEventInfo] ) -> MyRes
     let mut values: Vec<Value> = Vec::new();
     for i in 0 .. events.len() {
         let event = &events[ i ];
-        values.push( event.id.into_value() );
-        values.push( event.name.clone().into_value() );
-        values.push( event.start_time.msecs().into_value() );
-        values.push( event.end_time.msecs().into_value() );
-        values.push( event.data.clone().into_value() );
+        values.push( event.id.to_value() );
+        values.push( event.name.clone().to_value() );
+        values.push( event.start_time.msecs().to_value() );
+        values.push( event.end_time.msecs().to_value() );
+        values.push( event.data.clone().to_value() );
 
         let (group_attached, group_id) = to_group_info( event.group );
-        values.push( group_attached.into_value() );
-        values.push( group_id.into_value() );
+        values.push( group_attached.to_value() );
+        values.push( group_id.to_value() );
 
         let creator_id = match event.creator {
             Some( creator_id ) => creator_id,
             None => 0
         };
-        values.push( creator_id.into_value() );
+        values.push( creator_id.to_value() );
     }
 
     try!( stmt.execute( values ) );
     Ok( () )
 }
 
-fn add_disabled_event_impl( conn: &mut MyPooledConn, event: &FullEventInfo ) -> MyResult<Id> {
+fn add_disabled_event_impl( conn: &mut PooledConn, event: &FullEventInfo ) -> mysql::Result<Id> {
     let mut stmt = try!( conn.prepare("
         INSERT
             INTO `scheduled_events` (
@@ -478,7 +477,7 @@ fn add_disabled_event_impl( conn: &mut MyPooledConn, event: &FullEventInfo ) -> 
     Ok( result.last_insert_id() )
 }
 
-fn set_event_state_impl( conn: &mut MyPooledConn, scheduled_id: Id, state: EventState ) -> MyResult<()> {
+fn set_event_state_impl( conn: &mut PooledConn, scheduled_id: Id, state: EventState ) -> mysql::Result<()> {
     let mut stmt = try!( conn.prepare( "UPDATE scheduled_events SET state=? WHERE id=?" ) );
     let params: &[ &ToValue ] = &[ &state, &scheduled_id ];
     try!( stmt.execute( params ) );
@@ -486,7 +485,7 @@ fn set_event_state_impl( conn: &mut MyPooledConn, scheduled_id: Id, state: Event
 }
 
 /// "выключает" событие если оно еще не началось
-fn disable_event_if_not_started_impl( conn: &mut MyPooledConn, scheduled_id: Id ) -> MyResult<()> {
+fn disable_event_if_not_started_impl( conn: &mut PooledConn, scheduled_id: Id ) -> mysql::Result<()> {
     let mut stmt = try!( conn.prepare( "
         UPDATE
             `scheduled_events`
@@ -521,7 +520,7 @@ pub struct EventIdIr
 }
 
 impl ConvIr<EventId> for EventIdIr {
-    fn new(v: Value) -> MyResult<EventIdIr> {
+    fn new(v: Value) -> mysql::Result<EventIdIr> {
         match v {
             Value::Int( num ) => {
                 let maybe_event_id: MaybeEventId = From::from( num );
@@ -531,10 +530,10 @@ impl ConvIr<EventId> for EventIdIr {
                         val: id,
                         raw: num
                     }),
-                    None => Err( MyError::FromValueError( Value::Int( num ) ) )
+                    None => Err( mysql::Error::FromValueError( Value::Int( num ) ) )
                 }
             }
-            _ => Err( MyError::FromValueError( v ) )
+            _ => Err( mysql::Error::FromValueError( v ) )
         }
     }
     fn commit(self) -> EventId {

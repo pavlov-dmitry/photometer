@@ -1,10 +1,9 @@
 use std::str;
-use mysql::conn::pool::{ MyPooledConn };
-use mysql::error::{ MyResult, MyError };
+use mysql;
+use mysql::conn::pool::{ PooledConn };
 use mysql::value::{
-    IntoValue,
-    Value,
     ToValue,
+    Value,
     FromValue,
     ConvIr
 };
@@ -51,7 +50,7 @@ fn fn_failed<E: Display>( fn_name: &str, e: E ) -> CommonError {
     CommonError( format!( "DbVisited func '{}' failed: {}", fn_name, e ) )
 }
 
-impl DbVisited for MyPooledConn {
+impl DbVisited for PooledConn {
     /// выставляет что данный контент уже посёщен
     fn set_visited( &mut self, user_id: Id, content: VisitedContent, items: &[ Id ] ) -> EmptyResult {
         set_visited_impl( self, user_id, content, items )
@@ -69,10 +68,10 @@ impl DbVisited for MyPooledConn {
     // }
 }
 
-fn set_visited_impl( conn: &mut MyPooledConn,
+fn set_visited_impl( conn: &mut PooledConn,
                      user_id: Id,
                      content: VisitedContent,
-                     items: &[ Id ] ) -> MyResult<()>
+                     items: &[ Id ] ) -> mysql::Result<()>
 {
     if items.is_empty() {
         return Ok( () )
@@ -93,9 +92,9 @@ fn set_visited_impl( conn: &mut MyPooledConn,
     let mut stmt = try!( conn.prepare( &query ) );
     let mut values: Vec<Value> = Vec::with_capacity( items.len() * 3 );
     for id in items {
-        values.push( user_id.into_value() );
-        values.push( content.into_value() );
-        values.push( id.into_value() );
+        values.push( user_id.to_value() );
+        values.push( content.to_value() );
+        values.push( id.to_value() );
     }
     try!( stmt.execute( values ) );
     Ok( () )
@@ -120,7 +119,7 @@ pub struct VisitedContentIr
 }
 
 impl ConvIr<VisitedContent> for VisitedContentIr {
-    fn new(v: Value) -> MyResult<VisitedContentIr> {
+    fn new(v: Value) -> mysql::Result<VisitedContentIr> {
         match v {
             Value::Bytes( bytes ) => {
                 let value = match str::from_utf8( &bytes ) {
@@ -133,10 +132,10 @@ impl ConvIr<VisitedContent> for VisitedContentIr {
                 };
                 match value {
                     Some( t ) => Ok( VisitedContentIr{ val: t, bytes: bytes } ),
-                    None => Err( MyError::FromValueError( Value::Bytes( bytes ) ) )
+                    None => Err( mysql::Error::FromValueError( Value::Bytes( bytes ) ) )
                 }
             },
-            _ => Err(MyError::FromValueError(v))
+            _ => Err(mysql::Error::FromValueError(v))
         }
     }
     fn commit(self) -> VisitedContent {

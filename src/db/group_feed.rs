@@ -1,6 +1,6 @@
 use std::str;
-use mysql::conn::pool::{ MyPooledConn };
-use mysql::error::{ MyResult, MyError };
+use mysql;
+use mysql::conn::pool::{ PooledConn };
 use mysql::value::{ from_value, from_row, ToValue, FromValue, Value, ConvIr };
 use database::Database;
 use std::fmt::Display;
@@ -16,7 +16,7 @@ use events::feed_types::{
     FeedEventInfo
 };
 
-type UnwatchedFeedsByGroup = Vec<(Id, u32)>;
+pub type UnwatchedFeedsByGroup = Vec<(Id, u32)>;
 
 pub trait DbGroupFeed {
     /// Добавить новое событие в ленту группы
@@ -60,7 +60,7 @@ fn fn_failed<E: Display>( fn_name: &str, e: E ) -> CommonError {
     CommonError( format!( "DbGroupFeed func '{}' failed: {}", fn_name, e ) )
 }
 
-impl DbGroupFeed for MyPooledConn {
+impl DbGroupFeed for PooledConn {
     /// Добавить новое событие в ленту группы
     fn add_to_group_feed( &mut self,
                           creation_time: u64,
@@ -101,12 +101,12 @@ impl DbGroupFeed for MyPooledConn {
     }
 }
 
-fn add_to_group_feed_impl( conn: &mut MyPooledConn,
+fn add_to_group_feed_impl( conn: &mut PooledConn,
                            creation_time: u64,
                            group_id: Id,
                            scheduled_id: Id,
                            state: FeedEventState,
-                           data: &str ) -> MyResult<()>
+                           data: &str ) -> mysql::Result<()>
 {
     let mut stmt = try!( conn.prepare(
         "INSERT INTO `group_feed` (
@@ -201,7 +201,7 @@ fn read_fields<I: Iterator<Item = Value>>( mut values: I ) -> FeedEventInfo {
     }
 }
 
-fn get_feed_info_impl( conn: &mut MyPooledConn, user_id: Id, id: Id ) -> MyResult<Option<FeedEventInfo>> {
+fn get_feed_info_impl( conn: &mut PooledConn, user_id: Id, id: Id ) -> mysql::Result<Option<FeedEventInfo>> {
     let query = format!(
         "SELECT {}
          FROM `group_feed` as f
@@ -217,18 +217,18 @@ fn get_feed_info_impl( conn: &mut MyPooledConn, user_id: Id, id: Id ) -> MyResul
     let result = match sql_result.next() {
         Some( row ) => {
             let row = try!( row );
-            Some( read_fields( row.into_iter() ) )
+            Some( read_fields( row.unwrap().into_iter() ) )
         },
         None => None
     };
     Ok( result )
 }
 
-fn get_group_feed_impl( conn: &mut MyPooledConn,
+fn get_group_feed_impl( conn: &mut PooledConn,
                         user_id: Id,
                         group_id: Id,
                         count: u32,
-                        offset: u32 ) -> MyResult<Vec<FeedEventInfo>>
+                        offset: u32 ) -> mysql::Result<Vec<FeedEventInfo>>
 {
     let query = format!(
         "SELECT {}
@@ -251,14 +251,14 @@ fn get_group_feed_impl( conn: &mut MyPooledConn,
     let mut feed: Vec<_> = Vec::with_capacity( low_count );
     for row in sql_result {
         let row = try!( row );
-        let values = row.into_iter();
+        let values = row.unwrap().into_iter();
         feed.push( read_fields( values ) );
     }
     Ok( feed )
 }
 
-fn get_unwatched_feed_elements_by_groups_impl( conn: &mut MyPooledConn,
-                                               user_id: Id ) -> MyResult<UnwatchedFeedsByGroup>
+fn get_unwatched_feed_elements_by_groups_impl( conn: &mut PooledConn,
+                                               user_id: Id ) -> mysql::Result<UnwatchedFeedsByGroup>
 {
     let query = "
         SELECT f.group_id, COUNT( f.id )
@@ -297,7 +297,7 @@ pub struct FeedEventStateIr {
 }
 
 impl ConvIr<FeedEventState> for FeedEventStateIr {
-    fn new(v: Value) -> MyResult<FeedEventStateIr> {
+    fn new(v: Value) -> mysql::Result<FeedEventStateIr> {
         match v {
             Value::Bytes( bytes ) => {
                 let val = match str::from_utf8( &bytes ) {
@@ -310,10 +310,10 @@ impl ConvIr<FeedEventState> for FeedEventStateIr {
                 };
                 match val {
                     Some( val ) => Ok( FeedEventStateIr{ val: val, bytes: bytes }),
-                    None => Err( MyError::FromValueError( Value::Bytes( bytes ) ) )
+                    None => Err( mysql::Error::FromValueError( Value::Bytes( bytes ) ) )
                 }
             },
-            _ => Err( MyError::FromValueError( v ) )
+            _ => Err( mysql::Error::FromValueError( v ) )
         }
     }
     fn commit(self) -> FeedEventState {

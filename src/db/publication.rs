@@ -1,5 +1,5 @@
-use mysql::conn::pool::{ MyPooledConn };
-use mysql::error::{ MyResult };
+use mysql;
+use mysql::conn::pool::{ PooledConn };
 use mysql::value::{ from_row, ToValue };
 use types::{ Id, EmptyResult, CommonResult, CommonError };
 use std::fmt::Display;
@@ -38,7 +38,7 @@ pub fn create_tables( db: &Database ) -> EmptyResult {
     )
 }
 
-impl DbPublication for MyPooledConn {
+impl DbPublication for PooledConn {
     /// публикует фото
     fn public_photo( &mut self, scheduled: Id, user: Id, photo: Id, visible: bool, time: u64 ) -> EmptyResult {
         public_photo_impl( self, scheduled, user, photo, visible, time )
@@ -78,12 +78,12 @@ fn fn_failed<E: Display>( fn_name: &str, e: E ) -> CommonError {
     CommonError( format!( "DbPublication {} failed: {}", fn_name, e ) )
 }
 
-fn public_photo_impl( conn: &mut MyPooledConn,
+fn public_photo_impl( conn: &mut PooledConn,
                       scheduled: Id,
                       user: Id,
                       photo: Id,
                       visible: bool,
-                      time: u64 ) -> MyResult<()>
+                      time: u64 ) -> mysql::Result<()>
 {
     let mut stmt = try!( conn.prepare("
         INSERT INTO publication (
@@ -108,7 +108,7 @@ fn public_photo_impl( conn: &mut MyPooledConn,
     Ok( () )
 }
 
-fn make_publication_visible_impl( conn: &mut MyPooledConn, scheduled: Id ) -> MyResult<()> {
+fn make_publication_visible_impl( conn: &mut PooledConn, scheduled: Id ) -> mysql::Result<()> {
     let mut stmt = try!( conn.prepare( "
         UPDATE publication
         SET visible=true
@@ -120,7 +120,7 @@ fn make_publication_visible_impl( conn: &mut MyPooledConn, scheduled: Id ) -> My
     Ok( () )
 }
 
-fn get_published_photo_count_impl( conn: &mut MyPooledConn, scheduled: Id ) -> MyResult<u32> {
+fn get_published_photo_count_impl( conn: &mut PooledConn, scheduled: Id ) -> mysql::Result<u32> {
     let mut stmt = try!( conn.prepare( "
 SELECT
     COUNT(id)
@@ -135,7 +135,7 @@ WHERE
     Ok( count )
 }
 
-fn get_unpublished_users_impl( conn: &mut MyPooledConn, scheduled: Id ) -> MyResult<Vec<User>> {
+fn get_unpublished_users_impl( conn: &mut PooledConn, scheduled: Id ) -> mysql::Result<Vec<User>> {
     let mut stmt = try!( conn.prepare(
         "SELECT
             `g`.`user_id`, `u`.`login`, `u`.`mail`
@@ -163,7 +163,7 @@ fn get_unpublished_users_impl( conn: &mut MyPooledConn, scheduled: Id ) -> MyRes
     Ok( users )
 }
 
-fn is_unpublished_user_impl( conn: &mut MyPooledConn, scheduled: Id, user: Id ) -> MyResult<bool> {
+fn is_unpublished_user_impl( conn: &mut PooledConn, scheduled: Id, user: Id ) -> mysql::Result<bool> {
     let mut stmt = try!( conn.prepare(
         "SELECT
             COUNT( `id` )
@@ -181,7 +181,7 @@ fn is_unpublished_user_impl( conn: &mut MyPooledConn, scheduled: Id, user: Id ) 
     Ok( count == 0 )
 }
 
-fn is_photo_published_impl( conn: &mut MyPooledConn, photo: Id ) -> MyResult<bool> {
+fn is_photo_published_impl( conn: &mut PooledConn, photo: Id ) -> mysql::Result<bool> {
     let mut stmt = try!( conn.prepare(
         "SELECT
              `id`

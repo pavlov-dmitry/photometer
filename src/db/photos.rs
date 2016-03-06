@@ -1,5 +1,5 @@
-use mysql::conn::pool::{ MyPooledConn };
-use mysql::error::{ MyResult, MyError };
+use mysql;
+use mysql::conn::pool::{ PooledConn };
 use mysql::value::{ from_row, from_value, ToValue, FromValue, Value, ConvIr };
 use types::{
     Id,
@@ -71,7 +71,7 @@ const FOCAL_LENGTH_35MM_DEFAULT: u16 = 0;
 const CAMERA_MODEL_DEFAULT: &'static str = "";
 
 
-impl DbPhotos for MyPooledConn {
+impl DbPhotos for PooledConn {
 	/// добавление фотографии в галлерею пользователя
     fn add_photo( &mut self, user_id: Id, info: &PhotoInfo ) -> CommonResult<()> {
         add_photo_impl( self, user_id, info )
@@ -142,7 +142,7 @@ fn fn_failed<E: Display>( fn_name: &str, e: E ) -> CommonError {
 }
 
 
-fn add_photo_impl( conn: &mut MyPooledConn, user_id: Id, info: &PhotoInfo ) -> MyResult<()> {
+fn add_photo_impl( conn: &mut PooledConn, user_id: Id, info: &PhotoInfo ) -> mysql::Result<()> {
     let mut stmt = try!( conn.prepare(
         "insert into images (
         owner_id,
@@ -181,7 +181,7 @@ fn add_photo_impl( conn: &mut MyPooledConn, user_id: Id, info: &PhotoInfo ) -> M
     Ok( () )
 }
 
-fn get_photo_info_impl( conn: &mut MyPooledConn, reader_id: Id, photo_id: Id ) -> MyResult<Option< PhotoInfo>> {
+fn get_photo_info_impl( conn: &mut PooledConn, reader_id: Id, photo_id: Id ) -> mysql::Result<Option< PhotoInfo>> {
     let query = format!(
         "SELECT {}
         FROM images AS i
@@ -195,13 +195,13 @@ fn get_photo_info_impl( conn: &mut MyPooledConn, reader_id: Id, photo_id: Id ) -
         None => Ok( None ),
         Some( sql_row ) => {
             let row_data = try!( sql_row );
-            let mut values = row_data.into_iter();
+            let mut values = row_data.unwrap().into_iter();
             Ok( Some( read_photo_info( &mut values ) ) )
         }
     }
 }
 
-fn get_short_photo_info_impl( conn: &mut MyPooledConn, photo_id: Id ) -> MyResult<Option<ShortPhotoInfo>> {
+fn get_short_photo_info_impl( conn: &mut PooledConn, photo_id: Id ) -> mysql::Result<Option<ShortPhotoInfo>> {
     let query = format!(
         "SELECT i.id,
                 i.upload_time,
@@ -235,12 +235,12 @@ fn get_short_photo_info_impl( conn: &mut MyPooledConn, photo_id: Id ) -> MyResul
 }
 
 fn get_photo_infos_impl(
-    conn: &mut MyPooledConn,
+    conn: &mut PooledConn,
     reader_id: Id,
     owner_id: Id,
     offset: u32,
     count: u32
-) -> MyResult<Vec<PhotoInfo>>
+) -> mysql::Result<Vec<PhotoInfo>>
 {
     let query = format!(
         "SELECT {fields}
@@ -257,12 +257,12 @@ fn get_photo_infos_impl(
 }
 
 fn get_unpublished_photo_infos_impl(
-    conn: &mut MyPooledConn,
+    conn: &mut PooledConn,
     reader_id: Id,
     owner_id: Id,
     offset: u32,
     count: u32
-) -> MyResult<Vec<PhotoInfo>>
+) -> mysql::Result<Vec<PhotoInfo>>
 {
     let query = format!(
         "SELECT {fields}
@@ -280,9 +280,9 @@ fn get_unpublished_photo_infos_impl(
     get_photo_infos_general( conn, &query, params )
 }
 
-fn get_publication_photo_infos_impl( conn: &mut MyPooledConn,
+fn get_publication_photo_infos_impl( conn: &mut PooledConn,
                                      reader_id: Id,
-                                     scheduled_id: Id ) -> MyResult<Vec<PhotoInfo>>
+                                     scheduled_id: Id ) -> mysql::Result<Vec<PhotoInfo>>
 {
     let query = format!(
         "SELECT {fields}
@@ -297,35 +297,35 @@ fn get_publication_photo_infos_impl( conn: &mut MyPooledConn,
     get_photo_infos_general( conn, &query, params )
 }
 
-fn get_photo_infos_general( conn: &mut MyPooledConn,
+fn get_photo_infos_general( conn: &mut PooledConn,
                             query: &str,
-                            params: &[ &ToValue ] ) -> MyResult<Vec<PhotoInfo>>
+                            params: &[ &ToValue ] ) -> mysql::Result<Vec<PhotoInfo>>
 {
     let mut stmt = try!( conn.prepare( &query ) );
     let result = try!( stmt.execute( params ) );
     //что-то с преобразованием на лету через собственный итертор я подупрел =(, пришлось тупо собирать в новый массив
     let photos : Vec<_> = result.filter_map( |sql_row|
         sql_row.ok().map( |sql_values| {
-            let values = sql_values.into_iter();
+            let values = sql_values.unwrap().into_iter();
             read_photo_info( values )
         })
     ).collect();
     Ok( photos )
 }
 
-fn get_photo_neighbours_in_gallery_impl( conn: &mut MyPooledConn, owner_id: Id, photo_id: Id ) -> MyResult<(Option<Id>, Option<Id>)> {
+fn get_photo_neighbours_in_gallery_impl( conn: &mut PooledConn, owner_id: Id, photo_id: Id ) -> mysql::Result<(Option<Id>, Option<Id>)> {
     let prev = try!( get_neighbour_in_gallery( conn, owner_id, photo_id, false ) );
     let next = try!( get_neighbour_in_gallery( conn, owner_id, photo_id, true ) );
     Ok( ( prev, next ) )
 }
 
-fn get_photo_neighbours_in_publication_impl( conn: &mut MyPooledConn, scheduled_id: Id, photo_id: Id ) -> MyResult<(Option<Id>, Option<Id>)> {
+fn get_photo_neighbours_in_publication_impl( conn: &mut PooledConn, scheduled_id: Id, photo_id: Id ) -> mysql::Result<(Option<Id>, Option<Id>)> {
     let prev = try!( get_neighbour_in_publication( conn, scheduled_id, photo_id, false ) );
     let next = try!( get_neighbour_in_publication( conn, scheduled_id, photo_id, true ) );
     Ok( (prev, next) )
 }
 
-fn get_neighbour_in_gallery( conn: &mut MyPooledConn, owner_id: Id, photo_id: Id, is_next: bool ) -> MyResult<Option<Id>> {
+fn get_neighbour_in_gallery( conn: &mut PooledConn, owner_id: Id, photo_id: Id, is_next: bool ) -> mysql::Result<Option<Id>> {
     let comp_sign = if is_next { "<" } else { ">" };
     let sort_direction = if is_next { "DESC" } else { "ASC" };
     let query = format!(
@@ -346,7 +346,7 @@ fn get_neighbour_in_gallery( conn: &mut MyPooledConn, owner_id: Id, photo_id: Id
     read_neighbour_general( conn, &query, params )
 }
 
-fn get_neighbour_in_publication( conn: &mut MyPooledConn, scheduled_id: Id, photo_id: Id, is_next: bool ) -> MyResult<Option<Id>> {
+fn get_neighbour_in_publication( conn: &mut PooledConn, scheduled_id: Id, photo_id: Id, is_next: bool ) -> mysql::Result<Option<Id>> {
     let comp_sign = if is_next { ">" } else { "<" };
     let sort_direction = if is_next { "ASC" } else { "DESC" };
     let query = format!(
@@ -365,7 +365,7 @@ fn get_neighbour_in_publication( conn: &mut MyPooledConn, scheduled_id: Id, phot
     read_neighbour_general( conn, &query, params )
 }
 
-fn read_neighbour_general( conn: &mut MyPooledConn, query: &str, params: &[ &ToValue ] ) -> MyResult<Option<Id>> {
+fn read_neighbour_general( conn: &mut PooledConn, query: &str, params: &[ &ToValue ] ) -> mysql::Result<Option<Id>> {
     let mut stmt = try!( conn.prepare( query ) );
     let mut result = try!( stmt.execute( params ) );
     let neighbour: Option<Id> = match result.next() {
@@ -379,7 +379,7 @@ fn read_neighbour_general( conn: &mut MyPooledConn, query: &str, params: &[ &ToV
     Ok( neighbour )
 }
 
-fn get_photo_infos_count_impl( conn: &mut MyPooledConn, owner_id: Id ) -> MyResult<u32> {
+fn get_photo_infos_count_impl( conn: &mut PooledConn, owner_id: Id ) -> mysql::Result<u32> {
     let mut stmt = try!( conn.prepare( "
         SELECT COUNT(id)
         FROM
@@ -394,7 +394,7 @@ fn get_photo_infos_count_impl( conn: &mut MyPooledConn, owner_id: Id ) -> MyResu
     Ok( count )
 }
 
-fn get_unpublished_photos_count_impl( conn: &mut MyPooledConn, owner_id: Id ) -> MyResult<u32> {
+fn get_unpublished_photos_count_impl( conn: &mut PooledConn, owner_id: Id ) -> mysql::Result<u32> {
     let mut stmt = try!( conn.prepare( "
         SELECT COUNT(i.id)
         FROM images AS i
@@ -410,7 +410,7 @@ fn get_unpublished_photos_count_impl( conn: &mut MyPooledConn, owner_id: Id ) ->
     Ok( count )
 }
 
-fn rename_photo_impl( conn: &mut MyPooledConn, photo_id: Id, newname: &str ) -> MyResult<()> {
+fn rename_photo_impl( conn: &mut PooledConn, photo_id: Id, newname: &str ) -> mysql::Result<()> {
     let newname = newname.to_string();
     let mut stmt = try!( conn.prepare( "UPDATE images SET name=? WHERE id=?" ) );
     let params: &[ &ToValue ] = &[ &newname, &photo_id ];
@@ -497,7 +497,7 @@ pub struct ImageTypeIr
 
 impl ConvIr<ImageType> for ImageTypeIr
 {
-    fn new(v: Value) -> MyResult<ImageTypeIr> {
+    fn new(v: Value) -> mysql::Result<ImageTypeIr> {
         match v {
             Value::Bytes( bytes ) => {
                 let value = match str::from_utf8( &bytes ) {
@@ -510,10 +510,10 @@ impl ConvIr<ImageType> for ImageTypeIr
                 };
                 match value {
                     Some( t ) => Ok( ImageTypeIr{ val: t, bytes: bytes } ),
-                    None => Err( MyError::FromValueError( Value::Bytes( bytes ) ) )
+                    None => Err( mysql::Error::FromValueError( Value::Bytes( bytes ) ) )
                 }
             },
-            _ => Err(MyError::FromValueError(v))
+            _ => Err(mysql::Error::FromValueError(v))
         }
     }
     fn commit(self) -> ImageType {
