@@ -7,7 +7,7 @@ use db::photos::{ DbPhotos };
 use iron::prelude::*;
 use types::Id;
 use get_body::GetBody;
-use answer_types::{ OkInfo, AccessErrorInfo };
+use answer_types::{ OkInfo };
 
 pub fn rename_photo( req: &mut Request ) -> IronResult<Response> {
     let answer = AnswerResponse( rename_answer( req ) );
@@ -35,7 +35,7 @@ fn rename_answer( request: &mut Request ) -> AnswerResult {
                 Answer::good( OkInfo::new( "rename" ) )
             }
             else {
-                Answer::bad( AccessErrorInfo::new() )
+                Answer::access_denied()
             }
         },
         None => Answer::not_found()

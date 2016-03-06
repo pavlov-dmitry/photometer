@@ -8,7 +8,7 @@ use db::photos::{ DbPhotos };
 use iron::prelude::*;
 use get_body::GetBody;
 use types::{ Id };
-use answer_types::{ OkInfo, PhotoErrorInfo, AccessErrorInfo };
+use answer_types::{ OkInfo, PhotoErrorInfo };
 
 pub fn crop_photo( request: &mut Request ) -> IronResult<Response> {
     let answer = AnswerResponse( crop_photo_answer( request ) );
@@ -58,7 +58,7 @@ fn crop_photo_answer( request: &mut Request ) -> AnswerResult {
                 }
             }
             else {
-                Answer::bad( AccessErrorInfo::new() )
+                Answer::access_denied()
             }
         },
 

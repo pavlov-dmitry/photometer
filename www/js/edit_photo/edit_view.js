@@ -78,7 +78,6 @@ define( function( require ) {
 
             handler.good = function() {
                 self.renaming_now = false;
-                $("#rename-photo-form").removeClass( "loading");
                 growl({
                     header: "Переименовано",
                     msg: "Новое имя задано для вашей фотографии",
@@ -88,7 +87,6 @@ define( function( require ) {
 
             handler.bad = function( data ) {
                 self.renaming_now = false;
-                var $form = $("#rename-photo-form");
                 $form.removeClass( "loading" );
                 var msg = "";
                 if ( data.photo === "not_found" ) {
@@ -98,6 +96,9 @@ define( function( require ) {
                 }
                 errorsHandler.error( msg );
             };
+            handler.finish = function() {
+                $("#rename-photo-form").removeClass( "loading");
+            }
         },
 
         enable_crop_btn: function() {
@@ -129,17 +130,13 @@ define( function( require ) {
             } );
 
             handle.good = function() {
-                self.enable_crop_btn();
                 growl({
                     header: "Миниатюра готова",
                     msg: "Новая миниатюра для вашей фотографии подготовлена.",
                     positive: true
                 }, "short" );
             }
-
             handle.bad = function( data ) {
-                self.enable_crop_btn();
-
                 var msg = "";
                 if ( data.photo === "not_found" ) {
                     msg = "Опа, а такое фото не найдено! Что-то здесь не так.";
@@ -148,8 +145,10 @@ define( function( require ) {
                 } else {
                     msg = JSON.stringify( data );
                 }
-
                 errorsHandler.error( msg );
+            }
+            handle.finish = function() {
+                self.enable_crop_btn();
             }
         },
 
