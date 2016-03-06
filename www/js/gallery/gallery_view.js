@@ -72,6 +72,7 @@ define( function(require) {
             this.$progress.progress();
             this.$upload_file = $( "#upload-file" );
             this.$upload_btn = $( "#upload-btn" );
+            this.$empty_gallery = $("#empty-gallery");
 
             this.$progress.hide();
             return this;
@@ -93,12 +94,13 @@ define( function(require) {
         },
 
         check_on_empty: function() {
-            console.log( "check on empty" );
             if ( this.model.length == 0 ) {
-                $("#preview-list").removeClass( "cards" );
-                $("#preview-list").html(
+                this.$empty_gallery.html(
                     "<div class=\"ui center aligned very padded basic segment\"><h1 class=\"ui disabled icon header\"><i class=\"film icon\"></i>Галлерея пуста.</h1><h3 class=\"ui disabled header\">Начните её заполнять, нажав на кнопку \"Добавить\", в левом верхнем углу.</h3></div>"
                 );
+            }
+            else {
+                this.$empty_gallery.empty();
             }
         },
 
