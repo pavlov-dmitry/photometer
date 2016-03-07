@@ -139,13 +139,17 @@ fn get_group_greation_post_answer( req: &mut Request, group_id: Id, event_id: Ev
 
 
 fn get_event_id( prm: &str, req: &Request ) -> Option<EventId> {
-    let id = req.param( prm );
-    FromStr::from_str( id ).ok()
+    match req.param( prm ) {
+        Some( id ) => FromStr::from_str( id ).ok(),
+        None => None
+    }
 }
 
 fn get_id( prm: &str, req: &Request ) -> Option<Id> {
-    let id = req.param( prm );
-    FromStr::from_str( id ).ok()
+    match req.param( prm ) {
+        Some( id ) => FromStr::from_str( id ).ok(),
+        None => None
+    }
 }
 
 fn get_group_and_event_id( request: &mut Request ) -> Option<(Id, EventId)> {

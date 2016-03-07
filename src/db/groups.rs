@@ -1,7 +1,7 @@
 use mysql::conn::pool::{ PooledConn };
 use mysql;
 use mysql::value::{ from_row, ToValue, Value };
-use types::{ Id, CommonResult, EmptyResult, CommonError };
+use types::{ Id, ShortInfo, CommonResult, EmptyResult, CommonError };
 use authentication::{ User };
 use std::fmt::Display;
 use database::Database;
@@ -10,7 +10,7 @@ use time::Timespec;
 use parse_utils::{ GetMsecs, IntoTimespec };
 
 pub type Members = Vec<User>;
-pub type Groups = Vec<(Id, String)>;
+pub type Groups = Vec<ShortInfo>;
 
 pub struct GroupInfo {
     pub id: Id,
@@ -33,7 +33,7 @@ pub trait DbGroups {
     /// создать новую группу
     fn create_group( &mut self, name: &String, desc: &String, creation_time: Timespec ) -> CommonResult<Id>;
     /// добавляет членов группы
-    fn add_members( &mut self, group_id: Id, members: &[ Id ] ) -> EmptyResult;
+    fn add_members( &mut self, group_id: Id, members: &[ Id ], time: u64 ) -> EmptyResult;
     /// список групп в которых пользователь является членом
     fn member_in_groups( &mut self, user_id: Id ) -> CommonResult<Groups>;
     /// информация о группе
@@ -58,6 +58,7 @@ pub fn create_tables( db: &Database ) -> EmptyResult {
             `id` bigint(20) NOT NULL AUTO_INCREMENT,
             `user_id` bigint(20) NOT NULL DEFAULT '0',
             `group_id` bigint(20) NOT NULL DEFAULT '0',
+            `join_time` bigint(20) NOT NULL DEFAULT '0',
             PRIMARY KEY ( `id` ),
             KEY `members_idx` ( `user_id`, `group_id` )
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
@@ -95,8 +96,8 @@ impl DbGroups for PooledConn {
             .map_err( |e| fn_failed( "create_group", e ) )
     }
     /// добавляет членов группы
-    fn add_members( &mut self, group_id: Id, members: &[ Id ] ) -> EmptyResult {
-        add_members_impl( self, group_id, members )
+    fn add_members( &mut self, group_id: Id, members: &[ Id ], time: u64 ) -> EmptyResult {
+        add_members_impl( self, group_id, members, time )
             .map_err( |e| fn_failed( "add_members", e ) )
     }
     /// список групп в которых пользователь является членом
@@ -120,7 +121,8 @@ fn get_members_impl( conn: &mut PooledConn, group_id: Id ) -> mysql::Result<Memb
         "SELECT
             g.user_id,
             u.login,
-            u.mail
+            u.mail,
+            g.join_time
         FROM group_members AS g LEFT JOIN users AS u ON ( u.id = g.user_id )
         WHERE u.id IS NOT NULL AND g.group_id = ?
     "));
@@ -128,11 +130,12 @@ fn get_members_impl( conn: &mut PooledConn, group_id: Id ) -> mysql::Result<Memb
     let params: &[ &ToValue ] = &[ &group_id ];
     for row in try!( stmt.execute( params ) ) {
         let row = try!( row );
-        let (id, name, mail) = from_row( row );
+        let (id, name, mail, time) = from_row( row );
         members.push( User{
             id: id,
             name: name,
-            mail: mail
+            mail: mail,
+            join_time: time
         });
     }
     Ok( members )
@@ -182,17 +185,18 @@ fn create_group_impl( conn: &mut PooledConn, name: &String, desc: &String, creat
     Ok( result.last_insert_id() )
 }
 
-fn add_members_impl( conn: &mut PooledConn, group_id: Id, members: &[ Id ] ) -> mysql::Result<()> {
+fn add_members_impl( conn: &mut PooledConn, group_id: Id, members: &[ Id ], time: u64 ) -> mysql::Result<()> {
     let mut query: String = String::from("
         INSERT INTO group_members (
             user_id,
-            group_id
+            group_id,
+            join_time
         )
-        VALUES( ?, ? )
+        VALUES( ?, ?, ? )
     ");
 
     for _ in 1 .. members.len() {
-        query.push_str( ", ( ?, ? )" );
+        query.push_str( ", ( ?, ?, ? )" );
     }
 
     let mut stmt = try!( conn.prepare( &query ) );
@@ -201,6 +205,7 @@ fn add_members_impl( conn: &mut PooledConn, group_id: Id, members: &[ Id ] ) -> 
     for i in 0 .. members.len() {
         values.push( members[ i ].to_value() );
         values.push( group_id.to_value() );
+        values.push( time.to_value() );
     }
 
     try!( stmt.execute( values ) );
@@ -221,7 +226,8 @@ fn member_in_groups_impl( conn: &mut PooledConn, user_id: Id ) -> mysql::Result<
     let mut groups = Vec::new();
     for row in result {
         let row = try!( row );
-        groups.push( from_row( row ) );
+        let (id, name) = from_row( row );
+        groups.push( ShortInfo{ id: id, name: name } );
     }
     Ok( groups )
 }

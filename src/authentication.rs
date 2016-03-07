@@ -15,7 +15,8 @@ static SESSION_ID : &'static str = "sid";
 pub struct User {
     pub name : String,
     pub id : Id,
-    pub mail: String
+    pub mail: String,
+    pub join_time: u64
 }
 
 /*impl User {

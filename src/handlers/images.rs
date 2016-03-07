@@ -44,7 +44,11 @@ fn mime_from_image_type( t: ImageType ) -> mime::Mime {
 */
 
 pub fn get_image( req: &mut Request, is_preview: bool ) -> IronResult<Response> {
-    let image_id = match image_id_from_filename( req.param( FILENAME ) ) {
+    let filename = match req.param( FILENAME ) {
+        Some( name ) => name.to_owned(),
+        None => return Ok( Response::with( status::NotFound ) )
+    };
+    let image_id = match image_id_from_filename( &filename ) {
         Some( id ) => id,
         None => return Ok( Response::with( status::NotFound ) )
     };

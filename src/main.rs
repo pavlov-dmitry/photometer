@@ -103,6 +103,7 @@ fn main() {
     router.post( "/comment/edit", handlers::comments::post_edit_comment );
 
     router.get( handlers::authentication::user_info_path(), handlers::authentication::user_info );
+    router.get( "/user/:id", handlers::authentication::user_desc );
 
     router.get( handlers::search::users_path(), handlers::search::users );
 

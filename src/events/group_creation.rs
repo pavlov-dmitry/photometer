@@ -210,7 +210,7 @@ impl Event for GroupCreation {
                                                           time::get_time() ) );
                     // и тех кто проголовал ЗА добавляем в эту группу
                     votes.yes.push( info.initiator );
-                    try!( db.add_members( group_id, &votes.yes ) );
+                    try!( db.add_members( group_id, &votes.yes, time::get_time().msecs() ) );
                     let users = try!( db.users_by_id( &votes.yes ) );
                     (group_id, users)
                 };

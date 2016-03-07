@@ -138,7 +138,7 @@ WHERE
 fn get_unpublished_users_impl( conn: &mut PooledConn, scheduled: Id ) -> mysql::Result<Vec<User>> {
     let mut stmt = try!( conn.prepare(
         "SELECT
-            `g`.`user_id`, `u`.`login`, `u`.`mail`
+            `g`.`user_id`, `u`.`login`, `u`.`mail`, `u`.`join_time`
         FROM
             `group_members` AS `g`
         LEFT JOIN
@@ -153,11 +153,12 @@ fn get_unpublished_users_impl( conn: &mut PooledConn, scheduled: Id ) -> mysql::
     let mut users = Vec::new();
     for row in result {
         let row = try!( row );
-        let (id, name, mail) = from_row( row );
+        let (id, name, mail, time) = from_row( row );
         users.push( User {
             id: id,
             name: name,
-            mail: mail
+            mail: mail,
+            join_time: time
         });
     }
     Ok( users )

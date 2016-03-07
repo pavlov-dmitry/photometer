@@ -22,6 +22,7 @@ use db::users::DbUsers;
 use db::groups::DbGroups;
 use mail_writer::MailWriter;
 use mailer::Mailer;
+use parse_utils::GetMsecs;
 
 #[derive(Clone)]
 pub struct JoinToGroup;
@@ -97,7 +98,7 @@ impl ChangeByVoting for JoinToGroup {
     fn apply( &self, stuff: &mut Stuff, group: &ShortInfo, body: &ScheduledEventInfo ) -> EmptyResult {
         let data = try!( get_data( body ) );
         let db = try!( stuff.get_current_db_conn() );
-        try!( db.add_members( group.id, &[ data.user_id ] ) );
+        try!( db.add_members( group.id, &[ data.user_id ], time::get_time().msecs() ) );
         Ok( () )
     }
     /// краткое имя события, будет в основном использоваться в рассылке

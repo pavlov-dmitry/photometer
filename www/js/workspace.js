@@ -25,7 +25,8 @@ define( function(require) {
             'group/feed/element/:id': "group_feed_element",
             'change_timetable/:id': "change_timetable",
             'user_invite/:id' : "user_invite",
-            'publication/:feed_id/photo/:photo_id': "publication_photo"
+            'publication/:feed_id/photo/:photo_id': "publication_photo",
+            "user/:id" : "user_description"
         },
 
         clear_current: function( is_next_photo ) {
@@ -247,8 +248,17 @@ define( function(require) {
 
             var model = new UserInviteModel({group_id: group_id});
             this.current = new UserInviteView({model: model});
-        }
+        },
 
+        user_description: function( user_id ) {
+            this.clear_current();
+
+            var UserDescriptionModel = require( "user_description/model" );
+            var UserDescriptionView = require( "user_description/view" );
+
+            var model = new UserDescriptionModel({id: user_id});
+            this.current = new UserDescriptionView({model: model});
+        }
 
     });
 

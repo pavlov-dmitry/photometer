@@ -1,0 +1,21 @@
+<div class="ui container">
+  <h2 class="ui dividing header">
+    <div class="content">
+      <i class="user icon"></i>
+      {{name}}
+    </div>
+  </h2>
+  <p>
+    <strong>Присоединился: </strong>{{duration_from_now join_time}}
+  </p>
+  <h4 class="ui header">
+    <div class="content">
+      Состоит в группах:
+    </div>
+  </h4>
+  <div class="ui green labels">
+    {{#each groups}}
+      <a class="ui label" href="#/group/info/{{id}}">{{name}}</a>
+    {{/each}}
+  </div>
+</div>

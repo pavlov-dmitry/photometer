@@ -11,7 +11,7 @@ pub trait DbUsers {
     /// выбирает id пользователя по имени и паролю
     fn get_user( &mut self, name: &str, pass: &str ) -> CommonResult<Option<User>>;
     /// добавляет нового пользователя в БД
-    fn add_user( &mut self, name: &str, pass: &str, mail: &str, regkey: &str ) -> CommonResult<User>;
+    fn add_user( &mut self, name: &str, pass: &str, mail: &str, regkey: &str, time: u64 ) -> CommonResult<User>;
     /// активирует пользователя по определённому регистрационному ключу
     fn activate_user( &mut self, regkey: &str ) -> CommonResult<Option<User>>;
     /// проверяет наличие имени в БД
@@ -31,6 +31,7 @@ pub fn create_tables( db: &Database ) -> EmptyResult {
     db.execute(
         "CREATE TABLE IF NOT EXISTS `users` (
             `id` bigint(20) NOT NULL AUTO_INCREMENT,
+            `join_time` bigint(20) NOT NULL DEFAULT '0',
             `login` varchar(16) NOT NULL DEFAULT '',
             `password` varchar(32) NOT NULL DEFAULT '',
             `activated` BOOL NOT NULL DEFAULT false,
@@ -52,8 +53,8 @@ impl DbUsers for PooledConn {
     }
 
     /// добавляет нового пользователя в БД
-    fn add_user( &mut self, name: &str, pass: &str, mail: &str, regkey: &str ) -> CommonResult<User> {
-        add_user_impl( self, name, pass, mail, regkey )
+    fn add_user( &mut self, name: &str, pass: &str, mail: &str, regkey: &str, time: u64 ) -> CommonResult<User> {
+        add_user_impl( self, name, pass, mail, regkey, time )
             .map_err( |e| fn_failed( "add_user", e ) )
     }
     /// активирует пользователя по определённому регистрационному ключу
@@ -104,7 +105,8 @@ fn get_user_impl( conn: &mut PooledConn, name: &str, pass: &str ) -> mysql::Resu
         "SELECT
             `login`,
             `id`,
-            `mail`
+            `mail`,
+            `join_time`
         FROM `users`
         WHERE
             `login`=? AND
@@ -117,18 +119,19 @@ fn get_user_impl( conn: &mut PooledConn, name: &str, pass: &str ) -> mysql::Resu
         None => Ok( None ),
         Some( row ) => {
             let row = try!( row );
-            let (name, id, mail) = from_row( row );
+            let (name, id, mail, join_time) = from_row( row );
             let user = User {
                 name: name,
                 id: id,
-                mail: mail
+                mail: mail,
+                join_time: join_time
             };
             Ok( Some( user ) )
         }
     }
 }
 
-fn add_user_impl( conn: &mut PooledConn, name: &str, pass: &str, mail: &str, regkey: &str ) -> mysql::Result<User> {
+fn add_user_impl( conn: &mut PooledConn, name: &str, pass: &str, mail: &str, regkey: &str, time: u64 ) -> mysql::Result<User> {
     let name = name.to_string();
     let pass = pass.to_string();
     let mut stmt = try!( conn.prepare(
@@ -136,15 +139,17 @@ fn add_user_impl( conn: &mut PooledConn, name: &str, pass: &str, mail: &str, reg
             login,
             password,
             mail,
-            regkey
-        ) VALUES(?, ?, ?, ?);"
+            regkey,
+            join_time
+        ) VALUES(?, ?, ?, ?, ?);"
     ) );
-    let params: &[ &ToValue ] = &[ &name, &pass, &mail, &regkey ];
+    let params: &[ &ToValue ] = &[ &name, &pass, &mail, &regkey, &time ];
     let result = try!( stmt.execute( params ) );
     Ok( User {
         name: name.to_string(),
         id: result.last_insert_id(),
-        mail: mail.to_string()
+        mail: mail.to_string(),
+        join_time: time
     } )
 }
 
@@ -154,7 +159,8 @@ fn activate_user_impl( conn: &mut PooledConn, regkey: &str ) -> mysql::Result<Op
             "SELECT
                 `id`,
                 `login`,
-                `mail`
+                `mail`,
+                `join_time`
             FROM `users`
             WHERE
                 `regkey`=? AND
@@ -164,11 +170,12 @@ fn activate_user_impl( conn: &mut PooledConn, regkey: &str ) -> mysql::Result<Op
         match result.next()  {
             Some( row ) => {
                 let row = try!( row );
-                let (id, name, mail) = from_row( row );
+                let (id, name, mail, time) = from_row( row );
                 Some( User {
                     id: id,
                     name: name,
-                    mail: mail
+                    mail: mail,
+                    join_time: time
                 } )
             }
             None => None
@@ -198,17 +205,25 @@ fn user_id_exists_impl( conn: &mut PooledConn, id: Id  ) -> mysql::Result<bool> 
 }
 
 fn user_by_id_impl( conn: &mut PooledConn, id: Id ) -> mysql::Result<Option<User>> {
-    let mut stmt = try!( conn.prepare( "select login, mail from users where id=? AND activated=true" ) );
+    let mut stmt = try!( conn.prepare(
+        "SELECT login,
+                mail,
+                join_time
+         FROM users
+         WHERE id=?
+           AND activated=true"
+    ) );
     let mut sql_result = try!( stmt.execute( (id,) ) );
     match sql_result.next() {
         None => Ok( None ),
         Some( row ) => {
             let row = try!( row );
-            let (name, mail) = from_row( row );
+            let (name, mail, time) = from_row( row );
             let user = User {
                 name: name,
                 id: id,
-                mail: mail
+                mail: mail,
+                join_time: time
             };
             Ok( Some( user ) )
         }
@@ -216,7 +231,14 @@ fn user_by_id_impl( conn: &mut PooledConn, id: Id ) -> mysql::Result<Option<User
 }
 
 fn users_by_id_impl( conn: &mut PooledConn, ids: &[Id] ) -> mysql::Result<Vec<User>> {
-    let mut query = format!( "select id, login, mail from users where id in ( ? " );
+    let mut query = format!(
+        "SELECT id,
+                login,
+                mail,
+                join_time
+         FROM users
+         WHERE id IN ( ? "
+    );
     for _ in 1 .. ids.len() {
         query.push_str( ", ?" );
     }
@@ -232,11 +254,12 @@ fn users_by_id_impl( conn: &mut PooledConn, ids: &[Id] ) -> mysql::Result<Vec<Us
     let sql_result = try!( stmt.execute( values ) );
     for row in sql_result {
         let row = try!( row );
-        let (id, name, mail) = from_row( row );
+        let (id, name, mail, time) = from_row( row );
         let user = User {
             id: id,
             name: name,
-            mail: mail
+            mail: mail,
+            join_time: time
         };
         users.push( user );
     }
@@ -244,17 +267,25 @@ fn users_by_id_impl( conn: &mut PooledConn, ids: &[Id] ) -> mysql::Result<Vec<Us
 }
 
 fn user_by_name_impl( conn: &mut PooledConn, name: &str ) -> mysql::Result<Option<User>> {
-    let mut stmt = try!( conn.prepare( "select id, mail from users where login=? AND activated=true" ) );
+    let mut stmt = try!( conn.prepare(
+        "SELECT id,
+                mail,
+                join_time
+         FROM users
+         WHERE login=?
+           AND activated=true"
+    ) );
     let mut sql_result = try!( stmt.execute( (name,) ) );
     match sql_result.next() {
         None => Ok( None ),
         Some( row ) => {
             let row = try!( row );
-            let (id, mail) = from_row( row );
+            let (id, mail, time) = from_row( row );
             let user = User {
                 name: String::from( name ),
                 id: id,
-                mail: mail
+                mail: mail,
+                join_time: time
             };
             Ok( Some( user ) )
         }
