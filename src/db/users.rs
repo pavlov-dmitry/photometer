@@ -25,6 +25,8 @@ pub trait DbUsers {
     fn user_by_name( &mut self, name: &str ) -> CommonResult<Option<User>>;
     /// возвращает имена полльзователей имена которых похожи на шаблон
     fn get_users_like( &mut self, pattern: &str, offset: u32, count: u32 ) -> CommonResult<Vec<ShortInfo>>;
+    /// возвращает регистрационный ключ пользователя
+    fn get_reg_key( &mut self, name: &str ) -> CommonResult<Option<String>>;
 }
 
 pub fn create_tables( db: &Database ) -> EmptyResult {
@@ -91,6 +93,11 @@ impl DbUsers for PooledConn {
     fn get_users_like( &mut self, pattern: &str, offset: u32, count: u32 ) -> CommonResult<Vec<ShortInfo>> {
         get_users_like_impl( self, pattern, offset, count )
             .map_err( |e| fn_failed( "get_users_like", e ) )
+    }
+    /// возвращает регистрационный ключ пользователя
+    fn get_reg_key( &mut self, name: &str ) -> CommonResult<Option<String>> {
+        get_reg_key_impl( self, name )
+            .map_err( |e| fn_failed( "get_reg_key", e ) )
     }
 }
 
@@ -323,4 +330,21 @@ fn get_users_like_impl( conn: &mut PooledConn,
         results.push( user );
     }
     Ok( results )
+}
+
+fn get_reg_key_impl( conn: &mut PooledConn, name: &str ) -> mysql::Result<Option<String>> {
+    let mut stmt = try!( conn.prepare(
+        "SELECT `regkey`
+         FROM `users`
+         WHERE `login`=?" ) );
+    let mut sql_result = try!( stmt.execute( (name,) ) );
+    let result = match sql_result.next() {
+        Some( row ) => {
+            let row = try!( row );
+            let (regkey,) = from_row( row );
+            Some( regkey )
+        }
+        None => None
+    };
+    Ok( result )
 }

@@ -20,6 +20,9 @@ use types::{ Id, ShortInfo };
 use std::str::FromStr;
 use time;
 use parse_utils::GetMsecs;
+use crypto;
+use rustc_serialize::base64;
+use rustc_serialize::base64::ToBase64;
 
 /// авторизация пользователя
 pub fn login( request: &mut Request ) -> IronResult<Response> {
@@ -36,7 +39,14 @@ fn login_answer( request: &mut Request ) -> AnswerResult {
     let login_info = try!( request.get_body::<LoginInfo>() );
     let maybe_user = {
         let db = try!( request.stuff().get_current_db_conn() );
-        try!( db.get_user( &login_info.user, &login_info.password ) )
+        let regkey = try!( db.get_reg_key( &login_info.user ) );
+        match regkey {
+            Some( regkey ) => {
+                let password_hash = make_password_hash( &regkey, &login_info.password );
+                try!( db.get_user( &login_info.user, &password_hash ) )
+            },
+            None => None
+        }
     };
     make_login( request, maybe_user )
 }
@@ -74,10 +84,11 @@ fn join_us_answer( request: &mut Request ) -> AnswerResult {
 
     let answer = if user_exists == false { // нет такого пользователя
         let reg_key = gen_reg_key();
+        let password_hash = make_password_hash( &reg_key, &reg_info.password );
         let new_user = {
             let db = try!( request.stuff().get_current_db_conn() );
             try!( db.add_user( &reg_info.user,
-                               &reg_info.password,
+                               &password_hash,
                                &reg_info.email,
                                &reg_key,
                                time::get_time().msecs() ) )
@@ -92,6 +103,15 @@ fn join_us_answer( request: &mut Request ) -> AnswerResult {
         Answer::bad( FieldErrorInfo::new( "user", "exists" ) )
     };
     Ok( answer )
+}
+
+fn make_password_hash( reg_key: &str, password: &str ) -> String {
+    let reg_key_bytes: Vec<u8> = reg_key.bytes().take( 16 ).collect();
+    let password_bytes: Vec<u8> = password.bytes().collect();
+    let mut password_hash: [u8; 24] = [0; 24];
+    crypto::bcrypt::bcrypt( 12, &reg_key_bytes, &password_bytes, &mut password_hash );
+    let password_string = password_hash.to_base64( base64::STANDARD );
+    password_string
 }
 
 fn registration_end_answer( req: &mut Request ) -> AnswerResult {

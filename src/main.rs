@@ -16,6 +16,7 @@ extern crate env_logger;
 extern crate rustc_serialize;
 extern crate router;
 extern crate rand;
+extern crate crypto;
 
 use iron::prelude::*;
 use router::Router;

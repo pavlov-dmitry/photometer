@@ -16,6 +16,8 @@ iron = "*"
 router = "*"
 rand = "*"
 image = "*"
+lettre = "*"
+rust-crypto = "*"
 
 [dependencies.mysql]
 version="*"
