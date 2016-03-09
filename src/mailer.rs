@@ -139,7 +139,8 @@ impl MailContext {
             }
         };
 
-        loop {
+        let mut try_count = 0;
+        while try_count < 6 {
             let builder = SmtpTransportBuilder::new( (&self.smtp_addr as &str, smtp::SUBMISSION_PORT) );
             let builder = match builder {
                 Ok( builder ) => builder,
@@ -163,6 +164,7 @@ impl MailContext {
                 Err( e ) => {
                     error!( "error sending email to '{}' description: {}", mail.to_addr, e );
                     thread::sleep( Duration::from_secs( 10 ) );
+                    try_count += 1;
                 }
             }
         }
