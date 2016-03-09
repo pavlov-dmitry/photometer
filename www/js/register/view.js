@@ -28,8 +28,8 @@ define( function(require){
             $("#form-reg-error").toggleClass( 'hidden', !has_error );
             $("#name").focus();
 
-            var closable_message = require( "helpers/closable_message");
-            closable_message();
+            // var closable_message = require( "helpers/closable_message");
+            // closable_message();
 
             this.form_validation();
 
@@ -37,11 +37,29 @@ define( function(require){
         },
 
         submit: function() {
-            var is_valid = $("#form-register").form( "is valid" )
+            var $form = $("#form-register");
+            var is_valid = $form.form( "is valid" )
             if ( is_valid ) {
-                this.model.register( $("#name").val(),
-                                     $("#pasw").val(),
-                                     $("#mail").val() );
+                $form.addClass( "loading" );
+                var self = this;
+                var handler = this.model.register( $("#name").val(),
+                                                   $("#pasw").val(),
+                                                   $("#mail").val() );
+                handler.finish = function() {
+                    $form.removeClass( "loading" );
+                }
+                handler.bad = function( data ) {
+                    var state = {
+                        has_error: true
+                    };
+                    if ( data.reason === "exists" ) {
+                        state.error = "Пользователь с таким именем или почтой уже существует";
+                    }
+                    else { // для всех необработанных ошибок
+                        state.error = JSON.stringify( data );
+                    }
+                    self.model.set( state );
+                }
             }
         },
 

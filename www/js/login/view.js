@@ -38,8 +38,8 @@ define( function(require) {
             $( "#login-error" ).toggleClass( "hidden", !has_error );
 	    $("#login-name").focus();
 
-            var closable_message = require( "helpers/closable_message" );
-            closable_message();
+            // var closable_message = require( "helpers/closable_message" );
+            // closable_message();
 
             return this;
         },
