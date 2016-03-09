@@ -17,6 +17,7 @@ extern crate rustc_serialize;
 extern crate router;
 extern crate rand;
 extern crate crypto;
+extern crate lettre;
 
 use iron::prelude::*;
 use router::Router;
@@ -130,7 +131,6 @@ fn main() {
         &cfg.mail_smtp_address,
         &cfg.mail_from_address,
         &cfg.mail_from_pass,
-        &cfg.mail_tmp_file_path
     ) );
     stuff.add( postman );
     stuff.add( mail_writer::create( &cfg.root_url ) );

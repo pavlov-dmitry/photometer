@@ -1,12 +1,7 @@
 use iron::typemap::Key;
-use std::io;
-use std::process::Command;
-use std::fs::File;
-use std::io::stderr;
-use std::io::Write;
 use std::thread;
 use std::convert::From;
-use std::path::Path;
+use std::time::Duration;
 
 use authentication::User;
 use std::sync::mpsc::{ Sender, channel, SendError };
@@ -15,6 +10,10 @@ use db::mailbox::DbMailbox;
 use types::{ EmptyResult, CommonError };
 use database::{ Databaseable };
 use stuff::{ Stuff, StuffInstallable };
+
+use lettre::email::EmailBuilder;
+use lettre::transport::smtp::{ self, SmtpTransportBuilder };
+use lettre::transport::EmailTransport;
 
 struct MailSender( Sender<Mail> );
 
@@ -41,7 +40,6 @@ impl Mailer for Stuff {
     }
     fn send_external_mail( &mut self, _user: &User, _subject: &str, _body: &str ) -> EmptyResult {
         //FIXME: Временно на время тестов отключаем посылку писем во вне
-        // self.send_mail_external( user, subject, body )
         Ok( () )
     }
     fn send_internal_mail( &mut self, user: &User, subject: &str, body: &str ) -> EmptyResult {
@@ -74,7 +72,6 @@ impl MailerPrivate for Stuff {
         try!( tx.send( Mail {
             to_addr: user.mail.clone(),
             to_name: user.name.clone(),
-            //sender_name: sender.to_string(),
             subject: subject.to_string(),
             body: body.to_string(),
         } ) );
@@ -103,8 +100,7 @@ pub struct MailerBody {
 pub struct MailContext {
     smtp_addr: String,
     from_addr: String,
-    tmp_mail_file: String,
-    auth_info: String
+    pass: String
 }
 
 // сделал pub потому что иначе компилятор не даёт его использовать в FromError
@@ -119,58 +115,58 @@ pub struct Mail {
 impl Key for MailerBody { type Value = MailerBody; }
 impl Key for MailSender { type Value = MailSender; }
 
-//curl --url "smtps://smtp.gmail.com:465" --ssl-reqd --mail-from "photometer.org.ru@gmail.com" --mail-rcpt "voidwalker@mail.ru" --upload-file ./mail.txt --user "photometer.org.ru@gmail.com:ajnjvtnhbxtcrbq" --insecure
 impl MailContext {
-    pub fn new( smtp_addr: &str, from_addr: &str, pass: &str, tmp_file_path: &str ) -> MailContext {
+    pub fn new( smtp_addr: &str, from_addr: &str, pass: &str ) -> MailContext {
         MailContext {
-            smtp_addr: smtp_addr.to_string(),
-            from_addr: from_addr.to_string(),//format!( "{}", from_addr ),
-            tmp_mail_file: tmp_file_path.to_string(),
-            auth_info: format!( "{}:{}", from_addr, pass )
+            smtp_addr: smtp_addr.to_owned(),
+            from_addr: from_addr.to_owned(),
+            pass: pass.to_owned()
         }
     }
     fn send_mail( &self, mail: Mail ) {
-        //создаём текстовый файл с письмом
-        if let Err( e ) = self.make_mail_file( &mail ) {
-            let _ = writeln!( &mut stderr(), "fail to create tmp mail file: {}", e );
-            return;
-        }
-        //запускаем curl на передачу записанного письма
-        let process = Command::new( "curl" )
-            .arg( "--url" )
-            .arg( &self.smtp_addr )
-            .arg( "--ssl-reqd" )
-            .arg( "--mail-from" )
-            .arg( &self.from_addr )
-            .arg( "--mail-rcpt" )
-            .arg( &format!( "\"{}\"", mail.to_addr ) )
-            .arg( "--upload-file" )
-            .arg( &self.tmp_mail_file )
-            .arg( "--user" )
-            .arg( &self.auth_info )
-            .arg( "--insecure" )
-            .output();
+        let email = EmailBuilder::new()
+            .to( (&mail.to_addr as &str, &mail.to_name as &str) )
+            .from( &self.from_addr as &str )
+            .subject( &mail.subject )
+            .body( &mail.body )
+            .build();
 
-        let process = match process {
-            Ok( process ) => process,
-            Err( e ) => panic!( "fail to create 'curl' process: {}", e )
+        let email = match email {
+            Ok( email ) => email,
+            Err( desc ) => {
+                error!( "error creating email: {}", desc );
+                return;
+            }
         };
-        if process.status.success() == false {
-            let err_string = String::from_utf8_lossy( &process.stderr );
-            let _ = writeln!( &mut stderr(), "fail to send mail: {}", err_string );
+
+        loop {
+            let builder = SmtpTransportBuilder::new( (&self.smtp_addr as &str, smtp::SUBMISSION_PORT) );
+            let builder = match builder {
+                Ok( builder ) => builder,
+                Err( e ) => {
+                    error!( "error creating SmtpTransportBuilder with addr: {}, error description: {}", self.smtp_addr, e );
+                    return;
+                }
+            };
+
+            let mut sender = builder
+                .credentials( &self.from_addr, &self.pass )
+                .build();
+
+            match sender.send( email.clone() ) {
+                Ok( _ ) => {
+                    debug!( "mail to '{}' with subject='{}' successfully sended.",
+                             mail.to_addr,
+                             mail.subject );
+                    break;
+                },
+                Err( e ) => {
+                    error!( "error sending email to '{}' description: {}", mail.to_addr, e );
+                    thread::sleep( Duration::from_secs( 10 ) );
+                }
+            }
         }
-        else {
-            debug!( "mail to '{}' with subject='{}' successfully sended.", mail.to_addr, mail.subject );
-        }
-    }
-    fn make_mail_file( &self, mail: &Mail ) -> io::Result<()> {
-        let ref mut file = try!( File::create( &Path::new( &self.tmp_mail_file ) ) );
-        try!( writeln!( file, "From: \"photometer\" <{}>", self.from_addr ) );
-        try!( writeln!( file, "To: \"{}\" <{}>", mail.to_name, mail.to_addr ) );
-        try!( writeln!( file, "Subject: {}", mail.subject ) );
-        try!( writeln!( file, "" ) );
-        try!( write!( file, "{}", &mail.body ) );
-        Ok( () )
+
     }
 }
 

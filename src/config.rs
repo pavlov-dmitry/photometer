@@ -12,7 +12,6 @@ pub struct Config {
     pub server_port: u16,
     pub root_url: String,
     pub static_files_path : String,
-    // pub login_page_url : String,
     pub db_name : String,
     pub db_user : String,
     pub db_password : String,
@@ -25,7 +24,6 @@ pub struct Config {
     pub mail_smtp_address: String,
     pub mail_from_address: String,
     pub mail_from_pass: String,
-    pub mail_tmp_file_path: String
 }
 
 impl Config {
@@ -57,7 +55,6 @@ impl Config {
             mail_smtp_address: "smtps://smtp.gmail.com:465".to_string(),
             mail_from_address: "photometer.org.ru@gmail.com".to_string(),
             mail_from_pass: "ajnjvtnhbxtcrbq".to_string(),
-            mail_tmp_file_path: "../data/tmp_mail".to_string()
         }
     }
 }
