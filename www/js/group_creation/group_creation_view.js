@@ -32,7 +32,7 @@ define( function( require ) {
             this.$el.html( this.template( this.model.toJSON() ) );
             $("#users").dropdown({
                 fields: {
-                    value: "name"
+                    value: "id"
                 },
                 apiSettings: {
                     // cache: false,
@@ -88,7 +88,7 @@ define( function( require ) {
             members.reset();
             var users_value =  $("#users").val();
             _.forEach( users_value, function( data ) {
-                members.add_user( { name: data } );
+                members.add_user( { id: data } );
             })
             var handler = this.model.save();
 
@@ -146,7 +146,7 @@ define( function( require ) {
                     text_error = "Группа с таким именем уже существует";
                 }
                 else if ( desc.reason === NOT_FOUND ) {
-                    text_error = "Пользователь с именем " + desc.field + " не найден";
+                    text_error = "Пользователь с ID " + desc.field + " не найден";
                 }
 
                 var newError = "<li>" + text_error + "</li>";

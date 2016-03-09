@@ -43,7 +43,7 @@ type Members = HashSet<Id>;
 
 #[derive(Clone, RustcDecodable)]
 struct Member {
-    name: String
+    id: Id
 }
 
 #[derive(Clone, RustcDecodable)]
@@ -107,12 +107,15 @@ impl UserCreatedEvent for GroupCreation {
         // проверка наличия пользователей
         let db = try!( req.stuff().get_current_db_conn() );
         for member in group_info.members.iter() {
-            let user = try!( db.user_by_name( &member.name ) );
-            match user {
-                Some( user ) => {
-                    info.members.insert( user.id );
+            let is_exists = try!( db.user_id_exists( member.id ) );
+            match is_exists {
+                true => {
+                    info.members.insert( member.id );
                 },
-                None => errors.push( FieldErrorInfo::not_found( &member.name ) )
+                false => {
+                    let id_str = format!("{}", member.id);
+                    errors.push( FieldErrorInfo::not_found( &id_str ) )
+                }
             }
         }
 

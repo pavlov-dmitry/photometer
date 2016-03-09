@@ -3,7 +3,7 @@ define ( function( require ) {
 
     var UserModel = Backbone.Model.extend({
         defaults: {
-            name: ""
+            id: 0
         },
 
         set_removeable: function( is ) {
@@ -12,7 +12,7 @@ define ( function( require ) {
     });
 
     UserModel.empty_model = function() {
-        return { name: "" };
+        return { id: 0 };
     };
 
     return UserModel;
