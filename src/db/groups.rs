@@ -27,7 +27,7 @@ pub trait DbGroups {
     /// проверяет пользователя на принадлежность к группе
     fn is_member( &mut self, user_id: Id, group_id: Id ) -> CommonResult<bool>;
     /// проверяет существоание группы
-    fn is_group_id_exists( &mut self, group_id: Id ) -> CommonResult<bool>;
+    // fn is_group_id_exists( &mut self, group_id: Id ) -> CommonResult<bool>;
     /// проверяет существоание группы
     fn is_group_exists( &mut self, name: &String ) -> CommonResult<bool>;
     /// создать новую группу
@@ -81,10 +81,10 @@ impl DbGroups for PooledConn {
         is_member_impl( self, user_id, group_id )
             .map_err( |e| fn_failed( "is_member", e ) )
     }
-    fn is_group_id_exists( &mut self, group_id: Id ) -> CommonResult<bool> {
-        is_group_id_exists_impl( self, group_id )
-            .map_err( |e| fn_failed( "is_group_id_exists", e ) )
-    }
+    // fn is_group_id_exists( &mut self, group_id: Id ) -> CommonResult<bool> {
+    //     is_group_id_exists_impl( self, group_id )
+    //         .map_err( |e| fn_failed( "is_group_id_exists", e ) )
+    // }
     /// проверяет существоание группы
     fn is_group_exists( &mut self, name: &String ) -> CommonResult<bool> {
         is_group_exists_impl( self, &name )
@@ -157,12 +157,12 @@ fn is_member_impl( conn: &mut PooledConn, user_id: Id, group_id: Id ) -> mysql::
     Ok( result.count() == 1 )
 }
 
-fn is_group_id_exists_impl( conn: &mut PooledConn, group_id: Id ) -> mysql::Result<bool> {
-    let mut stmt = try!( conn.prepare( "SELECT id FROM groups WHERE id=?" ) );
-    let params: &[ &ToValue ] = &[ &group_id ];
-    let result = try!( stmt.execute( params ) );
-    Ok( result.count() == 1 )
-}
+// fn is_group_id_exists_impl( conn: &mut PooledConn, group_id: Id ) -> mysql::Result<bool> {
+//     let mut stmt = try!( conn.prepare( "SELECT id FROM groups WHERE id=?" ) );
+//     let params: &[ &ToValue ] = &[ &group_id ];
+//     let result = try!( stmt.execute( params ) );
+//     Ok( result.count() == 1 )
+// }
 
 fn is_group_exists_impl( conn: &mut PooledConn, name: &str ) -> mysql::Result<bool> {
     let mut stmt = try!( conn.prepare( "SELECT id FROM groups WHERE name=?" ) );
