@@ -52,5 +52,13 @@
         {{/each}}
       </div>
     </div>
+    {{else}}
+      {{#if comments_count}}
+    <div class="extra">
+      <div class="{{#if unreaded_comments}}new {{/if}}comments">
+        <i class="comment {{#unless unreaded_comments}}outline {{/unless}}icon"></i> {{comments_count}}
+      </div>
+    </div>
+      {{/if}}
     {{/if_equal}}
 </div>
