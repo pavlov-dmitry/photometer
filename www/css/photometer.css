@@ -2,6 +2,7 @@
 @import "jquery.fileupload.css";
 @import "imgareaselect-animated.css";
 @import "jquery.datetimepicker.css";
+@import "emojify.css";
 
 #workspace {
     height: 100%;

@@ -15,7 +15,8 @@ require.config({
         'template': '../template',
         'handlebars.runtime': 'lib/handlebars.runtime',
         'showdown': 'lib/showdown',
-        'moment': 'lib/moment-with-russian-locale'
+        'moment': 'lib/moment-with-russian-locale',
+        'emojify': "lib/emojify"
     }
 });
 
