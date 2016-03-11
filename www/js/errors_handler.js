@@ -29,7 +29,7 @@ define( function( require ) {
                     msg: text,
                     negative: true
                   },
-                  5000);
+                  "long");
         },
 
     };

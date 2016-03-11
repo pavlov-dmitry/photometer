@@ -51,9 +51,24 @@ define( function(require) {
                     self.model.fetch( 0 );
                 },
 
-                fail: function() {
+                error: function( e ) {
+                    console.log( "upload error: " + JSON.stringify( e ) );
+
                     var errorHandler = require( "errors_handler" );
-                    errorHandler.error( "Не получилось загрузить файл, может попробуем еще раз?" );
+                    if ( e.status == 413 ) {
+                        errorHandler.error( "Слишком большой файл. Попробуй что нить меньше 2Мб." );
+                    }
+                    else if ( e.status == 400 ) {
+                        if ( e.responseJSON.photo && e.responseJSON.photo == "bad_image" ) {
+                            errorHandler.error( "Какая-то странная картинка, что это за формат такой? Уж извините, но мы такого не знаем. Попробуйте сохранить в Baseline JPEG." );
+                        }
+                        else {
+                            errorHandler.error( "Что-то не так с загрузкой, но что не понятно. Пора пообщаться с разработчиком." );
+                        }
+                    }
+                    else {
+                        errorHandler.error( "Неизвестная ошибка. Пора пообщаться с разработчиком." );
+                    }
                 },
 
                 progressall : function( e, data ) {
