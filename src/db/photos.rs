@@ -37,18 +37,21 @@ pub trait DbPhotos {
     fn get_publication_photo_infos( &mut self, reader_id: Id, scheduled_id: Id ) -> CommonResult<Vec<PhotoInfo>>;
     /// выдаёт соседнии фотографии относительно публикации
     fn get_photo_neighbours_in_publication( &mut self, scheduled_id: Id, photo_id: Id ) -> CommonResult<(Option<Id>, Option<Id>)>;
+    /// увеличивает счётчик комментариев у фотографии
+    fn increment_photo_comments_count( &mut self, photo_id: Id ) -> EmptyResult;
 }
 
 pub fn create_tables( db: &Database ) -> EmptyResult {
     db.execute(
         "CREATE TABLE IF NOT EXISTS `images` (
             `id` bigint(20) NOT NULL AUTO_INCREMENT,
-            `owner_id` int(4) unsigned DEFAULT '0',
+            `owner_id` bigint(20) unsigned DEFAULT '0',
             `upload_time` bigint(20) NOT NULL DEFAULT '0',
             `type` enum( 'jpg', 'png' ) NOT NULL DEFAULT 'jpg',
             `width` int(4) unsigned DEFAULT '0',
             `height` int(4) unsigned DEFAULT '0',
             `name` varchar(64) NOT NULL DEFAULT '',
+            `comments_count` int(6) NOT NULL DEFAULT '0',
             `iso` int(11) unsigned DEFAULT '0',
             `shutter_speed` int(11) DEFAULT '0',
             `aperture` decimal(8,4) NOT NULL DEFAULT '0',
@@ -134,6 +137,12 @@ impl DbPhotos for PooledConn {
     fn get_photo_neighbours_in_publication( &mut self, scheduled_id: Id, photo_id: Id ) -> CommonResult<(Option<Id>, Option<Id>)> {
         get_photo_neighbours_in_publication_impl( self, scheduled_id, photo_id )
             .map_err( |e| fn_failed( "get_photo_neighbours_in_publication_impl", e ) )
+    }
+
+    /// увеличивает счётчик комментариев у фотографии
+    fn increment_photo_comments_count( &mut self, photo_id: Id ) -> EmptyResult {
+        increment_comments_count_impl( self, photo_id )
+            .map_err( |e| fn_failed( "increment_photo_comments_count", e ) )
     }
 }
 
@@ -418,6 +427,12 @@ fn rename_photo_impl( conn: &mut PooledConn, photo_id: Id, newname: &str ) -> my
     Ok( () )
 }
 
+fn increment_comments_count_impl( conn: &mut PooledConn, photo_id: Id ) -> mysql::Result<()>  {
+    try!( conn.prep_exec( "UPDATE images SET comments_count=comments_count+1 WHERE id=?",
+                           (photo_id,) ) );
+    Ok( () )
+}
+
 const PHOTO_INFO_FIELDS: &'static str = "
     i.owner_id,
     u.login,
@@ -433,7 +448,7 @@ const PHOTO_INFO_FIELDS: &'static str = "
     i.focal_length,
     i.focal_length_35mm,
     i.camera_model,
-    ( SELECT COUNT( id ) FROM comments WHERE comment_for='photo' AND for_id=i.id ),
+    i.comments_count,
     ( SELECT COUNT( cc.id )
       FROM comments AS cc
       LEFT JOIN visited AS vv

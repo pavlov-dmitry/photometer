@@ -53,6 +53,8 @@ pub trait DbEvents {
     fn get_group_timetable( &mut self, group_id: Id ) -> CommonResult<EventInfos>;
     /// "выключает" событие если оно еще не началось
     fn disable_event_if_not_started( &mut self, scheduled_id: Id ) -> EmptyResult;
+    /// увеличивает счётчие комментариев к событию
+    fn increment_event_comments_count( &mut self, scheduled_id: Id ) -> EmptyResult;
 }
 
 pub fn create_tables( db: &Database ) -> EmptyResult {
@@ -74,6 +76,7 @@ pub fn create_tables( db: &Database ) -> EmptyResult {
             `group_attached` BOOL NOT NULL DEFAULT false,
             `group_id` bigint(20) NOT NULL DEFAULT '0',
             `creator_id` bigint(20) NOT NULL DEFAULT '0',
+            `comments_count` int(6) NOT NULL DEFAULT '0',
             PRIMARY KEY ( `id` ),
             KEY `time_idx` ( `start_time`, `end_time`, `state` )
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
@@ -151,6 +154,12 @@ impl DbEvents for PooledConn {
     fn disable_event_if_not_started( &mut self, scheduled_id: Id ) -> EmptyResult {
         disable_event_if_not_started_impl( self, scheduled_id )
             .map_err( |e| fn_failed( "disable_event_if_not_started", e ) )
+    }
+
+    /// увеличивает счётчие комментариев к событию
+    fn increment_event_comments_count( &mut self, scheduled_id: Id ) -> EmptyResult {
+        increment_event_comments_count_impl( self, scheduled_id )
+            .map_err( |e| fn_failed( "increment_event_comments_count", e ) )
     }
 }
 
@@ -497,6 +506,13 @@ fn disable_event_if_not_started_impl( conn: &mut PooledConn, scheduled_id: Id ) 
     " ) );
     let params: &[ &ToValue ] = &[ &scheduled_id ];
     try!( stmt.execute( params ) );
+    Ok( () )
+}
+
+
+fn increment_event_comments_count_impl( conn: &mut PooledConn, scheduled_id: Id ) -> mysql::Result<()> {
+    try!( conn.prep_exec( "UPDATE scheduled_events SET comments_count=comments_count+1 WHERE id=?",
+                           (scheduled_id,) ) );
     Ok( () )
 }
 

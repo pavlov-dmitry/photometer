@@ -138,7 +138,7 @@ const FIELDS: &'static str = "
     e.creator_id,
     u.login,
     v.id,
-    ( SELECT COUNT( id ) FROM comments WHERE comment_for='event' AND for_id=f.scheduled_id ),
+    e.comments_count,
     ( SELECT COUNT( cc.id )
       FROM comments AS cc
       LEFT JOIN visited AS vv

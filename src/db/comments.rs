@@ -19,7 +19,7 @@ use types::{
     ShortInfo
 };
 
-#[derive(Clone)]
+#[derive(Copy, Clone)]
 pub enum CommentFor {
     Photo,
     Event

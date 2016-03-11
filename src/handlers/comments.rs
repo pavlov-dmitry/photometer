@@ -1,6 +1,8 @@
 use iron::prelude::*;
 use db::comments::{ DbComments, CommentFor };
 use db::visited::{ DbVisited, VisitedContent };
+use db::photos::DbPhotos;
+use db::events::DbEvents;
 use get_body::GetBody;
 use answer::{ AnswerResult, Answer, AnswerResponse };
 use types::{ Id, CommentInfo };
@@ -113,6 +115,10 @@ fn add_comment( req: &mut Request, comment_for: CommentFor ) -> AnswerResult {
                           comment_for,
                           info.id,
                           &info.text ) );
+    match comment_for {
+        CommentFor::Photo => try!( db.increment_photo_comments_count( info.id ) ),
+        CommentFor::Event => try!( db.increment_event_comments_count( info.id ) )
+    }
     Ok( Answer::good( "ok" ) )
 }
 
