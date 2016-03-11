@@ -49,7 +49,9 @@ pub fn create_tables( db: &Database ) -> EmptyResult {
                 'finish'
             ) NOT NULL DEFAULT 'start',
             `data` TEXT NOT NULL DEFAULT '',
-            PRIMARY KEY ( `id` )
+            PRIMARY KEY ( `id` ),
+            KEY `group_idx` ( `group_id` ),
+            KEY `sheduled_idx` ( `sheduled_id` )t
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
         ",
         "db::group_feed::create_tables"
@@ -264,7 +266,7 @@ fn get_unwatched_feed_elements_by_groups_impl( conn: &mut PooledConn,
         SELECT f.group_id, COUNT( f.id )
         FROM group_feed AS f
         LEFT JOIN group_members AS gm ON( gm.group_id = f.group_id )
-        LEFT JOIN visited AS v ON ( v.user_id=gm.user_id AND v.content_type='feed' AND v.content_id=f.id )
+        LEFT JOIN visited AS v ON ( v.content_type='feed' AND v.content_id=f.id AND v.user_id=gm.user_id )
         WHERE gm.user_id=? AND v.id is NULL
         GROUP BY f.group_id
     ";

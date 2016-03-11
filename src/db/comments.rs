@@ -65,7 +65,8 @@ pub fn create_tables( db: &Database ) -> EmptyResult {
             ) NOT NULL DEFAULT 'photo',
             `for_id` bigint(20) NOT NULL DEFAULT '0',
             `text` TEXT NOT NULL DEFAULT '',
-            PRIMARY KEY ( `id` )
+            PRIMARY KEY ( `id` ),
+            KEY `for_idx` ( `comment_for`, `for_id` )
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
         ",
         "db::comments::create_tables"
@@ -208,7 +209,7 @@ fn get_comment_info_impl( conn: &mut PooledConn,
         "SELECT {}
          FROM comments AS c
          LEFT JOIN users as u ON ( u.id = c.user_id )
-         LEFT JOIN visited as v ON ( v.user_id=? AND v.content_type='comment' AND v.content_id=c.id )
+         LEFT JOIN visited as v ON ( v.content_type='comment' AND v.content_id=c.id AND v.user_id=? )
          WHERE c.id = ?",
         FIELDS
     );
@@ -236,7 +237,7 @@ fn get_comments_impl( conn: &mut PooledConn,
         "SELECT {}
          FROM comments AS c
          LEFT JOIN users as u ON ( u.id = c.user_id )
-         LEFT JOIN visited as v ON ( v.user_id=? AND v.content_type='comment' AND v.content_id=c.id )
+         LEFT JOIN visited as v ON ( v.content_type='comment' AND v.content_id=c.id AND v.user_id=? )
          WHERE comment_for=?
            AND for_id=?
          LIMIT ?

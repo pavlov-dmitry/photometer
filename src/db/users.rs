@@ -40,7 +40,9 @@ pub fn create_tables( db: &Database ) -> EmptyResult {
             `mail` varchar(256) NOT NULL DEFAULT '',
             `regkey` varchar(256) NOT NULL DEFAULT '',
             PRIMARY KEY (`id`),
-            KEY `login_idx` (`login`)
+            UNIQUE KEY `login_idx` (`login`),
+            UNIQUE KEY `regkey_idx` (`regkey`),
+            UNIQUE KEY `email_idx` (`email`)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
         ",
         "db::users::create_tables"

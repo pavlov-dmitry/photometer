@@ -39,7 +39,8 @@ pub fn create_tables( db: &Database ) -> EmptyResult {
                 'comment'
             ) NOT NULL DEFAULT 'feed',
             `content_id` bigint(20) NOT NULL DEFAULT '0',
-            PRIMARY KEY ( `id` )
+            PRIMARY KEY ( `id` ),
+            KEY `visited_idx` ( `content_id`, `user_id` )
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
         ",
         "db::visited::create_tables"
