@@ -76,7 +76,7 @@ pub fn create_tables( db: &Database ) -> EmptyResult {
             `group_attached` BOOL NOT NULL DEFAULT false,
             `group_id` bigint(20) NOT NULL DEFAULT '0',
             `creator_id` bigint(20) NOT NULL DEFAULT '0',
-            `comments_count` int(6) NOT NULL DEFAULT '0',
+            `comments_count` int(11) NOT NULL DEFAULT '0',
             PRIMARY KEY ( `id` ),
             KEY `time_idx` ( `start_time`, `end_time`, `state` )
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8;

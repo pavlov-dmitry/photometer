@@ -51,7 +51,7 @@ pub fn create_tables( db: &Database ) -> EmptyResult {
             `width` int(4) unsigned DEFAULT '0',
             `height` int(4) unsigned DEFAULT '0',
             `name` varchar(64) NOT NULL DEFAULT '',
-            `comments_count` int(6) NOT NULL DEFAULT '0',
+            `comments_count` int(11) NOT NULL DEFAULT '0',
             `iso` int(11) unsigned DEFAULT '0',
             `shutter_speed` int(11) DEFAULT '0',
             `aperture` decimal(8,4) NOT NULL DEFAULT '0',
