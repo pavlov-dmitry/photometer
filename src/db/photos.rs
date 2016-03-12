@@ -17,16 +17,16 @@ use std::str;
 
 pub trait DbPhotos {
     /// добавление фотографии в галлерею пользователя
-    fn add_photo( &mut self, user_id: Id, info: &PhotoInfo ) -> CommonResult<()>;
-    /// получение информации о фото
-    fn get_photo_info( &mut self, reader_id: Id, photo_id: Id ) -> CommonResult<Option<PhotoInfo>>;
+    fn add_photo( &mut self, user_id: Id, info: &PhotoInfo ) -> CommonResult<Id>;
+    /// получение информации о фото в галлерее
+    fn get_gallery_photo_info( &mut self, reader_id: Id, photo_id: Id ) -> CommonResult<Option<PhotoInfo>>;
+    /// получение информации о фото в галлерее
+    fn get_publication_photo_info( &mut self, reader_id: Id, photo_id: Id ) -> CommonResult<Option<PhotoInfo>>;
     fn get_short_photo_info( &mut self, photo_id: Id ) -> CommonResult<Option<ShortPhotoInfo>>;
     ///возвращает список описаний фоточек
     fn get_photo_infos( &mut self, reader_id: Id, owner_id: Id, offset: u32, count: u32 ) -> CommonResult<Vec<PhotoInfo>>;
     ///вычисляет кол-во фоток пользователя за опеределнный период
     fn get_photo_infos_count( &mut self, owner_id: Id ) -> CommonResult<u32>;
-    ///выдаёт соседнии фотографии относительно опеределенной в галлереи опередленного пользователя
-    fn get_photo_neighbours_in_gallery( &mut self, owner_id: Id, photo_id: Id ) -> CommonResult<(Option<Id>, Option<Id>)>;
     ///переименование фотографии
     fn rename_photo( &mut self, photo_id: Id, newname: &str ) -> CommonResult<()>;
     ///вычисляет кол-во неопубликованных фотографий пользователя
@@ -35,10 +35,12 @@ pub trait DbPhotos {
     fn get_unpublished_photo_infos( &mut self, reader_id: Id, owner_id: Id, offset: u32, count: u32 ) -> CommonResult<Vec<PhotoInfo>>;
     /// возвращает описания фотографий от опеределенной публикации
     fn get_publication_photo_infos( &mut self, reader_id: Id, scheduled_id: Id ) -> CommonResult<Vec<PhotoInfo>>;
-    /// выдаёт соседнии фотографии относительно публикации
-    fn get_photo_neighbours_in_publication( &mut self, scheduled_id: Id, photo_id: Id ) -> CommonResult<(Option<Id>, Option<Id>)>;
     /// увеличивает счётчик комментариев у фотографии
     fn increment_photo_comments_count( &mut self, photo_id: Id ) -> EmptyResult;
+    /// возвращает последнее загруженное фото в галлерею пользователя
+    fn get_last_upload_gallery_photo( &mut self, user_id: Id ) -> CommonResult<Option<Id>>;
+    /// устанваливает предыдуюшую фотогафию в последовательности фотографий в галлерее
+    fn set_prev_in_gallery( &mut self, photo_id: Id, prev_photo_id: Id ) -> EmptyResult;
 }
 
 pub fn create_tables( db: &Database ) -> EmptyResult {
@@ -58,6 +60,8 @@ pub fn create_tables( db: &Database ) -> EmptyResult {
             `focal_length` int(4) unsigned DEFAULT '0',
             `focal_length_35mm` int(4) unsigned DEFAULT '0',
             `camera_model` varchar(64) NOT NULL DEFAULT '',
+            `next_gallery_id` bigint(20) NOT NULL DEFAULT '0',
+            `prev_gallery_id` bigint(20) NOT NULL DEFAULT '0',
             PRIMARY KEY ( `id` ),
             KEY `owner_image` ( `owner_id`, `upload_time` )
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
@@ -76,15 +80,19 @@ const CAMERA_MODEL_DEFAULT: &'static str = "";
 
 impl DbPhotos for PooledConn {
 	/// добавление фотографии в галлерею пользователя
-    fn add_photo( &mut self, user_id: Id, info: &PhotoInfo ) -> CommonResult<()> {
+    fn add_photo( &mut self, user_id: Id, info: &PhotoInfo ) -> CommonResult<Id> {
         add_photo_impl( self, user_id, info )
             .map_err( |e| fn_failed( "add_photo", e ) )
     }
 
     /// получение информации о фото
-    fn get_photo_info( &mut self, reader_id: Id, photo_id: Id ) -> CommonResult<Option<PhotoInfo>> {
-        get_photo_info_impl( self, reader_id, photo_id )
-            .map_err( |e| fn_failed( "get_photo_info", e ) )
+    fn get_gallery_photo_info( &mut self, reader_id: Id, photo_id: Id ) -> CommonResult<Option<PhotoInfo>> {
+        get_gallery_photo_info_impl( self, reader_id, photo_id )
+            .map_err( |e| fn_failed( "get_gallery_photo_info", e ) )
+    }
+    fn get_publication_photo_info( &mut self, reader_id: Id, photo_id: Id ) -> CommonResult<Option<PhotoInfo>> {
+        get_publication_photo_info_impl( self, reader_id, photo_id )
+            .map_err( |e| fn_failed( "get_publication_photo_info", e ) )
     }
     fn get_short_photo_info( &mut self, photo_id: Id ) -> CommonResult<Option<ShortPhotoInfo>> {
         get_short_photo_info_impl( self, photo_id )
@@ -101,12 +109,6 @@ impl DbPhotos for PooledConn {
     fn get_photo_infos_count( &mut self, owner_id: Id ) -> CommonResult<u32> {
         get_photo_infos_count_impl( self, owner_id )
             .map_err( |e| fn_failed( "get_photo_infos_count", e ) )
-    }
-
-    ///выдаёт соседнии фотографии относительно опеределенной в галлереи опередленного пользователя
-    fn get_photo_neighbours_in_gallery( &mut self, owner_id: Id, photo_id: Id ) -> CommonResult<(Option<Id>, Option<Id>)> {
-        get_photo_neighbours_in_gallery_impl( self, owner_id, photo_id )
-            .map_err( |e| fn_failed( "get_photo_neighbours_in_gallery", e ) )
     }
 
     ///переименование фотографии
@@ -133,16 +135,22 @@ impl DbPhotos for PooledConn {
             .map_err( |e| fn_failed( "get_publication_photo_infos", e ) )
     }
 
-    /// выдаёт соседнии фотографии относительно публикации
-    fn get_photo_neighbours_in_publication( &mut self, scheduled_id: Id, photo_id: Id ) -> CommonResult<(Option<Id>, Option<Id>)> {
-        get_photo_neighbours_in_publication_impl( self, scheduled_id, photo_id )
-            .map_err( |e| fn_failed( "get_photo_neighbours_in_publication_impl", e ) )
-    }
-
     /// увеличивает счётчик комментариев у фотографии
     fn increment_photo_comments_count( &mut self, photo_id: Id ) -> EmptyResult {
         increment_comments_count_impl( self, photo_id )
             .map_err( |e| fn_failed( "increment_photo_comments_count", e ) )
+    }
+
+    /// возвращает последнее загруженное фото в галлерею пользователя
+    fn get_last_upload_gallery_photo( &mut self, user_id: Id ) -> CommonResult<Option<Id>> {
+        get_last_upload_gallery_photo_impl( self, user_id )
+            .map_err( |e| fn_failed( "get_last_upload_gallery_photo", e ) )
+    }
+
+    /// устанваливает предыдуюшую фотогафию в последовательности фотографий в галлерее
+    fn set_prev_in_gallery( &mut self, photo_id: Id, prev_photo_id: Id ) -> EmptyResult {
+        set_prev_in_gallery_impl( self, photo_id, prev_photo_id )
+            .map_err( |e| fn_failed( "set_prev_in_gallery", e ) )
     }
 }
 
@@ -151,7 +159,7 @@ fn fn_failed<E: Display>( fn_name: &str, e: E ) -> CommonError {
 }
 
 
-fn add_photo_impl( conn: &mut PooledConn, user_id: Id, info: &PhotoInfo ) -> mysql::Result<()> {
+fn add_photo_impl( conn: &mut PooledConn, user_id: Id, info: &PhotoInfo ) -> mysql::Result<Id> {
     let mut stmt = try!( conn.prepare(
         "insert into images (
         owner_id,
@@ -165,8 +173,10 @@ fn add_photo_impl( conn: &mut PooledConn, user_id: Id, info: &PhotoInfo ) -> mys
         aperture,
         focal_length,
         focal_length_35mm,
-        camera_model )
-        values( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? )" )
+        camera_model,
+        next_gallery_id,
+        prev_gallery_id )
+        values( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? )" )
     );
     let camera_model: &str = match info.camera_model {
         Some( ref cam ) => cam,
@@ -184,20 +194,15 @@ fn add_photo_impl( conn: &mut PooledConn, user_id: Id, info: &PhotoInfo ) -> mys
         &info.aperture.unwrap_or( APERTURE_DEFAULT ),
         &info.focal_length.unwrap_or( FOCAL_LENGTH_DEFAULT ),
         &info.focal_length_35mm.unwrap_or( FOCAL_LENGTH_35MM_DEFAULT ),
-        &camera_model
+        &camera_model,
+        &info.next.unwrap_or( 0 ),
+        &info.prev.unwrap_or( 0 )
     ];
-    try!( stmt.execute( params ) );
-    Ok( () )
+    let sql_result = try!( stmt.execute( params ) );
+    Ok( sql_result.last_insert_id() )
 }
 
-fn get_photo_info_impl( conn: &mut PooledConn, reader_id: Id, photo_id: Id ) -> mysql::Result<Option< PhotoInfo>> {
-    let query = format!(
-        "SELECT {}
-        FROM images AS i
-        LEFT JOIN users AS u ON ( u.id = i.owner_id )
-        WHERE u.id IS NOT NULL AND i.id = ?",
-        PHOTO_INFO_FIELDS
-    );
+fn get_photo_info_impl( conn: &mut PooledConn, query: &str, reader_id: Id, photo_id: Id ) -> mysql::Result<Option< PhotoInfo>> {
     let mut stmt = try!( conn.prepare( &query ) );
     let mut sql_result = try!( stmt.execute( (reader_id, photo_id) ) );
     match sql_result.next() {
@@ -208,6 +213,33 @@ fn get_photo_info_impl( conn: &mut PooledConn, reader_id: Id, photo_id: Id ) -> 
             Ok( Some( read_photo_info( &mut values ) ) )
         }
     }
+}
+
+fn get_gallery_photo_info_impl( conn: &mut PooledConn, reader_id: Id, photo_id: Id ) -> mysql::Result<Option< PhotoInfo>> {
+    let query = format!(
+        "SELECT {}
+            i.next_gallery_id,
+            i.prev_gallery_id
+        FROM images AS i
+        LEFT JOIN users AS u ON ( u.id = i.owner_id )
+        WHERE u.id IS NOT NULL AND i.id = ?",
+        PHOTO_INFO_FIELDS
+    );
+    get_photo_info_impl( conn, &query, reader_id, photo_id )
+}
+
+fn get_publication_photo_info_impl( conn: &mut PooledConn, reader_id: Id, photo_id: Id ) -> mysql::Result<Option< PhotoInfo>> {
+    let query = format!(
+        "SELECT {}
+            p.next,
+            p.prev
+        FROM publication AS p
+        LEFT JOIN images AS i ON( i.id = p.photo_id )
+        LEFT JOIN users AS u ON ( u.id = i.owner_id )
+        WHERE u.id IS NOT NULL AND i.id = ?",
+        PHOTO_INFO_FIELDS
+    );
+    get_photo_info_impl( conn, &query, reader_id, photo_id )
 }
 
 fn get_short_photo_info_impl( conn: &mut PooledConn, photo_id: Id ) -> mysql::Result<Option<ShortPhotoInfo>> {
@@ -253,6 +285,8 @@ fn get_photo_infos_impl(
 {
     let query = format!(
         "SELECT {fields}
+            i.next_gallery_id,
+            i.prev_gallery_id
         FROM images AS i
         LEFT JOIN users AS u ON ( u.id = i.owner_id )
         WHERE i.owner_id = ?
@@ -275,6 +309,8 @@ fn get_unpublished_photo_infos_impl(
 {
     let query = format!(
         "SELECT {fields}
+         i.next_gallery_id,
+         i.prev_gallery_id
         FROM images AS i
         LEFT JOIN users AS u ON ( u.id = i.owner_id )
         LEFT JOIN publication AS p ON ( p.photo_id = i.id )
@@ -294,7 +330,9 @@ fn get_publication_photo_infos_impl( conn: &mut PooledConn,
                                      scheduled_id: Id ) -> mysql::Result<Vec<PhotoInfo>>
 {
     let query = format!(
-        "SELECT {fields}
+       "SELECT {fields}
+            p.next,
+            p.prev
         FROM publication AS p
         LEFT JOIN images AS i ON( i.id = p.photo_id )
         LEFT JOIN users AS u ON ( u.id = p.user_id )
@@ -320,72 +358,6 @@ fn get_photo_infos_general( conn: &mut PooledConn,
         })
     ).collect();
     Ok( photos )
-}
-
-fn get_photo_neighbours_in_gallery_impl( conn: &mut PooledConn, owner_id: Id, photo_id: Id ) -> mysql::Result<(Option<Id>, Option<Id>)> {
-    let prev = try!( get_neighbour_in_gallery( conn, owner_id, photo_id, false ) );
-    let next = try!( get_neighbour_in_gallery( conn, owner_id, photo_id, true ) );
-    Ok( ( prev, next ) )
-}
-
-fn get_photo_neighbours_in_publication_impl( conn: &mut PooledConn, scheduled_id: Id, photo_id: Id ) -> mysql::Result<(Option<Id>, Option<Id>)> {
-    let prev = try!( get_neighbour_in_publication( conn, scheduled_id, photo_id, false ) );
-    let next = try!( get_neighbour_in_publication( conn, scheduled_id, photo_id, true ) );
-    Ok( (prev, next) )
-}
-
-fn get_neighbour_in_gallery( conn: &mut PooledConn, owner_id: Id, photo_id: Id, is_next: bool ) -> mysql::Result<Option<Id>> {
-    let comp_sign = if is_next { "<" } else { ">" };
-    let sort_direction = if is_next { "DESC" } else { "ASC" };
-    let query = format!(
-        "SELECT
-             `id`
-         FROM
-             `images`
-         WHERE
-             `owner_id` = ? AND
-             `upload_time` {} (SELECT `upload_time` FROM `images` WHERE `id` = ?)
-         ORDER BY
-             `upload_time` {}
-         LIMIT 1;",
-        comp_sign,
-        sort_direction );
-
-    let params: &[ &ToValue ] = &[ &owner_id, &photo_id ];
-    read_neighbour_general( conn, &query, params )
-}
-
-fn get_neighbour_in_publication( conn: &mut PooledConn, scheduled_id: Id, photo_id: Id, is_next: bool ) -> mysql::Result<Option<Id>> {
-    let comp_sign = if is_next { ">" } else { "<" };
-    let sort_direction = if is_next { "ASC" } else { "DESC" };
-    let query = format!(
-        "SELECT
-             p.photo_id
-         FROM publication AS p
-         WHERE p.scheduled_id = ?
-           AND p.time {} (SELECT `time` FROM `publication` WHERE scheduled_id = ? AND photo_id = ? )
-         ORDER BY
-               time {}
-         LIMIT 1;",
-        comp_sign,
-        sort_direction );
-
-    let params: &[ &ToValue ] = &[ &scheduled_id, &scheduled_id, &photo_id ];
-    read_neighbour_general( conn, &query, params )
-}
-
-fn read_neighbour_general( conn: &mut PooledConn, query: &str, params: &[ &ToValue ] ) -> mysql::Result<Option<Id>> {
-    let mut stmt = try!( conn.prepare( query ) );
-    let mut result = try!( stmt.execute( params ) );
-    let neighbour: Option<Id> = match result.next() {
-        Some( row ) => {
-            let row = try!( row );
-            let (id,) = from_row( row );
-            Some( id )
-        },
-        None => None
-    };
-    Ok( neighbour )
 }
 
 fn get_photo_infos_count_impl( conn: &mut PooledConn, owner_id: Id ) -> mysql::Result<u32> {
@@ -433,6 +405,41 @@ fn increment_comments_count_impl( conn: &mut PooledConn, photo_id: Id ) -> mysql
     Ok( () )
 }
 
+fn get_last_upload_gallery_photo_impl( conn: &mut PooledConn,
+                                       user_id: Id ) -> mysql::Result<Option<Id>> {
+    let mut stmt = try!( conn.prepare( "
+         SELECT id
+         FROM images
+         WHERE owner_id=?
+         ORDER BY upload_time DESC
+         LIMIT 1
+    "));
+    let mut sql_result = try!( stmt.execute( (user_id,) ) );
+    let result = match sql_result.next() {
+        Some( row ) => {
+            let row = try!( row );
+            let (id,) = from_row( row );
+            if id != 0 {
+                Some( id )
+            }
+            else {
+                None
+            }
+        },
+        None => None
+    };
+    Ok( result )
+}
+
+fn set_prev_in_gallery_impl( conn: &mut PooledConn,
+                             photo_id: Id,
+                             prev_photo_id: Id ) -> mysql::Result<()>
+{
+    try!( conn.prep_exec( "UPDATE images SET prev_gallery_id=? WHERE id=?",
+                           (prev_photo_id, photo_id) ) );
+    Ok( () )
+}
+
 const PHOTO_INFO_FIELDS: &'static str = "
     i.owner_id,
     u.login,
@@ -455,11 +462,17 @@ const PHOTO_INFO_FIELDS: &'static str = "
            ON ( vv.content_type='comment'
                 AND vv.content_id = cc.id
                 AND vv.user_id=? )
-      WHERE cc.comment_for='photo' AND cc.for_id=i.id AND vv.id is NULL )";
+      WHERE cc.comment_for='photo' AND cc.for_id=i.id AND vv.id is NULL ),";
 
 fn read_photo_info<I: Iterator<Item = Value>>( mut values: I ) -> PhotoInfo
 {
     let mut next = || values.next().expect("DbPhotos invalid columns count on read PhotoInfo");
+    let neighbour = |value| {
+        match from_value( value ) {
+            0 => None,
+            v@_ => Some( v )
+        }
+    };
 
     PhotoInfo {
         owner: ShortInfo {
@@ -479,7 +492,9 @@ fn read_photo_info<I: Iterator<Item = Value>>( mut values: I ) -> PhotoInfo
         focal_length_35mm: if_not( from_value( next() ), FOCAL_LENGTH_35MM_DEFAULT ),
         camera_model: if_not( from_value( next() ), CAMERA_MODEL_DEFAULT.to_string() ),
         comments_count: from_value( next() ),
-        unreaded_comments: from_value( next() )
+        unreaded_comments: from_value( next() ),
+        next: neighbour( next() ),
+        prev: neighbour( next() )
     }
 }
 

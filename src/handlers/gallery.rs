@@ -140,9 +140,7 @@ struct PhotoContextInfo {
 
 #[derive(RustcEncodable)]
 struct GalleryPhotoInfo {
-    prev: Option<Id>,
-    photo: PhotoInfo,
-    next: Option<Id>
+    photo: PhotoInfo
 }
 
 pub fn photo_info( request: &mut Request ) -> IronResult<Response> {
@@ -156,19 +154,16 @@ fn photo_info_answer( req: &mut Request ) -> AnswerResult {
     let user_id = req.user().id;
 
     let db = try!( req.stuff().get_current_db_conn() );
-    let photo_info = try!( db.get_photo_info( user_id, photo_context.photo ) );
+    let photo_info = try!( db.get_gallery_photo_info( user_id, photo_context.photo ) );
     let photo_info = match photo_info {
         Some( photo_info ) => photo_info,
         None => return Ok( Answer::not_found() )
     };
 
-    let (prev, next) = try!( db.get_photo_neighbours_in_gallery( photo_context.user, photo_context.photo ) );
-
-    let answer = Answer::good( GalleryPhotoInfo{
-        prev: prev,
-        photo: photo_info,
-        next: next
-    });
+    let info = GalleryPhotoInfo {
+        photo: photo_info
+    };
+    let answer = Answer::good( info );
     Ok( answer )
 }
 
@@ -182,9 +177,7 @@ struct PublicationPhotoQuery {
 struct PublicationPhotoInfo {
     group: ShortInfo,
     feed: ShortInfo,
-    prev: Option<Id>,
     photo: PhotoInfo,
-    next: Option<Id>
 }
 
 fn publication_photo_answer( req: &mut Request ) -> AnswerResult {
@@ -197,24 +190,18 @@ fn publication_photo_answer( req: &mut Request ) -> AnswerResult {
         Some( info ) => info,
         None => return Ok( Answer::not_found() )
     };
-    let photo_info = try!( db.get_photo_info( user_id, photo_query.photo_id ) );
+    let photo_info = try!( db.get_publication_photo_info( user_id, photo_query.photo_id ) );
     let photo_info = match photo_info {
         Some( photo_info ) => photo_info,
         None => return Ok( Answer::not_found() )
     };
-    let (prev, next) = try!( db.get_photo_neighbours_in_publication(
-        feed_info.scheduled_id,
-        photo_query.photo_id
-    ) );
     let answer = Answer::good( PublicationPhotoInfo{
         feed: ShortInfo {
             id: feed_info.id,
             name: feed_info.event_name
         },
         group: feed_info.group,
-        prev: prev,
         photo: photo_info,
-        next: next
     });
     Ok( answer )
 }

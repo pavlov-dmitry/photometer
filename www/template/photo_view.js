@@ -1,11 +1,11 @@
 define(['handlebars.runtime'], function(Handlebars) {
   Handlebars = Handlebars["default"];  var template = Handlebars.template, templates = Handlebars.templates = Handlebars.templates || {};
 return templates['photo_view'] = template({"1":function(container,depth0,helpers,partials,data) {
-    var helper, alias1=depth0 != null ? depth0 : {}, alias2=helpers.helperMissing, alias3="function", alias4=container.escapeExpression;
+    var stack1, helper, alias1=container.escapeExpression;
 
   return "    <a href=\"#"
-    + alias4(((helper = (helper = helpers.context_url || (depth0 != null ? depth0.context_url : depth0)) != null ? helper : alias2),(typeof helper === alias3 ? helper.call(alias1,{"name":"context_url","hash":{},"data":data}) : helper)))
-    + alias4(((helper = (helper = helpers.next || (depth0 != null ? depth0.next : depth0)) != null ? helper : alias2),(typeof helper === alias3 ? helper.call(alias1,{"name":"next","hash":{},"data":data}) : helper)))
+    + alias1(((helper = (helper = helpers.context_url || (depth0 != null ? depth0.context_url : depth0)) != null ? helper : helpers.helperMissing),(typeof helper === "function" ? helper.call(depth0 != null ? depth0 : {},{"name":"context_url","hash":{},"data":data}) : helper)))
+    + alias1(container.lambda(((stack1 = (depth0 != null ? depth0.photo : depth0)) != null ? stack1.next : stack1), depth0))
     + "\">\n";
 },"3":function(container,depth0,helpers,partials,data) {
     return "        <div class=\"inside\">\n          <i style=\"right: 20%\" class=\"massive angle right next icon\"></i>\n        </div>\n";
@@ -14,16 +14,16 @@ return templates['photo_view'] = template({"1":function(container,depth0,helpers
 },"7":function(container,depth0,helpers,partials,data) {
     return "    </a>\n";
 },"9":function(container,depth0,helpers,partials,data) {
-    var helper, alias1=depth0 != null ? depth0 : {}, alias2=helpers.helperMissing, alias3="function", alias4=container.escapeExpression;
+    var stack1, helper, alias1=container.escapeExpression;
 
   return "    <a href=\"#"
-    + alias4(((helper = (helper = helpers.context_url || (depth0 != null ? depth0.context_url : depth0)) != null ? helper : alias2),(typeof helper === alias3 ? helper.call(alias1,{"name":"context_url","hash":{},"data":data}) : helper)))
-    + alias4(((helper = (helper = helpers.prev || (depth0 != null ? depth0.prev : depth0)) != null ? helper : alias2),(typeof helper === alias3 ? helper.call(alias1,{"name":"prev","hash":{},"data":data}) : helper)))
+    + alias1(((helper = (helper = helpers.context_url || (depth0 != null ? depth0.context_url : depth0)) != null ? helper : helpers.helperMissing),(typeof helper === "function" ? helper.call(depth0 != null ? depth0 : {},{"name":"context_url","hash":{},"data":data}) : helper)))
+    + alias1(container.lambda(((stack1 = (depth0 != null ? depth0.photo : depth0)) != null ? stack1.prev : stack1), depth0))
     + "\">\n";
 },"11":function(container,depth0,helpers,partials,data) {
     return "        <div class=\"inside\">\n          <i style=\"left: 20%\" class=\"massive angle left prev icon\"></i>\n        </div>\n";
 },"13":function(container,depth0,helpers,partials,data) {
-    return "        <div class=\"inside bounder\">\n          <div style=\"left: 20%\" class=\"prev\">[</div>\n        </div>\n";
+    return "        <div class=\"inside bounder\">\n          <div style=\"left: 20%\" class=\"photo.prev\">[</div>\n        </div>\n";
 },"15":function(container,depth0,helpers,partials,data) {
     var stack1, alias1=depth0 != null ? depth0 : {};
 
@@ -100,16 +100,16 @@ return templates['photo_view'] = template({"1":function(container,depth0,helpers
   return "<div id=\"photo-container\" class=\"full-height\">\n  <div id=\"loader\" class=\"ui dimmer full-height\">\n    <div class=\"ui text loader\">Загрузка</div>\n  </div>\n    <img id=\"photo\" src=\"/photo/"
     + container.escapeExpression(container.lambda(((stack1 = (depth0 != null ? depth0.photo : depth0)) != null ? stack1.id : stack1), depth0))
     + ".jpg\" class=\"incenter\"/>\n"
-    + ((stack1 = helpers["if"].call(alias1,(depth0 != null ? depth0.next : depth0),{"name":"if","hash":{},"fn":container.program(1, data, 0),"inverse":container.noop,"data":data})) != null ? stack1 : "")
+    + ((stack1 = helpers["if"].call(alias1,((stack1 = (depth0 != null ? depth0.photo : depth0)) != null ? stack1.next : stack1),{"name":"if","hash":{},"fn":container.program(1, data, 0),"inverse":container.noop,"data":data})) != null ? stack1 : "")
     + "      <div class=\"next pager\">\n"
-    + ((stack1 = helpers["if"].call(alias1,(depth0 != null ? depth0.next : depth0),{"name":"if","hash":{},"fn":container.program(3, data, 0),"inverse":container.program(5, data, 0),"data":data})) != null ? stack1 : "")
+    + ((stack1 = helpers["if"].call(alias1,((stack1 = (depth0 != null ? depth0.photo : depth0)) != null ? stack1.next : stack1),{"name":"if","hash":{},"fn":container.program(3, data, 0),"inverse":container.program(5, data, 0),"data":data})) != null ? stack1 : "")
     + "      </div>\n"
-    + ((stack1 = helpers["if"].call(alias1,(depth0 != null ? depth0.next : depth0),{"name":"if","hash":{},"fn":container.program(7, data, 0),"inverse":container.noop,"data":data})) != null ? stack1 : "")
-    + ((stack1 = helpers["if"].call(alias1,(depth0 != null ? depth0.prev : depth0),{"name":"if","hash":{},"fn":container.program(9, data, 0),"inverse":container.noop,"data":data})) != null ? stack1 : "")
+    + ((stack1 = helpers["if"].call(alias1,((stack1 = (depth0 != null ? depth0.photo : depth0)) != null ? stack1.next : stack1),{"name":"if","hash":{},"fn":container.program(7, data, 0),"inverse":container.noop,"data":data})) != null ? stack1 : "")
+    + ((stack1 = helpers["if"].call(alias1,((stack1 = (depth0 != null ? depth0.photo : depth0)) != null ? stack1.prev : stack1),{"name":"if","hash":{},"fn":container.program(9, data, 0),"inverse":container.noop,"data":data})) != null ? stack1 : "")
     + "      <div class=\"prev pager\">\n"
-    + ((stack1 = helpers["if"].call(alias1,(depth0 != null ? depth0.prev : depth0),{"name":"if","hash":{},"fn":container.program(11, data, 0),"inverse":container.program(13, data, 0),"data":data})) != null ? stack1 : "")
+    + ((stack1 = helpers["if"].call(alias1,((stack1 = (depth0 != null ? depth0.photo : depth0)) != null ? stack1.prev : stack1),{"name":"if","hash":{},"fn":container.program(11, data, 0),"inverse":container.program(13, data, 0),"data":data})) != null ? stack1 : "")
     + "      </div>\n"
-    + ((stack1 = helpers["if"].call(alias1,(depth0 != null ? depth0.prev : depth0),{"name":"if","hash":{},"fn":container.program(7, data, 0),"inverse":container.noop,"data":data})) != null ? stack1 : "")
+    + ((stack1 = helpers["if"].call(alias1,((stack1 = (depth0 != null ? depth0.photo : depth0)) != null ? stack1.prev : stack1),{"name":"if","hash":{},"fn":container.program(7, data, 0),"inverse":container.noop,"data":data})) != null ? stack1 : "")
     + "    <div class=\"exifview\">\n      <div class=\"ui very padded basic segment\">\n        <h2 class=\"ui center aligned header\">\n"
     + ((stack1 = helpers["if"].call(alias1,((stack1 = (depth0 != null ? depth0.photo : depth0)) != null ? stack1.shutter_speed : stack1),{"name":"if","hash":{},"fn":container.program(15, data, 0),"inverse":container.program(26, data, 0),"data":data})) != null ? stack1 : "")
     + "        </h2>\n      </div>\n    </div>\n    <div class=\"nameviewer\">\n      <div class=\"ui very padded center aligned basic segment\">\n          <div class=\"ui huge breadcrumb\">\n            <i class=\"big photo icon\"></i>\n"

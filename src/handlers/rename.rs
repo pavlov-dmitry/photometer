@@ -25,7 +25,7 @@ fn rename_answer( request: &mut Request ) -> AnswerResult {
     let user_id = request.user().id;
     let maybe_photo_info = {
         let db = try!( request.stuff().get_current_db_conn() );
-        try!( db.get_photo_info( user_id, rename_info.id ) )
+        try!( db.get_gallery_photo_info( user_id, rename_info.id ) )
     };
     let answer = match maybe_photo_info {
         Some( info ) => {

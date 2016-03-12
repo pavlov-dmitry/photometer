@@ -7,13 +7,12 @@ use super::{
     UserAction,
     get_group_id,
 };
-use super::late_publication::LatePublication;
+// use super::late_publication::LatePublication;
 use types::{ Id, EmptyResult, CommonResult };
 use answer::{ Answer, AnswerResult };
 use db::groups::DbGroups;
 use db::publication::DbPublication;
 use db::photos::DbPhotos;
-use db::events::DbEvents;
 use database::{ Databaseable };
 use stuff::{ Stuffable, Stuff };
 use authentication::{ Userable };
@@ -77,17 +76,17 @@ impl Event for Publication {
 
         //старт события загрузки опоздавших
         //FIXME: использовать более "дешевую" функцию для определения что есть отставшие
-        let unpublished_users = try!( db.get_unpublished_users( body.scheduled_id ) );
-        if unpublished_users.is_empty() == false {
-            let event_info = LatePublication::create_info(
-                body.scheduled_id,
-                group_id,
-                &body.name,
-                time::get_time(),
-                time::Duration::days( 365 )
-            );
-            try!( db.add_events( &[ event_info ] ) );
-        }
+        // let unpublished_users = try!( db.get_unpublished_users( body.scheduled_id ) );
+        // if unpublished_users.is_empty() == false {
+        //     let event_info = LatePublication::create_info(
+        //         body.scheduled_id,
+        //         group_id,
+        //         &body.name,
+        //         time::get_time(),
+        //         time::Duration::days( 365 )
+        //     );
+        //     try!( db.add_events( &[ event_info ] ) );
+        // }
 
         Ok( () )
     }
@@ -137,11 +136,16 @@ impl Event for Publication {
                 if photo_info.owner.id == user_id {
                     match try!( db.is_photo_published( photo_id ) ) {
                         false => {
+                            let prev = try!( db.get_last_pubcation_photo( body.scheduled_id ) );
                             try!( db.public_photo( body.scheduled_id,
                                                    user_id,
                                                    photo_id,
                                                    false,
-                                                   time::get_time().msecs() ) );
+                                                   time::get_time().msecs(),
+                                                   prev.clone() ) );
+                            if let Some( last_id ) = prev {
+                                try!( db.set_next_publication_photo( last_id, photo_id ) );
+                            }
                             Answer::good( OkInfo::new( "published" ) )
                         },
                         true => Answer::bad( PhotoErrorInfo::already_published() )

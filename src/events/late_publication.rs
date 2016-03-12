@@ -34,6 +34,7 @@ impl LatePublication {
         LatePublication
     }
 
+    #[allow(dead_code)]
     pub fn create_info( parent_id: Id, group_id: Id, name: &str, start_time: Timespec, duration: time::Duration ) -> FullEventInfo {
         let info = Info {
             parent_id: parent_id,
@@ -137,11 +138,16 @@ impl Event for LatePublication {
             let photo_info = try!( db.get_short_photo_info( photo_id ) );
             if let Some( photo_info ) = photo_info {
                 if photo_info.owner.id == user_id {
+                    let prev = try!( db.get_last_pubcation_photo( info.parent_id ) );
                     try!( db.public_photo( info.parent_id,
                                            user_id,
                                            photo_id,
                                            true,
-                                           time::get_time().msecs() ) );
+                                           time::get_time().msecs(),
+                                           prev.clone() ) );
+                    if let Some( last_id ) = prev {
+                        try!( db.set_next_publication_photo( last_id, photo_id ) );
+                    }
                     Answer::good( OkInfo::new( "published" ) )
                 }
                 else {

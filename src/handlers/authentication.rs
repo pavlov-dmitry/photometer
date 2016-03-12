@@ -76,6 +76,21 @@ struct RegInfo {
 fn join_us_answer( request: &mut Request ) -> AnswerResult {
     //считывание параметров
     let reg_info = try!( request.get_body::<RegInfo>() );
+
+    //ряд простызх проверок
+    if reg_info.user.is_empty() {
+        return Ok( Answer::bad( FieldErrorInfo::empty( "user" ) ) );
+    }
+    if 24 < reg_info.user.len() {
+        return Ok( Answer::bad( FieldErrorInfo::too_long( "user" ) ) );
+    }
+    if reg_info.email.is_empty() {
+        return Ok( Answer::bad( FieldErrorInfo::empty( "email" ) ) );
+    }
+    if 128 < reg_info.email.len() {
+        return Ok( Answer::bad( FieldErrorInfo::too_long( "email" ) ) );
+    }
+
     //проверка на то что такого пользователя больше нет
     let user_exists = {
         let db = try!( request.stuff().get_current_db_conn() );

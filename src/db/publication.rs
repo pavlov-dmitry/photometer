@@ -8,7 +8,13 @@ use authentication::User;
 
 pub trait DbPublication {
     /// публикует фото
-    fn public_photo( &mut self, scheduled: Id, user: Id, photo: Id, visible: bool, time: u64 ) -> EmptyResult;
+    fn public_photo( &mut self,
+                      scheduled: Id,
+                      user: Id,
+                      photo: Id,
+                      visible: bool,
+                      time: u64,
+                      prev: Option<Id> ) -> EmptyResult;
     /// открывает на просмотр определнную группу фото
     fn make_publication_visible( &mut self, scheduled: Id ) -> EmptyResult;
     /// кол-во уже опубликованных фото
@@ -19,6 +25,10 @@ pub trait DbPublication {
     fn is_unpublished_user( &mut self, scheduled: Id, user: Id ) -> CommonResult<bool>;
     /// проверят опубликованно ли это фото или нет
     fn is_photo_published( &mut self, photo: Id ) -> CommonResult<bool>;
+    /// возвращает идентификатор фотографии последней в публикации
+    fn get_last_pubcation_photo( &mut self, scheduled: Id ) -> CommonResult<Option<Id>>;
+    /// устанавливает следующую фотографию в публикации
+    fn set_next_publication_photo( &mut self, photo_id: Id, next_id: Id ) -> EmptyResult;
 }
 
 pub fn create_tables( db: &Database ) -> EmptyResult {
@@ -30,8 +40,11 @@ pub fn create_tables( db: &Database ) -> EmptyResult {
             `user_id` bigint(20) NOT NULL DEFAULT '0',
             `photo_id` bigint(20) NOT NULL DEFAULT '0',
             `visible` BOOL NOT NULL DEFAULT false,
+            `next` bigint(20) NOT NULL DEFAULT '0',
+            `prev` bigint(20) NOT NULL DEFAULT '0',
             PRIMARY KEY ( `id` ),
-            KEY `publication_idx` ( `scheduled_id`, `visible` ) USING BTREE
+            KEY `publication_idx` ( `scheduled_id`, `visible` ) USING BTREE,
+            KEY `photo_idx` ( `photo_id` )
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
         ",
         "db::publications::create_tables"
@@ -40,8 +53,15 @@ pub fn create_tables( db: &Database ) -> EmptyResult {
 
 impl DbPublication for PooledConn {
     /// публикует фото
-    fn public_photo( &mut self, scheduled: Id, user: Id, photo: Id, visible: bool, time: u64 ) -> EmptyResult {
-        public_photo_impl( self, scheduled, user, photo, visible, time )
+    fn public_photo( &mut self,
+                      scheduled: Id,
+                      user: Id,
+                      photo: Id,
+                      visible: bool,
+                      time: u64,
+                      prev: Option<Id> ) -> EmptyResult
+    {
+        public_photo_impl( self, scheduled, user, photo, visible, time, prev )
             .map_err( |e| fn_failed( "public_photo", e ) )
     }
 
@@ -72,6 +92,16 @@ impl DbPublication for PooledConn {
         is_photo_published_impl( self, photo )
             .map_err( |e| fn_failed( "is_photo_published", e ) )
     }
+    /// возвращает идентификатор фотографии последней в публикации
+    fn get_last_pubcation_photo( &mut self, scheduled: Id ) -> CommonResult<Option<Id>> {
+        get_last_pubcation_photo_impl( self, scheduled )
+            .map_err( |e| fn_failed( "get_last_pubcation_photo", e ) )
+    }
+    /// устанавливает следующую фотографию в публикации
+    fn set_next_publication_photo( &mut self, photo_id: Id, next_id: Id ) -> EmptyResult {
+        set_next_publication_photo_impl( self, photo_id, next_id )
+            .map_err( |e| fn_failed( "set_next_publication_photo", e ) )
+    }
 }
 
 fn fn_failed<E: Display>( fn_name: &str, e: E ) -> CommonError {
@@ -83,7 +113,8 @@ fn public_photo_impl( conn: &mut PooledConn,
                       user: Id,
                       photo: Id,
                       visible: bool,
-                      time: u64 ) -> mysql::Result<()>
+                      time: u64,
+                      prev: Option<Id> ) -> mysql::Result<()>
 {
     let mut stmt = try!( conn.prepare("
         INSERT INTO publication (
@@ -91,17 +122,20 @@ fn public_photo_impl( conn: &mut PooledConn,
             scheduled_id,
             user_id,
             photo_id,
-            visible
+            visible,
+            prev
         )
-        VALUES( ?, ?, ?, ?, ? )
+        VALUES( ?, ?, ?, ?, ?, ? )
         ON DUPLICATE KEY UPDATE photo_id=?
     "));
+    let prev = prev.unwrap_or( 0 );
     let params: &[ &ToValue ] = &[
         &time,
         &scheduled,
         &user,
         &photo,
         &visible,
+        &prev,
         &photo
     ];
     try!( stmt.execute( params ));
@@ -192,4 +226,35 @@ fn is_photo_published_impl( conn: &mut PooledConn, photo: Id ) -> mysql::Result<
     let result = try!( stmt.execute( (photo,) ) );
     let count = result.count();
     Ok( count != 0 )
+}
+
+fn get_last_pubcation_photo_impl( conn: &mut PooledConn, scheduled: Id ) -> mysql::Result<Option<Id>> {
+    let mut stmt = try!( conn.prepare(
+        "SELECT `photo_id`
+         FROM `publication`
+         WHERE `scheduled_id`=?
+         ORDER BY `time` DESC
+         LIMIT 1"
+    ));
+    let mut sql_result = try!( stmt.execute( (scheduled,) ) );
+    let result = match sql_result.next() {
+        Some( row ) => {
+            let row = try!( row );
+            let (id,) = from_row( row );
+            if id != 0 {
+                Some( id )
+            }
+            else {
+                None
+            }
+        },
+        None => None
+    };
+    Ok( result )
+}
+
+fn set_next_publication_photo_impl( conn: &mut PooledConn, photo_id: Id, next_id: Id ) -> mysql::Result<()> {
+    try!( conn.prep_exec( "UPDATE publication SET next=? WHERE photo_id=?",
+                          (next_id, photo_id) ) );
+    Ok( () )
 }

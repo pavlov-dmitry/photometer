@@ -30,7 +30,7 @@ fn crop_photo_answer( request: &mut Request ) -> AnswerResult {
 
     let maybe_photo_info = {
         let db = try!( request.stuff().get_current_db_conn() );
-        try!( db.get_photo_info( user_id, crop_info.id ) )
+        try!( db.get_gallery_photo_info( user_id, crop_info.id ) )
     };
 
     let answer = match maybe_photo_info {

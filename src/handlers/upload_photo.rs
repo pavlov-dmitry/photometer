@@ -66,11 +66,18 @@ fn upload_photo_answer( request: &mut Request ) -> AnswerResult {
                                                     &image.data ) )
             };
             match photo_info {
-                Ok( photo_info ) => {
+                Ok( mut photo_info ) => {
                     let user_id = request.user().id;
                     let db = try!( request.stuff().get_current_db_conn() );
+                    let next = try!( db.get_last_upload_gallery_photo( user_id ) );
+                    photo_info.next = next.clone();
                     match db.add_photo( user_id, &photo_info ) {
-                        Ok( _ ) => Answer::good( OkInfo::new( "photo_loaded" ) ),
+                        Ok( added_id ) => {
+                            if let Some( id ) = next {
+                                try!( db.set_prev_in_gallery( id, added_id ) );
+                            }
+                            Answer::good( OkInfo::new( "photo_loaded" ) )
+                        },
                         Err( e ) => return common_error( format!( "{}", e ) )
                     }
                 }
@@ -114,7 +121,9 @@ fn make_photo_info( owner: &User,
             name: owner.name.clone()
         },
         comments_count: 0,
-        unreaded_comments: 0
+        unreaded_comments: 0,
+        next: None,
+        prev: None
     }
 }
 

@@ -16,9 +16,6 @@ define( function(require) {
             var Request = require( "request" );
             var handler = Request.get( this.photo_url, this.photo_data );
             handler.good = function( data ) {
-                // var photo_data = data.photo;
-                // photo_data.next = data.next;
-                // photo_data.prev = data.prev;
                 self.set( data );
             }
 

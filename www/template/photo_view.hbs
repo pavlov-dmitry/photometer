@@ -1,29 +1,13 @@
-{{!-- Пока убрал за ненадобностью
-{{#if group}}
-<div class="ui container">
-  <div class="ui huge breadcrumb">
-    <i class="big photo icon"></i>
-    <a class="section" href="#user/{{photo.owner.id}}">{{photo.owner.name}}</a>
-    <i class="at divider icon"></i>
-    <a class="section" href="#group/feed/{{group.id}}">{{group.name}}</a>
-    <i class="right chevron divider icon"></i>
-    <a class="section" href="#group/feed/element/{{feed.id}}">{{feed.name}}</a>
-    <i class="right chevron divider icon"></i>
-    <div class="active section">{{photo.name}}</div>
-  </div>
-</div>
-{{/if}}
---}}
 <div id="photo-container" class="full-height">
   <div id="loader" class="ui dimmer full-height">
     <div class="ui text loader">Загрузка</div>
   </div>
     <img id="photo" src="/photo/{{photo.id}}.jpg" class="incenter"/>
-    {{#if next}}
-    <a href="#{{context_url}}{{next}}">
+    {{#if photo.next}}
+    <a href="#{{context_url}}{{photo.next}}">
     {{/if}}
       <div class="next pager">
-          {{#if next}}
+          {{#if photo.next}}
         <div class="inside">
           <i style="right: 20%" class="massive angle right next icon"></i>
         </div>
@@ -33,24 +17,24 @@
         </div>
           {{/if}}
       </div>
-    {{#if next}}
+    {{#if photo.next}}
     </a>
     {{/if}}
-    {{#if prev}}
-    <a href="#{{context_url}}{{prev}}">
+    {{#if photo.prev}}
+    <a href="#{{context_url}}{{photo.prev}}">
     {{/if}}
       <div class="prev pager">
-          {{#if prev}}
+          {{#if photo.prev}}
         <div class="inside">
           <i style="left: 20%" class="massive angle left prev icon"></i>
         </div>
           {{else}}
         <div class="inside bounder">
-          <div style="left: 20%" class="prev">[</div>
+          <div style="left: 20%" class="photo.prev">[</div>
         </div>
           {{/if}}
       </div>
-    {{#if prev}}
+    {{#if photo.prev}}
     </a>
     {{/if}}
     <div class="exifview">

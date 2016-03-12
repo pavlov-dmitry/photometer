@@ -34,15 +34,15 @@ pub fn create_tables( db: &Database ) -> EmptyResult {
         "CREATE TABLE IF NOT EXISTS `users` (
             `id` bigint(20) NOT NULL AUTO_INCREMENT,
             `join_time` bigint(20) NOT NULL DEFAULT '0',
-            `login` varchar(16) NOT NULL DEFAULT '',
+            `login` varchar(24) NOT NULL DEFAULT '',
             `password` varchar(32) NOT NULL DEFAULT '',
             `activated` BOOL NOT NULL DEFAULT false,
-            `mail` varchar(256) NOT NULL DEFAULT '',
-            `regkey` varchar(256) NOT NULL DEFAULT '',
+            `mail` varchar(128) NOT NULL DEFAULT '',
+            `regkey` varchar(128) NOT NULL DEFAULT '',
             PRIMARY KEY (`id`),
             UNIQUE KEY `login_idx` (`login`),
             UNIQUE KEY `regkey_idx` (`regkey`),
-            UNIQUE KEY `email_idx` (`email`)
+            UNIQUE KEY `email_idx` (`mail`)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
         ",
         "db::users::create_tables"

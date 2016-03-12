@@ -51,7 +51,7 @@ pub fn create_tables( db: &Database ) -> EmptyResult {
             `data` TEXT NOT NULL DEFAULT '',
             PRIMARY KEY ( `id` ),
             KEY `group_idx` ( `group_id` ),
-            KEY `sheduled_idx` ( `sheduled_id` )t
+            KEY `sheduled_idx` ( `scheduled_id` )
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
         ",
         "db::group_feed::create_tables"

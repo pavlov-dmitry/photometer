@@ -39,7 +39,9 @@ pub struct PhotoInfo {
     pub camera_model: Option<String>,
     pub owner: ShortInfo,
     pub comments_count: usize,
-    pub unreaded_comments: usize
+    pub unreaded_comments: usize,
+    pub next: Option<Id>,
+    pub prev: Option<Id>
 }
 
 pub struct ShortPhotoInfo {
