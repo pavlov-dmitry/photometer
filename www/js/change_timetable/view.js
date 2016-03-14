@@ -62,7 +62,11 @@ define( function(require) {
                 timepicker: false,
                 highlightedDates: this.current_highlighted
             });
-
+            $(".markdown").popup({
+                hoverable: true,
+                popup: "#markdown-help",
+                lastResort: true
+            });
             return this;
         },
 

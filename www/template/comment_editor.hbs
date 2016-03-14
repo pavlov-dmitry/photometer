@@ -12,6 +12,9 @@
     {{/if}}
     {{else}}
     <div class="ui field">
+      <div class="ui basic right aligned segment nopadmar">
+        <a class="thumb markdown">markdown?</a>
+      </div>
       <textarea class="comment-body" maxlength="1024" placeholder="Оставьте здесь комментарий ... (поддерживается форматирование markdown)" required>{{text}}</textarea>
     </div>
     {{/if}}
@@ -31,3 +34,4 @@
   </button>
   {{/if}}
 </form>
+{{{include "markdown_help" }}}

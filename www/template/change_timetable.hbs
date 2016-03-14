@@ -10,7 +10,14 @@
   <form id="change-timetable-form" class="ui form">
     <div class="ui two column stackable grid">
       <div class="column">
-        <h4 class="ui header">Описание:</h4>
+        <div class="ui clearing basic segment nopadmar">
+          <h4 class="ui left floated header">
+            Описание:
+          </h4>
+          <h4 class="ui right floated header">
+            <a class="thumb markdown">markdown?</a>
+          </h4>
+        </div>
         <textarea type="text" class="full-width" id="description-input" placeholder="Описание, с поддержкой формата markdown." maxlentgh="2048" rows="3" value="" required/>
       </div>
       <div id="description-err" class="ui hidden pointing red basic label">
@@ -50,3 +57,4 @@
     <button class="ui primary fluid submit button" type="submit">Отправить на согласование с группой</button>
   </form>
 </div>
+{{{include "markdown_help"}}}

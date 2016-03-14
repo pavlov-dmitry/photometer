@@ -4,6 +4,7 @@ define( function(require) {
         moment = require( "moment" ),
         make_pagination = require( "make_pagination" );
     require( "template/pagination" );
+    require( "template/markdown_help");
 
 
     Handlebars.registerHelper( "markdown", function( data ) {

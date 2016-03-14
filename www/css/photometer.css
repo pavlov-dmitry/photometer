@@ -259,3 +259,11 @@ blockquote {
 .ui.feed > .event > .content .fluid.extra.text {
     max-width: 100%
 }
+
+.thumb {
+    cursor: pointer;
+}
+
+.markdown {
+    font-weight: normal;
+}

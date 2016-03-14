@@ -25,6 +25,7 @@ define( function(require) {
             this.$el.html( this.template( this.model.toJSON() ) );
             this.$comment_body = this.$el.find(".comment-body");
             this.$form = this.$el.find( ".form" );
+            $(".markdown").popup({hoverable: true, popup: "#markdown-help"});
             return this;
         },
 

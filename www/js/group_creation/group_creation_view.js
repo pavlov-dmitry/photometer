@@ -30,6 +30,11 @@ define( function( require ) {
 
         render: function() {
             this.$el.html( this.template( this.model.toJSON() ) );
+            $(".markdown").popup({
+                hoverable: true,
+                popup: "#markdown-help",
+                lastResort: true
+            });
             $("#users").dropdown({
                 fields: {
                     value: "id"
