@@ -134,7 +134,7 @@ impl UserCreatedEvent for GroupCreation {
 
         //формирование
         let start_time = time::get_time();
-        let end_time = start_time + time::Duration::days( 1 );
+        let end_time = start_time + time::Duration::days( 3 );
         Ok( FullEventInfo {
             id: ID,
             name: group_info.name,

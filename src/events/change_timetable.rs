@@ -200,7 +200,7 @@ impl GroupCreatedEvent for ChangeTimetable {
             creator: Some( user_id )
         };
         // создаём голосование и хотим что бы за изменение расписания проголосовала хотя бы половина
-        Ok( group_voting::new( group_id, 0.5, &self_info ) )
+        Ok( group_voting::new( group_id, 0.75, &self_info ) )
     }
 }
 
