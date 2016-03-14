@@ -18,13 +18,10 @@ define( function(require) {
         render: function() {
             var data = this.model.toJSON();
             var html = this.template( data );
-            // console.log( "render one: " + html );
-            // this.$el.replaceWith( html );
             this.$el = $( html );
 
             var self = this;
             this.$el.find(".quote.action").click( function() {
-                console.log( "quote action" );
                 self.model.quote();
             })
             this.$el.find(".edit.action").click( function() {
@@ -34,7 +31,6 @@ define( function(require) {
         },
 
         quote: function() {
-            console.log( "quote event" );
             this.model.quote();
         },
 

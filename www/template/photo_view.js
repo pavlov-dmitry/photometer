@@ -23,7 +23,7 @@ return templates['photo_view'] = template({"1":function(container,depth0,helpers
 },"11":function(container,depth0,helpers,partials,data) {
     return "        <div class=\"inside\">\n          <i style=\"left: 20%\" class=\"massive angle left prev icon\"></i>\n        </div>\n";
 },"13":function(container,depth0,helpers,partials,data) {
-    return "        <div class=\"inside bounder\">\n          <div style=\"left: 20%\" class=\"photo.prev\">[</div>\n        </div>\n";
+    return "        <div class=\"inside bounder\">\n          <div style=\"left: 20%\" class=\"prev\">[</div>\n        </div>\n";
 },"15":function(container,depth0,helpers,partials,data) {
     var stack1, alias1=depth0 != null ? depth0 : {};
 

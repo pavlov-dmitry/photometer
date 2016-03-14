@@ -120,7 +120,6 @@ define( function( require ) {
 
             this.disable_crop_btn();
             var self = this;
-            // console.log( "need crop selection: " + JSON.stringify( this.selection ) );
             var handle = request.post( "/crop", {
                 id: this.model.get( "id" ),
                 x1: this.selection.x1,
@@ -156,7 +155,6 @@ define( function( require ) {
             fit_image( this.fit_image_options );
 
             var self = this;
-            console.log( JSON.stringify( this.selection ) );
             var photo = this.model.get("photo");
             this.ias = $("img#photo").imgAreaSelect({
                 instance: true,

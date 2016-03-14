@@ -28,7 +28,6 @@ define( function(require) {
         },
 
         render: function() {
-            console.log( "render" );
             var html = this.template( this.model.toJSON() );
             this.$el.html( html );
             this.$comments_list = $("#comments-list");
@@ -60,7 +59,6 @@ define( function(require) {
         },
 
         on_quote: function( text ) {
-            console.log( "on_quote:" + text );
             var self_text = this.model.get("text");
             self_text += "\n" + text + "\n";
             this.model.set({ text: self_text });

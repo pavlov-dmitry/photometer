@@ -14,7 +14,6 @@ define( function(require) {
             var url = this.start_url + this.scheduled_id();
             var handler = request.get( url, {});
             handler.good = function( data ) {
-                console.log( "event_info: " + JSON.stringify( data ) );
                 self.set( data );
             }
             return handler;

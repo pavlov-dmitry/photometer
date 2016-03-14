@@ -17,7 +17,6 @@ define( function(require) {
         need_more: function() {
             var page = this.get("page");
             page += 1;
-            console.log( "need more " + page );
             this.set({ page: page });
             return this.fetch_page( page );
         },

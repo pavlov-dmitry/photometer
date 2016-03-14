@@ -59,7 +59,6 @@ define( function(require) {
         },
 
         publish: function( photo_id ) {
-            console.log( "publish photo id:" + photo_id );
             $( "#photos-container" ).addClass( "loading" );
 
             var self = this;

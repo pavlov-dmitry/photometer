@@ -40,9 +40,7 @@ define( function( require ) {
                     value: "id"
                 },
                 apiSettings: {
-                    // cache: false,
                     mockResponseAsync: function( settings, callback ) {
-                        // console.log( "mock async: " + JSON.stringify( settings ) );
                         var response = {
                             success: true,
                             message: "",
@@ -55,7 +53,6 @@ define( function( require ) {
                         );
                         handler.good = function( data ) {
                             response.results = data.users;
-                            // console.log( "search result: " + JSON.stringify( response ) );
                             callback( response );
                         }
                         handler.bad = function( data ) {
@@ -98,7 +95,6 @@ define( function( require ) {
             var handler = this.model.save();
 
             handler.good = function() {
-                console.log( "group_created" );
                 var success_template = Handlebars.templates.success_info;
                 var success_html = success_template({
                     caption: "Группа создана.",
@@ -112,7 +108,6 @@ define( function( require ) {
             };
 
             handler.bad = function( data ) {
-                console.log( "group creation failed: " + JSON.stringify( data ) );
                 self.show_errors( data );
             }
 

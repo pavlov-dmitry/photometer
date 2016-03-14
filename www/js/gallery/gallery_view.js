@@ -52,8 +52,6 @@ define( function(require) {
                 },
 
                 error: function( e ) {
-                    console.log( "upload error: " + JSON.stringify( e ) );
-
                     var errorHandler = require( "errors_handler" );
                     if ( e.status == 413 ) {
                         errorHandler.error( "Слишком большой файл. Попробуй что нить меньше 2Мб." );
@@ -130,7 +128,7 @@ define( function(require) {
         },
 
         addNewImageToGallery: function() {
-            console.log( "add to gallery" );
+            // console.log( "add to gallery" );
         }
 
     });

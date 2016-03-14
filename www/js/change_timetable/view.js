@@ -50,7 +50,7 @@ define( function(require) {
 
         render: function() {
             this.$el.html( this.template( this.info_model.toJSON() ) );
-            this.$desc_preview = $("#desc-preview");
+            this.$desc_preview = $("#desc-preview")
             this.$form = $("#change-timetable-form");
 
             this.$remove_datetimepicker = $("#remove-datetimepicker");
@@ -118,7 +118,6 @@ define( function(require) {
             var handler = this.model.save( this.group_id );
             var self = this;
             handler.good = function() {
-                console.log( "good" );
                 growl(
                     {
                         header: "Запрос на изменение расписания создан.",
@@ -143,7 +142,6 @@ define( function(require) {
         },
 
         show_errors: function( errors ) {
-            console.log( "ERROR: " + JSON.stringify( errors ) );
             var self = this;
             _.forEach( errors, function( error ) {
                 var selector = null;

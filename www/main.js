@@ -4,12 +4,15 @@ require.config({
         'semantic' : { deps :['jquery'] },
         'jquery.imgareaselect': { deps: ['jquery'] },
         'showdown' : {},
+        'date-functions': { deps: ['jquery'] }
     },
     paths: {
 	'jquery': 'lib/jquery',
         'jquery.ui.widget': 'lib/jquery.ui.widget',
         'jquery.imgareaselect': 'lib/jquery.imgareaselect',
         'jquery.datetimepicker': 'lib/jquery.datetimepicker.full',
+        'date-functions': "lib/jquery.dateformatter",
+        'jquery-mousewheel': 'lib/jquery.mousewheel',
 	'semantic': 'lib/semantic',
         'underscore': 'lib/underscore',
         'template': '../template',
