@@ -27,7 +27,20 @@ define( function(require) {
         },
 
         submit: function() {
-            this.model.login( $("#login-name").val(), $("#login-pasw").val() );
+            var self = this;
+            this.$form.addClass( "loading" );
+            var handler = this.model.login( $("#login-name").val(), $("#login-pasw").val() );
+	    handler.bad = function( err ) {
+		if ( err.reason === "not_found" ) {
+		    self.model.set( {
+			has_error: true,
+			error: "Пользователь с таким паролем не найден."
+		    } );
+		}
+	    }
+            handler.finish = function() {
+                this.$form.removeClass( "loading" );
+            }
         },
 
         render: function() {
@@ -35,9 +48,7 @@ define( function(require) {
 	    var has_error = this.model.get( 'has_error' );
             $( "#login-error" ).toggleClass( "hidden", !has_error );
 	    $("#login-name").focus();
-
-            // var closable_message = require( "helpers/closable_message" );
-            // closable_message();
+            this.$form = $("#form-login");
 
             return this;
         },

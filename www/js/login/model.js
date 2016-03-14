@@ -25,35 +25,9 @@ define( function(require) {
 	    handler.good = function( data ) {
                 app.makeLogin( data.sid );
 	    }
+            return handler;
 
-	    handler.bad = function( err ) {
-		if ( err.reason === "not_found" ) {
-		    model.set( {
-			has_error: true,
-			error: "Пользователь с таким паролем не найден."
-		    } );
-		}
-	    }
         },
-
-        // sync: function(method, model, options) {
-        //     switch (method) {
-
-        //         case 'create':
-        //             options.url = model.url;
-        //             options.method = 'POST';
-        //             options.contentType = "application/json";
-        //             options.data = JSON.stringify({
-        //                     user: model.get( 'user' ),
-        //                     password: model.get( 'password' )
-        //                 });
-        //             var ajaxObj = Backbone.$.ajax( options );
-        //             model.trigger( "request" );
-        //             return ajaxObj;
-        //         break;
-
-        //     }
-        // }
     });
 
     return UserLoginModel;
