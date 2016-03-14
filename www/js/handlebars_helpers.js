@@ -79,5 +79,10 @@ define( function(require) {
         return ten;
     });
 
+    Handlebars.registerHelper( "as_percent", function( data ) {
+        data = Math.floor( data * 100 );
+        return data;
+    });
+
     return {};
 })

@@ -11,7 +11,7 @@ return templates['group_voting_info'] = template({"compiler":[7,">= 4.0.0"],"mai
     + "\n      </div>\n      <div class=\"label\">\n        За\n      </div>\n    </div>\n    <div class=\"statistic\">\n      <div class=\"value\">\n        <i class=\"thumbs down icon\"></i>\n        "
     + alias4(((helper = (helper = helpers.no || (depth0 != null ? depth0.no : depth0)) != null ? helper : alias2),(typeof helper === alias3 ? helper.call(alias1,{"name":"no","hash":{},"data":data}) : helper)))
     + "\n      </div>\n      <div class=\"label\">\n        Против\n      </div>\n    </div>\n    <div class=\"statistic\">\n      <div class=\"value\">\n        <i class=\"flag icon\"></i>\n        "
-    + alias4(((helper = (helper = helpers.min_success_count || (depth0 != null ? depth0.min_success_count : depth0)) != null ? helper : alias2),(typeof helper === alias3 ? helper.call(alias1,{"name":"min_success_count","hash":{},"data":data}) : helper)))
-    + "\n      </div>\n      <div class=\"label\">\n        Необходимо для принятия\n      </div>\n    </div>\n  </div>\n</div>\n";
+    + alias4((helpers.as_percent || (depth0 && depth0.as_percent) || alias2).call(alias1,(depth0 != null ? depth0.success_coeff : depth0),{"name":"as_percent","hash":{},"data":data}))
+    + "%\n      </div>\n      <div class=\"label\">\n        Необходимо для принятия\n      </div>\n    </div>\n  </div>\n</div>\n";
 },"useData":true});
 });

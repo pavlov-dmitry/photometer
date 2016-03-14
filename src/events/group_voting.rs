@@ -129,7 +129,7 @@ impl Event for GroupVoting {
             try!( db.get_votes( body.scheduled_id ) )
         };
         // подсчитываем голоса
-        let is_success = is_success( &votes, data.success_coeff );
+        let is_success = is_finished_success( &votes, data.success_coeff );
         if  is_success { // если набралось достаточно
             let change = try!( events_collection::get_change_by_voting( data.internal_id ) );
             // и применяем изменение
@@ -169,7 +169,7 @@ impl Event for GroupVoting {
             all_count: votes.all_count,
             yes: votes.yes.len(),
             no: votes.no.len(),
-            min_success_count: min_success_count( votes.all_count, data.success_coeff )
+            success_coeff: data.success_coeff
         } );
         Ok( desc )
     }
@@ -199,7 +199,7 @@ struct GroupVoitingInfo {
     all_count: usize,
     yes: usize,
     no: usize,
-    min_success_count: usize
+    success_coeff: f32
 }
 
 fn min_success_count( all: usize, success_coeff: f32 ) -> usize {
@@ -210,6 +210,14 @@ fn min_success_count( all: usize, success_coeff: f32 ) -> usize {
 
 fn is_success( votes: &Votes, success_coeff: f32 ) -> bool {
     min_success_count( votes.all_count, success_coeff ) <= votes.yes.len()
+}
+
+//NOTE: разница с функцией is_success в том что эта считает только
+// голоса проголосовавших. Чтобы по окончанию голосвания подсчитать
+// результат только по тем кто проголосовал. Иначе при отсутсвии
+// нескольких человек ни одно голосование не пройдет
+fn is_finished_success( votes: &Votes, success_coeff: f32 ) -> bool {
+    min_success_count( votes.yes.len() + votes.no.len(), success_coeff ) <= votes.yes.len()
 }
 
 fn is_fail( votes: &Votes, success_coeff: f32 ) -> bool {

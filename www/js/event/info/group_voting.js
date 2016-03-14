@@ -2,6 +2,7 @@ define( function(require) {
     var Handlebars = require( "handlebars.runtime" ),
         internal_collection = require( "event/internal_collection" );
     require( "template/group_voting_info" );
+    require( "handlebars_helpers" );
 
     var group_voting_info = {
         caption: function( name, data ) {
