@@ -52,6 +52,7 @@ define( function( require ) {
             // если фотка не покажется в течении некоторого вермени, то показываем загрузку
             setTimeout( function() {
                 if ( !self.photo_loaded ) {
+                    $("#loader").dimmer( { duration: {show: 0, hide: 200} } );
                     $("#loader").dimmer( "show" );
                 }
             }, 200 );
