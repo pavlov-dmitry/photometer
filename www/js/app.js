@@ -20,6 +20,7 @@ define( function (require) {
 
         logout: function() {
             $.removeCookie( "sid" );
+            this._redirectToAfterLogin = "gallery";
             // this.userState.logout();
             this.userState.fetch();
             this.workspace.nav( "login" );
