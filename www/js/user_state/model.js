@@ -53,7 +53,9 @@ define( function( require ) {
                     },
                     0
                 );
-                model_data.has_unreaded_in_other_groups = model_data.current_group.unwatched_events < all_unreaded_count;
+                if ( model_data.current_group ) {
+                    model_data.has_unreaded_in_other_groups = model_data.current_group.unwatched_events < all_unreaded_count;
+                }
                 self.set( model_data );
             }
 
