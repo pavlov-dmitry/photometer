@@ -34,12 +34,10 @@ pub fn create( context: MailContext ) -> MailerBody {
 impl Mailer for Stuff {
     fn send_mail( &mut self, user: &User, subject: &str, body: &str ) -> EmptyResult {
         try!( self.send_internal_mail( user, subject, body ) );
-        //FIXME: Временно на время тестов отключаем посылку писем во вне
-        // try!( self.send_external_mail( user, subject, body ) );
         Ok( () )
     }
-    fn send_external_mail( &mut self, _user: &User, _subject: &str, _body: &str ) -> EmptyResult {
-        //FIXME: Временно на время тестов отключаем посылку писем во вне
+    fn send_external_mail( &mut self, user: &User, subject: &str, body: &str ) -> EmptyResult {
+        try!( self.send_mail_external( user, subject, body ) );
         Ok( () )
     }
     fn send_internal_mail( &mut self, user: &User, subject: &str, body: &str ) -> EmptyResult {
@@ -142,31 +140,31 @@ impl MailContext {
         let mut try_count = 0;
         while try_count < 6 {
             let builder = SmtpTransportBuilder::new( (&self.smtp_addr as &str, smtp::SUBMISSION_PORT) );
-            let builder = match builder {
-                Ok( builder ) => builder,
+            match builder {
+                Ok( builder ) => {
+                    let mut sender = builder
+                        .credentials( &self.from_addr, &self.pass )
+                        .build();
+
+                    match sender.send( email.clone() ) {
+                        Ok( _ ) => {
+                            debug!( "mail to '{}' with subject='{}' successfully sended.",
+                                     mail.to_addr,
+                                     mail.subject );
+                            break;
+                        },
+                        Err( e ) => {
+                            error!( "error sending email to '{}' description: {}", mail.to_addr, e );
+                        }
+                    }
+                }
                 Err( e ) => {
                     error!( "error creating SmtpTransportBuilder with addr: {}, error description: {}", self.smtp_addr, e );
-                    return;
                 }
             };
 
-            let mut sender = builder
-                .credentials( &self.from_addr, &self.pass )
-                .build();
-
-            match sender.send( email.clone() ) {
-                Ok( _ ) => {
-                    debug!( "mail to '{}' with subject='{}' successfully sended.",
-                             mail.to_addr,
-                             mail.subject );
-                    break;
-                },
-                Err( e ) => {
-                    error!( "error sending email to '{}' description: {}", mail.to_addr, e );
-                    thread::sleep( Duration::from_secs( 10 ) );
-                    try_count += 1;
-                }
-            }
+            thread::sleep( Duration::from_secs( 10 ) );
+            try_count += 1;
         }
 
     }
