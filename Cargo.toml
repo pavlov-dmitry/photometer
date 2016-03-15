@@ -18,6 +18,7 @@ rand = "*"
 image = "*"
 lettre = "*"
 rust-crypto = "*"
+regex = "*"
 
 [dependencies.mysql]
 version="*"

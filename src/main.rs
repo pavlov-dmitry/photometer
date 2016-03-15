@@ -18,6 +18,7 @@ extern crate router;
 extern crate rand;
 extern crate crypto;
 extern crate lettre;
+extern crate regex;
 
 use iron::prelude::*;
 use router::Router;

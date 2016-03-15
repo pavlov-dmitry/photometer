@@ -23,6 +23,7 @@ use parse_utils::GetMsecs;
 use crypto;
 use rustc_serialize::base64;
 use rustc_serialize::base64::ToBase64;
+use regex::Regex;
 
 /// авторизация пользователя
 pub fn login( request: &mut Request ) -> IronResult<Response> {
@@ -83,6 +84,10 @@ fn join_us_answer( request: &mut Request ) -> AnswerResult {
     }
     if 24 < reg_info.user.len() {
         return Ok( Answer::bad( FieldErrorInfo::too_long( "user" ) ) );
+    }
+    let regexp = Regex::new( r"^[\w -]+$" ).unwrap();
+    if regexp.is_match( &reg_info.user ) == false {
+        return Ok( Answer::bad( FieldErrorInfo::new( "user", "invalid" ) ) );
     }
     if reg_info.email.is_empty() {
         return Ok( Answer::bad( FieldErrorInfo::empty( "email" ) ) );

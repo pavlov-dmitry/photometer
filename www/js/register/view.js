@@ -28,9 +28,6 @@ define( function(require){
             $("#form-reg-error").toggleClass( 'hidden', !has_error );
             $("#name").focus();
 
-            // var closable_message = require( "helpers/closable_message");
-            // closable_message();
-
             this.form_validation();
 
             return this;
@@ -42,18 +39,25 @@ define( function(require){
             if ( is_valid ) {
                 $form.addClass( "loading" );
                 var self = this;
-                var handler = this.model.register( $("#name").val(),
+                var name = $("#name").val();
+                var mail = $("#mail").val();
+                var handler = this.model.register( name,
                                                    $("#pasw").val(),
-                                                   $("#mail").val() );
+                                                   mail );
                 handler.finish = function() {
                     $form.removeClass( "loading" );
                 }
                 handler.bad = function( data ) {
                     var state = {
+                        name: name,
+                        email: mail,
                         has_error: true
                     };
                     if ( data.reason === "exists" ) {
                         state.error = "Пользователь с таким именем или почтой уже существует";
+                    }
+                    else if ( data.field == "user" && data.reason == "invalid" ) {
+                        state.error = "Имя пользователя может содержать только буквы, пробел, подчеркивание или знак минуса";
                     }
                     else { // для всех необработанных ошибок
                         state.error = JSON.stringify( data );
@@ -84,8 +88,12 @@ define( function(require){
                                 prompt: "Ну и как нам вас величать?"
                             },
                             {
-                                type: 'maxLength[64]',
+                                type: 'maxLength[24]',
                                 prompt: "Ох и имечко, может быть как-нить по короче?"
+                            },
+                            {
+                                type: "regExp[/^[\\w \\u0430-\\u044F\\u0410-\\u042F-]+$/]",
+                                prompt: "Имя пользователя может содержать только буквы, пробел, подчеркивание или знак минуса"
                             }
                         ]
                     },
@@ -107,7 +115,7 @@ define( function(require){
                             },
                             {
                                 type: 'match[pasw]',
-                                prompt: 'Уверены что чточно ввели, что хотели, а то что-то не совпадают пароли то.'
+                                prompt: 'Уверены что точно ввели, что хотели, а то что-то не совпадают пароли то.'
                             }
                         ]
                     },
@@ -117,6 +125,10 @@ define( function(require){
                             {
                                 type: "email",
                                 prompt: "Нам бы почту, ну только чтоб только важные оповещения слать. Честно, честно."
+                            },
+                            {
+                                type: 'maxLength[128]',
+                                prompt: "Никогда не думал что бывают такие длинные имена почтовых ящиков o_O"
                             }
                         ]
                     }
