@@ -39,7 +39,7 @@ define( function(require) {
 		}
 	    }
             handler.finish = function() {
-                this.$form.removeClass( "loading" );
+                self.$form.removeClass( "loading" );
             }
         },
 
