@@ -12,8 +12,9 @@ define( function( require ) {
             isNavInGroup: false,
             is_groups: false,
             is_many_groups: false,
-            has_unreaded_in_groups: false,
-            current_group: {}
+            has_unreaded_in_other_groups: false,
+            current_group: null,
+            current_group_id: 0
         },
 
         fetch: function() {
@@ -29,6 +30,7 @@ define( function( require ) {
                     groups: data.groups,
                     is_groups: false,
                     current_group: null,
+                    current_group_id: self.get( "current_group_id" ),
                     is_many_groups: false,
                     has_unreaded_in_groups: false
                 };
@@ -38,14 +40,20 @@ define( function( require ) {
                 }
                 if ( 1 < model_data.groups.length ) {
                     model_data.is_many_groups = true;
-                    model_data.current_group = _.max(
-                        model_data.groups,
-                        function( x ) {return x.unwatched_events;}
-                    );
+                    if ( model_data.current_group_id == 0 ) {
+                        self.choose_current_group_in( model_data );
+                        model_data.current_group_id = model_data.current_group.id;
+                    }
+                    self.set_current_group_in( model_data, model_data.current_group_id );
                 }
-                model_data.has_unreaded_in_groups = _.some( model_data.groups, function( x ) {
-                    return x.unwatched_events != 0;
-                });
+                var all_unreaded_count = _.reduce(
+                    model_data.groups,
+                    function( memo, group ) {
+                        return memo += group.unwatched_events;
+                    },
+                    0
+                );
+                model_data.has_unreaded_in_other_groups = model_data.current_group.unwatched_events < all_unreaded_count;
                 self.set( model_data );
             }
 
@@ -97,9 +105,21 @@ define( function( require ) {
             };
         },
 
+        set_current_group_in: function( data, id ) {
+            data.current_group = _.find( data.groups, function( x ) { return x.id == id; } );
+            data.current_group_id = id;
+        },
+
+        choose_current_group_in: function( data ) {
+            data.current_group = _.max(
+                data.groups,
+                function( x ) {return x.unwatched_events;}
+            );
+        },
+
         set_current_group: function( id ) {
             var data = this.toJSON();
-            data.current_group = _.find( data.groups, function( x ) { return x.id == id; } );
+            this.set_current_group_in( data, id );
             this.set( data );
         }
     });

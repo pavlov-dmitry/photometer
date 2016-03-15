@@ -1,19 +1,22 @@
 define( function(require) {
     var Backbone = require( "lib/backbone" ),
-        Handlebars = require( "handlebars.runtime" );
+        Handlebars = require( "handlebars.runtime" ),
+        app = require( "app" );
     require( "template/group_feed_element" );
 
     var GroupFeedElementView = Backbone.View.extend({
         el: "#workspace",
         template: Handlebars.templates.group_feed_element,
 
-        initialize: function() {
+            initialize: function() {
             this.listenTo( this.model, "change:event_id", this.render );
             this.model.fetch();
         },
 
         render: function() {
-            this.$el.html( this.template( this.model.toJSON() ) );
+            var data = this.model.toJSON();
+            this.$el.html( this.template( data ) );
+            app.userState.set_current_group( data.group.id );
 
             var views_factory = require( "group_feed/views_factory" );
             var View = views_factory( this.model.get("event_id") );

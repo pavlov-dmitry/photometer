@@ -48,7 +48,7 @@ return templates['user_state_header_view'] = template({"1":function(container,de
     var stack1, alias1=depth0 != null ? depth0 : {};
 
   return "      <div id=\"groups_menu\" class=\"ui top right pointing floating dropdown icon button item\">\n"
-    + ((stack1 = helpers["if"].call(alias1,(depth0 != null ? depth0.has_unreaded_in_groups : depth0),{"name":"if","hash":{},"fn":container.program(12, data, 0),"inverse":container.program(14, data, 0),"data":data})) != null ? stack1 : "")
+    + ((stack1 = helpers["if"].call(alias1,(depth0 != null ? depth0.has_unreaded_in_other_groups : depth0),{"name":"if","hash":{},"fn":container.program(12, data, 0),"inverse":container.program(14, data, 0),"data":data})) != null ? stack1 : "")
     + "        <div class=\"menu\">\n"
     + ((stack1 = helpers.each.call(alias1,(depth0 != null ? depth0.groups : depth0),{"name":"each","hash":{},"fn":container.program(16, data, 0),"inverse":container.noop,"data":data})) != null ? stack1 : "")
     + "        </div>\n      </div>\n";

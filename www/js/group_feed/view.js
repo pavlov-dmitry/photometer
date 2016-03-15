@@ -21,6 +21,7 @@ define( function(require) {
                 var errors_handler = require( "errors_handler" );
                 error_handler.oops( "Запрошенная группа не найдена." );
             }
+            app.userState.set_current_group( this.model.get( "id" ) );
         },
 
         close: function() {
