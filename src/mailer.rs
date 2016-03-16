@@ -12,7 +12,7 @@ use database::{ Databaseable };
 use stuff::{ Stuff, StuffInstallable };
 
 use lettre::email::EmailBuilder;
-use lettre::transport::smtp::{ self, SmtpTransportBuilder };
+use lettre::transport::smtp::{ SecurityLevel, SmtpTransportBuilder };
 use lettre::transport::EmailTransport;
 
 struct MailSender( Sender<Mail> );
@@ -97,6 +97,7 @@ pub struct MailerBody {
 
 pub struct MailContext {
     smtp_addr: String,
+    smtp_port: u16,
     from_addr: String,
     pass: String
 }
@@ -105,7 +106,6 @@ pub struct MailContext {
 pub struct Mail {
     to_addr: String,
     to_name: String,
-    //sender_name: String,
     subject: String,
     body: String
 }
@@ -114,9 +114,10 @@ impl Key for MailerBody { type Value = MailerBody; }
 impl Key for MailSender { type Value = MailSender; }
 
 impl MailContext {
-    pub fn new( smtp_addr: &str, from_addr: &str, pass: &str ) -> MailContext {
+    pub fn new( smtp_addr: &str, smtp_port: u16, from_addr: &str, pass: &str ) -> MailContext {
         MailContext {
             smtp_addr: smtp_addr.to_owned(),
+            smtp_port: smtp_port,
             from_addr: from_addr.to_owned(),
             pass: pass.to_owned()
         }
@@ -139,18 +140,19 @@ impl MailContext {
 
         let mut try_count = 0;
         while try_count < 6 {
-            let builder = SmtpTransportBuilder::new( (&self.smtp_addr as &str, smtp::SUBMISSION_PORT) );
+            let builder = SmtpTransportBuilder::new( (&self.smtp_addr as &str, self.smtp_port) );
             match builder {
                 Ok( builder ) => {
                     let mut sender = builder
+                        .security_level( SecurityLevel::EncryptedWrapper )
                         .credentials( &self.from_addr, &self.pass )
                         .build();
 
                     match sender.send( email.clone() ) {
                         Ok( _ ) => {
-                            debug!( "mail to '{}' with subject='{}' successfully sended.",
-                                     mail.to_addr,
-                                     mail.subject );
+                            info!( "mail to '{}' with subject='{}' successfully sended.",
+                                    mail.to_addr,
+                                    mail.subject );
                             break;
                         },
                         Err( e ) => {

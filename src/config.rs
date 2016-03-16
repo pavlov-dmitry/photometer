@@ -21,6 +21,7 @@ pub struct Config {
     pub photo_store_preview_size : usize,
     pub events_trigger_period_sec: u32,
     pub mail_smtp_address: String,
+    pub mail_smtp_port: u16,
     pub mail_from_address: String,
     pub mail_from_pass: String,
 }
@@ -49,9 +50,10 @@ impl Config {
             photo_store_max_photo_size_bytes : 3145728,
             photo_store_preview_size : 300,
             events_trigger_period_sec : 600,
-            mail_smtp_address: "smtps://smtp.gmail.com:465".to_string(),
-            mail_from_address: "photometer.org.ru@gmail.com".to_string(),
-            mail_from_pass: "ajnjvtnhbxtcrbq".to_string(),
+            mail_smtp_address: "mail.someserver.org".to_string(),
+            mail_smtp_port: 25,
+            mail_from_address: "photometer@mail.com".to_string(),
+            mail_from_pass: "qwerty".to_string(),
         }
     }
 }

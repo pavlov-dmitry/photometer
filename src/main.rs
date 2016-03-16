@@ -24,6 +24,7 @@ use iron::prelude::*;
 use router::Router;
 use not_found_switcher::NotFoundSwitcher;
 use std::path::Path;
+use std::env;
 
 mod params_body_parser;
 mod authentication;
@@ -54,6 +55,11 @@ use stuff::{ StuffCollection, StuffMiddleware };
 
 fn main() {
     env_logger::init().unwrap();
+
+    if let Err( e ) = set_exec_path_as_current_dir() {
+        error!( "error set exec path as current dir: {}", e );
+        return;
+    }
 
     let cfg = config::load_or_default( &Path::new( "../etc/photometer.cfg" ) );
 
@@ -130,6 +136,7 @@ fn main() {
     stuff.add( db );
     let postman = mailer::create( mailer::MailContext::new(
         &cfg.mail_smtp_address,
+        cfg.mail_smtp_port,
         &cfg.mail_from_address,
         &cfg.mail_from_pass,
     ) );
@@ -154,6 +161,21 @@ fn main() {
     let addr = cfg.server_socket();
     println!( "starting listen on {}", addr );
     Iron::new( chain ).http( addr ).unwrap();
+}
+
+fn set_exec_path_as_current_dir() -> Result<(), String> {
+    env::current_exe()
+        .map_err( |e| format!( "can not get exec path: {}", e ) )
+        .and_then( |path| {
+            path.parent()
+                .map( |p| p.to_path_buf() )
+                .ok_or( String::from( "exec path is root path o_O" ) )
+        })
+        .and_then( |path| {
+            println!( "setting current dir: {}", path.display() );
+            env::set_current_dir( path )
+                .map_err( |e| format!( "can not set current dir: {}", e ) )
+        })
 }
 
 // fn add_static_path( root_path: &str ) -> Mount {
