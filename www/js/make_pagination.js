@@ -15,6 +15,13 @@ define( function(require) {
         }
 
         pagination.pages = [];
+        if ( 0 < minPage ) {
+            pagination.pages.push(
+                { name: 1, link: "0" },
+                { name: "..", disabled: true}
+            );
+        }
+
         for ( var i = minPage; i <= maxPage; ++i ) {
             var current = {
                 name: i + 1
