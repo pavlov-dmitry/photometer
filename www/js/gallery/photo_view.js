@@ -50,12 +50,12 @@ define( function( require ) {
                 self.show_photo();
             });
             // если фотка не покажется в течении некоторого вермени, то показываем загрузку
-            setTimeout( function() {
+            // setTimeout( function() {
                 if ( !self.photo_loaded ) {
-                    $("#loader").dimmer( { duration: {show: 0, hide: 200} } );
+                    $("#loader").dimmer( { duration: {show: 0, hide: 0} } );
                     $("#loader").dimmer( "show" );
                 }
-            }, 200 );
+            // }, 200 );
             self.resize_handler();
 
             var comments_model = new CommentsModel({ photo_id: this.model.get("id") });
