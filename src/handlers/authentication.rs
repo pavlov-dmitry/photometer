@@ -129,7 +129,7 @@ fn make_password_hash( reg_key: &str, password: &str ) -> String {
     let reg_key_bytes: Vec<u8> = reg_key.bytes().take( 16 ).collect();
     let password_bytes: Vec<u8> = password.bytes().collect();
     let mut password_hash: [u8; 24] = [0; 24];
-    crypto::bcrypt::bcrypt( 12, &reg_key_bytes, &password_bytes, &mut password_hash );
+    crypto::bcrypt::bcrypt( 8, &reg_key_bytes, &password_bytes, &mut password_hash );
     let password_string = password_hash.to_base64( base64::STANDARD );
     password_string
 }
