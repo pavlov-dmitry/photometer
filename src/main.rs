@@ -51,6 +51,8 @@ mod mail_writer;
 mod get_body;
 mod answer_types;
 
+mod transfer;
+
 use stuff::{ StuffCollection, StuffMiddleware };
 
 fn main() {
@@ -144,6 +146,11 @@ fn main() {
     stuff.add( mail_writer::create( &cfg.root_url ) );
 
     let stuff_middleware = StuffMiddleware::new( stuff );
+
+    transfer::transfer( &mut stuff_middleware.new_stuff(), "../etc/transfer.json" );
+    println!( "transfer_end." );
+    return;
+
     trigger::start( cfg.events_trigger_period_sec, stuff_middleware.clone() );
 
     let mut chain = Chain::new( no_auth_router );
