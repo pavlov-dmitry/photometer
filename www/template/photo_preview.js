@@ -31,7 +31,7 @@ return templates['photo_preview'] = template({"1":function(container,depth0,help
     + alias4(((helper = (helper = helpers.id || (depth0 != null ? depth0.id : depth0)) != null ? helper : alias2),(typeof helper === alias3 ? helper.call(alias1,{"name":"id","hash":{},"data":data}) : helper)))
     + "\" class=\"centered card mw300\">\r\n  <a class=\"image\" href=\"#"
     + alias4(((helper = (helper = helpers.url || (depth0 != null ? depth0.url : depth0)) != null ? helper : alias2),(typeof helper === alias3 ? helper.call(alias1,{"name":"url","hash":{},"data":data}) : helper)))
-    + "\">\r\n    <img exify_intitialized=\"true\" src=\"preview/"
+    + "\">\r\n    <img exify_intitialized=\"true\" src=\"i/dummy_preview.png\" data-src=\"preview/"
     + alias4(((helper = (helper = helpers.id || (depth0 != null ? depth0.id : depth0)) != null ? helper : alias2),(typeof helper === alias3 ? helper.call(alias1,{"name":"id","hash":{},"data":data}) : helper)))
     + ".png\" alt=\"Нет картинки :(\">\r\n  </a>\r\n  <div class=\"content\">\r\n    <div class=\"ui "
     + ((stack1 = helpers.unless.call(alias1,(depth0 != null ? depth0.name : depth0),{"name":"unless","hash":{},"fn":container.program(1, data, 0),"inverse":container.noop,"data":data})) != null ? stack1 : "")

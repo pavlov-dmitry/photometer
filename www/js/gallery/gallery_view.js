@@ -99,6 +99,11 @@ define( function(require) {
                 id: "preview-" + data.id
             });
             this.$("#preview-list").append( view.render().$el );
+            $(".image img").visibility({
+                type: "image",
+                transition: "fade in",
+                duration: 500
+            });
         },
 
         addAll: function() {

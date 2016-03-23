@@ -18,6 +18,11 @@ define( function(require) {
             var data = this.model.toJSON();
             var html = Handlebars.templates.publication_feed_view( data );
             this.$el.replaceWith( html );
+            $(".image img").visibility({
+                type: "image",
+                transition: "fade in",
+                duration: 500
+            });
             return this;
         }
     });

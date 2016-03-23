@@ -41,7 +41,7 @@ return templates['publication_feed_view'] = template({"1":function(container,dep
     + alias2(alias1((depths[1] != null ? depths[1].id : depths[1]), depth0))
     + "/photo/"
     + alias2(((helper = (helper = helpers.id || (depth0 != null ? depth0.id : depth0)) != null ? helper : alias4),(typeof helper === alias5 ? helper.call(alias3,{"name":"id","hash":{},"data":data}) : helper)))
-    + "\">\n            <img exify_intitialized=\"true\" src=\"preview/"
+    + "\">\n            <img exify_intitialized=\"true\" src=\"i/dummy_preview.png\" data-src=\"preview/"
     + alias2(((helper = (helper = helpers.id || (depth0 != null ? depth0.id : depth0)) != null ? helper : alias4),(typeof helper === alias5 ? helper.call(alias3,{"name":"id","hash":{},"data":data}) : helper)))
     + ".png\" alt=\"Загружается ...\">\n          </a>\n          <div class=\"content\">\n            <div class=\"ui "
     + ((stack1 = helpers.unless.call(alias3,(depth0 != null ? depth0.name : depth0),{"name":"unless","hash":{},"fn":container.program(18, data, 0, blockParams, depths),"inverse":container.noop,"data":data})) != null ? stack1 : "")
