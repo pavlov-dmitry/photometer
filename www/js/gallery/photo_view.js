@@ -67,6 +67,7 @@ define( function( require ) {
         },
 
         close: function( is_next_photo ) {
+            $(window).off( "resize", this.resize_handler );
             if ( this.comments_view ) {
                 this.comments_view.close();
             }
@@ -76,7 +77,7 @@ define( function( require ) {
         },
 
         show_photo: function() {
-            document.getElementById( 'photo' ).scrollIntoView();
+            document.getElementById( 'photo-container' ).scrollIntoView();
         }
 
     });
