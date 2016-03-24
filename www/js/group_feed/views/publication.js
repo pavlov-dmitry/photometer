@@ -17,8 +17,10 @@ define( function(require) {
         render: function() {
             var data = this.model.toJSON();
             var html = Handlebars.templates.publication_feed_view( data );
+            // NOTE: так как после replaceWith find уже не работет у
+            // this.$el, то мы ищем наши картинки по другому
             this.$el.replaceWith( html );
-            $(".image img").visibility({
+            $("#feed-event-" + data.id).find(".image img").visibility({
                 type: "image",
                 transition: "fade in",
                 duration: 500
