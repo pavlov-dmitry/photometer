@@ -1,6 +1,6 @@
 [root]
 name = "photometer"
-version = "1.0.0-alpha"
+version = "1.0.0"
 dependencies = [
  "env_logger 0.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "image 0.7.0 (registry+https://github.com/rust-lang/crates.io-index)",

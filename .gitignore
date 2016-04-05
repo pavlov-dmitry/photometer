@@ -2,3 +2,4 @@
 /www-release
 /data
 nginx.conf
+*.swp
