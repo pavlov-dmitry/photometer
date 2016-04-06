@@ -65,7 +65,7 @@ return templates['gallery_view'] = template({"1":function(container,depth0,helpe
 },"19":function(container,depth0,helpers,partials,data) {
     var stack1;
 
-  return "        <div class=\"ui center aligned very padded basic segment\">\r\n            <h1 class=\"ui disabled icon header\">\r\n                <i class=\"film icon\"></i>\r\n                Галлерея пуста.\r\n            </h1>\r\n"
+  return "        </div>\r\n        <div class=\"ui center aligned very padded basic segment\">\r\n            <h1 class=\"ui disabled icon header\">\r\n                <i class=\"film icon\"></i>\r\n                Галлерея пуста.\r\n            </h1>\r\n"
     + ((stack1 = helpers["if"].call(depth0 != null ? depth0 : {},(depth0 != null ? depth0.is_own : depth0),{"name":"if","hash":{},"fn":container.program(20, data, 0),"inverse":container.noop,"data":data})) != null ? stack1 : "")
     + "        </div>\r\n";
 },"20":function(container,depth0,helpers,partials,data) {
@@ -81,6 +81,6 @@ return templates['gallery_view'] = template({"1":function(container,depth0,helpe
     + ((stack1 = helpers.each.call(alias1,(depth0 != null ? depth0.photos : depth0),{"name":"each","hash":{},"fn":container.program(5, data, 0, blockParams, depths),"inverse":container.program(19, data, 0, blockParams, depths),"data":data})) != null ? stack1 : "")
     + "    </div>\r\n    <p>\r\n    "
     + ((stack1 = (helpers.pagination || (depth0 && depth0.pagination) || alias2).call(alias1,(depth0 != null ? depth0.pagination : depth0),(depth0 != null ? depth0.prefix_url : depth0),{"name":"pagination","hash":{},"data":data})) != null ? stack1 : "")
-    + "\r\n}}}\r\n    </p>\r\n</div>\r\n";
+    + "\r\n    </p>\r\n</div>\r\n";
 },"useData":true,"useDepths":true});
 });
