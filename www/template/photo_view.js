@@ -81,19 +81,35 @@ return templates['photo_view'] = template({"1":function(container,depth0,helpers
     + alias2(alias1(((stack1 = (depth0 != null ? depth0.feed : depth0)) != null ? stack1.name : stack1), depth0))
     + "</a>\n            <i class=\"right chevron divider icon\"></i>\n";
 },"30":function(container,depth0,helpers,partials,data) {
-    return "            <a class=\"section\" href=\"#gallery\">Галлерея</a>\n            <i class=\"right chevron divider icon\"></i>\n";
+    var stack1, alias1=container.lambda, alias2=container.escapeExpression;
+
+  return "            <a class=\"section\" href=\"#user/"
+    + alias2(alias1(((stack1 = ((stack1 = (depth0 != null ? depth0.photo : depth0)) != null ? stack1.owner : stack1)) != null ? stack1.id : stack1), depth0))
+    + "\">"
+    + alias2(alias1(((stack1 = ((stack1 = (depth0 != null ? depth0.photo : depth0)) != null ? stack1.owner : stack1)) != null ? stack1.name : stack1), depth0))
+    + "</a>\n            <i class=\"at divider icon\"></i>\n            <a class=\"section\" href=\"#gallery/"
+    + alias2(alias1(((stack1 = ((stack1 = (depth0 != null ? depth0.photo : depth0)) != null ? stack1.owner : stack1)) != null ? stack1.id : stack1), depth0))
+    + "\">Галлерея</a>\n            <i class=\"right chevron divider icon\"></i>\n";
 },"32":function(container,depth0,helpers,partials,data) {
     var stack1;
 
-  return "              "
+  return "                  "
     + container.escapeExpression(container.lambda(((stack1 = (depth0 != null ? depth0.photo : depth0)) != null ? stack1.name : stack1), depth0))
     + "\n";
 },"34":function(container,depth0,helpers,partials,data) {
+    var stack1, alias1=depth0 != null ? depth0 : {};
+
+  return ((stack1 = helpers["if"].call(alias1,(depth0 != null ? depth0.is_own_photo : depth0),{"name":"if","hash":{},"fn":container.program(35, data, 0),"inverse":container.noop,"data":data})) != null ? stack1 : "")
+    + "                    <i>Без имени</i>\n"
+    + ((stack1 = helpers["if"].call(alias1,(depth0 != null ? depth0.is_own_photo : depth0),{"name":"if","hash":{},"fn":container.program(37, data, 0),"inverse":container.noop,"data":data})) != null ? stack1 : "");
+},"35":function(container,depth0,helpers,partials,data) {
     var helper;
 
-  return "              <a href=\"#edit_photo/"
+  return "                  <a href=\"#edit_photo/"
     + container.escapeExpression(((helper = (helper = helpers.id || (depth0 != null ? depth0.id : depth0)) != null ? helper : helpers.helperMissing),(typeof helper === "function" ? helper.call(depth0 != null ? depth0 : {},{"name":"id","hash":{},"data":data}) : helper)))
-    + "\">\n                <i>Без имени</i>\n              </a>\n";
+    + "\">\n";
+},"37":function(container,depth0,helpers,partials,data) {
+    return "                  </a>\n";
 },"compiler":[7,">= 4.0.0"],"main":function(container,depth0,helpers,partials,data) {
     var stack1, alias1=depth0 != null ? depth0 : {};
 

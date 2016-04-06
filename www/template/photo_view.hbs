@@ -75,16 +75,22 @@
             <a class="section" href="#group/feed/element/{{feed.id}}">{{feed.name}}</a>
             <i class="right chevron divider icon"></i>
             {{else}}
-            <a class="section" href="#gallery">Галлерея</a>
+            <a class="section" href="#user/{{photo.owner.id}}">{{photo.owner.name}}</a>
+            <i class="at divider icon"></i>
+            <a class="section" href="#gallery/{{photo.owner.id}}">Галлерея</a>
             <i class="right chevron divider icon"></i>
             {{/if}}
             <div class="active section">
               {{#if photo.name}}
-              {{photo.name}}
+                  {{photo.name}}
               {{else}}
-              <a href="#edit_photo/{{id}}">
-                <i>Без имени</i>
-              </a>
+                  {{#if is_own_photo}}
+                  <a href="#edit_photo/{{id}}">
+                  {{/if}}
+                    <i>Без имени</i>
+                  {{#if is_own_photo}}
+                  </a>
+                  {{/if}}
               {{/if}}
             </div>
           </div>

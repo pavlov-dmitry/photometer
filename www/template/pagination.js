@@ -58,13 +58,11 @@ return templates['pagination'] = template({"1":function(container,depth0,helpers
     + container.escapeExpression(((helper = (helper = helpers.link || (depth0 != null ? depth0.link : depth0)) != null ? helper : helpers.helperMissing),(typeof helper === "function" ? helper.call(depth0 != null ? depth0 : {},{"name":"link","hash":{},"data":data}) : helper)))
     + "\"";
 },"20":function(container,depth0,helpers,partials,data) {
-    var stack1, helper, alias1=depth0 != null ? depth0 : {};
+    var stack1;
 
   return "  <a class=\"ui pagination button\" "
-    + ((stack1 = helpers["if"].call(alias1,(depth0 != null ? depth0.prefix : depth0),{"name":"if","hash":{},"fn":container.program(21, data, 0),"inverse":container.program(23, data, 0),"data":data})) != null ? stack1 : "")
-    + " aria-label=\"Слудующая\">\n    <!-- <a class=\"ui pagination button\" data=\""
-    + container.escapeExpression(((helper = (helper = helpers.next || (depth0 != null ? depth0.next : depth0)) != null ? helper : helpers.helperMissing),(typeof helper === "function" ? helper.call(alias1,{"name":"next","hash":{},"data":data}) : helper)))
-    + "\" aria-label=\"Слудующая\"> -->\n    <i class=\"angle double right icon\"></i>\n  </a>\n";
+    + ((stack1 = helpers["if"].call(depth0 != null ? depth0 : {},(depth0 != null ? depth0.prefix : depth0),{"name":"if","hash":{},"fn":container.program(21, data, 0),"inverse":container.program(23, data, 0),"data":data})) != null ? stack1 : "")
+    + " aria-label=\"Слудующая\">\n    <i class=\"angle double right icon\"></i>\n  </a>\n";
 },"21":function(container,depth0,helpers,partials,data) {
     var helper, alias1=depth0 != null ? depth0 : {}, alias2=helpers.helperMissing, alias3="function", alias4=container.escapeExpression;
 

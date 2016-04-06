@@ -10,8 +10,8 @@ define( function(require) {
             'logout': 'logout',
             'register': 'register',
             'activate/:key': 'activate',
-            'gallery': 'gallery',
-            'gallery/:page': 'gallery_page',
+            'gallery/:user_id': 'gallery',
+            'gallery/:user_id/:page': 'gallery_page',
             'edit_photo/:id': "edit_photo",
             'mailbox/unreaded': 'mailbox_unreaded',
             'mailbox/unreaded/:page': 'mailbox_unreaded_page',
@@ -77,21 +77,23 @@ define( function(require) {
             makeActivate( key );
         },
 
-        gallery: function() {
-            this.gallery_page( 0 );
+        gallery: function( user_id ) {
+            this.gallery_page( user_id, 0 );
         },
 
-        gallery_page: function( page ) {
+        gallery_page: function( user_id, page ) {
             this.clear_current();
 
-            var GalleryView = require( "gallery/gallery_view" ),
-            GalleryCollection = require( "gallery/gallery_collection" );
+            var GalleryView = require( "gallery/gallery_view" );
+            var GalleryModel = require( "gallery/gallery_model" );
 
-            var model = new GalleryCollection;
+            var model = new GalleryModel({
+                owner: {
+                    id: user_id
+                }
+            });
             this.current = new GalleryView( { model: model } );
             model.fetch( page );
-
-            app.userState.navToGallery();
         },
 
         mailbox: function() {
@@ -157,8 +159,6 @@ define( function(require) {
             model.set({ context_url: "gallery_photo/" + user_id + "/" });
 
             this.current = new PhotoView({ model: model });
-
-            app.userState.navToGallery();
         },
 
         publication_photo: function( feed_id, photo_id ) {

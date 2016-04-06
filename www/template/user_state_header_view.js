@@ -1,7 +1,7 @@
 define(['handlebars.runtime'], function(Handlebars) {
   Handlebars = Handlebars["default"];  var template = Handlebars.template, templates = Handlebars.templates = Handlebars.templates || {};
 return templates['user_state_header_view'] = template({"1":function(container,depth0,helpers,partials,data) {
-    var stack1, helper, alias1=depth0 != null ? depth0 : {};
+    var stack1, helper, alias1=depth0 != null ? depth0 : {}, alias2=helpers.helperMissing, alias3="function", alias4=container.escapeExpression;
 
   return "<div id=\"main-menu\" class=\"ui pointing secondary stackable main menu\">\n  <div class=\"ui container\">\n    <div class=\"header item\">\n      <img class=\"ui logo\" src=\"i/logo.png\" data-variation=\"wide\">\n    </div>\n    <a class=\"item"
     + ((stack1 = helpers["if"].call(alias1,(depth0 != null ? depth0.isNavInMessages : depth0),{"name":"if","hash":{},"fn":container.program(2, data, 0),"inverse":container.noop,"data":data})) != null ? stack1 : "")
@@ -9,10 +9,12 @@ return templates['user_state_header_view'] = template({"1":function(container,de
     + ((stack1 = helpers["if"].call(alias1,(depth0 != null ? depth0.unreaded_messages : depth0),{"name":"if","hash":{},"fn":container.program(4, data, 0),"inverse":container.noop,"data":data})) != null ? stack1 : "")
     + "    </a>\n    <a class=\"item"
     + ((stack1 = helpers["if"].call(alias1,(depth0 != null ? depth0.isNavInGallery : depth0),{"name":"if","hash":{},"fn":container.program(2, data, 0),"inverse":container.noop,"data":data})) != null ? stack1 : "")
-    + "\" href=\"#gallery\">\n      <i class=\"icon film\"></i>\n      Галлерея\n    </a>\n"
+    + "\" href=\"#gallery/"
+    + alias4(((helper = (helper = helpers.id || (depth0 != null ? depth0.id : depth0)) != null ? helper : alias2),(typeof helper === alias3 ? helper.call(alias1,{"name":"id","hash":{},"data":data}) : helper)))
+    + "\">\n      <i class=\"icon film\"></i>\n      Галлерея\n    </a>\n"
     + ((stack1 = helpers["if"].call(alias1,(depth0 != null ? depth0.is_groups : depth0),{"name":"if","hash":{},"fn":container.program(6, data, 0),"inverse":container.noop,"data":data})) != null ? stack1 : "")
     + "    <div class=\"right menu\">\n      <div id=\"user_menu\" class=\"ui top right pointing dropdown item\">\n        "
-    + container.escapeExpression(((helper = (helper = helpers.name || (depth0 != null ? depth0.name : depth0)) != null ? helper : helpers.helperMissing),(typeof helper === "function" ? helper.call(alias1,{"name":"name","hash":{},"data":data}) : helper)))
+    + alias4(((helper = (helper = helpers.name || (depth0 != null ? depth0.name : depth0)) != null ? helper : alias2),(typeof helper === alias3 ? helper.call(alias1,{"name":"name","hash":{},"data":data}) : helper)))
     + "\n        <i class=\"dropdown icon\"></i>\n        <div class=\"menu\">\n          <a class=\"item\" href=\"#group_creation\">\n            <i class=\"child icon\"></i>\n            Создать новую группу\n          </a>\n          <a class=\"item\" href=\"#logout\">\n            <i class=\"sign out icon\"></i>\n            Выход\n          </a>\n        </div>\n      </div>\n    </div>\n  </div>\n</div>\n";
 },"2":function(container,depth0,helpers,partials,data) {
     return " active";

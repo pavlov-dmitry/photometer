@@ -76,10 +76,12 @@ define( function( require ) {
 
         //TODO: Является местополжение в навигации состоянием
         //пользователя ?, или стоит вынести это в отдельную модель
-        navToGallery: function() {
-            var navState = this.getResetedNav();
-            navState.isNavInGallery = true;
-            this.set( navState );
+        navToGallery: function( user_id ) {
+            if ( user_id === this.get("id") ) {
+                var navState = this.getResetedNav();
+                navState.isNavInGallery = true;
+                this.set( navState );
+            }
         },
 
         navToMessages: function() {

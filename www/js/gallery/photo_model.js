@@ -4,11 +4,6 @@ define( function(require) {
     var PhotoModel = Backbone.Model.extend({
         defaults: {
             'id': 0,
-            // Какого-то хера эта фигня не устанваливается, видимо по
-            // умолчанию можно ставить только те поля что
-            // предусмотрены Хребтом
-            'photo_url': "gallery/photo_info",
-            'context_url': "gallery/0/",
         },
 
         fetch: function() {

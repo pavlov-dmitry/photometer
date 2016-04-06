@@ -4,6 +4,7 @@ use stuff::Stuffable;
 use authentication::{ Userable };
 use db::photos::{ DbPhotos };
 use db::group_feed::DbGroupFeed;
+use db::users::DbUsers;
 use iron::prelude::*;
 use get_body::GetBody;
 use answer_types::CountInfo;
@@ -74,35 +75,50 @@ pub fn get_publication_photo( request: &mut Request ) -> IronResult<Response> {
 }
 
 #[derive(Clone, RustcDecodable)]
+struct GalleryQueryInfo {
+    user_id: Id,
+    page: u32
+}
+
+#[derive(Clone, RustcDecodable)]
 struct PageInfo {
     page: u32
 }
 
 #[derive(RustcEncodable)]
 struct GalleryInfo {
-    owner_id: Id,
+    is_own: bool,
+    owner: ShortInfo,
     pagination: PaginationInfo,
     photos: Vec<PhotoInfo>
 }
 
 fn gallery_answer( req: &mut Request ) -> AnswerResult {
-    let page = try!( req.get_body::<PageInfo>() ).page;
+    let query = try!( req.get_body::<GalleryQueryInfo>() );
 
     let user_id = req.user().id;
     let db = try!( req.stuff().get_current_db_conn() );
 
-    let photos_count = try!( db.get_photo_infos_count( user_id ) );
+    let owner_info = match try!( db.user_by_id( query.user_id ) ) {
+        Some( info ) => info,
+        None => return Ok( Answer::not_found() )
+    };
+    let photos_count = try!( db.get_photo_infos_count( query.user_id ) );
 
     let photo_infos = try!( db.get_photo_infos(
         user_id,
-        user_id,
-        page * IN_PAGE_COUNT,
+        query.user_id,
+        query.page * IN_PAGE_COUNT,
         IN_PAGE_COUNT
     ) );
 
     let gallery_info = GalleryInfo {
-        owner_id: user_id,
-        pagination: make_pagination( page, photos_count, IN_PAGE_COUNT ),
+        is_own: user_id == query.user_id,
+        owner: ShortInfo {
+            id: owner_info.id,
+            name: owner_info.name
+        },
+        pagination: make_pagination( query.page, photos_count, IN_PAGE_COUNT ),
         photos: photo_infos
     };
     let answer = Answer::good( gallery_info );
@@ -112,19 +128,23 @@ fn gallery_answer( req: &mut Request ) -> AnswerResult {
 fn gallery_unpublished_answer( req: &mut Request ) -> AnswerResult {
     let page = try!( req.get_body::<PageInfo>() ).page;
 
-    let user_id = req.user().id;
+    let user = req.user().clone();
     let db = try!( req.stuff().get_current_db_conn() );
 
-    let unpublished_count = try!( db.get_unpublished_photos_count( user_id ) );
+    let unpublished_count = try!( db.get_unpublished_photos_count( user.id ) );
     let photos = try!( db.get_unpublished_photo_infos(
-        user_id,
-        user_id,
+        user.id,
+        user.id,
         page * IN_PAGE_COUNT,
         IN_PAGE_COUNT
     ));
 
     let gallery_info = GalleryInfo {
-        owner_id: user_id,
+        owner: ShortInfo {
+            id: user.id,
+            name: user.name
+        },
+        is_own: true,
         pagination: make_pagination( page, unpublished_count, IN_PAGE_COUNT ),
         photos: photos
     };
@@ -140,6 +160,7 @@ struct PhotoContextInfo {
 
 #[derive(RustcEncodable)]
 struct GalleryPhotoInfo {
+    is_own: bool,
     photo: PhotoInfo
 }
 
@@ -161,6 +182,7 @@ fn photo_info_answer( req: &mut Request ) -> AnswerResult {
     };
 
     let info = GalleryPhotoInfo {
+        is_own: user_id == photo_info.owner.id,
         photo: photo_info
     };
     let answer = Answer::good( info );

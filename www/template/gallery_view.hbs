@@ -1,25 +1,73 @@
 <div class="ui container">
-  <span id="upload-btn" class="ui green button fileinput-button">
-    <i class="add icon"></i>
-    <span>Добавить</span>
-    <input id="upload-file" type="file" name="file" accept="image/jpeg,image/png">
-  </span>
+    {{#if is_own}}
+    <span id="upload-btn" class="ui green button fileinput-button">
+        <i class="add icon"></i>
+        <span>Добавить</span>
+        <input id="upload-file" type="file" name="file" accept="image/jpeg,image/png">
+    </span>
 
-  <div id="upload-progress" class="ui indicating progress">
-    <div class="bar"></div>
-    <div class="label">Загружено</div>
-  </div>
-
-  <p>
-    <div id="header-pagination">
+    <div id="upload-progress" class="ui indicating progress">
+        <div class="bar"></div>
+        <div class="label">Загружено</div>
     </div>
-  </p>
-  <div id="preview-list" class="ui stackable cards">
-  </div>
-  <div id="empty-gallery">
-  </div>
-  <p>
-    <div id="footer-pagination">
+    {{else}}
+    <h2 class="ui block header">
+        <i class="camera icon"></i>
+        <a class="content" href="#user/{{owner.id}}">
+            {{owner.name}}
+        </a>
+    </h2>
+    {{/if}}
+    <p>
+    {{{pagination pagination prefix_url}}}
+    </p>
+    <div id="preview-list" class="ui stackable cards">
+        {{#each photos}}
+        <div id="{{id}}" class="centered card mw300">
+            <a class="image" href="#gallery_photo/{{../owner.id}}/{{id}}">
+                <img exify_intitialized="true" src="i/dummy_preview.png" data-src="preview/{{id}}.png" alt="Нет картинки :(">
+            </a>
+            <div class="content">
+                <div class="ui {{#unless name}} disabled {{/unless}} header">
+                    {{#if name}}
+                        {{name}}
+                    {{else}}
+                        <i>Без имени</i>
+                    {{/if}}
+                </div>
+                {{#if comments_count}}
+                <div class="right floated {{#if unreaded_comments}} new {{/if}} comments">
+                    <i class="comment {{#unless unreaded_comments}} outline {{/unless}} icon"></i>
+                    {{comments_count}}
+                </div>
+                {{/if}}
+                <div class="meta">
+                    <span class="date">Загружено {{duration_from_now upload_time}}</span>
+                </div>
+            </div>
+            {{#if ../is_own}}
+            <div class="extra content">
+                <a href="#edit_photo/{{id}}">
+                    <i class="edit icon"></i>
+                    Редактировать
+                </a>
+            </div>
+            {{/if}}
+        </div>
+        {{else}}
+        <div class="ui center aligned very padded basic segment">
+            <h1 class="ui disabled icon header">
+                <i class="film icon"></i>
+                Галлерея пуста.
+            </h1>
+            {{#if is_own}}
+            <h3 class="ui disabled header">Начните её заполнять, нажав на кнопку "Добавить", в левом верхнем углу.</h3>
+            {{/if}}
+        </div>
+        {{/each}}
     </div>
-  </p>
+    <p>
+    {{{pagination pagination prefix_url}}}
+}}}
+    </p>
 </div>

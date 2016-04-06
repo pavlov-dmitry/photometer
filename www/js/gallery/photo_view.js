@@ -2,7 +2,8 @@ define( function( require ) {
     var Backbone = require( 'lib/backbone' ),
         Handlebars = require( "handlebars.runtime" ),
         CommentsModel = require( "comments/model" ),
-        CommentsView = require( "comments/view" );
+        CommentsView = require( "comments/view" )
+        app = require("app");
     require( 'template/photo_view' );
     require( "handlebars_helpers" );
     var fit_image = require( "helpers/fit_image" );
@@ -49,19 +50,19 @@ define( function( require ) {
                 $("#loader").dimmer( "hide" );
                 self.show_photo();
             });
-            // если фотка не покажется в течении некоторого вермени, то показываем загрузку
-            // setTimeout( function() {
-                if ( !self.photo_loaded ) {
-                    $("#loader").dimmer( { duration: {show: 0, hide: 0} } );
-                    $("#loader").dimmer( "show" );
-                }
-            // }, 200 );
+            if ( !self.photo_loaded ) {
+                $("#loader").dimmer( { duration: {show: 0, hide: 0} } );
+                $("#loader").dimmer( "show" );
+            }
             self.resize_handler();
 
             var comments_model = new CommentsModel({ photo_id: this.model.get("id") });
             this.comments_view = new CommentsView({ model: comments_model });
 
             $(".ui.sticky").sticky();
+
+            var photo = this.model.get("photo");
+            app.userState.navToGallery( photo.owner.id );
 
             return this;
         },

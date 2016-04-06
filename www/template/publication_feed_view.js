@@ -31,7 +31,7 @@ return templates['publication_feed_view'] = template({"1":function(container,dep
 },"12":function(container,depth0,helpers,partials,data,blockParams,depths) {
     var stack1, helper, alias1=container.lambda, alias2=container.escapeExpression, alias3=depth0 != null ? depth0 : {}, alias4=helpers.helperMissing, alias5="function";
 
-  return "        <div class=\"ui card mw300\">\n          <div class=\"content\">\n            <a href=\"#user/"
+  return "        <div class=\"ui card mw300\">\n          <div class=\"content\">\n            <a href=\"#gallery/"
     + alias2(alias1(((stack1 = (depth0 != null ? depth0.owner : depth0)) != null ? stack1.id : stack1), depth0))
     + "\" class=\"right floated author\">\n              @"
     + alias2(alias1(((stack1 = (depth0 != null ? depth0.owner : depth0)) != null ? stack1.name : stack1), depth0))
