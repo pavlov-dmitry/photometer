@@ -8,6 +8,7 @@ define( function(require) {
         template: Handlebars.templates.comment_editor,
         events: {
             "change .comment-body" : "on_comment_change",
+            "keydown .comment-body": "on_comment_keydown",
             "click .edit.tab": "on_edit_tab",
             "click .preview.tab": "on_preview_tab",
             "submit .form": "on_submit",
@@ -39,6 +40,14 @@ define( function(require) {
 
         on_preview_tab: function() {
             this.model.set({ is_preview: true });
+        },
+
+        on_comment_keydown: function( e ) {
+            var code = e.keyCode || e.which;
+            if ( e.ctrlKey && code == 13 ) {
+                this.on_comment_change();
+                this.on_submit();
+            }
         },
 
         on_submit: function() {
