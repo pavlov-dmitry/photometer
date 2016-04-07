@@ -7,12 +7,13 @@ use super::{
     UserAction,
     get_group_id,
 };
-// use super::late_publication::LatePublication;
+use super::late_publication::LatePublication;
 use types::{ Id, EmptyResult, CommonResult };
 use answer::{ Answer, AnswerResult };
 use db::groups::DbGroups;
 use db::publication::DbPublication;
 use db::photos::DbPhotos;
+use db::events::DbEvents;
 use database::{ Databaseable };
 use stuff::{ Stuffable, Stuff };
 use authentication::{ Userable };
@@ -63,7 +64,6 @@ impl Event for Publication {
     fn finish( &self, stuff: &mut Stuff, body: &ScheduledEventInfo ) -> EmptyResult {
         let group_id = try!( get_group_id( body ) );
         let db = try!( stuff.get_current_db_conn() );
-        try!( db.make_publication_visible( body.scheduled_id ) );
 
         // Добавляем запись в ленту группы
         try!( db.add_to_group_feed( time::get_time().msecs(),
@@ -76,35 +76,24 @@ impl Event for Publication {
 
         //старт события загрузки опоздавших
         //FIXME: использовать более "дешевую" функцию для определения что есть отставшие
-        // let unpublished_users = try!( db.get_unpublished_users( body.scheduled_id ) );
-        // if unpublished_users.is_empty() == false {
-        //     let event_info = LatePublication::create_info(
-        //         body.scheduled_id,
-        //         group_id,
-        //         &body.name,
-        //         time::get_time(),
-        //         time::Duration::days( 365 )
-        //     );
-        //     try!( db.add_events( &[ event_info ] ) );
-        // }
+        let unpublished_users = try!( db.get_unpublished_users( body.scheduled_id ) );
+        if unpublished_users.is_empty() == false {
+            let event_info = LatePublication::create_info(
+                body.scheduled_id,
+                group_id,
+                &body.name,
+                time::get_time(),
+                time::Duration::days( 365 )
+            );
+            try!( db.add_events( &[ event_info ] ) );
+        }
 
         Ok( () )
     }
 
     /// информация о состоянии события
     fn info( &self, stuff: &mut Stuff, body: &ScheduledEventInfo ) -> CommonResult<Description> {
-        let group_id = try!( get_group_id( body ) );
-        let db = try!( stuff.get_current_db_conn() );
-        let group_members_count = try!( db.get_members_count( group_id ) );
-        let published_photo_count = try!( db.get_published_photo_count( body.scheduled_id ) );
-
-        let desc = Description::new( PublicationInfo {
-            id: ID,
-            name: body.name.clone(),
-            all_count: group_members_count,
-            published: published_photo_count
-        } );
-        Ok( desc )
+        make_info( stuff, body, body.scheduled_id )
     }
 
     /// проверка на возможное досрочное завершение
@@ -115,58 +104,80 @@ impl Event for Publication {
 
     /// действие которое должен осуществить пользователь
     fn user_action( &self, stuff: &mut Stuff, body: &ScheduledEventInfo, user_id: Id ) -> CommonResult<UserAction> {
-        let db = try!( stuff.get_current_db_conn() );
-        let is_unpublished = try!( db.is_unpublished_user( body.scheduled_id,
-                                                           user_id ) );
-        let action = match is_unpublished {
-            true => UserAction::Publication,
-            false => UserAction::None
-        };
-        Ok( action )
+        get_user_action( stuff, user_id, body.scheduled_id )
     }
 
     /// применение действия пользователя на это событие
     fn user_action_post( &self, req: &mut Request, body: &ScheduledEventInfo ) -> AnswerResult {
-        let photo_id = try!( req.get_body::<PhotoInfo>() ).id;
-        let user_id = req.user().id;
-        let db = try!( req.stuff().get_current_db_conn() );
-
-        let answer = match try!( db.get_short_photo_info( photo_id ) ) {
-            Some( photo_info ) => {
-                if photo_info.owner.id == user_id {
-                    match try!( db.is_photo_published( photo_id ) ) {
-                        false => {
-                            let prev = try!( db.get_last_pubcation_photo( body.scheduled_id ) );
-                            try!( db.public_photo( body.scheduled_id,
-                                                   user_id,
-                                                   photo_id,
-                                                   false,
-                                                   time::get_time().msecs(),
-                                                   prev.clone() ) );
-                            if let Some( last_id ) = prev {
-                                try!( db.set_next_publication_photo( last_id, photo_id ) );
-                            }
-                            Answer::good( OkInfo::new( "published" ) )
-                        },
-                        true => Answer::bad( PhotoErrorInfo::already_published() )
-                    }
-                }
-                else {
-                    Answer::access_denied()
-                }
-            },
-            None => Answer::not_found()
-        };
-        Ok( answer )
+        process_user_action_post( req, body.scheduled_id )
     }
 }
 
 #[derive(RustcEncodable, Debug)]
-struct PublicationInfo {
+pub struct PublicationInfo {
     id: EventId,
     name: String,
     all_count: u32,
     published: u32
+}
+
+pub fn make_info( stuff: &mut Stuff, body: &ScheduledEventInfo, scheduled_id: Id ) -> CommonResult<Description> {
+    let group_id = try!( get_group_id( body ) );
+    let db = try!( stuff.get_current_db_conn() );
+    let group_members_count = try!( db.get_members_count( group_id ) );
+    let published_photo_count = try!( db.get_published_photo_count( scheduled_id ) );
+
+    let desc = Description::new( PublicationInfo {
+        id: ID,
+        name: body.name.clone(),
+        all_count: group_members_count,
+        published: published_photo_count
+    } );
+    Ok( desc )
+}
+
+pub fn get_user_action( stuff: &mut Stuff, user_id: Id, scheduled_id: Id ) -> CommonResult<UserAction> {
+    let db = try!( stuff.get_current_db_conn() );
+    let is_unpublished = try!( db.is_unpublished_user( scheduled_id, user_id ) );
+    let action = match is_unpublished {
+        true => UserAction::Publication,
+        false => UserAction::None
+    };
+    Ok( action )
+}
+
+pub fn process_user_action_post( req: &mut Request, scheduled_id: Id ) -> AnswerResult {
+    let photo_id = try!( req.get_body::<PhotoInfo>() ).id;
+    let user_id = req.user().id;
+    let db = try!( req.stuff().get_current_db_conn() );
+
+    //FIXME: как-то надо облагородить такую вложенность
+    let answer = match try!( db.get_short_photo_info( photo_id ) ) {
+        Some( photo_info ) => {
+            if photo_info.owner.id == user_id {
+                match try!( db.is_photo_published( photo_id ) ) {
+                    false => {
+                        let prev = try!( db.get_last_pubcation_photo( scheduled_id ) );
+                        try!( db.public_photo( scheduled_id,
+                                               user_id,
+                                               photo_id,
+                                               time::get_time().msecs(),
+                                               prev.clone() ) );
+                        if let Some( last_id ) = prev {
+                            try!( db.set_next_publication_photo( last_id, photo_id ) );
+                        }
+                        Answer::good( OkInfo::new( "published" ) )
+                    },
+                    true => Answer::bad( PhotoErrorInfo::already_published() )
+                }
+            }
+            else {
+                Answer::access_denied()
+            }
+        },
+        None => Answer::not_found()
+    };
+    Ok( answer )
 }
 
 impl CreateFromTimetable for Publication {

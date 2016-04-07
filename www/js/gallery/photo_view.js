@@ -73,7 +73,10 @@ define( function( require ) {
                 this.comments_view.close();
             }
             if ( !is_next_photo ) {
-                document.getElementById( 'main-menu' ).scrollIntoView();
+                var main_menu = document.getElementById( 'main-menu' );
+                if ( main_menu ) {
+                    main_menu.scrollIntoView();
+                }
             }
         },
 

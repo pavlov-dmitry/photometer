@@ -197,6 +197,7 @@ struct PublicationPhotoQuery {
 
 #[derive(RustcEncodable)]
 struct PublicationPhotoInfo {
+    is_own: bool,
     group: ShortInfo,
     feed: ShortInfo,
     photo: PhotoInfo,
@@ -218,6 +219,7 @@ fn publication_photo_answer( req: &mut Request ) -> AnswerResult {
         None => return Ok( Answer::not_found() )
     };
     let answer = Answer::good( PublicationPhotoInfo{
+        is_own: user_id == photo_info.owner.id,
         feed: ShortInfo {
             id: feed_info.id,
             name: feed_info.event_name

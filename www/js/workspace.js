@@ -10,6 +10,7 @@ define( function(require) {
             'logout': 'logout',
             'register': 'register',
             'activate/:key': 'activate',
+            'gallery': 'current_gallery',
             'gallery/:user_id': 'gallery',
             'gallery/:user_id/:page': 'gallery_page',
             'edit_photo/:id': "edit_photo",
@@ -75,6 +76,13 @@ define( function(require) {
 
             var makeActivate = require( "activate" );
             makeActivate( key );
+        },
+
+        current_gallery: function( user_id ) {
+            var self = this;
+            app.userState.on_ready( function() {
+                self.gallery( app.userState.user_id() );
+            });
         },
 
         gallery: function( user_id ) {

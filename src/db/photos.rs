@@ -79,7 +79,7 @@ const CAMERA_MODEL_DEFAULT: &'static str = "";
 
 
 impl DbPhotos for PooledConn {
-	/// добавление фотографии в галлерею пользователя
+    /// добавление фотографии в галлерею пользователя
     fn add_photo( &mut self, user_id: Id, info: &PhotoInfo ) -> CommonResult<Id> {
         add_photo_impl( self, user_id, info )
             .map_err( |e| fn_failed( "add_photo", e ) )
@@ -337,7 +337,7 @@ fn get_publication_photo_infos_impl( conn: &mut PooledConn,
         LEFT JOIN images AS i ON( i.id = p.photo_id )
         LEFT JOIN users AS u ON ( u.id = p.user_id )
         WHERE p.scheduled_id=?
-          AND p.visible=true",
+        ORDER BY p.id ASC",
         fields = PHOTO_INFO_FIELDS
     );
     let params: &[ &ToValue ] = &[ &reader_id, &scheduled_id ];

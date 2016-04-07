@@ -12,17 +12,26 @@ define( function(require) {
 
         var info = {};
 
-        if ( id === 'GroupCreation') {
-            info = require( "event/info/group_creation" );
-        }
-        else if ( id == 'GroupVoting' ) {
-            info = require( "event/info/group_voting" );
-        }
-        else if ( id === 'Publication' ) {
-            info = require( "event/info/publication" );
-        }
-        else if ( id === 'UserInvite' ) {
-            info = require( "event/info/user_invite" );
+        switch ( id ) {
+            case 'GroupCreation':
+                info = require( "event/info/group_creation" );
+                break;
+
+            case 'GroupVoting':
+                info = require( "event/info/group_voting" );
+                break;
+
+            case 'Publication':
+                info = require( "event/info/publication" );
+                break;
+
+            case 'LatePublication':
+                info = require( "event/info/late_publication" );
+                break;
+
+            case 'UserInvite':
+                info = require( "event/info/user_invite" );
+                break;
         }
 
         $.extend( base_info, info );

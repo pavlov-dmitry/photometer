@@ -41,6 +41,7 @@ define( function(require) {
         },
 
         init_upload_button: function() {
+            var self = this;
             this.$upload_file.fileupload({
 
                 url: "/upload",

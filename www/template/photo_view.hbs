@@ -84,11 +84,11 @@
               {{#if photo.name}}
                   {{photo.name}}
               {{else}}
-                  {{#if is_own_photo}}
+                  {{#if is_own}}
                   <a href="#edit_photo/{{id}}">
                   {{/if}}
                     <i>Без имени</i>
-                  {{#if is_own_photo}}
+                  {{#if is_own}}
                   </a>
                   {{/if}}
               {{/if}}

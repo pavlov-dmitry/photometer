@@ -57,6 +57,11 @@ define( function( require ) {
                     model_data.has_unreaded_in_other_groups = model_data.current_group.unwatched_events < all_unreaded_count;
                 }
                 self.set( model_data );
+
+                if ( self.after_fetch ) {
+                    self.after_fetch();
+                    self.after_fetch = null;
+                }
             }
 
             handler.unauthorized = function( data ) {
@@ -72,6 +77,21 @@ define( function( require ) {
                 isLogged: false,
                 name: ""
             });
+        },
+
+        user_id: function() {
+            return this.get("id");
+        },
+
+        // TODO: подумать чтоб убрать этот галимый костыль из-за того что я разделил
+        // информацию о пользователе и инфу о странице на два запроса
+        on_ready: function( f ) {
+            if ( this.user_id() !== 0 ) {
+                f();
+            }
+            else {
+                this.after_fetch = f;
+            }
         },
 
         //TODO: Является местополжение в навигации состоянием

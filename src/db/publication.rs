@@ -12,11 +12,8 @@ pub trait DbPublication {
                       scheduled: Id,
                       user: Id,
                       photo: Id,
-                      visible: bool,
                       time: u64,
                       prev: Option<Id> ) -> EmptyResult;
-    /// открывает на просмотр определнную группу фото
-    fn make_publication_visible( &mut self, scheduled: Id ) -> EmptyResult;
     /// кол-во уже опубликованных фото
     fn get_published_photo_count( &mut self, scheduled: Id ) -> CommonResult<u32>;
     /// возвращает идентификаторы пользователей которые не опубликовались
@@ -57,18 +54,11 @@ impl DbPublication for PooledConn {
                       scheduled: Id,
                       user: Id,
                       photo: Id,
-                      visible: bool,
                       time: u64,
                       prev: Option<Id> ) -> EmptyResult
     {
-        public_photo_impl( self, scheduled, user, photo, visible, time, prev )
+        public_photo_impl( self, scheduled, user, photo, time, prev )
             .map_err( |e| fn_failed( "public_photo", e ) )
-    }
-
-    /// открывает на просмотр определнную группу фото
-    fn make_publication_visible( &mut self, scheduled: Id ) -> EmptyResult {
-        make_publication_visible_impl( self, scheduled )
-            .map_err( |e| fn_failed( "make_publication_visible", e ) )
     }
 
     /// кол-во уже опубликованных фото
@@ -112,7 +102,6 @@ fn public_photo_impl( conn: &mut PooledConn,
                       scheduled: Id,
                       user: Id,
                       photo: Id,
-                      visible: bool,
                       time: u64,
                       prev: Option<Id> ) -> mysql::Result<()>
 {
@@ -122,10 +111,9 @@ fn public_photo_impl( conn: &mut PooledConn,
             scheduled_id,
             user_id,
             photo_id,
-            visible,
             prev
         )
-        VALUES( ?, ?, ?, ?, ?, ? )
+        VALUES( ?, ?, ?, ?, ? )
         ON DUPLICATE KEY UPDATE photo_id=?
     "));
     let prev = prev.unwrap_or( 0 );
@@ -134,23 +122,10 @@ fn public_photo_impl( conn: &mut PooledConn,
         &scheduled,
         &user,
         &photo,
-        &visible,
         &prev,
         &photo
     ];
     try!( stmt.execute( params ));
-    Ok( () )
-}
-
-fn make_publication_visible_impl( conn: &mut PooledConn, scheduled: Id ) -> mysql::Result<()> {
-    let mut stmt = try!( conn.prepare( "
-        UPDATE publication
-        SET visible=true
-        WHERE scheduled_id = ?
-    "));
-
-    let params: &[ &ToValue ] = &[ &scheduled ];
-    try!( stmt.execute( params ) );
     Ok( () )
 }
 

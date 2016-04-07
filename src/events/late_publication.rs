@@ -5,25 +5,21 @@ use super::{
     FullEventInfo,
     Description,
     UserAction,
-    get_group_id
+    get_group_id,
+    publication
 };
 use types::{ Id, EmptyResult, CommonResult, CommonError };
-use answer::{ Answer, AnswerResult };
+use answer::{ AnswerResult };
 use database::{ Databaseable };
-use stuff::{ Stuffable, Stuff };
+use stuff::{ Stuff };
 use mailer::Mailer;
 use db::groups::DbGroups;
 use db::publication::DbPublication;
-use db::photos::DbPhotos;
 use mail_writer::MailWriter;
 use time::{ self, Timespec };
 use rustc_serialize::json;
-use authentication::Userable;
 use iron::prelude::*;
-use get_body::GetBody;
-use answer_types::{ OkInfo, AccessErrorInfo };
 use std::convert::From;
-use parse_utils::GetMsecs;
 
 #[derive(Clone)]
 pub struct LatePublication;
@@ -34,15 +30,13 @@ impl LatePublication {
         LatePublication
     }
 
-    #[allow(dead_code)]
     pub fn create_info( parent_id: Id, group_id: Id, name: &str, start_time: Timespec, duration: time::Duration ) -> FullEventInfo {
         let info = Info {
             parent_id: parent_id,
         };
-        let event_name: String = String::from( "Догоняем " );
         FullEventInfo {
             id: ID,
-            name: event_name + name,
+            name: String::from( "Догоняем " ) + name,
             start_time: start_time,
             end_time: start_time + duration,
             data: json::encode( &info ).unwrap(),
@@ -86,29 +80,8 @@ impl Event for LatePublication {
     }
     /// информация о состоянии события
     fn info( &self, stuff: &mut Stuff, body: &ScheduledEventInfo ) -> CommonResult<Description> {
-        let group_id = try!( get_group_id( body ) );
         let info = try!( get_info( body ) );
-        let db = try!( stuff.get_current_db_conn() );
-        let group_members_count = try!( db.get_members_count( group_id ) );
-        let published_photo_count = try!( db.get_published_photo_count( info.parent_id ) );
-        // let need_publish = try!( db.is_unpublished_user( info.parent_id, info.group_id, user_id ) );
-        // let answer = if need_publish {
-        //     // TODO: переделать на нормальное отдачу, поговорить с
-        //     // Саньком, что ему нужно в этот момент
-        //     Answer::good( OkInfo::new( "choose_from_gallery" ) )
-        // }
-        // else {
-        //     // TODO: возможно необходимо вывести общий тип для таких ответов
-        //     Answer::good( OkInfo::new( "nothing_to_do" ) )
-        // };
-
-        let desc = Description::new( LatePublicationInfo {
-            id: ID,
-            name: body.name.clone(),
-            all_count: group_members_count,
-            published: published_photo_count
-        } );
-        Ok( desc )
+        publication::make_info( stuff, body, info.parent_id )
     }
     /// проверка на возможное досрочное завершение
     fn is_complete( &self, stuff: &mut Stuff, body: &ScheduledEventInfo ) -> CommonResult<bool> {
@@ -121,56 +94,16 @@ impl Event for LatePublication {
     }
 
     /// действие которое должен осуществить пользователь
-    fn user_action( &self, _stuff: &mut Stuff, _body: &ScheduledEventInfo, _user_id: Id ) -> CommonResult<UserAction> {
-        unimplemented!();
+    fn user_action( &self, stuff: &mut Stuff, body: &ScheduledEventInfo, user_id: Id ) -> CommonResult<UserAction> {
+        let info = try!( get_info( body ) );
+        publication::get_user_action( stuff, user_id, info.parent_id )
     }
 
     /// применение действия пользователя на это событие
     fn user_action_post( &self, req: &mut Request, body: &ScheduledEventInfo ) -> AnswerResult {
         let info = try!( get_info( body ) );
-        let photo_id = try!( req.get_body::<PhotoInfo>() ).id;
-        let user_id = req.user().id;
-        let db = try!( req.stuff().get_current_db_conn() );
-
-        // если такой пользователь есть должен выложиться
-        let need_publish = try!( db.is_unpublished_user( info.parent_id, user_id ) );
-        let answer = if need_publish {
-            let photo_info = try!( db.get_short_photo_info( photo_id ) );
-            if let Some( photo_info ) = photo_info {
-                if photo_info.owner.id == user_id {
-                    let prev = try!( db.get_last_pubcation_photo( info.parent_id ) );
-                    try!( db.public_photo( info.parent_id,
-                                           user_id,
-                                           photo_id,
-                                           true,
-                                           time::get_time().msecs(),
-                                           prev.clone() ) );
-                    if let Some( last_id ) = prev {
-                        try!( db.set_next_publication_photo( last_id, photo_id ) );
-                    }
-                    Answer::good( OkInfo::new( "published" ) )
-                }
-                else {
-                    Answer::bad( AccessErrorInfo::new() )
-                }
-            }
-            else {
-                Answer::not_found()
-            }
-        }
-        else {
-            Answer::bad( AccessErrorInfo::new() )
-        };
-        Ok( answer )
+        publication::process_user_action_post( req, info.parent_id )
     }
-}
-
-#[derive(RustcEncodable, Debug)]
-struct LatePublicationInfo {
-    id: EventId,
-    name: String,
-    all_count: u32,
-    published: u32
 }
 
 #[derive(RustcEncodable, RustcDecodable)]
