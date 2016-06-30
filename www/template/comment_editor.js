@@ -17,7 +17,7 @@ return templates['comment_editor'] = template({"1":function(container,depth0,hel
 },"8":function(container,depth0,helpers,partials,data) {
     var helper;
 
-  return "    <div class=\"ui field\">\n      <div class=\"ui basic right aligned segment nopadmar\">\n        <a class=\"thumb markdown\">markdown?</a>\n      </div>\n      <textarea class=\"comment-body\" maxlength=\"1024\" placeholder=\"Оставьте здесь комментарий ... (поддерживается форматирование markdown)\" required>"
+  return "    <div class=\"ui field\">\n      <div class=\"ui basic right aligned segment nopadmar\">\n        <a class=\"thumb markdown\">markdown?</a>\n      </div>\n      <textarea class=\"comment-body\" maxlength=\"8192\" placeholder=\"Оставьте здесь комментарий ... (поддерживается форматирование markdown)\" required>"
     + container.escapeExpression(((helper = (helper = helpers.text || (depth0 != null ? depth0.text : depth0)) != null ? helper : helpers.helperMissing),(typeof helper === "function" ? helper.call(depth0 != null ? depth0 : {},{"name":"text","hash":{},"data":data}) : helper)))
     + "</textarea>\n    </div>\n";
 },"10":function(container,depth0,helpers,partials,data) {

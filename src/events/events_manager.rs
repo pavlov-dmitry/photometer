@@ -25,6 +25,7 @@ use parse_utils::{ GetMsecs };
 pub trait EventsManagerStuff {
     fn maybe_start_some_events(&mut self) -> CommonResult<bool>;
     fn maybe_end_some_events(&mut self) -> CommonResult<bool>;
+    fn event_user_action( &mut self, scheduled_id: Id, user_id: Id ) -> CommonResult<UserAction>;
 }
 
 pub trait EventsManagerRequest {
@@ -34,6 +35,11 @@ pub trait EventsManagerRequest {
     fn event_user_creation_post(&mut self, event_id: EventId ) -> AnswerResult;
     fn event_group_creation_get(&mut self, group_id: Id, event_id: EventId ) -> AnswerResult;
     fn event_group_creation_post(&mut self, group_id: Id, event_id: EventId ) -> AnswerResult;
+}
+
+pub trait CustomEventsManager {
+    fn custom_event_action_post<F>( &mut self, scheduled_id: Id, f: F ) -> AnswerResult
+        where F: Fn(&EventPtr, &ScheduledEventInfo, &mut Request) -> AnswerResult;
 }
 
 #[derive(Clone, RustcEncodable)]
@@ -78,6 +84,26 @@ impl EventsManagerStuff for Stuff {
             try!( self.finish_him( event, event_info ) );
         }
         Ok( !events.is_empty() )
+    }
+
+    fn event_user_action( &mut self, scheduled_id: Id, user_id: Id ) -> CommonResult<UserAction>
+    {
+        let event_info = {
+            let db = try!( self.get_current_db_conn() );
+            try!( db.event_info( scheduled_id ) )
+        };
+        match event_info {
+            Some( event_info ) => {
+                if try!( is_valid_user_for_action( &event_info, self, user_id ) ) {
+                    let event = try!( events_collection::get_event( event_info.id ) );
+                    event.user_action( self, &event_info, user_id )
+                }
+                else {
+                    Ok( UserAction::None )
+                }
+            },
+            None => Ok( UserAction::None )
+        }
     }
 }
 
@@ -141,31 +167,8 @@ impl<'a, 'b> EventsManagerRequest for Request<'a, 'b> {
 
     /// применяем действие
     fn event_action_post( &mut self, scheduled_id: Id ) -> AnswerResult {
-        self.if_has_event( scheduled_id, |event, event_info, req| {
-
-            let can_be_action = {
-                let user_id = req.user().id;
-                let stuff = req.stuff();
-                try!( is_valid_user_for_action( &event_info, stuff, user_id ) )
-            };
-
-            let result = match can_be_action {
-                true => {
-                    let result = try!( event.user_action_post( req, &event_info ) );
-                    let stuff = req.stuff();
-                    if try!( event.is_complete( stuff, &event_info ) ) {
-                        info!( "early finishing '{}':{:?}", event_info.name, event_info.id );
-                        try!( stuff.finish_him( event, &event_info ) );
-                    }
-                    result
-                },
-
-                false => {
-                    Answer::bad( FieldErrorInfo::new( "action", "access error" ) )
-                }
-            };
-
-            Ok( result )
+        self.custom_event_action_post( scheduled_id, |event, event_info, req| {
+            event.user_action_post( req, event_info )
         })
     }
 
@@ -207,6 +210,40 @@ impl<'a, 'b> EventsManagerRequest for Request<'a, 'b> {
             let answer = Answer::access_denied();
             Ok( answer )
         }
+    }
+}
+
+impl<'a, 'b> CustomEventsManager for Request<'a, 'b> {
+
+    fn custom_event_action_post<F>( &mut self, scheduled_id: Id, f: F ) -> AnswerResult
+        where F: Fn(&EventPtr, &ScheduledEventInfo, &mut Request) -> AnswerResult
+    {
+        self.if_has_event( scheduled_id, |event, event_info, req| {
+
+            let can_be_action = {
+                let user_id = req.user().id;
+                let stuff = req.stuff();
+                try!( is_valid_user_for_action( &event_info, stuff, user_id ) )
+            };
+
+            let result = match can_be_action {
+                true => {
+                    let result = try!( f( &event, &event_info, req ) );
+                    let stuff = req.stuff();
+                    if try!( event.is_complete( stuff, &event_info ) ) {
+                        info!( "early finishing '{}':{:?}", event_info.name, event_info.id );
+                        try!( stuff.finish_him( event, &event_info ) );
+                    }
+                    result
+                },
+
+                false => {
+                    Answer::access_denied()
+                }
+            };
+
+            Ok( result )
+        })
     }
 }
 

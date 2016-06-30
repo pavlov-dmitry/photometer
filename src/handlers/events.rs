@@ -5,9 +5,8 @@ use stuff::Stuffable;
 use types::{ Id };
 use iron::prelude::*;
 use iron::status;
-use std::str::FromStr;
-use router_params::RouterParams;
 use types::EmptyResult;
+use super::utils::{ get_id, get_event_id };
 
 static ID: &'static str = "id";
 static GROUP_ID: &'static str = "group_id";
@@ -135,21 +134,6 @@ fn get_group_greation_post_answer( req: &mut Request, group_id: Id, event_id: Ev
     let result = req.event_group_creation_post( group_id, event_id );
     try!( trigger_events( req ) );
     result
-}
-
-
-fn get_event_id( prm: &str, req: &Request ) -> Option<EventId> {
-    match req.param( prm ) {
-        Some( id ) => FromStr::from_str( id ).ok(),
-        None => None
-    }
-}
-
-fn get_id( prm: &str, req: &Request ) -> Option<Id> {
-    match req.param( prm ) {
-        Some( id ) => FromStr::from_str( id ).ok(),
-        None => None
-    }
 }
 
 fn get_group_and_event_id( request: &mut Request ) -> Option<(Id, EventId)> {

@@ -27,11 +27,11 @@ return templates['publication_action'] = template({"1":function(container,depth0
 },"6":function(container,depth0,helpers,partials,data) {
     return "          <i>Без имени</i>\n";
 },"8":function(container,depth0,helpers,partials,data) {
-    return "    </div>\n    <div class=\"ui center aligned very padded basic segment\">\n      <h1 class=\"ui disabled icon header\">\n        <i class=\"film icon\"></i>\n        У вам нет неопубликованных фотографии.\n      </h1>\n      <h3 class=\"ui disabled header\">\n        Попробуйте загрузить новое фото в свою <a href=\"#gallery\">Галлерею</a>\n      </h3>\n    </div>\n";
+    return "    </div>\n    <div class=\"ui center aligned very padded basic segment\">\n      <h1 class=\"ui disabled icon header\">\n        <i class=\"film icon\"></i>\n        У вам нет неопубликованных фотографии.\n      </h1>\n      <h3 class=\"ui disabled header\">\n        Вы можете воспользоваться кнопкой \"Загрузить и опубликовать\"\n      </h3>\n    </div>\n";
 },"compiler":[7,">= 4.0.0"],"main":function(container,depth0,helpers,partials,data) {
     var stack1, alias1=depth0 != null ? depth0 : {}, alias2=helpers.helperMissing;
 
-  return "<div id=\"photos-container\" class=\"ui container basic segment nopadmar\">\n  <p>\n    "
+  return "<div id=\"photos-container\" class=\"ui container basic segment nopadmar\">\n\n    <span id=\"upload-btn\" class=\"ui green button fileinput-button\">\n        <i class=\"add icon\"></i>\n        <span>Загрузить и опубликовать</span>\n        <input id=\"upload-file\" type=\"file\" name=\"file\" accept=\"image/jpeg,image/png\">\n    </span>\n\n    <div id=\"upload-progress\" class=\"ui indicating progress\">\n        <div class=\"bar\"></div>\n        <div class=\"label\">Загружено</div>\n    </div>\n\n  <p>\n    "
     + ((stack1 = (helpers.pagination || (depth0 && depth0.pagination) || alias2).call(alias1,(depth0 != null ? depth0.pagination : depth0),"",{"name":"pagination","hash":{},"data":data})) != null ? stack1 : "")
     + "\n  </p>\n  <div class=\"ui stackable cards\">\n"
     + ((stack1 = helpers.each.call(alias1,(depth0 != null ? depth0.photos : depth0),{"name":"each","hash":{},"fn":container.program(1, data, 0),"inverse":container.program(8, data, 0),"data":data})) != null ? stack1 : "")

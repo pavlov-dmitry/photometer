@@ -15,6 +15,7 @@ use events::feed_types::{
     FeedEventState,
     FeedEventInfo
 };
+use events::UserAction;
 
 pub type UnwatchedFeedsByGroup = Vec<(Id, u32)>;
 
@@ -199,7 +200,8 @@ fn read_fields<I: Iterator<Item = Value>>( mut values: I ) -> FeedEventInfo {
         group: group,
         creator: user,
         comments_count: comments_count,
-        unreaded_comments: unreaded_comments
+        unreaded_comments: unreaded_comments,
+        action: UserAction::None
     }
 }
 

@@ -20,11 +20,17 @@ define( function(require) {
                 self.readed();
             });
 
+            this.$el.find( ".description a" ).click( function() {
+                self.readed();
+            });
+
             return this;
         },
 
         readed: function() {
-            this.model.mark_as_readed();
+            if ( this.model.get("readed") == false ) {
+                this.model.mark_as_readed();
+            }
         },
 
     });

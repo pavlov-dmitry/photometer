@@ -16,14 +16,9 @@ use types::{
     CommonResult,
     CommonError,
     CommentInfo,
-    ShortInfo
+    ShortInfo,
+    CommentFor
 };
-
-#[derive(Copy, Clone)]
-pub enum CommentFor {
-    Photo,
-    Event
-}
 
 pub trait DbComments {
     /// Добавляет комментарий

@@ -7,7 +7,7 @@ use db::photos::{ DbPhotos };
 use iron::prelude::*;
 use types::Id;
 use get_body::GetBody;
-use answer_types::{ OkInfo };
+use answer_types::{ OkInfo, FieldErrorInfo };
 
 pub fn rename_photo( req: &mut Request ) -> IronResult<Response> {
     let answer = AnswerResponse( rename_answer( req ) );
@@ -22,11 +22,16 @@ struct RenameInfo {
 
 fn rename_answer( request: &mut Request ) -> AnswerResult {
     let rename_info = try!( request.get_body::<RenameInfo>() );
+    if 64 < rename_info.name.chars().count() {
+        return Ok( Answer::bad( FieldErrorInfo::too_long( "name" ) ) );
+    }
+
     let user_id = request.user().id;
     let maybe_photo_info = {
         let db = try!( request.stuff().get_current_db_conn() );
         try!( db.get_gallery_photo_info( user_id, rename_info.id ) )
     };
+
     let answer = match maybe_photo_info {
         Some( info ) => {
             if info.owner.id == request.user().id {

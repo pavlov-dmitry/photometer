@@ -1,18 +1,23 @@
 use iron::prelude::*;
-use db::comments::{ DbComments, CommentFor };
+use db::comments::DbComments;
 use db::visited::{ DbVisited, VisitedContent };
 use db::photos::DbPhotos;
 use db::events::DbEvents;
+use db::users::DbUsers;
 use get_body::GetBody;
 use answer::{ AnswerResult, Answer, AnswerResponse };
-use types::{ Id, CommentInfo };
-use authentication::{ Userable };
+use types::{ Id, CommentInfo, CommentFor, EmptyResult, ShortPhotoInfo };
+use authentication::{ Userable, User };
 use database::{ Databaseable };
-use stuff::Stuffable;
+use stuff::{ Stuffable, Stuff };
 use answer_types::{ PaginationInfo, FieldErrorInfo };
 use super::helpers::make_pagination;
 use time;
 use parse_utils::GetMsecs;
+use std::collections::HashSet;
+use regex::Regex;
+use mail_writer::MailWriter;
+use mailer::Mailer;
 
 pub fn get_event_comments( req: &mut Request ) -> IronResult<Response> {
     let answer = AnswerResponse( get_comments( req, CommentFor::Event ) );
@@ -40,7 +45,7 @@ pub fn post_edit_comment( req: &mut Request ) -> IronResult<Response> {
 }
 
 const IN_PAGE_COUNT: u32 = 10;
-const MAX_COMMENT_LENGTH: usize = 1024;
+const MAX_COMMENT_LENGTH: usize = 8192;
 
 #[derive(Clone, RustcDecodable)]
 struct CommentsQuery {
@@ -96,7 +101,7 @@ fn check_comment( info: &AddCommentInfo ) -> Option<FieldErrorInfo> {
     if info.text.is_empty() {
         return Some( FieldErrorInfo::empty("text") );
     }
-    if MAX_COMMENT_LENGTH < info.text.len() {
+    if MAX_COMMENT_LENGTH < info.text.chars().count() {
         return Some( FieldErrorInfo::too_long("text") );
     }
     None
@@ -108,18 +113,86 @@ fn add_comment( req: &mut Request, comment_for: CommentFor ) -> AnswerResult {
         return Ok( Answer::bad( e ) );
     }
 
-    let user_id = req.user().id;
-    let db = try!( req.stuff().get_current_db_conn() );
-    try!( db.add_comment( user_id,
-                          time::get_time().msecs(),
-                          comment_for,
-                          info.id,
-                          &info.text ) );
-    match comment_for {
-        CommentFor::Photo => try!( db.increment_photo_comments_count( info.id ) ),
-        CommentFor::Event => try!( db.increment_event_comments_count( info.id ) )
+    {
+        let user_id = req.user().id;
+        let db = try!( req.stuff().get_current_db_conn() );
+        try!( db.add_comment( user_id,
+                              time::get_time().msecs(),
+                              comment_for,
+                              info.id,
+                              &info.text ) );
+        match comment_for {
+            CommentFor::Photo => try!( db.increment_photo_comments_count( info.id ) ),
+            CommentFor::Event => try!( db.increment_event_comments_count( info.id ) )
+        }
     }
+
+    // генерим оповещения
+    let user = req.user().clone();
+    let mut notices = make_notice_set( &info.text );
+    notices.remove( &user.name.to_lowercase() );
+    let stuff = req.stuff();
+    try!( send_notices( stuff, notices, comment_for, &user, info.id ) );
     Ok( Answer::good( "ok" ) )
+}
+
+fn send_notices(
+    stuff: &mut Stuff,
+    mut notices: HashSet<String>,
+    comment_for: CommentFor,
+    commenter_user: &User,
+    photo_id: Id
+) -> EmptyResult
+{
+    let owner_id = match comment_for {
+        CommentFor::Photo => {
+            //оповещяем владельца фотки, о новом комментарии
+            let short_info = {
+                let db = try!( stuff.get_current_db_conn() );
+                //NOTE: Делаю здесь unwrap, так как сюда мы не можем добраться если этой офтки нет
+                try!( db.get_short_photo_info( photo_id ) ).unwrap()
+            };
+            notices.remove( &short_info.owner.name.to_lowercase() );
+            if commenter_user.id != short_info.owner.id {
+                try!( notify_owner( stuff, &short_info, &commenter_user.name ) );
+            }
+            short_info.owner.id
+        },
+        CommentFor::Event => 0
+    };
+    for name in notices {
+        info!( "notice for {}", name );
+        let maybe_user = {
+            let db = try!( stuff.get_current_db_conn() );
+            try!( db.user_by_name( &name ) )
+        };
+        if let Some( user ) = maybe_user {
+            let (subject, mail) = stuff.write_you_refered_in_comment_mail(
+                &commenter_user.name,
+                comment_for,
+                owner_id,
+                photo_id
+            );
+            try!( stuff.send_mail( &user, &subject, &mail ) );
+        }
+    }
+    Ok( () )
+}
+
+fn notify_owner( stuff: &mut Stuff, photo_info: &ShortPhotoInfo, commenter_name: &str ) -> EmptyResult
+{
+    // генерим сообщение для владельца фотографии
+    let (subject, mail) = stuff.write_your_photo_commented_mail(
+        &photo_info.name,
+        commenter_name,
+        photo_info.owner.id,
+        photo_info.id
+    );
+    let photo_owner = {
+        let db = try!( stuff.get_current_db_conn() );
+        try!( db.user_by_id( photo_info.owner.id ) ).unwrap()
+    };
+    stuff.send_mail( &photo_owner, &subject, &mail )
 }
 
 fn edit_comment( req: &mut Request ) -> AnswerResult {
@@ -148,4 +221,15 @@ fn edit_comment( req: &mut Request ) -> AnswerResult {
         None => Answer::not_found()
     };
     Ok( answer )
+}
+
+fn make_notice_set( msg: &str ) -> HashSet<String> {
+    let mut result = HashSet::new();
+    let regexp = Regex::new( r"@(\w+)" ).unwrap();
+    for cap in regexp.captures_iter( msg ) {
+        cap.at( 1 ).map( |name| {
+            result.insert( name.to_owned().to_lowercase() );
+        });
+    }
+    result
 }

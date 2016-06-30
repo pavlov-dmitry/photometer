@@ -88,10 +88,10 @@ impl UserCreatedEvent for GroupCreation {
         if group_info.description.is_empty() {
             errors.push( FieldErrorInfo::empty( DESCRIPTION ) );
         }
-        if 64 < group_info.name.len() {
+        if 64 < group_info.name.chars().count() {
             errors.push( FieldErrorInfo::too_long( NAME ) );
         }
-        if 2048 < group_info.description.len() {
+        if 2048 < group_info.description.chars().count() {
             errors.push( FieldErrorInfo::too_long( DESCRIPTION ) );
         }
 

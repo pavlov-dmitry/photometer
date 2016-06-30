@@ -1,6 +1,7 @@
 define( function(require) {
     var Backbone = require( "lib/backbone" ),
-        Handlebars = require( "handlebars.runtime" );
+        Handlebars = require( "handlebars.runtime" ),
+        errors = require( "errors_handler" );
     require( "template/comment_editor");
     require( "handlebars_helpers" );
 
@@ -60,6 +61,14 @@ define( function(require) {
             var self = this;
             handler.finish = function() {
                 self.$form.removeClass( "loading" );
+            }
+            handler.bad = function( data ) {
+                if ( data.field === "text" && data.reason === "too_long" ) {
+                    errors.error( "Коммантарий слишком длинный" );
+                }
+                else {
+                    errors.error( "Неизвестная ошибка" );
+                }
             }
         },
 

@@ -51,9 +51,7 @@ define( function(require) {
             else {
                 $("#mail-list").addClass( "segment" );
             }
-            $('.readed-btn').popup({inline: true});
         },
-
 
         pagesChanged: function( pagination ) {
             if ( 1 < pagination.count ) {

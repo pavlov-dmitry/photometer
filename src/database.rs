@@ -1,7 +1,6 @@
 /// модуль работы с БД
-use mysql::conn::{ Opts };
+use mysql;
 use mysql::conn::pool::{ Pool, PooledConn };
-use std::default::{ Default };
 
 use types::{ CommonResult, EmptyResult, CommonError, common_error };
 use iron::typemap::Key;
@@ -60,12 +59,10 @@ pub fn create_db_connection(
     min_connections: usize,
     max_connections: usize
 ) -> CommonResult<Database> {
-    let opts = Opts{
-        db_name: Some( db_name ),
-        user: Some( user ),
-        pass: Some( pass ),
-        ..Default::default()
-    };
+    let mut opts = mysql::OptsBuilder::new();
+    opts.db_name( Some( db_name ) )
+        .user( Some( user ) )
+        .pass( Some( pass ) );
 
     let pool = Pool::new_manual( min_connections, max_connections, opts );
     match pool {

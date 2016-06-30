@@ -17,9 +17,9 @@ use std::string::ToString;
 
 pub mod events_manager;
 mod events_collection;
-mod publication;
+pub mod publication;
 mod group_creation;
-mod late_publication;
+pub mod late_publication;
 mod group_voting;
 mod change_timetable;
 mod invite_to_group;
@@ -64,7 +64,7 @@ impl VoteInfo {
     }
 }
 
-#[derive(Copy, Clone, Debug, RustcEncodable, RustcDecodable)]
+#[derive(Copy, Clone, Debug, RustcEncodable, RustcDecodable, Eq, PartialEq)]
 pub enum EventId {
     Publication = 1,
     GroupCreation = 2,

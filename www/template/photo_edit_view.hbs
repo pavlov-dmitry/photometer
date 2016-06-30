@@ -9,7 +9,7 @@
     <div class="fields">
       <div class="twelve wide icon field">
         <div class="ui input">
-          <input type="text" class="has-success" id="new-name-input" placeholder="Имя фотографии" {{#if photo.name}} value="{{photo.name}}"{{/if}} required>
+          <input type="text" class="has-success" maxlength="64" id="new-name-input" placeholder="Имя фотографии" {{#if photo.name}} value="{{photo.name}}"{{/if}} required>
         </div>
       </div>
       <div class="four wide field">

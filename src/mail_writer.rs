@@ -2,7 +2,7 @@ use stuff::{ Stuff, StuffInstallable };
 use std::sync::Arc;
 use iron::typemap::Key;
 use events;
-use types::Id;
+use types::{ Id, CommentFor };
 //TODO: Возможно стоит шаблоны писем вынести из кода в отдельные файлы.
 
 /// возвращает для всех писем (тема, само_письмо)
@@ -73,6 +73,22 @@ pub trait MailWriter {
     fn write_time_for_group_join_voit_mail( &self,
                                             group_name: &str,
                                             scheduled_id: Id ) -> (String, String);
+
+
+    /// ОПОВЕЩЕНИЯ
+    // письмо о том что под вашей фотографией оставили комментарий
+    fn write_your_photo_commented_mail( &self,
+                                        photo_name: &str,
+                                        commenter_name: &str,
+                                        owner_id: Id,
+                                        photo_id: Id ) -> (String, String);
+
+    //письмо о том что вас упоминули в комментарии
+    fn write_you_refered_in_comment_mail( &self,
+                                          commenter_name: &str,
+                                          comment_for: CommentFor,
+                                          owner_id: Id,
+                                          context_id: Id ) -> (String, String);
 }
 
 // саоздаёт экземпляр Сочинителя Писем для установки его в Stuff
@@ -289,6 +305,44 @@ impl MailWriter for Stuff {
         let mail = format!( "После вашего согласия присоединиться к группе **{}**, теперь группа должна принять решение о вашем вступлении. Следить за их решением можно перейдя [вот по этой ссылке]({}).",
                              group_name,
                              events::make_event_link( scheduled_id ) );
+        (subject, mail)
+    }
+
+    // письмо о том что под вашей фотографией оставили комментарий
+    fn write_your_photo_commented_mail( &self,
+                                        photo_name: &str,
+                                        commenter_name: &str,
+                                        owner_id: Id,
+                                        photo_id: Id ) -> (String, String)
+    {
+        let subject = format!( "Вашу фотографию '{}' прокомментировали", photo_name );
+        let mail = format!(
+            "Пользователь **{}** оставил комментарий под фотографией **{}**. [Пойдём посмотрим?](#gallery_photo/{}/{})",
+            commenter_name,
+            photo_name,
+            owner_id,
+            photo_id
+        );
+        (subject, mail)
+    }
+
+    //письмо о том что вас упоминули в комментарии
+    fn write_you_refered_in_comment_mail( &self,
+                                          commenter_name: &str,
+                                          comment_for: CommentFor,
+                                          owner_id: Id,
+                                          context_id: Id ) -> (String, String)
+    {
+        let subject = format!( "{} упомянул вас в своём комментарии", commenter_name );
+        let link = match comment_for {
+            CommentFor::Photo => format!( "#gallery_photo/{}/{}", owner_id, context_id ),
+            CommentFor::Event => events::make_event_link( context_id )
+        };
+        let mail = format!(
+            "Пользователь **{}** упомянул Вас в своём комментарии. [Пойдем посмотрим?]({})",
+            commenter_name,
+            link
+        );
         (subject, mail)
     }
 }

@@ -1,5 +1,6 @@
 use super::{
-    EventId
+    EventId,
+    UserAction
 };
 use types::{
     Id,
@@ -27,5 +28,6 @@ pub struct FeedEventInfo {
     pub creator: Option<ShortInfo>,
     pub group: ShortInfo,
     pub comments_count: usize,
-    pub unreaded_comments: usize
+    pub unreaded_comments: usize,
+    pub action: UserAction
 }

@@ -19,7 +19,7 @@ impl<'a, 'b> GetBody for Request<'a, 'b> {
         if self.method == Method::Get {
             match self.url.query {
                 Some( ref query ) => {
-                    let query = percent_encoding::lossy_utf8_percent_decode( query.as_bytes() );
+                    let query = percent_encoding::percent_decode( query.as_bytes() ).decode_utf8_lossy();
                     json::decode::<T>( &query )
                         .map_err( |e| CommonError( format!( "error parsing query: {:?}", e ) ) )
                 }

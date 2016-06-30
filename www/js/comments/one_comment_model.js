@@ -12,7 +12,7 @@ define( function( require ) {
             var text = this.get("text");
             var lines = text.split('\n');
             var creator = this.get("creator");
-            var quote_text = "> #### " + creator.name + "\n";
+            var quote_text = "> #### @" + creator.name + "\n";
             _.forEach( lines, function( line ) {
                 quote_text += "> " + line + "\n";
             })

@@ -8,7 +8,7 @@ use super::{
     get_group_id,
 };
 use super::late_publication::LatePublication;
-use types::{ Id, EmptyResult, CommonResult };
+use types::{ Id, EmptyResult, CommonResult, CommonError };
 use answer::{ Answer, AnswerResult };
 use db::groups::DbGroups;
 use db::publication::DbPublication;
@@ -20,7 +20,7 @@ use authentication::{ Userable };
 use time::{ self, Timespec };
 use iron::prelude::*;
 use get_body::GetBody;
-use answer_types::{ OkInfo, PhotoErrorInfo };
+use answer_types::{ PhotoErrorInfo };
 use db::group_feed::DbGroupFeed;
 use super::feed_types::FeedEventState;
 use parse_utils::{ GetMsecs };
@@ -148,11 +148,46 @@ pub fn get_user_action( stuff: &mut Stuff, user_id: Id, scheduled_id: Id ) -> Co
 
 pub fn process_user_action_post( req: &mut Request, scheduled_id: Id ) -> AnswerResult {
     let photo_id = try!( req.get_body::<PhotoInfo>() ).id;
+    match process_publish_photo( req, scheduled_id, photo_id ) {
+        Ok( _ ) => Ok( Answer::good( "published" ) ),
+        Err( e ) => e.into()
+    }
+}
+
+pub enum PublishError
+{
+    Common( CommonError ),
+    Answer( Answer )
+}
+
+impl PublishError {
+    pub fn err( a: Answer ) -> Result<(), PublishError> {
+        Err( PublishError::Answer( a ) )
+    }
+}
+
+impl From<CommonError> for PublishError {
+    fn from( e: CommonError ) -> PublishError {
+        PublishError::Common( e )
+    }
+}
+
+impl Into<AnswerResult> for PublishError {
+    fn into( self ) -> AnswerResult {
+        match self {
+            PublishError::Common( ce ) => Err( ce ),
+            PublishError::Answer( a ) => Ok( a )
+        }
+    }
+}
+
+pub fn process_publish_photo( req: &mut Request, scheduled_id: Id, photo_id: Id ) -> Result<(), PublishError>
+{
     let user_id = req.user().id;
     let db = try!( req.stuff().get_current_db_conn() );
 
     //FIXME: как-то надо облагородить такую вложенность
-    let answer = match try!( db.get_short_photo_info( photo_id ) ) {
+    match try!( db.get_short_photo_info( photo_id ) ) {
         Some( photo_info ) => {
             if photo_info.owner.id == user_id {
                 match try!( db.is_photo_published( photo_id ) ) {
@@ -166,18 +201,17 @@ pub fn process_user_action_post( req: &mut Request, scheduled_id: Id ) -> Answer
                         if let Some( last_id ) = prev {
                             try!( db.set_next_publication_photo( last_id, photo_id ) );
                         }
-                        Answer::good( OkInfo::new( "published" ) )
+                        Ok( () )
                     },
-                    true => Answer::bad( PhotoErrorInfo::already_published() )
+                    true => PublishError::err( Answer::bad( PhotoErrorInfo::already_published() ) )
                 }
             }
             else {
-                Answer::access_denied()
+                PublishError::err( Answer::access_denied() )
             }
         },
-        None => Answer::not_found()
-    };
-    Ok( answer )
+        None => PublishError::err( Answer::not_found() )
+    }
 }
 
 impl CreateFromTimetable for Publication {

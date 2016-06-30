@@ -1,7 +1,7 @@
 define(['handlebars.runtime'], function(Handlebars) {
   Handlebars = Handlebars["default"];  var template = Handlebars.template, templates = Handlebars.templates = Handlebars.templates || {};
 return templates['mail_view'] = template({"1":function(container,depth0,helpers,partials,data) {
-    return "      <button class=\"ui topright icon basic tiny button readed-btn\" data-content=\"Пометить как прочитанное.\" data-position=\"left center\" data-variation=\"inverted\">\n        <i class=\"close icon\"></i>\n      </button>\n";
+    return "      <button class=\"ui topright icon basic tiny button readed-btn\" data-tooltip=\"Пометить как прочитанное.\" data-position=\"left center\" data-variation=\"inverted\">\n        <i class=\"close icon\"></i>\n      </button>\n";
 },"compiler":[7,">= 4.0.0"],"main":function(container,depth0,helpers,partials,data) {
     var stack1, helper, alias1=depth0 != null ? depth0 : {}, alias2=helpers.helperMissing, alias3="function", alias4=container.escapeExpression;
 

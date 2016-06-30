@@ -245,6 +245,7 @@ fn get_publication_photo_info_impl( conn: &mut PooledConn, reader_id: Id, photo_
 fn get_short_photo_info_impl( conn: &mut PooledConn, photo_id: Id ) -> mysql::Result<Option<ShortPhotoInfo>> {
     let query = format!(
         "SELECT i.id,
+                i.name,
                 i.upload_time,
                 i.type,
                 i.owner_id,
@@ -258,9 +259,10 @@ fn get_short_photo_info_impl( conn: &mut PooledConn, photo_id: Id ) -> mysql::Re
     let result = match sql_result.next() {
         Some( sql_row ) => {
             let row_data = try!( sql_row );
-            let (id, time, img_type, owner_id, owner_name) = from_row( row_data );
+            let (id, name, time, img_type, owner_id, owner_name) = from_row( row_data );
             let info = ShortPhotoInfo {
                 id: id,
+                name: name,
                 upload_time: time,
                 image_type: img_type,
                 owner: ShortInfo {

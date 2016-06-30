@@ -77,6 +77,7 @@ fn main() {
     router.post( "/upload", handlers::upload_photo );
     router.post( "/crop", handlers::crop_photo );
     router.post( "/rename", handlers::rename_photo );
+    router.post( handlers::upload_and_publish_path(), handlers::upload_and_publish_photo );
 
     router.get( handlers::images::photos_path(), handlers::images::get_photo );
     router.get( handlers::images::preview_path(), handlers::images::get_preview );

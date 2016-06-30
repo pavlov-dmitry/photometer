@@ -46,6 +46,7 @@ pub struct PhotoInfo {
 
 pub struct ShortPhotoInfo {
     pub id: Id,
+    pub name: String,
     pub upload_time: u64,
     pub image_type: ImageType,
     pub owner: ShortInfo,
@@ -97,4 +98,10 @@ pub struct CommentInfo {
     pub text: String,
     pub is_editable: bool,
     pub is_new: bool
+}
+
+#[derive(Copy, Clone)]
+pub enum CommentFor {
+    Photo,
+    Event
 }

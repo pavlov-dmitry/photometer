@@ -1,15 +1,17 @@
 use iron::prelude::*;
 use answer::{ AnswerResult, Answer, AnswerResponse };
-use types::{ Id };
+use types::{ Id, EmptyResult };
 use get_body::GetBody;
 use db::groups::DbGroups;
 use db::group_feed::DbGroupFeed;
 use db::visited::{ DbVisited, VisitedContent };
 use authentication::Userable;
 use database::Databaseable;
-use stuff::Stuffable;
+use stuff::{ Stuff, Stuffable };
 use parse_utils::GetMsecs;
 use events::feed_types::FeedEventInfo;
+use events::EventId;
+use events::events_manager::EventsManagerStuff;
 
 #[derive(Clone, Copy, RustcDecodable)]
 struct GroupQuery {
@@ -113,17 +115,28 @@ fn group_info( req: &mut Request ) -> AnswerResult {
 fn group_feed( req: &mut Request ) -> AnswerResult {
     let group_query = try!( req.get_body::<GroupFeedQuery>() );
     let user_id = req.user().id;
-    let db = try!( req.stuff().get_current_db_conn() );
+    let stuff = req.stuff();
+    let group_info = {
+        let db = try!( stuff.get_current_db_conn() );
+        try!( db.group_info( group_query.group_id ) )
+    };
 
-    let answer = match try!( db.group_info( group_query.group_id ) ) {
+    let answer = match group_info {
         Some( group_info ) => {
-            let feed = try!( db.get_group_feed( user_id,
-                                                group_query.group_id,
-                                                IN_PAGE_COUNT,
-                                                IN_PAGE_COUNT * group_query.page ) );
+            let mut feed = {
+                let db = try!( stuff.get_current_db_conn() );
+                try!( db.get_group_feed( user_id,
+                                         group_query.group_id,
+                                         IN_PAGE_COUNT,
+                                         IN_PAGE_COUNT * group_query.page ) )
+            };
+
+            try!( add_actions_to_feed( user_id, stuff, &mut feed ) );
+
             let new_feeds = feed.iter()
                 .filter_map( |f| if f.is_new { Some( f.id ) } else { None } )
                 .collect::<Vec<_>>();
+            let db = try!( stuff.get_current_db_conn() );
             try!( db.set_visited( user_id, VisitedContent::Feed, &new_feeds ) );
             Answer::good( GroupFeedResult{
                 group_id: group_info.id,
@@ -135,6 +148,19 @@ fn group_feed( req: &mut Request ) -> AnswerResult {
     };
 
     Ok( answer )
+}
+
+fn add_actions_to_feed( user_id: Id, stuff: &mut Stuff, feed: &mut Vec<FeedEventInfo> ) -> EmptyResult
+{
+    for elem in feed.iter_mut() {
+        if elem.event_id == EventId::Publication {
+            elem.action = try!( stuff.event_user_action(
+                elem.scheduled_id,
+                user_id
+            ) );
+        }
+    }
+    Ok( () )
 }
 
 #[derive(Clone, RustcDecodable)]

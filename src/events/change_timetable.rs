@@ -217,7 +217,7 @@ fn parse_times( diff_str: TimetableDiffInfoStr ) -> Result<TimetableDiffInfo, An
         });
     }
 
-    if MAX_DESCRIPTION_LENGTH < diff_str.description.len() {
+    if MAX_DESCRIPTION_LENGTH < diff_str.description.chars().count() {
         errors.push( FieldErrorInfo {
             field_class: FieldClass::Common,
             field_type: FieldType::Description,
@@ -257,7 +257,7 @@ fn check_for_add( for_add: &Vec<AddEventInfo>, current_time: &Timespec, errors: 
                 reason: ErrorReason::Empty
             });
         }
-        if MAX_NAME_LENGTH < add.name.len() {
+        if MAX_NAME_LENGTH < add.name.chars().count() {
             errors.push( FieldErrorInfo {
                 field_class: FieldClass::ForAdd,
                 field_type: FieldType::Name,
@@ -265,7 +265,7 @@ fn check_for_add( for_add: &Vec<AddEventInfo>, current_time: &Timespec, errors: 
                 reason: ErrorReason::TooLong
             });
         }
-        if MAX_PARAMS_LENGTH < add.params.len() {
+        if MAX_PARAMS_LENGTH < add.params.chars().count() {
             errors.push( FieldErrorInfo {
                 field_class: FieldClass::ForAdd,
                 field_type: FieldType::Params,

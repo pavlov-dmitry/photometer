@@ -16,6 +16,7 @@ define( function( require ) {
     var my_converter = {
         makeHtml: function( data ) {
             var result = data
+            result = result.replace(/(@\w+)/g, '**$1**' );
             result = emojify.replace( result );
             result = converter.makeHtml( result );
             return result;

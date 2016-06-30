@@ -1,7 +1,9 @@
 define( function(require) {
     var Backbone = require( "lib/backbone" ),
         Handlebars = require( "handlebars.runtime" ),
-        PublicationModel = require( "event/action/publication/model" );
+        PublicationModel = require( "event/action/publication/model" ),
+        make_upload_button = require( "make_upload_button" ),
+        app = require( "app" );
     require( "template/publication_action" );
     require( "handlebars_helpers" );
 
@@ -32,17 +34,14 @@ define( function(require) {
             var html =  this.template( this.publication_model.toJSON() );
             this.$el.html( html );
             var self = this;
+            var id = this.model.get("id");
+
+            make_upload_button( this, this.$el, "/upload_and_publish/" + id, function( photo_id ) {
+                app.workspace.nav( "edit_photo/" + photo_id );
+            });
+
             $(".dimmable.image").dimmer({
                 on: "hover"
-            //     on: "click",
-            //     onShow: function() {
-            //         if ( self.$last_dimmed &&
-            //              self.$last_dimmed.attr("id") != $(this).attr("id") )
-            //         {
-            //             self.$last_dimmed.dimmer( "hide" );
-            //         }
-            //         self.$last_dimmed = $(this);
-            //     }
             });
             $(".pagination.button").click( function() {
                 self.on_pagination( $(this).attr("data") );

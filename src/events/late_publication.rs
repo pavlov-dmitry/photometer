@@ -8,6 +8,7 @@ use super::{
     get_group_id,
     publication
 };
+use super::publication::PublishError;
 use types::{ Id, EmptyResult, CommonResult, CommonError };
 use answer::{ AnswerResult };
 use database::{ Databaseable };
@@ -104,6 +105,11 @@ impl Event for LatePublication {
         let info = try!( get_info( body ) );
         publication::process_user_action_post( req, info.parent_id )
     }
+}
+
+pub fn process_publish_photo( req: &mut Request, body: &ScheduledEventInfo, photo_id: Id ) -> Result<(), PublishError> {
+    let info = try!( get_info( body ) );
+    publication::process_publish_photo( req, info.parent_id, photo_id )
 }
 
 #[derive(RustcEncodable, RustcDecodable)]

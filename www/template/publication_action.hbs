@@ -1,4 +1,16 @@
 <div id="photos-container" class="ui container basic segment nopadmar">
+
+    <span id="upload-btn" class="ui green button fileinput-button">
+        <i class="add icon"></i>
+        <span>Загрузить и опубликовать</span>
+        <input id="upload-file" type="file" name="file" accept="image/jpeg,image/png">
+    </span>
+
+    <div id="upload-progress" class="ui indicating progress">
+        <div class="bar"></div>
+        <div class="label">Загружено</div>
+    </div>
+
   <p>
     {{{pagination pagination ""}}}
   </p>
@@ -36,7 +48,7 @@
         У вам нет неопубликованных фотографии.
       </h1>
       <h3 class="ui disabled header">
-        Попробуйте загрузить новое фото в свою <a href="#gallery">Галлерею</a>
+        Вы можете воспользоваться кнопкой "Загрузить и опубликовать"
       </h3>
     </div>
     {{/each}}

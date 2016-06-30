@@ -83,7 +83,7 @@ impl GroupCreatedEvent for UserInviteToGroup {
         if invite_query.text.is_empty() {
             return Err( Ok( Answer::bad( FieldErrorInfo::empty( "text" ) ) ) );
         }
-        if 2048 < invite_query.text.len() {
+        if 2048 < invite_query.text.chars().count() {
             return Err( Ok( Answer::bad( FieldErrorInfo::too_long( "text" ) ) ) );
         }
         let db = try!( req.stuff().get_current_db_conn() );

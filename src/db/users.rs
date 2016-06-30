@@ -1,6 +1,7 @@
 use mysql;
 use mysql::conn::pool::{ PooledConn };
 use mysql::value::{ Value, ToValue, from_row };
+use mysql::QueryResult;
 use types::{ Id, ShortInfo, CommonResult, EmptyResult, CommonError };
 use std::fmt::Display;
 use database::Database;
@@ -22,7 +23,7 @@ pub trait DbUsers {
     /// возвращает пользователей по Id
     fn users_by_id( &mut self, ids: &[Id] ) -> CommonResult<Vec<User>>;
     /// возвращает пользователя по имени
-    // fn user_by_name( &mut self, name: &str ) -> CommonResult<Option<User>>;
+    fn user_by_name( &mut self, name: &str ) -> CommonResult<Option<User>>;
     /// возвращает имена полльзователей имена которых похожи на шаблон
     fn get_users_like( &mut self, pattern: &str, offset: u32, count: u32 ) -> CommonResult<Vec<ShortInfo>>;
     /// возвращает регистрационный ключ пользователя
@@ -87,10 +88,10 @@ impl DbUsers for PooledConn {
             .map_err( |e| fn_failed( "users_by_id", e ) )
     }
     /// возвращает пользователя по имени
-    // fn user_by_name( &mut self, name: &str ) -> CommonResult<Option<User>> {
-    //     user_by_name_impl( self, name )
-    //         .map_err( |e| fn_failed( "user_by_name", e ) )
-    // }
+    fn user_by_name( &mut self, name: &str ) -> CommonResult<Option<User>> {
+        user_by_name_impl( self, name )
+            .map_err( |e| fn_failed( "user_by_name", e ) )
+    }
     /// возвращает имена полльзователей имена которых похожи на шаблон
     fn get_users_like( &mut self, pattern: &str, offset: u32, count: u32 ) -> CommonResult<Vec<ShortInfo>> {
         get_users_like_impl( self, pattern, offset, count )
@@ -215,19 +216,38 @@ fn user_id_exists_impl( conn: &mut PooledConn, id: Id  ) -> mysql::Result<bool> 
 
 fn user_by_id_impl( conn: &mut PooledConn, id: Id ) -> mysql::Result<Option<User>> {
     let mut stmt = try!( conn.prepare(
-        "SELECT login,
+        "SELECT id,
+                login,
                 mail,
                 join_time
          FROM users
          WHERE id=?
            AND activated=true"
     ) );
-    let mut sql_result = try!( stmt.execute( (id,) ) );
+    let sql_result = try!( stmt.execute( (id,) ) );
+    read_user( sql_result )
+}
+
+fn user_by_name_impl( conn: &mut PooledConn, name: &str ) -> mysql::Result<Option<User>> {
+    let mut stmt = try!( conn.prepare(
+        "SELECT id,
+                login,
+                mail,
+                join_time
+         FROM users
+         WHERE login=?
+           AND activated=true"
+    ) );
+    let sql_result = try!( stmt.execute( (name,) ) );
+    read_user( sql_result )
+}
+
+fn read_user( mut sql_result: QueryResult ) -> mysql::Result<Option<User>> {
     match sql_result.next() {
         None => Ok( None ),
         Some( row ) => {
             let row = try!( row );
-            let (name, mail, time) = from_row( row );
+            let (id, name, mail, time) = from_row( row );
             let user = User {
                 name: name,
                 id: id,
