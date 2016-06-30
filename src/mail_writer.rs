@@ -317,7 +317,7 @@ impl MailWriter for Stuff {
     {
         let subject = format!( "Вашу фотографию '{}' прокомментировали", photo_name );
         let mail = format!(
-            "Пользователь **{}** оставил комментарий под фотографией **{}**. [Пойдём посмотрим?](#gallery_photo/{}/{})",
+            "Пользователь **{}** оставил(a) комментарий под фотографией **{}**. [Пойдём посмотрим?](#gallery_photo/{}/{})",
             commenter_name,
             photo_name,
             owner_id,
@@ -333,13 +333,13 @@ impl MailWriter for Stuff {
                                           owner_id: Id,
                                           context_id: Id ) -> (String, String)
     {
-        let subject = format!( "{} упомянул вас в своём комментарии", commenter_name );
+        let subject = format!( "{} упомянул(a) вас в своём комментарии", commenter_name );
         let link = match comment_for {
             CommentFor::Photo => format!( "#gallery_photo/{}/{}", owner_id, context_id ),
             CommentFor::Event => events::make_event_link( context_id )
         };
         let mail = format!(
-            "Пользователь **{}** упомянул Вас в своём комментарии. [Пойдем посмотрим?]({})",
+            "Пользователь **{}** упомянул(а) Вас в своём комментарии. [Пойдем посмотрим?]({})",
             commenter_name,
             link
         );
