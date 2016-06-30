@@ -71,6 +71,8 @@ impl Event for Publication {
                                     body.scheduled_id,
                                     FeedEventState::Finish,
                                     "" ) );
+        // удаляем стартовое за ненадобностью из ленты группы
+        try!( db.remove_start_event_from_feed( body.scheduled_id ) );
 
         //TODO: старт голосования
 

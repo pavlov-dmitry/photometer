@@ -23,14 +23,16 @@ return templates['publication_feed_view'] = template({"1":function(container,dep
     + alias4(((helper = (helper = helpers.event_name || (depth0 != null ? depth0.event_name : depth0)) != null ? helper : alias2),(typeof helper === alias3 ? helper.call(alias1,{"name":"event_name","hash":{},"data":data}) : helper)))
     + "</a>\n";
 },"11":function(container,depth0,helpers,partials,data) {
-    var stack1, alias1=depth0 != null ? depth0 : {}, alias2=helpers.helperMissing;
+    var stack1, alias1=depth0 != null ? depth0 : {}, alias2=helpers.helperMissing, alias3=container.escapeExpression;
 
   return ((stack1 = (helpers.if_equal || (depth0 && depth0.if_equal) || alias2).call(alias1,(depth0 != null ? depth0.action : depth0),"Publication",{"name":"if_equal","hash":{},"fn":container.program(12, data, 0),"inverse":container.noop,"data":data})) != null ? stack1 : "")
-    + "        <div class=\"meta\">\n            Фотографии будут выставлены в "
-    + container.escapeExpression((helpers.fulltime || (depth0 && depth0.fulltime) || alias2).call(alias1,(depth0 != null ? depth0.end_time : depth0),{"name":"fulltime","hash":{},"data":data}))
+    + "        <div class=\"meta\">\n            Фотографии будут выставлены "
+    + alias3((helpers.duration_from_now || (depth0 && depth0.duration_from_now) || alias2).call(alias1,(depth0 != null ? depth0.end_time : depth0),{"name":"duration_from_now","hash":{},"data":data}))
+    + " в "
+    + alias3((helpers.fulltime || (depth0 && depth0.fulltime) || alias2).call(alias1,(depth0 != null ? depth0.end_time : depth0),{"name":"fulltime","hash":{},"data":data}))
     + "\n        </div>\n";
 },"12":function(container,depth0,helpers,partials,data) {
-    return "        <div class=\"extra\">\n            <span id=\"upload-btn\" class=\"ui green button fileinput-button\">\n                <i class=\"add icon\"></i>\n                <span>Загрузить и опубликовать</span>\n                <input id=\"upload-file\" type=\"file\" name=\"file\" accept=\"image/jpeg,image/png\">\n            </span>\n\n            <div id=\"upload-progress\" class=\"ui indicating progress\">\n                <div class=\"bar\"></div>\n                <div class=\"label\">Загружено</div>\n            </div>\n        </div>\n";
+    return "        <div class=\"extra\">\n            <div class=\"ui center align basic segment\">\n                <span id=\"upload-btn\" class=\"ui green button fileinput-button\">\n                    <i class=\"add icon\"></i>\n                    <span>Загрузить и опубликовать</span>\n                    <input id=\"upload-file\" type=\"file\" name=\"file\" accept=\"image/jpeg,image/png\">\n                </span>\n\n                <div id=\"upload-progress\" class=\"ui indicating progress\">\n                    <div class=\"bar\"></div>\n                    <div class=\"label\">Загружено</div>\n                </div>\n            </div>\n        </div>\n";
 },"14":function(container,depth0,helpers,partials,data,blockParams,depths) {
     var stack1;
 

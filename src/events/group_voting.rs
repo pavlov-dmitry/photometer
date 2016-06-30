@@ -148,6 +148,8 @@ impl Event for GroupVoting {
                                     body.scheduled_id,
                                     FeedEventState::Finish,
                                     &feed_data ) );
+        // удаляем стартовое за ненадобностью из ленты группы
+        try!( db.remove_start_event_from_feed( body.scheduled_id ) );
 
         Ok( () )
     }

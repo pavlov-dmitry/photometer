@@ -36,6 +36,8 @@ pub trait DbGroupFeed {
         &mut self,
         user_id: Id
     ) -> CommonResult<UnwatchedFeedsByGroup>;
+    /// удаляем стартовое событие из ленты
+    fn remove_start_event_from_feed( &mut self, scheduled_id: Id ) -> EmptyResult;
 }
 
 pub fn create_tables( db: &Database ) -> EmptyResult {
@@ -101,6 +103,13 @@ impl DbGroupFeed for PooledConn {
     {
         get_unwatched_feed_elements_by_groups_impl( self, user_id )
             .map_err( |e| fn_failed( "get_unwatched_feed_elements_by_groups", e ) )
+    }
+
+    /// удаляем стартовое событие из ленты
+    fn remove_start_event_from_feed( &mut self, scheduled_id: Id ) -> EmptyResult
+    {
+        remove_start_event_from_feed_impl( self, scheduled_id )
+            .map_err( |e| fn_failed( "remove_start_feed_event", e ) )
     }
 }
 
@@ -280,6 +289,17 @@ fn get_unwatched_feed_elements_by_groups_impl( conn: &mut PooledConn,
         result.push( from_row( row ) );
     }
     Ok( result )
+}
+
+fn remove_start_event_from_feed_impl( conn: &mut PooledConn, scheduled_id: Id ) -> mysql::Result<()>
+{
+    try!( conn.prep_exec(
+            "DELETE FROM group_feed
+             WHERE scheduled_id=?
+               AND state='start'",
+            (scheduled_id,)
+    ) );
+    Ok( () )
 }
 
 const START: &'static str = "start";

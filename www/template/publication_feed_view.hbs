@@ -24,20 +24,22 @@
         {{#if_equal state "Start"}}
         {{#if_equal action "Publication"}}
         <div class="extra">
-            <span id="upload-btn" class="ui green button fileinput-button">
-                <i class="add icon"></i>
-                <span>Загрузить и опубликовать</span>
-                <input id="upload-file" type="file" name="file" accept="image/jpeg,image/png">
-            </span>
+            <div class="ui center align basic segment">
+                <span id="upload-btn" class="ui green button fileinput-button">
+                    <i class="add icon"></i>
+                    <span>Загрузить и опубликовать</span>
+                    <input id="upload-file" type="file" name="file" accept="image/jpeg,image/png">
+                </span>
 
-            <div id="upload-progress" class="ui indicating progress">
-                <div class="bar"></div>
-                <div class="label">Загружено</div>
+                <div id="upload-progress" class="ui indicating progress">
+                    <div class="bar"></div>
+                    <div class="label">Загружено</div>
+                </div>
             </div>
         </div>
         {{/if_equal}}
         <div class="meta">
-            Фотографии будут выставлены в {{fulltime end_time}}
+            Фотографии будут выставлены {{duration_from_now end_time}} в {{fulltime end_time}}
         </div>
         {{/if_equal}}
         {{#if_equal state "Finish"}}
