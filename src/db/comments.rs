@@ -27,7 +27,7 @@ pub trait DbComments {
                      time: u64,
                      comment_for: CommentFor,
                      for_id: Id,
-                     text: &str ) -> EmptyResult;
+                     text: &str ) -> CommonResult<Id>;
     /// редактирование комментария
     fn edit_comment( &mut self, comment_id: Id, time: u64, text: &str ) -> EmptyResult;
     /// чтение информации о комментарии
@@ -75,7 +75,7 @@ impl DbComments for PooledConn {
                      time: u64,
                      comment_for: CommentFor,
                      for_id: Id,
-                     text: &str ) -> EmptyResult
+                     text: &str ) -> CommonResult<Id>
     {
         add_comment_impl( self,
                           user_id,
@@ -132,7 +132,7 @@ fn add_comment_impl( conn: &mut PooledConn,
                      time: u64,
                      comment_for: CommentFor,
                      for_id: Id,
-                     text: &str ) -> mysql::Result<()>
+                     text: &str ) -> mysql::Result<Id>
 {
     let mut stmt = try!( conn.prepare(
         "INSERT INTO comments (
@@ -144,8 +144,8 @@ fn add_comment_impl( conn: &mut PooledConn,
         )
         VALUES( ?, ?, ?, ?, ? )"
     ));
-    try!( stmt.execute( (user_id, time, comment_for, for_id, text) ) );
-    Ok( () )
+    let result = try!( stmt.execute( (user_id, time, comment_for, for_id, text) ) );
+    Ok( result.last_insert_id() )
 }
 
 fn edit_comment_impl( conn: &mut PooledConn,

@@ -7,7 +7,7 @@ use authentication::User;
 use std::sync::mpsc::{ Sender, channel, SendError };
 use std::sync::{ Arc, Mutex };
 use db::mailbox::DbMailbox;
-use types::{ EmptyResult, CommonError };
+use types::{ Id, CommonResult, EmptyResult, CommonError };
 use database::{ Databaseable };
 use stuff::{ Stuff, StuffInstallable };
 
@@ -20,9 +20,9 @@ struct MailSender( Sender<Mail> );
 const PHOTOMETER : &'static str = "Фотометр";
 
 pub trait Mailer {
-    fn send_mail( &mut self, user: &User, subject: &str, body: &str  ) -> EmptyResult;
+    fn send_mail( &mut self, user: &User, subject: &str, body: &str  ) -> CommonResult<Id>;
     fn send_external_mail( &mut self, user: &User, subject: &str, body: &str ) -> EmptyResult;
-    fn send_internal_mail( &mut self, user: &User, subject: &str, body: &str ) -> EmptyResult;
+    fn send_internal_mail( &mut self, user: &User, subject: &str, body: &str ) -> CommonResult<Id>;
 }
 
 pub fn create( context: MailContext ) -> MailerBody {
@@ -32,22 +32,22 @@ pub fn create( context: MailContext ) -> MailerBody {
 }
 
 impl Mailer for Stuff {
-    fn send_mail( &mut self, user: &User, subject: &str, body: &str ) -> EmptyResult {
-        try!( self.send_internal_mail( user, subject, body ) );
-        Ok( () )
+    fn send_mail( &mut self, user: &User, subject: &str, body: &str ) -> CommonResult<Id> {
+        let id = try!( self.send_internal_mail( user, subject, body ) );
+        Ok( id )
     }
     fn send_external_mail( &mut self, user: &User, subject: &str, body: &str ) -> EmptyResult {
         try!( self.send_mail_external( user, subject, body ) );
         Ok( () )
     }
-    fn send_internal_mail( &mut self, user: &User, subject: &str, body: &str ) -> EmptyResult {
+    fn send_internal_mail( &mut self, user: &User, subject: &str, body: &str ) -> CommonResult<Id> {
         self.send_mail_internal( user, PHOTOMETER, subject, body )
     }
 }
 
 trait MailerPrivate {
     fn send_mail_external( &mut self, user: &User, subject: &str, body: &str ) -> EmptyResult;
-    fn send_mail_internal( &mut self, user: &User, sender: &str, subject: &str, body: &str ) -> EmptyResult;
+    fn send_mail_internal( &mut self, user: &User, sender: &str, subject: &str, body: &str ) -> CommonResult<Id>;
 }
 
 impl MailerPrivate for Stuff {
@@ -76,11 +76,11 @@ impl MailerPrivate for Stuff {
         Ok( () )
     }
 
-    fn send_mail_internal( &mut self, user: &User, sender: &str, subject: &str, body: &str ) -> EmptyResult {
+    fn send_mail_internal( &mut self, user: &User, sender: &str, subject: &str, body: &str ) -> CommonResult<Id> {
         // делаем запись в базе о новом оповещении
         let db = try!( self.get_current_db_conn() );
-        try!( db.send_mail_to( user.id, sender, subject, body ) );
-        Ok( () )
+        let id = try!( db.send_mail_to( user.id, sender, subject, body ) );
+        Ok( id )
     }
 }
 

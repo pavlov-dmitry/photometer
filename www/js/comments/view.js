@@ -2,7 +2,8 @@ define( function(require) {
     var Backbone = require( "lib/backbone" ),
         Handlebars = require( "handlebars.runtime" ),
         OneCommentView = require( "comments/one_comment_view" ),
-        CommentEditor = require( "comments/editor" );
+        CommentEditor = require( "comments/editor" ),
+        app = require( "app" );
     require( "template/comments_view" );
     require( "handlebars_helpers" );
 
@@ -52,6 +53,7 @@ define( function(require) {
 
         reset: function() {
             this.$comments_list.empty();
+            app.userState.fetch();
         },
 
         pagination: function( page ) {

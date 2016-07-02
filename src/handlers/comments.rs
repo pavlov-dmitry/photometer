@@ -4,9 +4,19 @@ use db::visited::{ DbVisited, VisitedContent };
 use db::photos::DbPhotos;
 use db::events::DbEvents;
 use db::users::DbUsers;
+use db::comment_message_link::{ DbCommentMessageLink, MessageLink };
+use db::mailbox::DbMailbox;
 use get_body::GetBody;
 use answer::{ AnswerResult, Answer, AnswerResponse };
-use types::{ Id, CommentInfo, CommentFor, EmptyResult, ShortPhotoInfo };
+use types::{
+    Id,
+    CommentInfo,
+    CommentFor,
+    EmptyResult,
+    ShortPhotoInfo,
+    common_error,
+    CommonResult
+};
 use authentication::{ Userable, User };
 use database::{ Databaseable };
 use stuff::{ Stuffable, Stuff };
@@ -30,9 +40,7 @@ pub fn get_photo_comments( req: &mut Request ) -> IronResult<Response> {
 }
 
 pub fn post_event_comment( req: &mut Request ) -> IronResult<Response> {
-    let answer = AnswerResponse( add_comment( req, CommentFor::Event ) );
-    Ok( Response::with( answer ) )
-}
+    let answer = AnswerResponse( add_comment( req, CommentFor::Event ) ); Ok( Response::with( answer ) ) }
 
 pub fn post_photo_comment( req: &mut Request ) -> IronResult<Response> {
     let answer = AnswerResponse( add_comment( req, CommentFor::Photo ) );
@@ -79,6 +87,8 @@ fn get_comments( req: &mut Request, comment_for: CommentFor ) -> AnswerResult {
                 .map( |c| c.id )
                 .collect::<Vec<Id>>();
             try!( db.set_visited( user_id, VisitedContent::Comment, &new_visited ) );
+            let message_ids = try!( db.get_linked_messages( user_id, new_visited ) );
+            try!( db.mark_as_readed( user_id, &message_ids ) );
 
             Answer::good( CommentsInfo{
                 all_count: count,
@@ -113,48 +123,55 @@ fn add_comment( req: &mut Request, comment_for: CommentFor ) -> AnswerResult {
         return Ok( Answer::bad( e ) );
     }
 
-    {
+    let comment_id = {
         let user_id = req.user().id;
         let db = try!( req.stuff().get_current_db_conn() );
-        try!( db.add_comment( user_id,
-                              time::get_time().msecs(),
-                              comment_for,
-                              info.id,
-                              &info.text ) );
+        let comment_id = try!( db.add_comment( user_id,
+                                               time::get_time().msecs(),
+                                               comment_for,
+                                               info.id,
+                                               &info.text ) );
         match comment_for {
             CommentFor::Photo => try!( db.increment_photo_comments_count( info.id ) ),
             CommentFor::Event => try!( db.increment_event_comments_count( info.id ) )
         }
-    }
+        comment_id
+    };
 
     // генерим оповещения
     let user = req.user().clone();
     let mut notices = make_notice_set( &info.text );
     notices.remove( &user.name.to_lowercase() );
     let stuff = req.stuff();
-    try!( send_notices( stuff, notices, comment_for, &user, info.id ) );
+    try!( send_notices( stuff, comment_id, notices, comment_for, &user, info.id ) );
     Ok( Answer::good( "ok" ) )
 }
 
 fn send_notices(
     stuff: &mut Stuff,
+    comment_id: Id,
     mut notices: HashSet<String>,
     comment_for: CommentFor,
     commenter_user: &User,
     photo_id: Id
 ) -> EmptyResult
 {
+    let mut links = Vec::new();
     let owner_id = match comment_for {
         CommentFor::Photo => {
             //оповещяем владельца фотки, о новом комментарии
             let short_info = {
                 let db = try!( stuff.get_current_db_conn() );
                 //NOTE: Делаю здесь unwrap, так как сюда мы не можем добраться если этой офтки нет
-                try!( db.get_short_photo_info( photo_id ) ).unwrap()
+                match try!( db.get_short_photo_info( photo_id ) ) {
+                    Some( info ) => info,
+                    None => return common_error( "invalid photo id".to_owned() )
+                }
             };
             notices.remove( &short_info.owner.name.to_lowercase() );
             if commenter_user.id != short_info.owner.id {
-                try!( notify_owner( stuff, &short_info, &commenter_user.name ) );
+                let link = try!( notify_owner( stuff, &short_info, &commenter_user.name ) );
+                links.push( link );
             }
             short_info.owner.id
         },
@@ -173,13 +190,22 @@ fn send_notices(
                 owner_id,
                 photo_id
             );
-            try!( stuff.send_mail( &user, &subject, &mail ) );
+            let message_id = try!( stuff.send_mail( &user, &subject, &mail ) );
+
+            links.push( MessageLink{
+                user_id: user.id,
+                message_id: message_id
+            } );
         }
     }
+
+    let db = try!( stuff.get_current_db_conn() );
+    try!( db.add_comment_message_links( comment_id, links ) );
+
     Ok( () )
 }
 
-fn notify_owner( stuff: &mut Stuff, photo_info: &ShortPhotoInfo, commenter_name: &str ) -> EmptyResult
+fn notify_owner( stuff: &mut Stuff, photo_info: &ShortPhotoInfo, commenter_name: &str ) -> CommonResult<MessageLink>
 {
     // генерим сообщение для владельца фотографии
     let (subject, mail) = stuff.write_your_photo_commented_mail(
@@ -190,9 +216,16 @@ fn notify_owner( stuff: &mut Stuff, photo_info: &ShortPhotoInfo, commenter_name:
     );
     let photo_owner = {
         let db = try!( stuff.get_current_db_conn() );
-        try!( db.user_by_id( photo_info.owner.id ) ).unwrap()
+        match try!( db.user_by_id( photo_info.owner.id ) ) {
+            Some( user ) => user,
+            None => return common_error( "invalid photo owner id".to_owned() )
+        }
     };
-    stuff.send_mail( &photo_owner, &subject, &mail )
+    let message_id = try!( stuff.send_mail( &photo_owner, &subject, &mail ) );
+    Ok( MessageLink{
+        user_id: photo_info.owner.id,
+        message_id: message_id
+    } )
 }
 
 fn edit_comment( req: &mut Request ) -> AnswerResult {

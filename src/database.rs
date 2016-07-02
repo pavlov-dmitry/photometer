@@ -35,6 +35,7 @@ impl Database {
         try!( db::group_feed::create_tables( self ) );
         try!( db::visited::create_tables( self ) );
         try!( db::comments::create_tables( self ) );
+        try!( db::comment_message_link::create_tables( self ) );
         try!( self.init_names() );
         Ok( () )
     }

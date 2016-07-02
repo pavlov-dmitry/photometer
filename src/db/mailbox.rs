@@ -1,22 +1,25 @@
 use mysql;
 use mysql::conn::pool::{ PooledConn };
-use mysql::value::{ from_row, ToValue };
+use mysql::value::{
+    from_row,
+    ToValue,
+    Value
+};
 use time;
 use types::{ Id, CommonResult, EmptyResult, MailInfo, CommonError };
 use std::fmt::Display;
-use parse_utils::{ self, GetMsecs };
+use parse_utils::{ GetMsecs };
 use database::Database;
-use std::str::FromStr;
 
 pub trait DbMailbox {
     /// посылает письмо одному из участников
-    fn send_mail_to( &mut self, recipient_id: Id, sender_name: &str, subject: &str, body: &str ) -> EmptyResult;
+    fn send_mail_to( &mut self, recipient_id: Id, sender_name: &str, subject: &str, body: &str ) -> CommonResult<Id>;
     /// подсчитывает кол-во писем у определенного участника
     fn messages_count( &mut self, owner_id: Id, only_unreaded: bool ) -> CommonResult<u32>;
     /// читает сообщения с пагинацией в обратном от создания порядке
     fn messages_from_last<F: FnMut(MailInfo)>( &mut self, owner_id: Id, only_unreaded: bool, offset: u32, count: u32, take_mail: &mut F ) -> EmptyResult;
     /// помечает сообщение как прочитанное
-    fn mark_as_readed( &mut self, owner_id: Id, message_id: Id ) -> CommonResult<bool>;
+    fn mark_as_readed( &mut self, owner_id: Id, message_ids: &[Id] ) -> EmptyResult;
 }
 
 pub fn create_tables( db: &Database ) -> EmptyResult {
@@ -39,7 +42,7 @@ pub fn create_tables( db: &Database ) -> EmptyResult {
 
 impl DbMailbox for PooledConn {
     /// посылает письмо одному из участников
-    fn send_mail_to( &mut self, recipient_id: Id, sender_name: &str, subject: &str, body: &str ) -> EmptyResult {
+    fn send_mail_to( &mut self, recipient_id: Id, sender_name: &str, subject: &str, body: &str ) -> CommonResult<Id> {
         send_mail_impl( self, recipient_id, sender_name, subject, body )
             .map_err( |e| fn_failed( "send_mail", e ) )
     }
@@ -54,8 +57,8 @@ impl DbMailbox for PooledConn {
             .map_err( |e| fn_failed( "messages_from_last", e ) )
     }
     /// помечает сообщение как прочитанное
-    fn mark_as_readed( &mut self, owner_id: Id, message_id: Id ) -> CommonResult<bool> {
-        mark_as_readed_impl( self, owner_id, message_id )
+    fn mark_as_readed( &mut self, owner_id: Id, message_ids: &[Id] ) -> EmptyResult {
+        mark_as_readed_impl( self, owner_id, message_ids )
             .map_err( |e| fn_failed( "mark_as_readed", e ) )
     }
 
@@ -66,7 +69,7 @@ fn fn_failed<E: Display>( fn_name: &str, e: E ) -> CommonError {
     CommonError( format!( "DbMailbox {} failed: {}", fn_name, e ) )
 }
 
-fn send_mail_impl( conn: &mut PooledConn, recipient_id: Id, sender_name: &str, subject: &str, body: &str ) -> mysql::Result<()> {
+fn send_mail_impl( conn: &mut PooledConn, recipient_id: Id, sender_name: &str, subject: &str, body: &str ) -> mysql::Result<Id> {
     let now_time = time::get_time();
     let mut stmt = try!( conn.prepare( "
         INSERT INTO mailbox (
@@ -90,8 +93,8 @@ fn send_mail_impl( conn: &mut PooledConn, recipient_id: Id, sender_name: &str, s
         &body,
         &readed
     ];
-    try!( stmt.execute( params ) );
-    Ok( () )
+    let result = try!( stmt.execute( params ) );
+    Ok( result.last_insert_id() )
 }
 
 fn messages_count_impl( conn: &mut PooledConn, owner_id: Id, only_unreaded: bool ) -> mysql::Result<u32> {
@@ -150,13 +153,28 @@ fn messages_from_last_impl<F: FnMut(MailInfo)>(
     Ok( () )
 }
 
-fn mark_as_readed_impl( conn: &mut PooledConn, owner_id: Id, message_id: Id ) -> mysql::Result<bool> {
-    let mut stmt = try!( conn.prepare( "UPDATE mailbox SET readed=true WHERE id=? AND recipient_id=?" ) );
-    let params: &[ &ToValue ] = &[ &message_id, &owner_id ];
-    let sql_result = try!( stmt.execute( params ) );
-    //узнать сколько строчек подошло под запрос можно только распарсив строку информации после запроса
-    let info = String::from_utf8( sql_result.info() ).unwrap();
-    let matched_count_str = parse_utils::str_between( &info, "matched: ", " " ).unwrap();
-    let matched : u32 = FromStr::from_str( matched_count_str ).unwrap();
-    Ok( 1 == matched )
+fn mark_as_readed_impl( conn: &mut PooledConn, owner_id: Id, message_ids: &[Id] ) -> mysql::Result<()> {
+    if message_ids.is_empty() {
+        return Ok( () );
+    }
+
+    let mut query = format!("
+        UPDATE mailbox
+        SET readed=true
+        WHERE id IN ( ?
+    ");
+    for _ in 1 .. message_ids.len() {
+        query.push_str( ", ?" );
+    }
+    query.push_str( ") AND recipient_id=?" );
+
+    let mut stmt = try!( conn.prepare( query ) );
+    let mut values: Vec<Value> = Vec::new();
+    for id in message_ids {
+        values.push( id.to_value() );
+    }
+    values.push( owner_id.to_value() );
+
+    try!( stmt.execute( values ) );
+    Ok( () )
 }

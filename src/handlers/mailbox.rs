@@ -6,7 +6,7 @@ use authentication::{ Userable };
 use iron::prelude::*;
 use get_body::GetBody;
 use types::{ Id, MailInfo };
-use answer_types::{ OkInfo, CountInfo, AccessErrorInfo, PaginationInfo };
+use answer_types::{ OkInfo, CountInfo, PaginationInfo };
 use super::helpers::make_pagination;
 
 const IN_PAGE_COUNT: u32 = 10;
@@ -88,12 +88,6 @@ pub fn mark_as_readed_answer( req: &mut Request ) -> AnswerResult {
     let id = try!( req.get_body::<IdInfo>() ).id;
     let user_id = req.user().id;
     let db = try!( req.stuff().get_current_db_conn() );
-    let success = try!( db.mark_as_readed( user_id, id ) );
-    let answer = if success {
-        Answer::good( OkInfo::new( "marked" ) )
-    }
-    else {
-        Answer::bad( AccessErrorInfo::new() )
-    };
-    Ok( answer )
+    try!( db.mark_as_readed( user_id, &[ id ] ) );
+    Ok( Answer::good( OkInfo::new( "marked" ) ) )
 }

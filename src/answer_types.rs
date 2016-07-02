@@ -73,18 +73,18 @@ impl PhotoErrorInfo {
 
 
 /// Отказ в доступе
-#[derive(RustcEncodable)]
-pub struct AccessErrorInfo {
-    access: String
-}
-
-impl AccessErrorInfo {
-    pub fn new() -> AccessErrorInfo {
-        AccessErrorInfo {
-            access: String::from( "denied" )
-        }
-    }
-}
+// #[derive(RustcEncodable)]
+// pub struct AccessErrorInfo {
+//     access: String
+// }
+//
+// impl AccessErrorInfo {
+//     pub fn new() -> AccessErrorInfo {
+//         AccessErrorInfo {
+//             access: String::from( "denied" )
+//         }
+//     }
+// }
 
 
 #[derive(RustcEncodable)]

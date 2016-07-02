@@ -8,5 +8,6 @@ pub mod votes;
 pub mod group_feed;
 pub mod visited;
 pub mod comments;
+pub mod comment_message_link;
 
 mod handler_error;
