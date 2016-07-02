@@ -6,6 +6,7 @@ use types::{ CommonResult, EmptyResult, CommonError, common_error };
 use iron::typemap::Key;
 use iron::prelude::*;
 use db;
+use db::meta::DbMeta;
 use err_msg;
 use stuff::{ Stuff, StuffInstallable };
 
@@ -22,6 +23,7 @@ pub struct Database {
 }
 
 pub type DbConnection = PooledConn;
+const DB_VERSION: u32  = 1;
 
 impl Database {
     fn init(&self) -> EmptyResult {
@@ -36,7 +38,19 @@ impl Database {
         try!( db::visited::create_tables( self ) );
         try!( db::comments::create_tables( self ) );
         try!( db::comment_message_link::create_tables( self ) );
+        try!( db::meta::create_tables( self ) );
         try!( self.init_names() );
+
+        try!( self.pool.set_db_version( DB_VERSION ) );
+        let db_version = try!( self.pool.get_db_version() );
+        info!( "current db schema version: {}", db_version );
+        if db_version != DB_VERSION {
+            return common_error( format!(
+                    "invalid db schema version, expected version: {}, current db schema version: {}",
+                    DB_VERSION, db_version
+            ));
+        }
+
         Ok( () )
     }
 
@@ -50,7 +64,6 @@ impl Database {
             Err( e ) => Err( err_msg::fn_failed( fn_name, e ) )
         }
     }
-
 }
 
 pub fn create_db_connection(
