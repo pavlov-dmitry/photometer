@@ -33,7 +33,8 @@ pub fn create_tables( db: &Database ) -> EmptyResult {
             `user_id` bigint(20) NOT NULL DEFAULT '0',
             `comment_id` bigint(20) NOT NULL DEFAULT '0',
             `message_id` bigint(20) NOT NULL DEFAULT '0',
-            PRIMARY KEY ( `id` )
+            PRIMARY KEY ( `id` ),
+            KEY `user_comment_idx` ( `user_id`, `comment_id` )
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
         ",
         "db::comment_message_link::create_tables"
