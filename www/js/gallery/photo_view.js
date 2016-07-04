@@ -56,7 +56,14 @@ define( function( require ) {
             }
             self.resize_handler();
 
-            var comments_model = new CommentsModel({ photo_id: this.model.get("id") });
+            var photo_info = this.model.get("photo");
+            var new_comments_page = Math.floor(
+                ( photo.comments_count - photo.unreaded_comments ) / 10
+            );
+            var comments_model = new CommentsModel({
+                photo_id: this.model.get("id"),
+                page: new_comments_page
+            });
             this.comments_view = new CommentsView({ model: comments_model });
 
             $(".ui.sticky").sticky();

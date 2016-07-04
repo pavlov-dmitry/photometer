@@ -42,7 +42,9 @@ define( function(require) {
             this.action_view = new ActionView({ model: this.action_model });
             this.action_model.set( action_data );
 
-            var comments_model = new CommentsModel({ event_id: this.model.get("scheduled_id") });
+            var comments_model = new CommentsModel({
+                event_id: this.model.get("scheduled_id")
+            });
             this.comments_view = new CommentsView({ model: comments_model });
         },
 
