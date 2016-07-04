@@ -20,7 +20,7 @@ define( function (require) {
 
         logout: function() {
             $.removeCookie( "sid" );
-            this._redirectToAfterLogin = "gallery";
+            this._redirectToAfterLogin = "start";
             // this.userState.logout();
             this.userState.fetch();
             this.workspace.nav( "login" );
@@ -50,7 +50,7 @@ define( function (require) {
             // если есть куда вернуться, то запоминаем куда нам вернуться после авторизации
             this._redirectToAfterLogin = locationUrl;
             if ( this._redirectToAfterLogin === "" ) {
-                this._redirectToAfterLogin = "gallery";
+                this._redirectToAfterLogin = "start";
             }
             // идём авторизироваться
             this.workspace.nav( "login" );

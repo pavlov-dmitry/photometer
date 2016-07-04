@@ -69,6 +69,7 @@ define( function( require ) {
                     isLogged: false,
                     name: ""
                 });
+                app.unauthorized();
             }
         },
 
@@ -145,6 +146,15 @@ define( function( require ) {
             var data = this.toJSON();
             this.set_current_group_in( data, id );
             this.set( data );
+        },
+
+        get_current_group_id: function() {
+            var group = this.get("current_group");
+            if ( group != null )
+            {
+                return group.id;
+            }
+            return 0;
         }
     });
 

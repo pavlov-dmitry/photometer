@@ -23,6 +23,7 @@ define( function(require) {
             'event/:id': "event_info",
             'group/info/:id': "group_info",
             'group/feed/:id': "group_feed",
+            'start': "start",
             'group/feed/element/:id': "group_feed_element",
             'change_timetable/:id': "change_timetable",
             'user_invite/:id' : "user_invite",
@@ -46,7 +47,7 @@ define( function(require) {
         },
 
         root: function() {
-            this.nav( "mailbox/unreaded" );
+            this.start();
         },
 
         login: function() {
@@ -224,6 +225,21 @@ define( function(require) {
             var model = new GroupFeedModel({ id: id });
             this.current = new GroupFeedView({ model: model });
             app.userState.navToGroup();
+        },
+
+        start: function() {
+            var self = this;
+            app.userState.on_ready( function() {
+                var group_id = app.userState.get_current_group_id();
+                if ( group_id != 0 )
+                {
+                    app.navGroup( group_id );
+                }
+                else
+                {
+                    app.navMessages();
+                }
+            });
         },
 
         group_feed_element: function( id ) {
