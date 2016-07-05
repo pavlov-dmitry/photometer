@@ -7,8 +7,8 @@ return templates['mailbox_view'] = template({"1":function(container,depth0,helpe
 
   return "<div class=\"ui container\">\n  <div class=\"ui centered doubling stackable grid basic segment\">\n    <div class=\"three column row\">\n      <div class=\"column\">\n        <div class=\"ui two item menu\">\n          <a class=\"item"
     + ((stack1 = helpers["if"].call(alias1,(depth0 != null ? depth0.is_unreaded : depth0),{"name":"if","hash":{},"fn":container.program(1, data, 0),"inverse":container.noop,"data":data})) != null ? stack1 : "")
-    + "\" href=\"#mailbox/unreaded\">Непрочитанные</a>\n          <a class=\"item"
+    + "\" href=\"#mailbox/unreaded\">Новые</a>\n          <a class=\"item"
     + ((stack1 = helpers.unless.call(alias1,(depth0 != null ? depth0.is_unreaded : depth0),{"name":"unless","hash":{},"fn":container.program(1, data, 0),"inverse":container.noop,"data":data})) != null ? stack1 : "")
-    + "\" href=\"#mailbox\">Все</a>\n        </div>\n      </div>\n    </div>\n  </div>\n  <div id=\"header-pagination\">\n  </div>\n  <div class=\"ui doubling stackable grid\">\n    <div class=\"column\">\n      <div id=\"mail-list\" class=\"ui relaxed divided items\">\n      </div>\n    </div>\n  </div>\n  <div id=\"footer-pagination\" style=\"clear:both\">\n  </div>\n</div>\n";
+    + "\" href=\"#mailbox\">Все</a>\n        </div>\n      </div>\n    </div>\n  </div>\n  <p>\n      <div id=\"header-pagination\">\n      </div>\n  </p>\n  <div class=\"ui doubling stackable grid\">\n    <div class=\"column\">\n      <div id=\"mail-list\" class=\"ui relaxed divided items\">\n      </div>\n    </div>\n  </div>\n  <p>\n      <div id=\"footer-pagination\" style=\"clear:both\">\n      </div>\n  </p>\n</div>\n";
 },"useData":true});
 });

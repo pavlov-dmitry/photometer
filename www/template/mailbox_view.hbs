@@ -3,20 +3,24 @@
     <div class="three column row">
       <div class="column">
         <div class="ui two item menu">
-          <a class="item{{#if is_unreaded}} active{{/if}}" href="#mailbox/unreaded">Непрочитанные</a>
+          <a class="item{{#if is_unreaded}} active{{/if}}" href="#mailbox/unreaded">Новые</a>
           <a class="item{{#unless is_unreaded}} active{{/unless}}" href="#mailbox">Все</a>
         </div>
       </div>
     </div>
   </div>
-  <div id="header-pagination">
-  </div>
+  <p>
+      <div id="header-pagination">
+      </div>
+  </p>
   <div class="ui doubling stackable grid">
     <div class="column">
       <div id="mail-list" class="ui relaxed divided items">
       </div>
     </div>
   </div>
-  <div id="footer-pagination" style="clear:both">
-  </div>
+  <p>
+      <div id="footer-pagination" style="clear:both">
+      </div>
+  </p>
 </div>
