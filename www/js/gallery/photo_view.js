@@ -60,6 +60,8 @@ define( function( require ) {
             var new_comments_page = Math.floor(
                 ( photo.comments_count - photo.unreaded_comments ) / 10
             );
+            var max_page = Math.max( 0, Math.ceil( photo.comments_count / 10 ) - 1 );
+            new_comments_page = Math.min( new_comments_page, max_page );
             var comments_model = new CommentsModel({
                 photo_id: this.model.get("id"),
                 page: new_comments_page
