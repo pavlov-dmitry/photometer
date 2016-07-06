@@ -11,13 +11,15 @@ define( function(require) {
             'readed': false
         },
 
-        mark_as_readed: function() {
+        mark_as_readed: function( need_update ) {
             var self = this;
             var request = require( "request" );
             var handler = request.post( "/mailbox/mark_as_readed", { id: this.id } );
             handler.good = function( data ) {
                 self.set({ readed: true });
-                self.trigger( "marked" );
+                if ( need_update ) {
+                    self.trigger( "marked" );
+                }
             }
         }
     })

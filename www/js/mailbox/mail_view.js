@@ -17,19 +17,19 @@ define( function(require) {
 
             var self = this;
             this.$el.find( ".readed-btn" ).click( function() {
-                self.readed();
+                self.readed( true );
             });
 
             this.$el.find( ".description a" ).click( function() {
-                self.readed();
+                self.readed( false );
             });
 
             return this;
         },
 
-        readed: function() {
+        readed: function( need_update ) {
             if ( this.model.get("readed") == false ) {
-                this.model.mark_as_readed();
+                this.model.mark_as_readed( need_update );
             }
         },
 
