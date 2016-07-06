@@ -65,6 +65,10 @@ fn add_comment_message_links_impl(
     links: Vec<MessageLink>
 ) -> mysql::Result<()>
 {
+    if links.is_empty() {
+        return Ok( () );
+    }
+
     let mut query = format!(
         "INSERT INTO comment_message_link (
             user_id,
