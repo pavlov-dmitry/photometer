@@ -82,7 +82,7 @@ pub fn create_tables( db: &Database ) -> EmptyResult {
             `creator_id` bigint(20) NOT NULL DEFAULT '0',
             `comments_count` int(11) NOT NULL DEFAULT '0',
             PRIMARY KEY ( `id` ),
-            KEY `time_idx` ( `start_time`, `end_time`, `state` )
+            KEY `state_evt_idx` ( `state`, `event_id` )
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
         ",
         "db::events::create_tables"
