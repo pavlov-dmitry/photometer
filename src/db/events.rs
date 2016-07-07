@@ -55,6 +55,10 @@ pub trait DbEvents {
     fn disable_event_if_not_started( &mut self, scheduled_id: Id ) -> EmptyResult;
     /// увеличивает счётчие комментариев к событию
     fn increment_event_comments_count( &mut self, scheduled_id: Id ) -> EmptyResult;
+    /// выбирает информацию о следующей событии в группу
+    fn get_next_event_after( &mut self, moment: &Timespec, event_id: EventId ) -> CommonResult<Option<(Id, Timespec)>>;
+    /// обновляет время начала для события
+    fn update_event_start_time( &mut self, scheduled_id: Id, new_start: &Timespec ) -> EmptyResult;
 }
 
 pub fn create_tables( db: &Database ) -> EmptyResult {
@@ -160,6 +164,18 @@ impl DbEvents for PooledConn {
     fn increment_event_comments_count( &mut self, scheduled_id: Id ) -> EmptyResult {
         increment_event_comments_count_impl( self, scheduled_id )
             .map_err( |e| fn_failed( "increment_event_comments_count", e ) )
+    }
+
+    /// выбирает информацию о следующей событии в группу
+    fn get_next_event_after( &mut self, moment: &Timespec, event_id: EventId ) -> CommonResult<Option<(Id, Timespec)>> {
+        get_next_event_after_impl( self, moment, event_id )
+            .map_err( |e| fn_failed( "get_next_event_after", e ) )
+    }
+
+    /// обновляет время начала для события
+    fn update_event_start_time( &mut self, scheduled_id: Id, new_start: &Timespec ) -> EmptyResult {
+        update_event_start_time_impl( self, scheduled_id, new_start )
+            .map_err( |e| fn_failed( "update_event_start_time", e ) )
     }
 }
 
@@ -513,6 +529,49 @@ fn disable_event_if_not_started_impl( conn: &mut PooledConn, scheduled_id: Id ) 
 fn increment_event_comments_count_impl( conn: &mut PooledConn, scheduled_id: Id ) -> mysql::Result<()> {
     try!( conn.prep_exec( "UPDATE scheduled_events SET comments_count=comments_count+1 WHERE id=?",
                            (scheduled_id,) ) );
+    Ok( () )
+}
+
+fn get_next_event_after_impl(
+    conn: &mut PooledConn,
+    moment: &Timespec,
+    event_id: EventId
+) -> mysql::Result<Option<(Id, Timespec)>>
+{
+    let mut stmt = try!( conn.prepare( "
+        SELECT
+            `id`,
+            `start_time`
+        FROM `scheduled_events`
+        WHERE `start_time` > ?
+          AND `event_id` = ?
+          AND `state` NOT IN ('disabled', 'finished')
+    " ) );
+    let mut sql_result = try!( stmt.execute( (&moment.msecs(), &event_id) ) );
+    let result = match sql_result.next() {
+        Some( row ) => {
+            let row = try!( row );
+            let (id, start_time) : (Id, u64) = from_row( row );
+            Some( (id, start_time.into_timespec()) )
+        },
+        None => None
+    };
+    Ok( result )
+}
+
+fn update_event_start_time_impl(
+    conn: &mut PooledConn,
+    scheduled_id: Id,
+    new_start: &Timespec
+) -> mysql::Result<()>
+{
+    let mut stmt = try!( conn.prepare( "
+        UPDATE `scheduled_events`
+        SET `start_time`=?
+        WHERE `id`=?
+          AND `state`='not_started_yet'
+    " ) );
+    try!( stmt.execute( (&new_start.msecs(), &scheduled_id) ) );
     Ok( () )
 }
 

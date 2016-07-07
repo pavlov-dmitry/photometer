@@ -5,7 +5,7 @@ return templates['publication_action'] = template({"1":function(container,depth0
 
   return "    <div id=\"card-"
     + alias4(((helper = (helper = helpers.id || (depth0 != null ? depth0.id : depth0)) != null ? helper : alias2),(typeof helper === alias3 ? helper.call(alias1,{"name":"id","hash":{},"data":data}) : helper)))
-    + "\" class=\"centered card mw300\">\n      <div class=\"blurring dimmable image\">\n        <div class=\"ui dimmer\">\n          <div class=\"content\">\n            <div class=\"center\">\n              <div class=\"ui primary publish button\" data=\""
+    + "\" class=\"centered card mw300\">\n      <div class=\"blurring dimmable image\">\n        <div class=\"ui dimmer\">\n          <div class=\"content\">\n            <div class=\"center\">\n              <div class=\"ui publish button\" data=\""
     + alias4(((helper = (helper = helpers.id || (depth0 != null ? depth0.id : depth0)) != null ? helper : alias2),(typeof helper === alias3 ? helper.call(alias1,{"name":"id","hash":{},"data":data}) : helper)))
     + "\">Опубликовать</div>\n            </div>\n          </div>\n        </div>\n        <img exify_intitialized=\"true\" src=\"preview/"
     + alias4(((helper = (helper = helpers.id || (depth0 != null ? depth0.id : depth0)) != null ? helper : alias2),(typeof helper === alias3 ? helper.call(alias1,{"name":"id","hash":{},"data":data}) : helper)))
@@ -31,7 +31,7 @@ return templates['publication_action'] = template({"1":function(container,depth0
 },"compiler":[7,">= 4.0.0"],"main":function(container,depth0,helpers,partials,data) {
     var stack1, alias1=depth0 != null ? depth0 : {}, alias2=helpers.helperMissing;
 
-  return "<div id=\"photos-container\" class=\"ui container basic segment nopadmar\">\n\n    <span id=\"upload-btn\" class=\"ui green button fileinput-button\">\n        <i class=\"add icon\"></i>\n        <span>Загрузить и опубликовать</span>\n        <input id=\"upload-file\" type=\"file\" name=\"file\" accept=\"image/jpeg,image/png\">\n    </span>\n\n    <div id=\"upload-progress\" class=\"ui indicating progress\">\n        <div class=\"bar\"></div>\n        <div class=\"label\">Загружено</div>\n    </div>\n\n  <p>\n    "
+  return "<div id=\"photos-container\" class=\"ui container basic segment nopadmar\">\n\n    <span id=\"upload-btn\" class=\"ui button fileinput-button\">\n        <i class=\"upload icon\"></i>\n        <span>Загрузить и опубликовать</span>\n        <input id=\"upload-file\" type=\"file\" name=\"file\" accept=\"image/jpeg,image/png\">\n    </span>\n\n    <div id=\"upload-progress\" class=\"ui indicating progress\">\n        <div class=\"bar\"></div>\n        <div class=\"label\">Загружено</div>\n    </div>\n\n  <p>\n    "
     + ((stack1 = (helpers.pagination || (depth0 && depth0.pagination) || alias2).call(alias1,(depth0 != null ? depth0.pagination : depth0),"",{"name":"pagination","hash":{},"data":data})) != null ? stack1 : "")
     + "\n  </p>\n  <div class=\"ui stackable cards\">\n"
     + ((stack1 = helpers.each.call(alias1,(depth0 != null ? depth0.photos : depth0),{"name":"each","hash":{},"fn":container.program(1, data, 0),"inverse":container.program(8, data, 0),"data":data})) != null ? stack1 : "")

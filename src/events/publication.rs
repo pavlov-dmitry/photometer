@@ -15,6 +15,7 @@ use db::publication::DbPublication;
 use db::photos::DbPhotos;
 use db::events::DbEvents;
 use database::{ Databaseable };
+use mysql::PooledConn;
 use stuff::{ Stuffable, Stuff };
 use authentication::{ Userable };
 use time::{ self, Timespec };
@@ -73,6 +74,8 @@ impl Event for Publication {
                                     "" ) );
         // удаляем стартовое за ненадобностью из ленты группы
         try!( db.remove_start_event_from_feed( body.scheduled_id ) );
+        // подправляем время старта следующей за этой публикации
+        try!( maybe_correct_next_publication_starttime( db, body ) );
 
         //TODO: старт голосования
 
@@ -113,6 +116,28 @@ impl Event for Publication {
     fn user_action_post( &self, req: &mut Request, body: &ScheduledEventInfo ) -> AnswerResult {
         process_user_action_post( req, body.scheduled_id )
     }
+}
+
+fn maybe_correct_next_publication_starttime(
+    db: &mut PooledConn,
+    body: &ScheduledEventInfo
+) -> EmptyResult
+{
+    debug!( "TRY TO UPDATE TIME!");
+    match try!( db.get_next_event_after( &body.start_time, EventId::Publication ) ) {
+        Some( (next_id, next_start_time) ) => {
+            let calced_start_time = body.end_time + time::Duration::days( 1 );
+            if calced_start_time < next_start_time {
+                try!( db.update_event_start_time( next_id, &calced_start_time ) );
+                debug!( "updating time for {}", next_id );
+            }
+            else {
+                debug!( "No need to update time for {}", next_id );
+            }
+        },
+        None => {}
+    }
+    Ok( () )
 }
 
 #[derive(RustcEncodable, Debug)]

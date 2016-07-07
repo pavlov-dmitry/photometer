@@ -20,27 +20,27 @@
             {{else}}
             Фотографии с <a href="#group/feed/element/{{id}}">{{event_name}}</a>
             {{/if_equal}}
+            {{#if_equal state "Start"}}
+            <div class="date">
+                выставляем {{duration_from_now end_time}} в {{fulltime end_time}}
+            </div>
+            {{/if_equal}}
         </div>
         {{#if_equal state "Start"}}
         {{#if_equal action "Publication"}}
-        <div class="extra">
-            <div class="ui center align basic segment">
-                <span id="upload-btn" class="ui green button fileinput-button">
-                    <i class="add icon"></i>
-                    <span>Загрузить и опубликовать</span>
-                    <input id="upload-file" type="file" name="file" accept="image/jpeg,image/png">
-                </span>
+        <div class="meta">
+            <span id="upload-btn" class="ui compact small button fileinput-button">
+                <i class="upload icon"></i>
+                <span>Опубликовать</span>
+                <input id="upload-file" type="file" name="file" accept="image/jpeg,image/png">
 
                 <div id="upload-progress" class="ui indicating progress">
                     <div class="bar"></div>
                     <div class="label">Загружено</div>
                 </div>
-            </div>
+            </span>
         </div>
         {{/if_equal}}
-        <div class="meta">
-            Фотографии будут выставлены {{duration_from_now end_time}} в {{fulltime end_time}}
-        </div>
         {{/if_equal}}
         {{#if_equal state "Finish"}}
         <div class="extra">
