@@ -51,7 +51,7 @@ pub fn create_tables( db: &Database ) -> EmptyResult {
                 'start',
                 'finish'
             ) NOT NULL DEFAULT 'start',
-            `data` TEXT NOT NULL DEFAULT '',
+            `data` TEXT NOT NULL,
             PRIMARY KEY ( `id` ),
             KEY `group_idx` ( `group_id` ),
             KEY `sheduled_idx` ( `scheduled_id` )

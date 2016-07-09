@@ -30,7 +30,7 @@ pub fn create_tables( db: &Database ) -> EmptyResult {
             `recipient_id` int(4) unsigned DEFAULT '0',
             `sender_name` varchar(128) NOT NULL DEFAULT '',
             `subject` varchar(128) NOT NULL DEFAULT '',
-            `body` TEXT NOT NULL DEFAULT '',
+            `body` TEXT NOT NULL,
             `readed` BOOL NOT NULL DEFAULT false,
             PRIMARY KEY ( `id` ),
             KEY `unreaded_messages` ( `recipient_id`, `readed`, `creation_time` ) USING BTREE

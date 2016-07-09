@@ -46,7 +46,7 @@ pub fn create_tables( db: &Database ) -> EmptyResult {
         "CREATE TABLE IF NOT EXISTS `groups` (
             `id` bigint(20) NOT NULL AUTO_INCREMENT,
             `name` varchar(128) NOT NULL DEFAULT '',
-            `description` TEXT NOT NULL DEFAULT '',
+            `description` TEXT NOT NULL,
             `creation_time` bigint(20) NOT NULL DEFAULT '0',
             PRIMARY KEY ( `id` )
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8;

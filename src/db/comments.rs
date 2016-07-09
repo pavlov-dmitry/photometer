@@ -59,7 +59,7 @@ pub fn create_tables( db: &Database ) -> EmptyResult {
                 'event'
             ) NOT NULL DEFAULT 'photo',
             `for_id` bigint(20) NOT NULL DEFAULT '0',
-            `text` TEXT NOT NULL DEFAULT '',
+            `text` TEXT NOT NULL,
             PRIMARY KEY ( `id` ),
             KEY `for_idx` ( `comment_for`, `for_id` )
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8;

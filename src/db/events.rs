@@ -69,7 +69,7 @@ pub fn create_tables( db: &Database ) -> EmptyResult {
             `event_name` varchar(128) NOT NULL DEFAULT '',
             `start_time` bigint(20) NOT NULL DEFAULT '0',
             `end_time` bigint(20) NOT NULL DEFAULT '0',
-            `data` TEXT NOT NULL DEFAULT '',
+            `data` TEXT NOT NULL,
             `state` ENUM(
                 'not_started_yet',
                 'active',
