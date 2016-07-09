@@ -80,6 +80,10 @@ define( function( require ) {
             });
         },
 
+        is_logged_in: function() {
+            return this.get("isLogged");
+        },
+
         user_id: function() {
             return this.get("id");
         },

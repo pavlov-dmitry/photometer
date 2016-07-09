@@ -51,6 +51,11 @@ define( function(require) {
         },
 
         login: function() {
+            if ( app.userState.is_logged_in() ) {
+                this.start();
+                return;
+            }
+
             this.clear_current();
 
             var UserLoginView = require( "login/view" ),
