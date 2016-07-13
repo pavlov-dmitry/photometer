@@ -25,6 +25,7 @@ use router::Router;
 use not_found_switcher::NotFoundSwitcher;
 use std::path::Path;
 use std::env;
+use log::{ LogRecord, LogLevelFilter };
 
 mod params_body_parser;
 mod authentication;
@@ -54,7 +55,8 @@ mod answer_types;
 use stuff::{ StuffCollection, StuffMiddleware };
 
 fn main() {
-    env_logger::init().unwrap();
+    // env_logger::init().unwrap();
+    init_log();
 
     if let Err( e ) = set_exec_path_as_current_dir() {
         error!( "error set exec path as current dir: {}", e );
@@ -162,6 +164,22 @@ fn main() {
     let addr = cfg.server_socket();
     println!( "starting listen on {}", addr );
     Iron::new( chain ).http( addr ).unwrap();
+}
+
+fn init_log() {
+    let log_format = |record: &LogRecord| {
+        let current_time = time::now();
+        let time_desc = current_time.strftime( "%Y.%m.%d %H:%M:%S" ).unwrap();
+        format!("[{}] {}:{}: {}", time_desc, record.level(), record.location().module_path(), record.args() )
+    };
+    let mut log_builder = env_logger::LogBuilder::new();
+    log_builder.format( log_format ).filter( None, LogLevelFilter::Info );
+
+    if env::var("RUST_LOG").is_ok() {
+       log_builder.parse(&env::var("RUST_LOG").unwrap());
+    }
+
+    log_builder.init().unwrap();
 }
 
 fn set_exec_path_as_current_dir() -> Result<(), String> {
