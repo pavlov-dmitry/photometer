@@ -27,6 +27,8 @@ define( function (require) {
         },
 
         unauthorized: function() {
+            this.userState.logout();
+
             //находим текущее положение наше положение
             var locationUrl =  $(location).attr("href");
             var gridPos = locationUrl.indexOf( '#' );
