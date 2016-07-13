@@ -51,17 +51,21 @@ define( function(require) {
         },
 
         login: function() {
-            if ( app.userState.is_logged_in() ) {
-                this.start();
-                return;
-            }
-
             this.clear_current();
 
             var UserLoginView = require( "login/view" ),
             UserLoginModel = require( "login/model" );
 
             this.current = new UserLoginView( { model: new UserLoginModel } );
+
+            //какой-то мерзкий костыль
+            var self = this;
+            app.userState.on_ready( function() {
+                if ( app.userState.is_logged_in() ) {
+                    self.start();
+                    return;
+                }
+            });
         },
 
         logout: function() {
@@ -233,6 +237,7 @@ define( function(require) {
         },
 
         start: function() {
+            console.log( "START" );
             var self = this;
             app.userState.on_ready( function() {
                 var group_id = app.userState.get_current_group_id();

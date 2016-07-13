@@ -18,8 +18,8 @@ define( function(require) {
 	    model.set( { user: usr } );
 
 	    var handler = Request.post( this.url, {
-		user: usr,
-		password: psw
+    		user: usr,
+    		password: psw
 	    } );
 
 	    handler.good = function( data ) {
